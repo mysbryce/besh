@@ -2,6 +2,14 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.6: server-side client code examples
+
+- Eight targets: JavaScript Axios/Fetch, PHP cURL, shell cURL, Rust reqwest, Go net/http, Java HttpClient, and C++ libcurl.
+- Published-source default, explicit saved draft, expected revision, typed REST/GraphQL inputs, and code-only origin/prefix overrides.
+- Environment-based runtime-key placeholders, escaped source, dependency/run notes, and bounded no-redirect requests. Rendering does not execute an API, issue a key, or persist example payloads.
+
+See [client code guide](client-code.md) for setup and [testing](testing.md) for exact native/toolchain, browser, and preview evidence. Optional release-pinned keys remain the next planned slice.
+
 ## Implemented in 0.5: uploaded SQLite reads and feature folders
 
 - Immutable original SQLite uploads and inspected table/column metadata, saved inside consistent control backups through migration 12.

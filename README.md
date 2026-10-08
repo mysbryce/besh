@@ -30,6 +30,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 - Visual editor with response fields, input references, conditions, and data reads; advanced JSON remains optional.
 - Saved drafts, validated publication, immutable release history, and rollback.
 - REST methods and path parameters, plus typed GraphQL queries/mutations.
+- [Server-side client examples](docs/client-code.md) for JavaScript Axios/Fetch, PHP/shell cURL, Rust, Go, Java, and C++.
 - Built-in k6 load testing for published REST/GraphQL APIs, with automatic local setup and optional goals.
 - Optional REST input/response rules and separate draft/published OpenAPI downloads.
 - Built-in and custom action roles; expiring runtime API keys with replacement and revocation.

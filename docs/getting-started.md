@@ -103,6 +103,7 @@ For a record endpoint, use `/v1/items/:id` and read the path field `id` in your 
 | GraphQL       | Per-API typed schemas, queries/mutations, variables, field selection and bounded execution                |
 | API rules     | Optional REST path/query/body/response types, required fields, nullability, and server checks             |
 | OpenAPI       | JSON downloads for a saved REST draft or published release, kept separate                                 |
+| Client code   | Eight server-side request targets, saved-source revisions, typed inputs, and copy/download                |
 | Drafts        | SQLite persistence; incomplete graphs may be saved                                                        |
 | Publishing    | Graph validation, overlapping-route checks, immutable release history, permission-checked rollback        |
 | Load testing  | Permission-authorized local k6 tests of published REST/GraphQL APIs, optional goals, saved summaries      |
@@ -121,6 +122,10 @@ Runtime keys grant REST requests, GraphQL queries, or GraphQL mutations for one 
 To replace an active token, open **API keys**, select **Replace key**, and confirm. Save the returned token and update your callers: the original stops accepting new requests immediately. Replacement keeps the same name, API, operations, and exact expiration; it does not extend access. Already authenticated requests may finish. For gradual handover, manually create another key, update callers, then revoke the original. Revoked or expired keys need a new issuance. See [runtime API keys](api-keys.md) for confirmation, lost-response recovery, product login attempts, and backup behavior.
 
 Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/input/output limits. Spreadsheet and SQLite uploads use separate bounded multipart routes. SQLite reads have additional [database limits](databases.md#limits). General network requests, live external database connections, and SQL writes remain planned.
+
+## Copy client code
+
+In API Studio, open **Use this API** with flow-read permission. Keep **Published release** as the example source, choose a client target, fill its request inputs, and select **Generate example**. Copy or download the source and follow its dependency instructions. Examples use a separately issued runtime key through `BESH_RUNTIME_API_KEY` in your caller's server environment; no token is entered into the panel. Generation does not call the API. Explicit **Saved draft** examples require publication before runtime use. See [client code examples](client-code.md) for the eight targets, source/revision rules, and setup.
 
 ## Load test a published API
 
@@ -279,6 +284,7 @@ These are roadmap items. Public Google Sheets imports, uploaded read-only SQLite
 - [Testing](testing.md) · [Glossary](../GLOSSARY.md) · [Agent instructions](../AGENTS.md)
 - [Page/action previews and Git ignore rules](preview.md)
 - [GraphQL schemas and execution](graphql.md)
+- [Client code examples](client-code.md)
 - [Spreadsheet data sources](data-sources.md)
 - [Uploaded SQLite database copies](databases.md)
 - [REST API rules and OpenAPI downloads](api-contracts.md)

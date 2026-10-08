@@ -1,4 +1,4 @@
-import { memo, useState } from 'react'
+import { lazy, memo, Suspense, useState } from 'react'
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -170,6 +170,9 @@ const FlowCard = memo(function FlowCard({
 })
 
 const nodeTypes = { besh: FlowCard }
+const ClientCode = lazy(() =>
+  import('./client-code').then((module) => ({ default: module.ClientCode })),
+)
 
 function Inspector({ node }: { node: CanvasNode }) {
   const [advanced, setAdvanced] = useState(false)
@@ -482,6 +485,7 @@ export function Builder() {
 
 function BuilderSession() {
   const state = useStudio()
+  const [clientCode, setClientCode] = useState(false)
   const socialFlow = state.nodes.some((node) => node.data.kind === 'social')
   const [loginInput, setLoginInput] = useState<LoginInput>({
     action: 'BEGIN',
@@ -776,6 +780,19 @@ function BuilderSession() {
         <ApiRules />
       )}
       <OpenApiDownload />
+      <Button
+        variant="outline"
+        aria-expanded={clientCode}
+        disabled={state.busy || !state.id || !can(state.member, 'flows.read')}
+        onClick={() => setClientCode(!clientCode)}
+      >
+        Use this API
+      </Button>
+      {clientCode && can(state.member, 'flows.read') ? (
+        <Suspense fallback={<p>Loading client examples…</p>}>
+          <ClientCode />
+        </Suspense>
+      ) : null}
       <ReleaseHistory />
       <section className="editor-panel">
         <div className="editor-toolbar">

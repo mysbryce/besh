@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import type { PreviewRecord } from '../scripts/preview-report'
 import type { UpdateState } from '../src/updates/model'
 import { databasePreviews } from './database-preview'
+import { clientCodePreviews } from './client-code-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -4067,6 +4068,7 @@ test('preview every current page and its actions', async ({
   await page.unroute('**/api/updates')
   await page.unroute('**/api/updates/check')
   await databasePreviews({ page, directory, owner, capture })
+  await clientCodePreviews({ page, owner, capture })
   expect(errors).toEqual([])
 
   await context.clearPermissions()

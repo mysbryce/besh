@@ -18,6 +18,8 @@ Playwright needs Node.js 22.22.1 or newer. Installed Chrome is detected at its s
 
 ## Inventory
 
+Client-code states add all eight REST/GraphQL language choices, source revisions, request/variable forms, copied/downloaded contents, unsaved-draft guidance, stale revision recovery, invalid inputs, pending actions, metadata errors and late responses, viewer access, and account-only denial. Light/dark phone captures use Fit View and check both graph nodes inside the canvas. See [client examples](client-code.md).
+
 | Page or group        | Previewed actions and states                                                                                                                                                                                                                              |
 | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Setup                | Connection error, retry, wizard, incorrect setup key, create workspace, one-time owner key, copy key, acknowledge and enter                                                                                                                               |
@@ -40,7 +42,7 @@ Playwright needs Node.js 22.22.1 or newer. Installed Chrome is detected at its s
 | Permissions          | Viewer studio, denied administration pages, editor controls, revoked token rejected                                                                                                                                                                       |
 | Phone layout         | Dashboard pages and login at 390px width, saved-API dropdown and selection, visible canvas, no document overflow, accessible sign-out                                                                                                                     |
 
-The verified walkthrough captured 372 screenshots on 2026-10-08, including all 12 dashboard pages at desktop and phone widths in light and dark appearance, plus REST rules, OpenAPI downloads, workspace accounts/sessions, GitHub product login, API key replacement, k6 load tests, path parameters, release review/rollback, custom roles, update notices, and uploaded SQLite copies.
+The verified walkthrough captured 413 screenshots on 2026-10-09, including all 12 dashboard pages at desktop and phone widths in light and dark appearance, plus REST rules, OpenAPI downloads, client examples, workspace accounts/sessions, GitHub product login, API key replacement, k6 load tests, path parameters, release review/rollback, custom roles, update notices, and uploaded SQLite copies.
 
 Gallery checks passed mouse/keyboard filtering, search, empty results, every image URL, phone overflow, and denial of private database/test-output paths. Light/dark/system appearance, reload, and OS preference behavior were verified separately. Desktop and phone screenshots were inspected, including the corrected input boundaries and settled theme controls.
 
@@ -49,6 +51,8 @@ Custom-role previews include actual grant changes and affected cookie revocation
 Updates screenshot scenarios use explicitly labeled controlled Besh UI fixtures for cached states and transport errors; they do not claim a live GitHub request. The separate update browser story uses real Besh routes and SQLite with only external GitHub transport controlled, and a native HTTP/GitHub smoke is recorded in [testing](testing.md). Notices report versions without downloading or applying updates.
 
 SQLite previews use actual uploaded databases, native read-only children, and Besh HTTP routes. The 43 new states include selected rows, strict boolean filters, generated REST/GraphQL drafts, node configuration and contract guidance, pending actions, referenced deletion rejection, malformed files, externally removed copies, and independent read/manage grants. Only selected request delivery is delayed or failed for pending/retry states; row results are not simulated. Changing node settings does not rewrite its typed API rules or GraphQL schema. See [database copies](databases.md).
+
+Client-code previews use real source metadata and generated text from Besh routes. They compare copied/downloaded contents and confirm that generation makes no runtime request. Only selected metadata/generation transport is delayed or failed for pending/retry states. No runtime credential is inserted, and entered sample values are safe fixtures. The 41 new captures are not claims of running code in the browser; independent native programs and the browser story are recorded in [testing](testing.md).
 
 The stock condition example is seeded through the public HTTP API; its runs are performed through the dashboard. Connection errors, runtime-key loading errors, and the explicitly labeled Google success/refresh states use controlled HTTP responses. CSV import, API generation, publication, scoped runtime calls, replacement, and deletion checks use the real local server and SQLite.
 

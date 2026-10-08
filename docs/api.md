@@ -90,6 +90,26 @@ Custom role metadata contains `id`, `name`, `permissions`, `version`, `createdAt
 
 Member role assignment accepts exactly `{ "role": "editor" }`, `{ "role": "viewer" }`, or `{ "role": "custom", "roleId": "..." }`. Permission changes and assignments commit with `role.updated` or `member.role.updated` and affected `session.revoked` events. Role creation/deletion record `role.created`/`role.deleted`. Changing grants revokes sessions for members assigned to that role; assignment changes revoke the member's sessions. Member keys remain valid but resolve current grants on their next request. Renaming a role does not add privileges. Migration 11 adds `workspace_roles` and `member_roles` without changing existing built-in assignments. See [permission catalog and boundaries](roles.md).
 
+## Client code examples
+
+All client-code routes require `flows.read`; runtime keys cannot access them. Cookie POSTs use the normal Origin/CSRF checks. These routes render request source only; they do not execute an API, issue a key, or save example payloads.
+
+| Method | Path                         | Behavior                                                                          |
+| ------ | ---------------------------- | --------------------------------------------------------------------------------- |
+| GET    | `/api/client-code/targets`   | Supported target catalog with IDs, labels, languages, dependencies, and filenames |
+| GET    | `/api/flows/:id/client-code` | Saved-source metadata; optional single `source=published` or `source=draft`       |
+| POST   | `/api/flows/:id/client-code` | Exact `{ target, source?, revision, baseUrl, request? }`; generated text result   |
+
+Source defaults to the current immutable publication; an unpublished API returns `404`. Draft means the current saved definition, excluding unsaved browser edits. Metadata contains `source`, `revision`, `name`, `method`, `path`, `graphql: { schema } | null`, `contract | null`, and `targets`. Generation requires the positive safe-integer revision just reviewed; a stale source returns `409`. It cannot select arbitrary historical revisions.
+
+REST `request` accepts optional `params`/`query` text maps and JSON `body`; GraphQL accepts only `graphql: { query, variables?, operationName? }`. REST path/query/body rules and GraphQL schema/operation/variable budgets are checked without executing the flow. GET/HEAD require the body property to be omitted, even for `null`; other methods preserve explicit JSON `null`, while an omitted body has no JSON content header. Path/query maps have at most 64 entries; keys at most 256 characters and values at most 4,096. GraphQL query text is at most 16,384 characters; operation names at most 100. Selected operations allow at most 2,000 tokens, depth 12, 200 fields, and 16 roots, or one root for product-login mutations. Introspection and subscriptions are rejected. JSON uses the normal nesting/256 KiB bound.
+
+`baseUrl` is an HTTP(S) origin with an optional deployment prefix, at most 2,048 characters, without credentials, query, fragment, spaces, or control characters. It affects code only and causes no network fetch or Besh configuration change. Concrete path/query values are encoded and each target uses its own literal escaping.
+
+The result contains `target`, `source`, `revision`, `method`, `url`, `code`, `dependencies`, `warnings`, `filename`, and `contentType: "text/plain"`. Code is at most 64 KiB and the full result at most 256 KiB. Examples use the caller's `BESH_RUNTIME_API_KEY` environment variable, a ten-second timeout, and no redirect following; no workspace or runtime token value is included. Draft output warns that the saved revision must be published first. Source metadata is not runtime revision pinning.
+
+Supported IDs are `javascript-axios`, `javascript-fetch`, `php-curl`, `curl`, `rust-reqwest`, `go-net-http`, `java-http-client`, and `cpp-libcurl`. See [client code guide](client-code.md) for filenames, dependencies, and run instructions; exact observed compilation/execution belongs in [testing](testing.md).
+
 ## Load testing
 
 Every load-test management route requires `load-tests.run`. Owners have it by default, and custom roles can grant it. Built-in editors and viewers receive `403`; runtime keys cannot access management. Cookie writes require the normal Origin and CSRF checks.

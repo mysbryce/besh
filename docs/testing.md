@@ -21,9 +21,20 @@ Use real SQLite in temporary directories. Test through public routes or exported
 
 Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. Tests run against temporary SQLite databases on API ports `4311`–`4313`, `4315`–`4319`, and `4321`, and dashboard port `5179`. The production story serves the built dashboard and API together on port `4314`.
 
-## Verified on 2026-10-08
+## Verified on 2026-10-08–09
 
 Windows, Bun 1.3.14, Node 22.22.1, TypeScript 7.0.2, Playwright 1.64.0 with installed Chrome.
+
+### Client code examples
+
+- Backend validation: 174 tests with 3,152 assertions across 13 files, type checks, production build, and formatting passed. Nine new public HTTP tests cover eight targets, immutable published/saved-draft sources, stale revisions, strict input and URL validation, typed REST/GraphQL input, bounded output, absent/scalar bodies, every REST method, current grants, cookie CSRF, and example-input privacy.
+- Independent native localhost checks generated, compiled where needed, and executed 40 exact programs: all eight targets each called real REST POST, a named typed GraphQL query, a named typed mutation, HEAD with HTTP 200, and GET with an empty HTTP 204 response. Expected results were known literal fixtures, not results derived from the generator. Quotes, apostrophes, backslashes, shell-like text, CR/LF, Thai, emoji, Unicode separators, literal Unicode escapes, nested JSON types, and a C++ raw-string delimiter collision remained intact.
+- Toolchains actually observed: Node 22.22.1 with Axios 1.20.0 and built-in Fetch, PHP 8.5.11 with cURL, Git Bash with native cURL 8.22.0, Rust 1.95.0 with reqwest 0.13.5, Go 1.27.2, Java 21.0.12.1, and G++ 13.2 with libcurl 8.22.0. Portable missing tools used official archives checked against their published SHA-256 values, under ignored local caches. These tools are caller dependencies, not Besh installation requirements. Minimum supported versions and other platforms were not compiled in this run.
+- Native checks reproduced Windows cURL argument corruption for non-ASCII JSON, Java console encoding loss, and a PHP 8.5 deprecated-cleanup warning. Generated cURL now sends readable JSON through UTF-8 standard input, Java emits UTF-8 response bytes, and PHP releases its handle with `unset`. The [PHP manual](https://www.php.net/manual/en/function.curl-close.php) documents the obsolete cleanup function. All 40 programs passed after these fixes.
+- Read-only cross-review checked the HTTP permission/CSRF gates, saved-source snapshot/revision selection, GraphQL budgets, language escaping, absent-body behavior, environment-only credentials, and lack of flow execution or example-payload persistence. This feature does not issue keys or bind future calls to an archived release.
+- All 14 browser stories passed in about 3.8 minutes using installed Chrome and real isolated servers. The client journey exercises every REST/GraphQL language, exact clipboard/download contents, request/variable forms, explicit sources, unsaved/stale guidance and recovery, pending navigation guards, metadata errors/late responses, and viewer/account-only boundaries. Generation produced zero live runtime calls. Controlled transport delays and one service failure exercise pending/retry behavior; generated contents remain real.
+- Visual review of all 41 new captures found a clipped phone graph. A public browser assertion failed before the capture helper used the actual Fit View control; the exact helper then passed with both nodes contained in light/dark phone and restored desktop viewports. Product layout was unchanged. The initial production dashboard chunk is 440.93 kB before gzip, with the client panel loaded on demand and no large-chunk warning.
+- The corrected full walkthrough passed in about 2.7 minutes and captured 413 masked screenshots across 12 dashboard pages. The client panels, source/language menus, error/retry states, readable code, and corrected phone graphs were inspected. Gallery filters, keyboard search, all image URLs, private-file denial, phone containment, and light/dark/system persistence passed.
 
 ### Uploaded SQLite copies
 

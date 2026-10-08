@@ -8,9 +8,10 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Treat repository evidence and user-provided vault notes as truth. Do not invent past decisions or integrations.
 - Vault unavailable for this project. Use repository docs for working context. Never access `D:\VAULT\__codex` directly. If vault notes are supplied later, propose linked Markdown updates for manual save.
 - Use Bun, Elysia, React, Zustand, Tailwind CSS, and shadcn/ui. Avoid adding frameworks without a concrete need.
-- Code style: no semicolons, single quotes, readable spacing, and blank lines between logical steps. Comment only important intent, constraints, and non-obvious behavior. Use Prettier; do not compress several statements onto one line.
+- TypeScript/JavaScript style: no semicolons, single quotes, readable spacing, and blank lines between logical steps. Generated examples in other languages use their own valid syntax. Comment only important intent, constraints, and non-obvious behavior. Use Prettier; do not compress several statements onto one line.
 - Use custom styled, accessible controls for checkboxes, radio groups, and dropdowns. Do not expose browser-native widgets. Preserve keyboard interaction, labels, focus, and disabled states.
 - Support real GraphQL APIs alongside REST. Keep schema validation, execution limits, authentication, and draft/release separation at the server boundary.
+- Keep copyable server-side REST/GraphQL examples for JavaScript Axios/Fetch, PHP cURL, shell cURL, Rust reqwest, Go net/http, Java HttpClient, and C++ libcurl. Default to the published release; make saved-draft selection explicit. Preserve typed input validation and source revisions, escape each language correctly, and document dependencies/run steps without claiming unobserved compilation.
 - Workspace sign-in uses email/password or member/owner keys. Social sign-in belongs to templates for generated product APIs, never the workspace panel.
 - Keep local setup easy. Provide a first-run wizard; do not require manual environment edits for the basic workflow.
 - Design common workflows for people who do not write code. Use labeled forms, selectors, examples, and data previews. Keep JSON and schema editors optional advanced tools.
@@ -31,6 +32,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Check authentication and permissions on the server for every management operation.
 - Keep member credentials limited to management and draft tests. Published APIs require a separate, unexpired runtime key scoped to the published flow and operation type. Never add a member-key bypass.
 - Derive endpoint permissions and displayed URLs from the published release, not an edited draft. Query/mutation grants do not replace future field or record authorization.
+- Client-code generation only renders text. Never execute an API, persist example payloads, or insert member/runtime key values. Examples read `BESH_RUNTIME_API_KEY` from the caller's server environment; keep credentials out of browser code and use bounded requests without following redirects.
 - Replace runtime keys atomically with their audit events. Preserve exact scope and expiry, show the new token once, and keep navigation blocked while its request is pending.
 - Validate flows before execution and publication. Bound graph, request, and response sizes.
 - Never evaluate uploaded JavaScript inside the server process.

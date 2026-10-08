@@ -801,11 +801,13 @@ export function RequestForm({
   path = '',
   disabled,
   onChange,
+  includeBody = true,
 }: {
   input: string
   path?: string
   disabled: boolean
   onChange: (input: string, error: string) => void
+  includeBody?: boolean
 }) {
   const [initial] = useState(() => parseRequestInput(input))
   const [body, setBody] = useState(() => fieldRows(initial.body, false))
@@ -884,8 +886,8 @@ export function RequestForm({
         references={false}
         textOnly
       />
-      <h3>Request body fields</h3>
-      {body ? (
+      {includeBody ? <h3>Request body fields</h3> : null}
+      {includeBody && body ? (
         <FieldRows
           prefix="Body"
           addLabel="Add body field"
@@ -894,13 +896,45 @@ export function RequestForm({
           disabled={disabled}
           references={false}
         />
-      ) : (
+      ) : includeBody ? (
         <p>
           Structured request data is preserved. Use Advanced test input to edit
           it.
         </p>
-      )}
+      ) : null}
     </div>
+  )
+}
+
+export function ValueFields({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: Record<string, unknown>
+  disabled: boolean
+  onChange: (value: Record<string, unknown>, error: string) => void
+}) {
+  const [rows, setRows] = useState(() => fieldRows(value, false) ?? [])
+  return (
+    <FieldRows
+      rows={rows}
+      prefix="Variable"
+      addLabel="Add variable"
+      references={false}
+      disabled={disabled}
+      onChange={(next) => {
+        setRows(next)
+        try {
+          onChange(rowsObject(next), '')
+        } catch (reason) {
+          onChange(
+            value,
+            reason instanceof Error ? reason.message : 'Review variables.',
+          )
+        }
+      }}
+    />
   )
 }
 

@@ -12,6 +12,8 @@
 - **Versioned route**: an explicit path prefix, such as `/v1` or `/v2`, on separate flows; it does not promise automatic compatibility or caller migration.
 - **API rules**: optional REST path, query, body, and response constraints checked by the server; GraphQL uses its schema instead.
 - **Contract**: the versioned definition of an API's accepted inputs and returned data.
+- **Client code example**: generated request source for a selected saved draft or published revision, using an environment-based runtime-key placeholder; generating it does not call the API.
+- **Client code target**: one supported language and HTTP-client combination, with its own dependencies, filename, and escaping rules.
 - **OpenAPI document**: a downloadable description of one saved REST draft or published release, including its route, rules, and runtime-key authentication.
 - **GraphQL schema**: a typed contract describing query/mutation fields, their arguments, and returned data.
 - **GraphQL operation**: a query or mutation selecting fields from a published schema; variables supply typed argument values.

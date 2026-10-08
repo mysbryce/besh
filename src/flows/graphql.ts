@@ -46,7 +46,7 @@ export function graphqlSchema(flow: Flow) {
   return schema
 }
 
-function operationLimits(
+export function operationLimits(
   document: DocumentNode,
   operationName?: string | null,
   maxRoots = 16,

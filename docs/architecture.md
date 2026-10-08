@@ -39,6 +39,12 @@ Checkboxes and dropdowns use local styled components built on Radix primitives. 
 
 Basic response, condition, and REST request editing uses labeled field forms. Raw JSON is an optional advanced view; complex nested values are preserved. Returning from advanced request input validates the full params/body/query envelope before mounting the form, including text-only parameter/query values. Input strings resembling reference syntax stay literal request values. Light/dark appearance uses shared tokens, a same-origin initialization script compatible with the content security policy, and accessible custom controls; see [design system](design.md).
 
+## Client-code boundary
+
+Client examples are rendered from saved published/draft metadata, with the current publication as default and an expected source revision to reject stale generation. `flows.read` permits catalog/metadata/text generation; it does not issue caller credentials. Unsaved editor changes are excluded. The renderer validates typed REST inputs and GraphQL operations/variables without invoking the executor or any external service.
+
+The eight fixed target templates escape language literals and shell arguments, use `BESH_RUNTIME_API_KEY` from the caller's server environment, bound request time, and disable redirects. Custom HTTP(S) base origins/prefixes only change generated URLs; they are never fetched or saved as workspace configuration. Code/input/result budgets protect rendering, and example payloads are not persisted. Saved-draft output warns that its revision must be published before runtime use. Source revision metadata does not make current flow-scoped runtime keys release-pinned. See [client code guide](client-code.md) and [testing](testing.md) for supported targets and observed toolchains.
+
 ## Load-test boundary
 
 Built-in k6 load testing is a main product workflow, separate from draft testing. Members with `load-tests.run` select an immutable published REST or GraphQL endpoint, supply validated request input, and optionally change bounded load and result goals. Defaults require no manual binary installation, scripts, credential setup, or Grafana Cloud. Labeled REST input and GraphQL variable forms are the common input path; GraphQL operations start from an editable generated example. Advanced JSON configuration stays optional.

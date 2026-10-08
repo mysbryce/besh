@@ -6,6 +6,7 @@ import { updateService, type ReleaseFetch } from './updates/service'
 import { openStore, hashToken } from './workspace/store'
 import { allow, ApiError, requirePermission } from './errors'
 import { flowService } from './flows/service'
+import { clientCodeTargets } from './flows/client-code-model'
 import { backupService } from './workspace/backups'
 import { dataSourceService } from './data/sources'
 import { databaseConnectionService } from './databases/service'
@@ -158,6 +159,21 @@ export function createApp(options: AppOptions) {
     })
     .get('/me', ({ member }) => member)
     .get('/permissions', () => permissionCatalog)
+    .get('/client-code/targets', ({ member }) => {
+      requirePermission(member, 'flows.read')
+      return clientCodeTargets
+    })
+    .get('/flows/:id/client-code', ({ member, params, request }) => {
+      requirePermission(member, 'flows.read')
+      const sources = new URL(request.url).searchParams.getAll('source')
+      if (sources.length > 1)
+        throw new ApiError(400, 'Choose one example source')
+      return flows.clientCodeMetadata(params.id, sources[0])
+    })
+    .post('/flows/:id/client-code', ({ member, params, body }) => {
+      requirePermission(member, 'flows.read')
+      return flows.clientCode(params.id, body)
+    })
     .get('/updates', ({ member }) => {
       allow(member, ['owner'])
       return updates.get()

@@ -2833,3 +2833,23 @@ input[type='file']::file-selector-button {
     padding: 12px;
   }
 }
+.client-code-panel {
+  margin: 16px 0;
+}
+.client-code-panel .simple-form {
+  max-width: 100%;
+}
+.client-code-result {
+  min-width: 0;
+}
+.client-code-result > p {
+  overflow-wrap: anywhere;
+}
+.client-code-result pre {
+  max-width: 100%;
+  max-height: 420px;
+  overflow: auto;
+  padding: 16px;
+  font-size: 12px;
+  line-height: 1.6;
+}

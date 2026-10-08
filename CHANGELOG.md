@@ -4,6 +4,24 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.6.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Copyable and downloadable REST/GraphQL client examples for JavaScript Axios/Fetch, PHP cURL, shell cURL, Rust reqwest, Go net/http, Java HttpClient, and C++ libcurl.
+- Published-release and saved-draft choices, request and variable forms, dependency instructions, and stale-revision recovery in the API Studio.
+- Client-code HTTP endpoints and light, dark, phone, pending, error, and permission previews.
+
+### Fixed
+
+- Preserve UTF-8 JSON through Windows shell cURL input and Java response output in generated examples.
+
+### Security
+
+- Generate text without running flows or retaining example inputs. Require current flow-read permission and cookie CSRF protection.
+- Validate selected revisions, typed REST inputs and GraphQL operations; escape each target language and bound input/output.
+- Read runtime credentials from the caller's environment, keep member keys out of examples, and disable redirects with bounded request timeouts.
+
 ## 0.5.0-alpha.0 — 2026-10-08
 
 ### Added

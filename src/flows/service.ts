@@ -8,6 +8,8 @@ import { flowOpenapi } from './openapi'
 import type { productAuthService } from '../auth/product'
 import { decodedRoute, matchRoute, overlappingRoutes } from './routes'
 import type { databaseConnectionService } from '../databases/service'
+import { clientCodeTargets } from './client-code-model'
+import { clientCodeSchema, flowClientCode } from './client-code'
 
 type Row = {
   id: string
@@ -120,6 +122,22 @@ export function flowService(
     return row
   }
 
+  function codeSource(id: string, source: unknown) {
+    if (source !== undefined && source !== 'draft' && source !== 'published')
+      throw new ApiError(400, 'Choose draft or published example source')
+    const selected: 'draft' | 'published' = source ?? 'published'
+    const row = get(id)
+    if (selected === 'published' && !row.published)
+      throw new ApiError(404, 'This API has no published release')
+    return {
+      source: selected,
+      revision: selected === 'draft' ? row.revision : row.published_revision!,
+      flow: draft(
+        JSON.parse(selected === 'draft' ? row.definition : row.published!),
+      ),
+    }
+  }
+
   function publicationUnlocked(id: string) {
     if (
       query(
@@ -163,6 +181,41 @@ export function flowService(
   }
 
   return {
+    clientCodeMetadata(id: string, source: unknown) {
+      return db
+        .transaction(() => {
+          const selected = codeSource(id, source)
+          const { name, method, path, graphql, contract } = selected.flow
+          return {
+            source: selected.source,
+            revision: selected.revision,
+            name,
+            method,
+            path,
+            graphql: graphql ?? null,
+            contract: contract ?? null,
+            targets: clientCodeTargets,
+          }
+        })
+        .immediate()
+    },
+    clientCode(id: string, value: unknown) {
+      const parsed = clientCodeSchema.safeParse(value)
+      if (!parsed.success)
+        throw new ApiError(
+          400,
+          'Provide a supported target, source revision, base URL, and bounded example input',
+        )
+      const selected = db
+        .transaction(() => codeSource(id, parsed.data.source))
+        .immediate()
+      if (selected.revision !== parsed.data.revision)
+        throw new ApiError(
+          409,
+          'Selected API revision changed. Reload before generating an example.',
+        )
+      return flowClientCode(selected.flow, selected.source, parsed.data)
+    },
     list() {
       return query<Row, []>('SELECT * FROM flows ORDER BY rowid DESC')
         .all()

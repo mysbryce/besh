@@ -1,5 +1,11 @@
 # Besh context
 
+## 2026-10-09 decisions
+
+- User requested persistent copyable client examples for JavaScript Axios/Fetch, PHP cURL, shell cURL, Rust reqwest, Go net/http, Java HttpClient, and C++ libcurl. The 0.6 delivery targets server applications with environment-based runtime keys, not workspace credentials in browser code. It defaults to the published release, makes saved-draft selection explicit, checks source revisions and typed inputs, and generates text without calling APIs or saving sample payloads. Dependency/run instructions and observed toolchain evidence stay separate. Optional release-pinned keys follow this slice and remain planned. See [client code examples](client-code.md).
+
+- Native checks compiled or ran forty exact generated programs across the eight targets, covering REST POST, named typed GraphQL query/mutation, HEAD, and empty GET responses. Hostile quotes, backslashes, Unicode, nested values, and a C++ raw-string delimiter collision exposed target-specific encoding needs: Java prints UTF-8 response bytes, and shell cURL pipes safely quoted UTF-8 input instead of relying on platform argument encoding. Exact versions and current browser/preview evidence belong in [testing](testing.md); minimum declared toolchain versions are not all tested.
+
 ## 2026-10-08 decisions
 
 - Custom workspace roles extend the earlier fixed-role delivery without changing built-in behavior. Owners alone administer roles/member assignments and other members' sessions. Thirteen explicit action grants can delegate publication/rollback, sources, product connections, runtime keys, audit, backups, migrations, and bounded load tests. Historical owner-only decisions and verification notes below describe their original deliveries; current behavior is documented in [roles and permissions](roles.md).
