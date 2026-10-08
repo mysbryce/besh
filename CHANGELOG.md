@@ -4,6 +4,21 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.7.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Optional runtime keys restricted to one published API revision, with follow-publication behavior retained by default.
+- Release choices, active/inactive guidance, and exact revision/expiration details in key issuance and replacement.
+- Migration 13 preserving existing follow keys and managed k6 keys tied to their run's publication.
+
+### Security
+
+- Reject stale pinned-key issuance atomically and deny mismatched releases before input checks or flow effects.
+- Preserve exact pins and expiration during replacement, including dormant keys, without executing archived definitions.
+- Recheck requested expiration after acquiring the database write lock, so waiting cannot create an already-expired key.
+- Document rollback reactivation, immediate revocation/expiration, in-flight request limits, and mutable-data boundaries.
+
 ## 0.6.0-alpha.0 — 2026-10-09
 
 ### Added

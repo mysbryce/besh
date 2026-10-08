@@ -44,6 +44,7 @@ export type RuntimeKey = {
   id: string
   name: string
   flowId: string
+  releaseRevision: number | null
   permissions: RuntimePermission[]
   expiresAt: string
   createdAt: string
@@ -55,6 +56,7 @@ type RuntimeKeyRow = {
   id: string
   name: string
   flow_id: string
+  release_revision: number | null
   permissions: string
   expires_at: string
   created_at: string
@@ -66,6 +68,7 @@ function runtimeKey(row: RuntimeKeyRow): RuntimeKey {
     id: row.id,
     name: row.name,
     flowId: row.flow_id,
+    releaseRevision: row.release_revision,
     permissions: JSON.parse(row.permissions),
     expiresAt: row.expires_at,
     createdAt: row.created_at,
@@ -342,6 +345,16 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 13').get()) {
+      db.exec(`ALTER TABLE runtime_keys ADD COLUMN release_revision INTEGER
+        CHECK (release_revision IS NULL OR
+          (typeof(release_revision) = 'integer' AND release_revision BETWEEN 1 AND 9007199254740991))`)
+      query('INSERT INTO migrations VALUES (13, ?, ?)').run(
+        'optional published release pins for runtime keys',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -458,17 +471,34 @@ export function openStore(path: string, adminToken?: string) {
     flowId: string,
     permissions: RuntimePermission[],
     conflict = false,
+    releaseRevision: number | null = null,
   ) {
-    const flow = query<{ published: string | null }, [string]>(
-      'SELECT published FROM flows WHERE id = ?',
-    ).get(flowId)
+    const flow = query<
+      { published: string | null; published_revision: number | null },
+      [string]
+    >('SELECT published, published_revision FROM flows WHERE id = ?').get(
+      flowId,
+    )
     if (!flow) throw new ApiError(404, 'Flow not found')
+    if (releaseRevision !== null && flow.published_revision !== releaseRevision)
+      throw new ApiError(
+        409,
+        'Selected release is no longer published. Reload before issuing a pinned key.',
+      )
     if (!flow.published)
       throw new ApiError(
         conflict ? 409 : 400,
         'Publish this API before issuing a runtime key',
       )
-    const graphql = Boolean(JSON.parse(flow.published).graphql)
+    validateRuntimePermissions(flow.published, permissions, conflict)
+  }
+
+  function validateRuntimePermissions(
+    definition: string,
+    permissions: RuntimePermission[],
+    conflict = false,
+  ) {
+    const graphql = Boolean(JSON.parse(definition).graphql)
     if (
       !permissions.length ||
       new Set(permissions).size !== permissions.length ||
@@ -485,7 +515,9 @@ export function openStore(path: string, adminToken?: string) {
   }
 
   function insertRuntimeKey(actor: string, key: RuntimeKey, token: string) {
-    query('INSERT INTO runtime_keys VALUES (?, ?, ?, ?, ?, ?, ?, NULL)').run(
+    query(
+      'INSERT INTO runtime_keys (id, name, flow_id, permissions, token_hash, expires_at, created_at, release_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    ).run(
       key.id,
       key.name,
       key.flowId,
@@ -493,6 +525,7 @@ export function openStore(path: string, adminToken?: string) {
       hashToken(token),
       key.expiresAt,
       key.createdAt,
+      key.releaseRevision,
     )
     audit(actor, 'runtime-key.created', key.id)
   }
@@ -730,7 +763,7 @@ export function openStore(path: string, adminToken?: string) {
     },
     listRuntimeKeys() {
       return query<RuntimeKeyRow & { managed: number }, []>(
-        'SELECT id, name, flow_id, permissions, expires_at, created_at, revoked_at, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys ORDER BY rowid DESC',
+        'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys ORDER BY rowid DESC',
       )
         .all()
         .map((row): RuntimeKey => ({
@@ -738,15 +771,26 @@ export function openStore(path: string, adminToken?: string) {
           ...(row.managed ? { managedBy: 'load-test' } : {}),
         }))
     },
-    createRuntimeKey(
-      actor: string,
-      value: {
-        name: string
-        flowId: string
-        permissions: RuntimePermission[]
-        expiresAt: string
-      },
-    ) {
+    createRuntimeKey(actor: string, input: unknown) {
+      const parsed = z
+        .object({
+          name: z.string().max(500),
+          flowId: z.string().min(1).max(80),
+          permissions: z
+            .array(z.enum(['rest', 'query', 'mutation']))
+            .min(1)
+            .max(3),
+          expiresAt: z.string().max(100),
+          releaseRevision: z.number().int().positive().safe().optional(),
+        })
+        .strict()
+        .safeParse(input)
+      if (!parsed.success)
+        throw new ApiError(
+          400,
+          'Provide valid runtime key settings and an optional positive safe release revision',
+        )
+      const value = parsed.data
       const name = value.name.trim()
       const expiration = Date.parse(value.expiresAt)
       const now = Date.now()
@@ -768,6 +812,7 @@ export function openStore(path: string, adminToken?: string) {
         id: crypto.randomUUID(),
         name,
         flowId: value.flowId,
+        releaseRevision: value.releaseRevision ?? null,
         permissions: value.permissions,
         expiresAt: new Date(expiration).toISOString(),
         createdAt: new Date(now).toISOString(),
@@ -776,9 +821,20 @@ export function openStore(path: string, adminToken?: string) {
       const token = `besh_${randomBytes(32).toString('base64url')}`
 
       db.transaction(() => {
-        validateRuntimeScope(key.flowId, key.permissions)
+        // Another process may hold the write lock beyond the requested expiry.
+        if (expiration <= Date.now())
+          throw new ApiError(
+            400,
+            'Expiration must be a valid future date within 366 days',
+          )
+        validateRuntimeScope(
+          key.flowId,
+          key.permissions,
+          false,
+          key.releaseRevision,
+        )
         insertRuntimeKey(actor, key, token)
-      })()
+      }).immediate()
 
       return { ...key, token }
     },
@@ -786,7 +842,7 @@ export function openStore(path: string, adminToken?: string) {
       return db
         .transaction(() => {
           const row = query<RuntimeKeyRow, [string]>(
-            'SELECT id, name, flow_id, permissions, expires_at, created_at, revoked_at FROM runtime_keys WHERE id = ?',
+            'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at FROM runtime_keys WHERE id = ?',
           ).get(id)
           if (!row) throw new ApiError(404, 'Runtime key not found')
 
@@ -813,7 +869,23 @@ export function openStore(path: string, adminToken?: string) {
             createdAt: new Date(now).toISOString(),
             revokedAt: null,
           }
-          validateRuntimeScope(key.flowId, key.permissions, true)
+          if (key.releaseRevision === null) {
+            validateRuntimeScope(key.flowId, key.permissions, true)
+          } else {
+            const release = query<{ definition: string }, [string, number]>(
+              'SELECT definition FROM releases WHERE flow_id = ? AND revision = ?',
+            ).get(key.flowId, key.releaseRevision)
+            if (!release)
+              throw new ApiError(
+                409,
+                'Pinned release is unavailable. The key cannot be replaced.',
+              )
+            validateRuntimePermissions(
+              release.definition,
+              key.permissions,
+              true,
+            )
+          }
           const token = `besh_${randomBytes(32).toString('base64url')}`
 
           query('UPDATE runtime_keys SET revoked_at = ? WHERE id = ?').run(
@@ -854,7 +926,7 @@ export function openStore(path: string, adminToken?: string) {
     },
     authenticateRuntime(token: string): RuntimeKey | null {
       const row = query<RuntimeKeyRow, [string]>(
-        'SELECT id, name, flow_id, permissions, expires_at, created_at, revoked_at FROM runtime_keys WHERE token_hash = ?',
+        'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at FROM runtime_keys WHERE token_hash = ?',
       ).get(hashToken(token))
 
       if (

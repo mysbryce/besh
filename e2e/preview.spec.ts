@@ -5,6 +5,7 @@ import type { PreviewRecord } from '../scripts/preview-report'
 import type { UpdateState } from '../src/updates/model'
 import { databasePreviews } from './database-preview'
 import { clientCodePreviews } from './client-code-preview'
+import { releasePinPreviews } from './release-pins-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -4069,6 +4070,7 @@ test('preview every current page and its actions', async ({
   await page.unroute('**/api/updates/check')
   await databasePreviews({ page, directory, owner, capture })
   await clientCodePreviews({ page, owner, capture })
+  await releasePinPreviews({ page, owner, capture })
   expect(errors).toEqual([])
 
   await context.clearPermissions()

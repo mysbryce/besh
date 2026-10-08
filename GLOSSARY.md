@@ -47,7 +47,10 @@
 - **Provider subject**: the provider's stable user identifier, paired with the provider name for product identity; distinct from a mutable username or email address.
 - **Secret key file**: the local encryption key for saved provider secrets and PKCE verifiers; separate from SQLite backups and restored with the matching database.
 - **Runtime API key**: a server-issued credential granting REST requests or GraphQL query/mutation operations for one published flow, with required expiration and immediate revocation; separate from workspace role permissions.
-- **Key replacement**: a key-management-authorized action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, and exact expiration; the new token appears once and there is no grace period.
+- **Following key**: a runtime key with no release pin; it accepts the flow's current published revision.
+- **Release-pinned key**: a runtime key bound to one graph revision; it accepts that revision only while it is the current publication, without executing an archived release.
+- **Dormant key**: an unexpired, unrevoked pinned key whose revision is not currently published; selecting its exact revision again can restore caller access.
+- **Key replacement**: a key-management-authorized action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, release pin or following mode, and exact expiration; the new token appears once and there is no grace period.
 - **Runtime grant**: permission to invoke an entire REST request, GraphQL query, or GraphQL mutation; it does not filter fields or records.
 - **Audit event**: a record of who performed an action, when, and on which resource.
 - **Migration**: a versioned change to a database schema.

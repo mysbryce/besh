@@ -159,7 +159,7 @@ For GraphQL, use `request.graphql` with the published schema:
 }
 ```
 
-The operation document is limited to 16,384 characters, and an optional operation name to 100. Normal published-schema validation and GraphQL execution budgets apply. The server derives the temporary key's query/mutation grant from the selected operation. REST input cannot substitute for a GraphQL operation.
+The operation document is limited to 16,384 characters, and an optional operation name to 100. Normal published-schema validation and GraphQL execution budgets apply. The server derives the temporary key's query/mutation grant from the selected operation and pins the key to the run's published revision. REST input cannot substitute for a GraphQL operation.
 
 For parameterized REST targets, `request.params` supplies decoded text values for every route parameter, such as `{ "id": "42" }` for `/v1/items/:id`. Omit `params` or use `{}` for a literal route. Missing, extra, malformed, and unsafe values are rejected; declared path rules also apply. The server encodes the concrete path before launching k6. GraphQL does not accept path parameters.
 
@@ -327,11 +327,13 @@ Content-Type: application/json
 }
 ```
 
+Issuance accepts exactly `name`, `flowId`, `permissions`, `expiresAt`, and optional `releaseRevision`; unknown fields return `400`. To pin the key, add `releaseRevision` as a JSON number that is a positive safe integer equal to the flow's current published revision. Numeric strings are not converted. Omitting it keeps following behavior; explicit `null`, strings, booleans, fractions, and unsafe integers return `400`. The current-publication check and insertion/audit are atomic. A stale/noncurrent pin, including a known flow with no publication, returns `409` before grant/protocol checks and without issuing a key or creation audit. An unpublished following target returns `400`; an unknown flow returns `404`.
+
 Name must contain 1 to 80 characters after trimming. Expiration must be a future ISO date with timezone within 366 days. A REST flow accepts `rest`; a GraphQL flow accepts `query`, `mutation`, or both. Empty, duplicate, or protocol-incompatible grants are rejected. One key scopes to one published flow ID.
 
-The response contains `id`, `name`, `flowId`, `permissions`, `expiresAt`, `createdAt`, `revokedAt: null`, and a one-time `token`. `GET /api/runtime-keys` returns the same metadata without tokens or hashes. Keys owned by load-test jobs additionally contain `managedBy: "load-test"`; ordinary caller keys omit it. These temporary keys are revoked automatically and cannot be replaced (`409`). Manual revocation is allowed and interrupts their caller access. Revocation returns `{ "ok": true }` and retains `revokedAt`. Repeating revocation succeeds; an unknown key returns `404`.
+The response contains `id`, `name`, `flowId`, `permissions`, `expiresAt`, `createdAt`, `revokedAt: null`, required nullable `releaseRevision`, and a one-time `token`. `GET /api/runtime-keys` returns the same metadata without tokens or hashes. Keys owned by load-test jobs additionally contain `managedBy: "load-test"`; ordinary caller keys omit it. These temporary keys are revoked automatically and cannot be replaced (`409`). Manual revocation is allowed and interrupts their caller access. Revocation returns `{ "ok": true }` and retains `revokedAt`. Repeating revocation succeeds; an unknown key returns `404`.
 
-### Replace an active key
+### Replace an active or dormant key
 
 ```http
 POST /api/runtime-keys/<key-id>/rotate
@@ -340,26 +342,26 @@ Authorization: Bearer <key-manager-member-token>
 
 Send no body or an empty JSON object `{}`. Any other body, including name, scope, grants, or expiration settings, returns `400`. Cookie-authenticated callers require the usual exact `Origin` and `X-Besh-CSRF` headers.
 
-A successful `200` response uses the issuance response format above, with a new `id`, `createdAt`, and one-time `token`. It preserves the original `name`, `flowId`, `permissions`, and exact `expiresAt`. Replacement does not renew expiration or change grants. The old revocation, new hash-only key insertion, and `runtime-key.revoked` / `runtime-key.created` audit events commit in one transaction. Their resource IDs identify the old and new keys respectively; audit records contain no token or credential hash.
+A successful `200` response uses the issuance response format above, with a new `id`, `createdAt`, and one-time `token`. It preserves the original `name`, `flowId`, `permissions`, required nullable `releaseRevision`, and exact `expiresAt`. Replacement does not renew expiration or change grants. The old revocation, new hash-only key insertion, and `runtime-key.revoked` / `runtime-key.created` audit events commit in one transaction. Their resource IDs identify the old and new keys respectively; audit records contain no token or credential hash.
 
-| Status | Meaning                                                                                                            |
-| ------ | ------------------------------------------------------------------------------------------------------------------ |
-| `200`  | Replacement committed; save the returned token once                                                                |
-| `400`  | Body is neither omitted nor an empty object                                                                        |
-| `401`  | Missing or invalid workspace management credentials                                                                |
-| `403`  | Caller lacks `runtime-keys.manage`                                                                                 |
-| `404`  | Original key does not exist                                                                                        |
-| `409`  | Key is revoked or expired, another replacement won, or its grants no longer match the currently published API type |
+| Status | Meaning                                                                                                              |
+| ------ | -------------------------------------------------------------------------------------------------------------------- |
+| `200`  | Replacement committed; save the returned token once                                                                  |
+| `400`  | Body is neither omitted nor an empty object                                                                          |
+| `401`  | Missing or invalid workspace management credentials                                                                  |
+| `403`  | Caller lacks `runtime-keys.manage`                                                                                   |
+| `404`  | Original key does not exist                                                                                          |
+| `409`  | Key is revoked or expired, another replacement won, or its grants no longer match the selected compatibility release |
 
-Compatibility uses the current published release, not an edited draft. A failed replacement leaves the old key unchanged. Concurrent replacements allow only one winner. New requests using the old token return `401` immediately after the commit; requests already authenticated may finish.
+Following-key compatibility uses the current published release. Pinned-key compatibility uses the immutable pinned release, including when it is dormant; a missing pinned release returns `409` without replacement. Neither uses an edited draft. A failed replacement leaves the old key unchanged. Concurrent replacements allow only one winner. New requests using the old token return `401` immediately after the commit; requests already authenticated may finish.
 
 Do not automatically retry after a lost response: the replacement may already have committed and its token cannot be fetched again. List key metadata to inspect the state, then revoke/create or replace an active replacement if its token was lost. For uninterrupted handover, manually create another key, update callers, and revoke the original; this route has no grace period. See [runtime API keys](api-keys.md) for the dashboard workflow.
 
 Runtime keys cannot authenticate management routes. Built-in editor and viewer member tokens cannot manage keys; custom members require `runtime-keys.manage`. Owner and member tokens cannot invoke published endpoints. Missing, expired, or revoked runtime credentials return `401`; valid keys targeting another flow or an ungranted operation return `403`. GraphQL checks the selected query or mutation before flow execution. Grants do not filter fields or records.
 
-Keys follow the flow's published revisions rather than pinning one release. Review grants before republishing broader behavior. Migration 6 adds runtime-key storage; it preserves published releases but intentionally ends member-token runtime access. Existing callers need new runtime credentials.
+Following keys (`releaseRevision: null`) accept the flow's current publication. A pinned key accepts only its exact revision while that revision is currently published; a mismatch at the current route returns `403` before typed input validation or effects. A removed old route returns `404`. Rollback to the exact pin restores access only while the key is unexpired and unrevoked. Pins do not execute archived releases, freeze mutable data/credentials, or add field/record policy. Review following-key grants before republishing broader behavior. Migration 6 adds runtime-key storage; it preserves published releases but intentionally ends member-token runtime access. Existing callers need new runtime credentials.
 
-Replacement uses the existing key and audit tables without a schema migration. Restoring a backup restores that snapshot's key state and can reactivate a key revoked or replaced later. Review restored keys before resuming callers.
+Migration 13 adds a nullable, positive integer `release_revision` column; existing keys remain following keys. Replacement retains that value and existing audit behavior. Restoring a backup restores that snapshot's key state and can reactivate a key revoked or replaced later. Review restored keys before resuming callers.
 
 ## Runtime
 

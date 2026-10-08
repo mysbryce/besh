@@ -33,7 +33,8 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Keep member credentials limited to management and draft tests. Published APIs require a separate, unexpired runtime key scoped to the published flow and operation type. Never add a member-key bypass.
 - Derive endpoint permissions and displayed URLs from the published release, not an edited draft. Query/mutation grants do not replace future field or record authorization.
 - Client-code generation only renders text. Never execute an API, persist example payloads, or insert member/runtime key values. Examples read `BESH_RUNTIME_API_KEY` from the caller's server environment; keep credentials out of browser code and use bounded requests without following redirects.
-- Replace runtime keys atomically with their audit events. Preserve exact scope and expiry, show the new token once, and keep navigation blocked while its request is pending.
+- Preserve optional release pins: issue only for the current publication, deny mismatches before input validation or effects, never execute archived releases, and retain the pin through replacement. Managed load-test keys pin their starting revision. Pins do not freeze mutable dependencies or create field/record authorization.
+- Replace runtime keys atomically with their audit events. Preserve exact scope, release pin, and expiry, show the new token once, and keep navigation blocked while its request is pending.
 - Validate flows before execution and publication. Bound graph, request, and response sizes.
 - Never evaluate uploaded JavaScript inside the server process.
 - Keep load tests permission-authorized, bounded, and restricted to the local published API. Owners have the grant by default; custom roles need `load-tests.run`. Use generated k6 scripts and temporary scoped keys; never accept arbitrary target URLs, uploaded scripts, or CLI options. Persist summaries, not request payloads, process logs, or secrets.

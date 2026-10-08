@@ -529,28 +529,10 @@ export function createApp(options: AppOptions) {
       requirePermission(member, 'runtime-keys.manage')
       return store.listRuntimeKeys()
     })
-    .post(
-      '/runtime-keys',
-      ({ member, body }) => {
-        requirePermission(member, 'runtime-keys.manage')
-        return store.createRuntimeKey(member.id, body)
-      },
-      {
-        body: t.Object({
-          name: t.String({ maxLength: 500 }),
-          flowId: t.String({ minLength: 1, maxLength: 80 }),
-          permissions: t.Array(
-            t.Union([
-              t.Literal('rest'),
-              t.Literal('query'),
-              t.Literal('mutation'),
-            ]),
-            { minItems: 1, maxItems: 3 },
-          ),
-          expiresAt: t.String({ maxLength: 100 }),
-        }),
-      },
-    )
+    .post('/runtime-keys', ({ member, body }) => {
+      requirePermission(member, 'runtime-keys.manage')
+      return store.createRuntimeKey(member.id, body)
+    })
     .delete('/runtime-keys/:id', ({ member, params }) => {
       requirePermission(member, 'runtime-keys.manage')
       return store.revokeRuntimeKey(member.id, params.id)

@@ -38,7 +38,7 @@ Release history lists immutable published revisions and identifies the current o
 
 Rollback changes the current publication only. It does not overwrite your draft, add a draft revision, or mutate an old release. Restoring the current release is rejected. A concurrent publication, overlapping route, invalid dependency, or active load test for this flow blocks the change. Refresh history after a conflict and review again.
 
-Keys follow the flow ID across publication and rollback. They keep their existing operation grants and expiration; changing the API type can make an existing grant unusable. Rollback is not a key rotation or a credential recovery procedure.
+Following keys keep the flow ID across publication and rollback, along with their operation grants and expiration; changing the API type can make a grant unusable. An unexpired, unrevoked pin becomes dormant when another revision is current and can work again after rollback to its exact revision. A pin does not execute history at an old URL or recover an expired/revoked credential. Rotation preserves the pin and expiry, even while dormant. See [runtime keys](api-keys.md).
 
 A release stores its graph, route, rules, and referenced resource IDs. Spreadsheet snapshots and product OAuth connection contents remain mutable. Restoring a graph does not restore spreadsheet rows, provider secrets, product sessions, or external database contents. A missing dependency can make an old release unrestorable. Workspace backup restoration is a separate operation.
 

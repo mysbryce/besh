@@ -72,6 +72,7 @@ export type RuntimeKey = {
   id: string
   name: string
   flowId: string
+  releaseRevision: number | null
   permissions: RuntimePermission[]
   expiresAt: string
   createdAt: string

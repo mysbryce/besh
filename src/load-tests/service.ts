@@ -336,6 +336,7 @@ export function loadTestService(
             name: `Load test ${run.id}`,
             flowId: row.id,
             permissions: [permission],
+            releaseRevision: row.published_revision,
             expiresAt: new Date(Date.now() + 300_000).toISOString(),
           })
           store

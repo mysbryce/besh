@@ -16,7 +16,7 @@ Use sample input values. The generated source contains the inputs you enter; a d
 
 **Published release** is the default and requires an existing publication. Editing a draft does not change this source. **Saved draft** uses the last saved definition; publish that saved revision before expecting its runtime URL and rules to work. Draft examples use runtime authentication, not member-key draft-test routes.
 
-The expected revision guards generation against stale metadata. Use **Refresh saved source** after a conflict, review the current source, and generate again. A source revision describes the example; it does not pin later runtime calls. Current keys still follow their flow's selected publication. Optional release-pinned keys remain planned.
+The expected revision guards generation against stale metadata. Use **Refresh saved source** after a conflict, review the current source, and generate again. A source revision describes the example; it does not pin later runtime calls. Following keys use their flow's current publication. Callers can separately choose a release-pinned key in **API keys**; generating code does not select or issue that key. See [runtime keys](api-keys.md) for the pin's current delivery status and dormant behavior.
 
 The base URL affects copied code only. It does not configure Besh, test a server, or fetch a remote URL. Use an HTTP(S) origin with an optional deployment prefix, without embedded credentials, query, fragment, spaces, or control characters.
 

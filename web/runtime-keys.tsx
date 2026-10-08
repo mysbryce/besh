@@ -12,7 +12,13 @@ import { Button } from './components/ui/button'
 import { Checkbox } from './components/ui/checkbox'
 import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
-import { api, type RuntimeKey, type RuntimePermission } from './lib/api'
+import {
+  api,
+  ApiError,
+  type RuntimeKey,
+  type RuntimePermission,
+  type SavedFlow,
+} from './lib/api'
 import { useStudio } from './store'
 import { can } from '../src/workspace/permissions'
 
@@ -20,6 +26,27 @@ const permissionLabels: Record<RuntimePermission, string> = {
   rest: 'REST requests',
   query: 'GraphQL queries',
   mutation: 'GraphQL mutations',
+}
+
+function releaseLabel(key: { releaseRevision: number | null }) {
+  return key.releaseRevision === null
+    ? 'Follow published changes'
+    : `Only release ${key.releaseRevision}`
+}
+
+type Pin = {
+  flowId: string
+  revision: number
+  endpoint: NonNullable<SavedFlow['publishedEndpoint']>
+}
+type Creation = {
+  name: string
+  flowId: string
+  permissions: RuntimePermission[]
+  expiresAt: string
+  releaseRevision?: number
+  apiName: string
+  route: string
 }
 
 export function RuntimeKeys() {
@@ -39,12 +66,23 @@ export function RuntimeKeys() {
     permissions: RuntimePermission[]
   } | null>(null)
   const [issued, setIssued] = useState('')
+  const [issuedRecord, setIssuedRecord] = useState<RuntimeKey | null>(null)
+  const [pin, setPin] = useState<Pin | null>(null)
+  const [review, setReview] = useState<Creation | null>(null)
+  const [metadataKnown, setMetadataKnown] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const active = useRef(false)
-  const published = flows.filter((flow) => flow.publishedEndpoint)
+  const dialog = useRef<HTMLDialogElement>(null)
+  const cancel = useRef<HTMLButtonElement>(null)
+  const createButton = useRef<HTMLButtonElement>(null)
+  const readable = can(member, 'flows.read')
+  const published = readable
+    ? flows.filter((flow) => flow.publishedEndpoint)
+    : []
   const selected = published.find((flow) => flow.id === flowId) ?? published[0]
-  const endpoint = selected?.publishedEndpoint
+  const selectedPin = pin?.flowId === selected?.id ? pin : null
+  const endpoint = selectedPin?.endpoint ?? selected?.publishedEndpoint
   const permissions: RuntimePermission[] =
     scope && scope.flowId === selected?.id
       ? scope.permissions
@@ -56,6 +94,40 @@ export function RuntimeKeys() {
     : ['rest']
   const locked = busy || loading || !!issued
 
+  function currentSession() {
+    const state = useStudio.getState()
+    return (
+      active.current &&
+      state.token === token &&
+      state.member?.id === member?.id &&
+      can(state.member, 'runtime-keys.manage') &&
+      state.sessionId === sessionId
+    )
+  }
+
+  async function refreshRecords(current: () => boolean) {
+    const [records, metadata] = await Promise.allSettled([
+      api<RuntimeKey[]>('/api/runtime-keys', token),
+      readable ? api<SavedFlow[]>('/api/flows', token) : Promise.resolve(null),
+    ])
+    if (!current()) return
+    setMetadataKnown(false)
+    if (records.status === 'fulfilled') setKeys(records.value)
+    if (
+      metadata.status === 'fulfilled' &&
+      metadata.value &&
+      can(useStudio.getState().member, 'flows.read')
+    ) {
+      useStudio.setState({ flows: metadata.value })
+      setMetadataKnown(true)
+    }
+    if (records.status === 'rejected') throw records.reason
+    if (metadata.status === 'rejected')
+      throw new Error(
+        'API keys loaded, but current API releases could not be read. Refresh to review release status.',
+      )
+  }
+
   useEffect(() => {
     if (!can(member, 'runtime-keys.manage')) return
 
@@ -64,17 +136,16 @@ export function RuntimeKeys() {
     setLoading(true)
     setKeys([])
     setIssued('')
+    setIssuedRecord(null)
+    setReview(null)
     setError('')
 
-    api<RuntimeKey[]>('/api/runtime-keys', token)
-      .then((records) => {
-        if (loadingCurrent) setKeys(records)
-      })
+    refreshRecords(() => loadingCurrent && currentSession())
       .catch((reason: Error) => {
-        if (loadingCurrent) setError(reason.message)
+        if (loadingCurrent && currentSession()) setError(reason.message)
       })
       .finally(() => {
-        if (loadingCurrent) setLoading(false)
+        if (loadingCurrent && currentSession()) setLoading(false)
       })
 
     return () => {
@@ -83,18 +154,65 @@ export function RuntimeKeys() {
     }
   }, [token, member?.id, member?.role, member?.permissions, sessionId])
 
-  function perform(work: (current: () => boolean) => Promise<void>) {
-    const current = () => {
-      const state = useStudio.getState()
-
-      return (
-        active.current &&
-        state.token === token &&
-        state.member?.id === member?.id &&
-        can(state.member, 'runtime-keys.manage') &&
-        state.sessionId === sessionId
-      )
+  useEffect(() => {
+    if (review && !dialog.current?.open) {
+      dialog.current?.showModal()
+      cancel.current?.focus()
     }
+  }, [review])
+
+  function closeReview() {
+    if (useStudio.getState().busy) return
+    setReview(null)
+    createButton.current?.focus()
+  }
+
+  function issue(value: Creation) {
+    const { apiName: _apiName, route: _route, ...body } = value
+    perform(async (current) => {
+      try {
+        const created = await api<RuntimeKey & { token: string }>(
+          '/api/runtime-keys',
+          token,
+          'POST',
+          body,
+        )
+        const { token: secret, ...record } = created
+        if (!current()) return
+        setIssued(secret)
+        setIssuedRecord(record)
+        setKeys((records) => [record, ...records])
+        setReview(null)
+        setName('')
+        message('API key created. Save it now; it is shown once.')
+      } catch (reason) {
+        if (current()) {
+          if (reason instanceof ApiError && reason.status === 409)
+            setMetadataKnown(false)
+          setReview(null)
+          createButton.current?.focus()
+        }
+        throw reason
+      }
+    })
+  }
+
+  function keyStatus(key: RuntimeKey) {
+    if (key.revokedAt) return 'Revoked'
+    if (Date.parse(key.expiresAt) <= Date.now()) return 'Expired'
+    const flow =
+      readable && metadataKnown
+        ? flows.find((flow) => flow.id === key.flowId)
+        : null
+    if (!flow?.publishedRevision) return 'Current release unknown'
+    return key.releaseRevision !== null &&
+      key.releaseRevision !== flow.publishedRevision
+      ? 'Dormant'
+      : 'Active'
+  }
+
+  function perform(work: (current: () => boolean) => Promise<void>) {
+    const current = currentSession
 
     void task(async () => {
       if (!current()) return
@@ -132,13 +250,8 @@ export function RuntimeKeys() {
           disabled={busy || loading}
           onClick={() =>
             perform(async (current) => {
-              const records = await api<RuntimeKey[]>(
-                '/api/runtime-keys',
-                token,
-              )
+              await refreshRecords(current)
               if (!current()) return
-
-              setKeys(records)
               message('API keys refreshed.')
             })
           }
@@ -151,6 +264,12 @@ export function RuntimeKeys() {
         Owner and member keys manage the workspace. API keys call published
         endpoints and cannot open the dashboard or edit drafts.
       </p>
+      <p className="credential-note">
+        A key can follow published changes or work only while one release is
+        current. A release pin does not freeze imported data or product login
+        settings. Refresh after publishing or rolling back to review the
+        displayed status.
+      </p>
       {error ? (
         <p className="form-error" role="alert">
           {error}
@@ -162,30 +281,22 @@ export function RuntimeKeys() {
           className="runtime-key-form"
           onSubmit={(event) => {
             event.preventDefault()
-            if (locked || !name.trim() || !permissions.length) return
+            if (locked || !metadataKnown || !name.trim() || !permissions.length)
+              return
 
-            perform(async (current) => {
-              const created = await api<RuntimeKey & { token: string }>(
-                '/api/runtime-keys',
-                token,
-                'POST',
-                {
-                  name: name.trim(),
-                  flowId: selected.id,
-                  permissions,
-                  expiresAt: new Date(
-                    Date.now() + Number(days) * 24 * 60 * 60 * 1000,
-                  ).toISOString(),
-                },
-              )
-              const { token: secret, ...record } = created
-              if (!current()) return
-
-              setIssued(secret)
-              setKeys((current) => [record, ...current])
-              setName('')
-              message('API key created. Save it now; it is shown once.')
-            })
+            const value: Creation = {
+              name: name.trim(),
+              flowId: selected.id,
+              permissions,
+              expiresAt: new Date(
+                Date.now() + Number(days) * 24 * 60 * 60 * 1000,
+              ).toISOString(),
+              ...(selectedPin ? { releaseRevision: selectedPin.revision } : {}),
+              apiName: selected.name,
+              route: `${endpoint?.method} ${endpoint?.graphql ? '/graphql' : '/run'}${endpoint?.path}`,
+            }
+            if (selectedPin) setReview(value)
+            else issue(value)
           }}
         >
           <div className="runtime-key-fields">
@@ -210,6 +321,7 @@ export function RuntimeKeys() {
                 onValueChange={(value) => {
                   setFlowId(value)
                   setScope(null)
+                  setPin(null)
                 }}
                 disabled={locked}
                 options={published.map((flow) => ({
@@ -232,7 +344,66 @@ export function RuntimeKeys() {
                 }))}
               />
             </label>
+            <label>
+              Release access
+              <Select
+                label="Release access"
+                value={selectedPin ? 'pin' : 'follow'}
+                disabled={locked || !metadataKnown}
+                onValueChange={(value) => {
+                  if (
+                    value === 'pin' &&
+                    selected.publishedRevision &&
+                    selected.publishedEndpoint
+                  )
+                    setPin({
+                      flowId: selected.id,
+                      revision: selected.publishedRevision,
+                      endpoint: selected.publishedEndpoint,
+                    })
+                  else setPin(null)
+                }}
+                options={[
+                  { value: 'follow', label: 'Follow published changes' },
+                  { value: 'pin', label: 'Only this release' },
+                ]}
+              />
+            </label>
           </div>
+          {selectedPin ? (
+            <p className="credential-note">
+              Only release {selectedPin.revision} selected. Current published
+              release: {metadataKnown ? selected.publishedRevision : 'unknown'}.
+              This choice stays unchanged when you refresh.
+              {metadataKnown &&
+              selectedPin.revision !== selected.publishedRevision ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={locked}
+                  onClick={() => {
+                    if (
+                      selected.publishedRevision &&
+                      selected.publishedEndpoint
+                    ) {
+                      setPin({
+                        flowId: selected.id,
+                        revision: selected.publishedRevision,
+                        endpoint: selected.publishedEndpoint,
+                      })
+                      setScope(null)
+                    }
+                  }}
+                >
+                  Use current release
+                </Button>
+              ) : null}
+            </p>
+          ) : (
+            <p className="credential-note">
+              This key follows future published changes to the selected API.
+            </p>
+          )}
           {endpoint ? (
             <div className="runtime-endpoint">
               <label htmlFor="runtime-endpoint-url">
@@ -280,7 +451,12 @@ export function RuntimeKeys() {
                 </label>
               ))}
             </fieldset>
-            <Button disabled={locked || !name.trim() || !permissions.length}>
+            <Button
+              ref={createButton}
+              disabled={
+                locked || !name.trim() || !permissions.length || !metadataKnown
+              }
+            >
               <Plus />
               Create API key
             </Button>
@@ -310,6 +486,21 @@ export function RuntimeKeys() {
           <div>
             <strong>Save this API key</strong>
             <p>Shown once. Copy it before leaving this page.</p>
+            {issuedRecord ? (
+              <p>
+                {issuedRecord.name} · {releaseLabel(issuedRecord)} ·{' '}
+                {issuedRecord.permissions
+                  .map((permission) => permissionLabels[permission])
+                  .join(', ')}
+                <br />
+                Expires {new Date(issuedRecord.expiresAt).toLocaleString()}
+                <br />
+                {keyStatus(issuedRecord)}
+                {keyStatus(issuedRecord) === 'Dormant'
+                  ? ' — this key works only if its pinned release becomes current again.'
+                  : ''}
+              </p>
+            ) : null}
           </div>
           <Input aria-label="New API key" readOnly value={issued} />
           <Button
@@ -339,6 +530,7 @@ export function RuntimeKeys() {
               <th>Key name</th>
               <th>Published API</th>
               <th>Permissions</th>
+              <th>Release access</th>
               <th>Expires</th>
               <th>Status</th>
               <th>Access</th>
@@ -354,7 +546,9 @@ export function RuntimeKeys() {
                   ) : null}
                 </td>
                 <td>
-                  {flows.find((flow) => flow.id === key.flowId)?.name ??
+                  {(readable
+                    ? flows.find((flow) => flow.id === key.flowId)?.name
+                    : null) ??
                     (can(member, 'flows.read')
                       ? 'Unavailable API'
                       : `API ${key.flowId.slice(0, 8)}`)}
@@ -364,15 +558,10 @@ export function RuntimeKeys() {
                     .map((permission) => permissionLabels[permission])
                     .join(', ')}
                 </td>
+                <td>{releaseLabel(key)}</td>
                 <td>{new Date(key.expiresAt).toLocaleString()}</td>
                 <td>
-                  <Badge variant="secondary">
-                    {key.revokedAt
-                      ? 'Revoked'
-                      : Date.parse(key.expiresAt) <= Date.now()
-                        ? 'Expired'
-                        : 'Active'}
-                  </Badge>
+                  <Badge variant="secondary">{keyStatus(key)}</Badge>
                 </td>
                 <td>
                   {!key.managedBy &&
@@ -386,7 +575,7 @@ export function RuntimeKeys() {
                         if (locked) return
                         if (
                           !window.confirm(
-                            `Replace API key ${key.name}? The old key stops working immediately. The new key keeps the same API, permissions, and expiry. Save the new key and update your caller.`,
+                            `Replace API key ${key.name}? The old key stops working immediately. The new key keeps the same API, permissions, and expiry. Release access: ${releaseLabel(key)}. Permissions: ${key.permissions.map((permission) => permissionLabels[permission]).join(', ')}. Expires: ${new Date(key.expiresAt).toLocaleString()}.${keyStatus(key) === 'Dormant' ? ' This key remains dormant until its pinned release is current again.' : ''} Save the new key and update your caller.`,
                           )
                         )
                           return
@@ -416,6 +605,7 @@ export function RuntimeKeys() {
                           const { token: secret, ...record } = replacement
 
                           setIssued(secret)
+                          setIssuedRecord(record)
                           setKeys((records) => [
                             record,
                             ...records.map((previous) =>
@@ -480,6 +670,54 @@ export function RuntimeKeys() {
           <p className="table-empty">No API keys yet.</p>
         ) : null}
       </div>
+      {review ? (
+        <dialog
+          ref={dialog}
+          className="rollback-confirm"
+          aria-labelledby="pin-key-title"
+          onCancel={(event) => {
+            event.preventDefault()
+            closeReview()
+          }}
+        >
+          <h2 id="pin-key-title">Create release-pinned API key</h2>
+          <p>
+            {review.name} · {review.apiName}
+          </p>
+          <p>
+            <strong>Only release {review.releaseRevision}</strong>
+            <br />
+            <code>{review.route}</code>
+          </p>
+          <p>
+            Permissions:{' '}
+            {review.permissions
+              .map((permission) => permissionLabels[permission])
+              .join(', ')}
+            <br />
+            Expires: {new Date(review.expiresAt).toLocaleString()}
+          </p>
+          <p>
+            This key becomes dormant if another release is published. It works
+            again only when this exact release is current, while the key remains
+            unexpired and unrevoked. Imported data and product login settings
+            can still change.
+          </p>
+          <div className="title-actions">
+            <Button
+              ref={cancel}
+              variant="outline"
+              disabled={busy}
+              onClick={closeReview}
+            >
+              Cancel
+            </Button>
+            <Button disabled={busy} onClick={() => issue(review)}>
+              Create pinned key
+            </Button>
+          </div>
+        </dialog>
+      ) : null}
     </>
   )
 }

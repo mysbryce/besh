@@ -33,7 +33,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 - [Server-side client examples](docs/client-code.md) for JavaScript Axios/Fetch, PHP/shell cURL, Rust, Go, Java, and C++.
 - Built-in k6 load testing for published REST/GraphQL APIs, with automatic local setup and optional goals.
 - Optional REST input/response rules and separate draft/published OpenAPI downloads.
-- Built-in and custom action roles; expiring runtime API keys with replacement and revocation.
+- Built-in and custom action roles; expiring runtime API keys with optional release pins, replacement, and revocation.
 - Optional email/password sign-in and revocable workspace browser sessions.
 - GitHub product-login templates for REST and GraphQL, with server-held credentials.
 - Local SQLite persistence, audit history, migrations, and tested backups.

@@ -416,6 +416,14 @@ export function flowService(
       if (!row?.published) throw new ApiError(404, 'Endpoint not found')
       if (row.id !== key.flowId || !key.permissions.includes('rest'))
         throw new ApiError(403, 'Runtime key does not allow this endpoint')
+      if (
+        key.releaseRevision !== null &&
+        key.releaseRevision !== row.published_revision
+      )
+        throw new ApiError(
+          403,
+          'Runtime key is pinned to a release that is not currently published',
+        )
 
       const result = await execute(
         `runtime:${key.id}`,
@@ -444,6 +452,14 @@ export function flowService(
       if (!row?.published) throw new ApiError(404, 'Endpoint not found')
       if (row.id !== key.flowId || key.permissions.includes('rest'))
         throw new ApiError(403, 'Runtime key does not allow this endpoint')
+      if (
+        key.releaseRevision !== null &&
+        key.releaseRevision !== row.published_revision
+      )
+        throw new ApiError(
+          403,
+          'Runtime key is pinned to a release that is not currently published',
+        )
 
       const result = await executeGraphql(
         JSON.parse(row.published),
