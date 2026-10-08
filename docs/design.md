@@ -24,7 +24,7 @@ Besh gives the flow editor most of the space. Navigation, setup, and workspace c
 - Keep visible focus, meaningful labels, keyboard selection, disabled states, and clear success/error feedback.
 - Small entrance and hover transitions provide feedback. Respect `prefers-reduced-motion`; keep graph editing stable.
 - Keys appear once in memory. Keep copy and acknowledgement actions close to the key, and mask credentials in previews.
-- Appearance offers Light, Dark, and System. Save only the appearance preference; apply it before the dashboard paints and follow operating-system changes in System mode.
+- Appearance offers Light, Dark, and System. Save only the appearance preference in local storage; apply it before the dashboard paints and follow operating-system changes in System mode. Workspace sign-in uses an HttpOnly cookie; passwords and member keys are not stored in local storage.
 - Common API tasks use labeled forms: response fields, conditions, test values, spreadsheet columns, and row limits. Put JSON and schema editors under Advanced. Preserve complex existing values when a form cannot represent them.
 - Spreadsheet setup follows import, inspect rows, choose fields, and create a draft. Publishing and issuing a runtime key remain explicit actions.
 

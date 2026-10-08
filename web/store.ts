@@ -10,7 +10,16 @@ import {
   type Connection,
 } from '@xyflow/react'
 import type { Flow, FlowNode, FlowResult } from '../src/flows/model'
-import { api, apiRulesError, type Member, type SavedFlow } from './lib/api'
+import {
+  api,
+  apiRulesError,
+  ApiError,
+  onSessionExpired,
+  setSessionCredential,
+  type Member,
+  type SavedFlow,
+  type WorkspaceSession,
+} from './lib/api'
 
 export type CanvasNode = Node<
   { kind: FlowNode['type']; config: FlowNode['config'] },
@@ -43,6 +52,9 @@ type Studio = {
   editorSession: string
   token: string
   member: Member | null
+  authReady: boolean
+  sessionId: string | null
+  expiresAt: string | null
   flows: SavedFlow[]
   id: string | null
   name: string
@@ -60,8 +72,12 @@ type Studio = {
   notice: string
   failed: boolean
   result: FlowResult | null
-  login: (token: string) => Promise<void>
-  logout: () => void
+  login: (
+    credentials: string | { email: string; password: string },
+  ) => Promise<void>
+  restoreSession: () => Promise<void>
+  logout: () => Promise<void>
+  clearSession: (notice?: string) => void
   fresh: () => void
   load: (flow: SavedFlow) => void
   openCreated: (flow: SavedFlow) => void
@@ -115,23 +131,35 @@ function editState(flow?: SavedFlow) {
   }
 }
 
+let restoration: Promise<void> | null = null
+
 export const useStudio = create<Studio>((set, get) => ({
   ...editState(),
   token: '',
   member: null,
+  authReady: false,
+  sessionId: null,
+  expiresAt: null,
   flows: [],
   busy: false,
   notice: 'Connect your first idea.',
   failed: false,
 
-  async login(token) {
-    const [member, flows] = await Promise.all([
-      api<Member>('/api/me', token),
-      api<SavedFlow[]>('/api/flows', token),
-    ])
+  async login(credentials) {
+    const session = await api<WorkspaceSession>(
+      '/auth/login',
+      '',
+      'POST',
+      typeof credentials === 'string' ? { token: credentials } : credentials,
+    )
+    setSessionCredential(session.csrfToken)
+    const flows = await api<SavedFlow[]>('/api/flows')
     set({
-      token,
-      member,
+      token: '',
+      member: session.member,
+      sessionId: session.sessionId,
+      expiresAt: session.expiresAt,
+      authReady: true,
       flows,
       ...editState(flows[0]),
       notice: 'Workspace ready.',
@@ -139,8 +167,63 @@ export const useStudio = create<Studio>((set, get) => ({
     })
   },
 
-  logout() {
-    set({ token: '', member: null, flows: [], ...editState(), notice: '' })
+  restoreSession() {
+    if (restoration) return restoration
+    restoration = (async () => {
+      try {
+        const session = await api<WorkspaceSession>('/auth/session')
+        setSessionCredential(session.csrfToken)
+        const flows = await api<SavedFlow[]>('/api/flows')
+        set({
+          member: session.member,
+          sessionId: session.sessionId,
+          expiresAt: session.expiresAt,
+          flows,
+          ...editState(flows[0]),
+          notice: 'Workspace ready.',
+          failed: false,
+        })
+      } catch (error) {
+        if (!(error instanceof ApiError) || error.status !== 401)
+          set({
+            notice:
+              error instanceof Error
+                ? error.message
+                : 'Could not restore session.',
+            failed: true,
+          })
+      } finally {
+        set({ authReady: true })
+      }
+    })()
+    return restoration
+  },
+
+  async logout() {
+    try {
+      await api('/auth/logout', '', 'POST')
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        get().clearSession('This session has already ended. Sign in again.')
+        return
+      }
+      throw error
+    }
+    get().clearSession('Signed out. This session was revoked.')
+  },
+
+  clearSession(notice = '') {
+    setSessionCredential('')
+    set({
+      token: '',
+      member: null,
+      sessionId: null,
+      expiresAt: null,
+      flows: [],
+      ...editState(),
+      notice,
+      failed: false,
+    })
   },
   fresh() {
     set({
@@ -340,3 +423,9 @@ export const useStudio = create<Studio>((set, get) => ({
     }
   },
 }))
+
+onSessionExpired(() => {
+  useStudio
+    .getState()
+    .clearSession('Your session expired or was revoked. Sign in again.')
+})

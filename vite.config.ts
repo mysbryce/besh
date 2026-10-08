@@ -14,6 +14,7 @@ export default defineConfig({
       ignored: ['**/.preview/**', '**/test-results/**', '**/docs/**'],
     },
     proxy: {
+      '/auth': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',
       '/api': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',
       '/run': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',
       '/graphql': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',

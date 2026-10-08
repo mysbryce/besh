@@ -22,7 +22,7 @@ Open the **First-run setup** link printed in the terminal. The wizard will:
 
 No database server or `.env` file is needed. Keep the terminal running. Press Ctrl+C to stop both servers.
 
-Next time, run `bun run dev` and open `http://127.0.0.1:5173`. Use your saved owner key. Keys stay in browser memory, so a reload asks you to sign in again.
+Next time, run `bun run dev` and open `http://127.0.0.1:5173`. Use your saved owner key, or choose **Email & password** after adding sign-in details under **Account & sessions**. The browser restores an active HttpOnly session after reload; keys and passwords are not saved in local storage. See [workspace accounts and sessions](workspace-auth.md).
 
 For one server with a built dashboard:
 
@@ -102,7 +102,7 @@ Input references replace a whole value and preserve JSON types. Supported roots 
 | Drafts      | SQLite persistence; incomplete graphs may be saved                                         |
 | Publishing  | Graph validation, route conflict checks, immutable release history                         |
 | Concurrency | Stale save/publish requests return `409`                                                   |
-| Access      | Server-enforced owner, editor, and viewer roles; revocable member tokens                   |
+| Access      | Server-enforced roles; workspace keys or email/password; expiring browser sessions         |
 | API keys    | Owner-issued keys for one published API, expiring grants, immediate revocation             |
 | Audit       | Changes, tests, runs, backups, and access denials; latest 200 visible                      |
 | Migrations  | Versioned control-database schema history                                                  |
@@ -148,10 +148,17 @@ REST and GraphQL keep separate routes and published releases. GraphQL currently 
 | Import/read/manage spreadsheet sources   | Yes   | Yes    | No     |
 | Publish                                  | Yes   | No     | No     |
 | Members, audit, migrations, backups      | Yes   | No     | No     |
+| Change own email/password with proof     | Yes   | Yes    | Yes    |
+| Inspect/revoke own browser sessions      | Yes   | Yes    | Yes    |
+| Inspect/revoke other members' sessions   | Yes   | No     | No     |
 | Create/list/revoke runtime API keys      | Yes   | No     | No     |
 | Call published endpoints with member key | No    | No     | No     |
 
-Member tokens are shown once. Revoke a member to invalidate their token. The owner key cannot be revoked from the member screen. Owner and member tokens do not expire automatically in this preview; runtime API keys require expiration. Runtime keys cannot manage the workspace or test drafts.
+Member tokens are shown once. Remove a member to invalidate their token, account, and sessions. The owner key cannot be revoked from the member screen. Owner and member keys do not expire automatically in this preview; browser sessions and runtime API keys expire. Runtime keys cannot manage the workspace or test drafts.
+
+Every role can manage its own email/password under **Account & sessions**, with a current password or member key as fresh proof. Members see and revoke their own sessions; owners can inspect and revoke all workspace sessions. Ending a session leaves its member's sign-in credentials usable. See [workspace accounts and sessions](workspace-auth.md).
+
+Owners add editors/viewers from **Members**. Fill **Member email (optional)** and **Member password** for email/password sign-in, or leave email blank for key-only access. Save the issued member key; no invitation email is sent.
 
 ## Data and recovery
 
@@ -163,29 +170,31 @@ To restore without overwriting your current workspace:
 2. Keep the existing database and its `-wal` / `-shm` files together. Do not replace a live database.
 3. Copy a downloaded backup to a new filename, such as `data/restored.sqlite`.
 4. Set `BESH_DATABASE_PATH=data/restored.sqlite` in `.env` and restart.
-5. Sign in with a token valid at backup time. Check flows, logs, and a test response before using the restored copy.
-6. Review and revoke or rotate restored runtime keys. A snapshot can restore keys revoked after that snapshot was taken.
+5. Sign in with credentials valid at backup time. Check flows, logs, and a test response before using the restored copy.
+6. Review restored accounts and sessions, and revoke or rotate restored keys. A snapshot can restore old passwords, unexpired sessions, and runtime keys revoked after it was taken. Ending sessions alone does not disable restored passwords or member keys.
 
 Only Besh's control database is backed up. External database backups, schedules, retention, encryption, and remote storage are planned.
 
-If you lose the owner key, stop Besh and generate a new long random value. Set `BESH_ADMIN_TOKEN` in a private `.env`, then restart. This replaces the owner token. Remove the variable afterward; the hash remains in SQLite. Treat server filesystem access as owner access.
+If you lose the owner key, stop Besh and generate a new long random value. Set `BESH_ADMIN_TOKEN` in a private `.env`, then restart. This replaces the owner token and ends owner sessions when the key changes. Remove the variable afterward; the hash remains in SQLite. The existing owner email/password remains valid; use the recovered key to update **Account & sessions** if that password also needs replacement. Treat server filesystem access as owner access.
 
 ## Configuration
 
 Configuration is optional. Copy `.env.example` to `.env` only when needed.
 
-| Variable             | Default / purpose                                               |
-| -------------------- | --------------------------------------------------------------- |
-| `PORT`               | API port, `3000`                                                |
-| `BESH_HOST`          | API host, `127.0.0.1`                                           |
-| `BESH_DATABASE_PATH` | `data/besh.sqlite`                                              |
-| `BESH_BACKUP_DIR`    | `data/backups`                                                  |
-| `BESH_ADMIN_TOKEN`   | Optional recovery/automation key, at least 32 random characters |
-| `BESH_SETUP_KEY`     | Optional setup challenge; generated automatically otherwise     |
-| `BESH_WEB_URL`       | Dashboard origin used for setup link; dev command sets it       |
-| `BESH_API_URL`       | Vite proxy target; defaults to `http://127.0.0.1:3000`          |
+| Variable             | Default / purpose                                                           |
+| -------------------- | --------------------------------------------------------------------------- |
+| `PORT`               | API port, `3000`                                                            |
+| `BESH_HOST`          | API host, `127.0.0.1`                                                       |
+| `BESH_DATABASE_PATH` | `data/besh.sqlite`                                                          |
+| `BESH_BACKUP_DIR`    | `data/backups`                                                              |
+| `BESH_ADMIN_TOKEN`   | Optional recovery/automation key, at least 32 random characters             |
+| `BESH_SETUP_KEY`     | Optional setup challenge; generated automatically otherwise                 |
+| `BESH_WEB_URL`       | Exact browser origin for authentication and setup link; dev command sets it |
+| `BESH_API_URL`       | Vite proxy target; defaults to `http://127.0.0.1:3000`                      |
 
 If you change `PORT` during development, also set `BESH_API_URL` to that port. The dashboard uses port `5173`. It fails clearly if the port is already occupied.
+
+Set `BESH_WEB_URL` to the exact public HTTPS origin when using a reverse proxy, with no path or trailing slash. HTTP browser sessions are allowed only on loopback. The server does not trust forwarded headers for the browser origin. See [workspace authentication](workspace-auth.md#browser-origin-and-api-clients) for cookie, CSRF, session, and login limits.
 
 ## Project layout
 
@@ -216,9 +225,9 @@ Code style: no semicolons, single quotes, blank lines between steps, and comment
 
 ## Planned integrations
 
-PostgreSQL, MySQL/MariaDB, SQLite product data, MongoDB, Supabase, Firebase; GitHub, Discord, Facebook and other identity providers; WebSocket flows; custom plugins; GitHub update notices; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI.
+PostgreSQL, MySQL/MariaDB, SQLite product data, MongoDB, Supabase, Firebase; generated-product social-auth templates for GitHub, Discord, Facebook, Google and other identity providers; WebSocket flows; custom plugins; GitHub update notices; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI. Workspace sign-in uses email/password or member/owner keys.
 
-These are roadmap items. Public Google Sheets imports already work; private identity providers and database adapters do not. No external account is required for local flows or uploaded spreadsheets.
+These are roadmap items. Public Google Sheets imports already work; product social-auth templates and database adapters do not. No external account is required for local flows or uploaded spreadsheets.
 
 ## Read more
 
@@ -227,6 +236,7 @@ These are roadmap items. Public Google Sheets imports already work; private iden
 - [Page/action previews and Git ignore rules](preview.md)
 - [GraphQL schemas and execution](graphql.md)
 - [REST API rules and OpenAPI downloads](api-contracts.md)
+- [Workspace accounts and sessions](workspace-auth.md)
 - [AI policy](../AI_POLICY.md) · [Code of conduct](../CODE_OF_CONDUCT.md) · [Security](../SECURITY.md)
 
 MIT licensed. See [LICENSE](../LICENSE) and [third-party notices](../THIRD_PARTY_NOTICES.md).

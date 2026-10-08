@@ -1,8 +1,10 @@
+![Besh — Build APIs visually, with connected request, flow, and response nodes](docs/assets/besh-banner.png)
+
 # Besh
 
 Build and publish APIs visually. Connect nodes, test drafts, and publish REST or GraphQL endpoints with scoped access and audit logs.
 
-Besh is an early local development preview. Database adapters, social login, plugins, and the AI operator remain planned.
+Besh is an early local development preview. Database adapters, social-auth API templates, plugins, and the AI operator remain planned.
 
 ## Start locally
 
@@ -21,7 +23,7 @@ For later sessions:
 bun run dev
 ```
 
-Open `http://127.0.0.1:5173` and sign in with your saved workspace key. See [getting started](docs/getting-started.md) for configuration, examples, and recovery.
+Open `http://127.0.0.1:5173` and sign in with your workspace key or configured email/password. See [getting started](docs/getting-started.md) for configuration, examples, and recovery.
 
 ## What works
 
@@ -30,6 +32,7 @@ Open `http://127.0.0.1:5173` and sign in with your saved workspace key. See [get
 - REST methods and typed GraphQL queries/mutations.
 - Optional REST input/response rules and separate draft/published OpenAPI downloads.
 - Owner, editor, and viewer roles; separate expiring runtime API keys.
+- Optional email/password sign-in and revocable workspace browser sessions.
 - Local SQLite persistence, audit history, migrations, and tested backups.
 - CSV, Excel (.xlsx), and public Google Sheets snapshots with manual refresh.
 - Readable light/dark themes and keyboard-accessible custom controls.

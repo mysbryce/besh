@@ -250,8 +250,7 @@ test('build, move, save, test and publish a flow through the dashboard', async (
   ).toBe(401)
 
   await page.reload()
-  await page.getByLabel('Workspace token').fill(token)
-  await page.getByRole('button', { name: 'Open workspace' }).click()
+  await expect(page.getByRole('heading', { name: /API Studio/ })).toBeVisible()
   await page.getByRole('button', { name: /Browser greeting/ }).click()
   await expect(page.getByLabel('API name')).toHaveValue('Browser greeting')
   await page.getByRole('button', { name: 'Test flow', exact: true }).click()

@@ -6,6 +6,7 @@ import type { PreviewRecord } from '../scripts/preview-report'
 test('preview every current page and its actions', async ({
   page,
   context,
+  request,
 }) => {
   const directory = process.env.BESH_PREVIEW_DIR!
   const setupKey = process.env.BESH_PREVIEW_SETUP_KEY!
@@ -26,6 +27,10 @@ test('preview every current page and its actions', async ({
       ).toBeVisible()
     }
     if (!dropdownOpen) await page.evaluate(() => window.scrollTo(0, 0))
+    const passwordMasks: Locator[] = []
+    for (const input of await page.locator('input[type="password"]').all()) {
+      if (await input.inputValue()) passwordMasks.push(input)
+    }
     const image = `images/${String(records.length + 1).padStart(2, '0')}-${title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -35,6 +40,7 @@ test('preview every current page and its actions', async ({
       fullPage: !dropdownOpen,
       animations: 'disabled',
       mask: [
+        ...passwordMasks,
         page.getByLabel('Your owner key', { exact: true }),
         page.getByLabel('Workspace token', { exact: true }),
         page.getByLabel('Setup key', { exact: true }),
@@ -563,13 +569,13 @@ test('preview every current page and its actions', async ({
   await capture(
     'Authentication',
     'Sign out',
-    'Signing out clears the in-memory key and returns to the login page.',
+    'Signing out revokes this browser session on the server and returns to the login page.',
   )
   await page.getByLabel('Workspace token').fill('invalid-demo-key')
   await page
     .getByRole('button', { name: 'Open workspace', exact: true })
     .click()
-  await notice('Authentication required')
+  await notice('Invalid credentials')
   await capture(
     'Authentication',
     'Invalid login',
@@ -1081,6 +1087,17 @@ test('preview every current page and its actions', async ({
   await page
     .getByRole('option', { name: 'Editor · build and test', exact: true })
     .click()
+  await page
+    .getByLabel('Member email (optional)', { exact: true })
+    .fill('preview-editor@example.test')
+  await page
+    .getByLabel('Member password', { exact: true })
+    .fill('Preview editor password 123!')
+  await capture(
+    'Members',
+    'Optional member email sign-in',
+    'The owner can give a new editor email/password sign-in while keeping their scoped member key. The password is masked.',
+  )
   await page.getByRole('button', { name: 'Add member', exact: true }).click()
   const editor = await page.getByLabel('New member token').inputValue()
   await page.getByRole('button', { name: 'I saved it', exact: true }).click()
@@ -1211,7 +1228,7 @@ test('preview every current page and its actions', async ({
   await capture(
     'Roadmap',
     'Planned integrations',
-    'Identity, database adapters, custom plugins, and AI are explicitly marked planned.',
+    'Product social-auth templates, database adapters, custom plugins, and AI are explicitly marked planned.',
   )
 
   await page.getByRole('button', { name: /Sign out/ }).click()
@@ -1247,6 +1264,19 @@ test('preview every current page and its actions', async ({
       'Workspace administration is restricted to the owner; the page explains the role boundary.',
     )
   }
+  await navigate('Account & sessions')
+  await expect(page.getByText('Loading your account…')).toHaveCount(0)
+  await expect(
+    page.getByText('Only your own active sessions appear here.'),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('cell', { name: 'Owner', exact: true }),
+  ).toHaveCount(0)
+  await capture(
+    'Permissions',
+    'Viewer account and own sessions',
+    'A viewer can configure their own password and revoke their own sessions. Owner sessions are not listed.',
+  )
   await page.getByRole('button', { name: /Sign out/ }).click()
   await signIn(editor)
   await expect(
@@ -1840,15 +1870,210 @@ test('preview every current page and its actions', async ({
   await capture(
     'Authentication',
     'Login page',
-    'Returning visitors use their saved owner or member token. Tokens are kept only in memory.',
+    'Sign in with a workspace key or email/password. A successful login exchanges credentials for an HttpOnly session cookie.',
   )
   await signIn(owner)
   await page.getByRole('link', { name: 'Besh home', exact: true }).click()
-  await expect(page.getByLabel('Workspace token')).toBeVisible()
+  await expect(page.getByRole('heading', { name: /API Studio/ })).toBeVisible()
   await capture(
     'Authentication',
     'Home link and reload',
-    'The home link reloads the app. Authentication is requested again because the token was not persisted in browser storage.',
+    'The home link reloads the app. The server restores the valid workspace session without storing the member key in browser storage.',
+  )
+
+  await navigate('Account & sessions')
+  await expect(page.getByText('Loading your account…')).toHaveCount(0)
+  await expect(page.getByText('This device', { exact: true })).toBeVisible()
+  await capture(
+    'Account & sessions',
+    'Workspace key and current session',
+    'A key-only member can add email/password sign-in. The current browser session and its server expiry are shown.',
+  )
+  const accountPassword = 'Preview owner password 123!'
+  await page
+    .getByLabel('Account email', { exact: true })
+    .fill('preview-owner@example.test')
+  await page.getByLabel('New password', { exact: true }).fill(accountPassword)
+  await page
+    .getByLabel('Your workspace key', { exact: true })
+    .fill('wrong-preview-key')
+  await page
+    .getByRole('button', { name: 'Save sign-in details', exact: true })
+    .click()
+  await notice('Current password or member key required')
+  await capture(
+    'Account & sessions',
+    'Account change needs current credentials',
+    'The real server rejects an incorrect proof key before changing sign-in details. All password and key fields are masked.',
+  )
+  await page.getByLabel('Your workspace key', { exact: true }).fill(owner)
+  await page
+    .getByRole('button', { name: 'Save sign-in details', exact: true })
+    .click()
+  await notice('Sign-in details saved')
+  await capture(
+    'Account & sessions',
+    'Email sign-in configured',
+    'The saved account email is shown. New credentials are cleared from the form and other browser sessions are revoked.',
+  )
+  await page
+    .getByRole('combobox', { name: 'Confirm your identity', exact: true })
+    .click()
+  await capture(
+    'Account & sessions',
+    'Choose account confirmation method',
+    'An accessible custom selector offers a workspace key or the current password as proof for account changes.',
+  )
+  await page
+    .getByRole('option', { name: 'Current password', exact: true })
+    .click()
+  await capture(
+    'Account & sessions',
+    'Current password confirmation',
+    'Members with a password account can confirm changes with that password. The workspace key remains a sign-in option.',
+  )
+
+  const otherLogin = await request.post('/auth/login', {
+    headers: { origin: 'http://127.0.0.1:5180' },
+    data: { token: owner },
+  })
+  expect(otherLogin.status()).toBe(200)
+  await page
+    .getByRole('button', { name: 'Refresh sessions', exact: true })
+    .click()
+  await expect(
+    page.getByRole('button', { name: 'Revoke session for Owner', exact: true }),
+  ).toHaveCount(1)
+  await capture(
+    'Account & sessions',
+    'Review another active session',
+    'A separate HTTP client signs in through the real server. The owner sees that session alongside this device.',
+  )
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page
+    .getByRole('button', { name: 'Revoke session for Owner', exact: true })
+    .click()
+  await capture(
+    'Account & sessions',
+    'Cancel another session revocation',
+    'Canceling confirmation leaves the other browser session active.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Revoke session for Owner', exact: true })
+    .click()
+  await notice('Browser session revoked')
+  expect((await request.get('/auth/session')).status()).toBe(401)
+  await capture(
+    'Account & sessions',
+    'Revoke another session',
+    'The other client receives 401 after revocation, while this device remains signed in.',
+  )
+  await appearance('Dark')
+  await capture(
+    'Dark workspace pages',
+    'Account & sessions',
+    'Account fields, current-session status, and revocation controls remain readable in dark appearance.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile dark',
+    'Account & sessions',
+    'Phone layout contains account fields and the session table in dark appearance.',
+  )
+  await appearance('Light')
+  await capture(
+    'Mobile',
+    'Account & sessions',
+    'The same account and session controls remain usable at phone width in light appearance.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.getByRole('button', { name: /Sign out/ }).click()
+  await expect(page.getByLabel('Workspace token')).toBeVisible()
+  await page
+    .getByRole('button', { name: 'Email & password', exact: true })
+    .click()
+  await capture(
+    'Authentication',
+    'Email and password sign-in',
+    'Workspace sign-in offers email/password or a workspace key. Social sign-in belongs to future generated-API templates.',
+  )
+  await page
+    .getByLabel('Email', { exact: true })
+    .fill('preview-owner@example.test')
+  await page
+    .getByLabel('Password', { exact: true })
+    .fill('Wrong preview password 123!')
+  await page
+    .getByRole('button', { name: 'Open workspace', exact: true })
+    .click()
+  await notice('Invalid credentials')
+  await capture(
+    'Authentication',
+    'Rejected email sign-in',
+    'An incorrect password receives a generic error; the server does not reveal whether an account exists.',
+  )
+  await appearance('Dark')
+  await capture(
+    'Authentication',
+    'Dark email sign-in',
+    'Email/password controls and errors retain clear contrast in dark appearance.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  await capture(
+    'Mobile dark',
+    'Email sign-in',
+    'Password sign-in at phone width in dark appearance, with credentials masked.',
+  )
+  await appearance('Light')
+  await capture(
+    'Mobile',
+    'Email sign-in',
+    'Password sign-in at phone width in light appearance, with credentials masked.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.getByLabel('Password', { exact: true }).fill(accountPassword)
+  await page
+    .getByRole('button', { name: 'Open workspace', exact: true })
+    .click()
+  await expect(page.getByRole('heading', { name: /API Studio/ })).toBeVisible()
+  await capture(
+    'Authentication',
+    'Successful email sign-in',
+    'A real verified password creates a new workspace session and opens the existing APIs.',
+  )
+  await navigate('Account & sessions')
+  await expect(page.getByText('Loading your account…')).toHaveCount(0)
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page
+    .getByRole('button', {
+      name: 'Revoke session for Owner on this device',
+      exact: true,
+    })
+    .click()
+  await capture(
+    'Account & sessions',
+    'Cancel current session revocation',
+    'Canceling leaves this device signed in and preserves the active session.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', {
+      name: 'Revoke session for Owner on this device',
+      exact: true,
+    })
+    .click()
+  await expect(page.getByLabel('Workspace token')).toBeVisible()
+  expect((await page.request.get('/auth/session')).status()).toBe(401)
+  await capture(
+    'Authentication',
+    'Current session revoked',
+    'Revoking this device invalidates its server session and returns to workspace sign-in.',
   )
   expect(errors).toEqual([])
 

@@ -19,6 +19,9 @@
 - **Plugin**: a versioned extension that adds nodes or integrations.
 - **Permission**: a named action a member may perform. Roles group permissions.
 - **Member token**: an owner, editor, or viewer credential for workspace management; it cannot invoke published endpoints.
+- **Account**: a workspace member's optional email/password sign-in credentials; separate from generated product identities.
+- **Workspace session**: a browser's expiring, revocable workspace sign-in, represented by an HttpOnly cookie; separate from runtime API keys.
+- **Product auth template**: a planned starting flow for authenticating users of a generated product API, including future social-provider sign-in; it does not sign users into the Besh workspace.
 - **Runtime API key**: a server-issued credential granting REST requests or GraphQL query/mutation operations for one published flow, with required expiration and immediate revocation.
 - **Runtime grant**: permission to invoke an entire REST request, GraphQL query, or GraphQL mutation; it does not filter fields or records.
 - **Audit event**: a record of who performed an action, when, and on which resource.

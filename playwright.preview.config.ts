@@ -32,6 +32,7 @@ export default defineConfig({
         BESH_HOST: '127.0.0.1',
         BESH_ADMIN_TOKEN: '',
         BESH_SETUP_KEY: setupKey,
+        BESH_WEB_URL: 'http://127.0.0.1:5180',
         BESH_DATABASE_PATH: resolve(directory, 'workspace/besh.sqlite'),
         BESH_BACKUP_DIR: resolve(directory, 'workspace/backups'),
       },

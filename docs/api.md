@@ -1,6 +1,6 @@
 # Core API
 
-Management routes use `Authorization: Bearer <workspace-token>`. Send JSON for request bodies. Responses use JSON except backup downloads. Error responses have `{ "error": "message" }`.
+Management routes accept a workspace session cookie or `Authorization: Bearer <workspace-token>`. Cookie-authenticated writes require the exact browser `Origin` and `X-Besh-CSRF`; bearer management clients remain compatible without these headers. An explicit Authorization header takes precedence over cookies and never falls back after an invalid credential. Send JSON for request bodies. Responses use JSON except backup downloads. Error responses have `{ "error": "message" }`.
 
 GraphQL runtime endpoints use the GraphQL `data`/`errors` envelope. See [GraphQL guide](graphql.md).
 
@@ -13,6 +13,28 @@ GraphQL runtime endpoints use the GraphQL `data`/`errors` envelope. See [GraphQL
 | POST   | `/setup`        | `{ "key": "server-setup-key", "name": "My workspace" }`; returns owner token once |
 
 Setup needs the challenge from the local server terminal. It returns `409` once an owner exists. Changing the environment setup key does not reopen an existing workspace.
+
+The setup API also accepts optional `email` and `password` together to create the owner's account. The browser wizard creates the owner key first; add an account afterwards under **Account & sessions**. Passwords contain 12 to 128 exact characters. Emails are validated, trimmed, lowercased, limited to 254 characters, and unique across the workspace.
+
+## Workspace authentication
+
+| Method | Path                | Body / behavior                                                                                                                                                    |
+| ------ | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| POST   | `/auth/login`       | `{ "token": "<member-key>" }` or `{ "email": "owner@example.com", "password": "<password>" }`; requires exact `Origin`, creates a session cookie                   |
+| GET    | `/auth/session`     | Restores a valid cookie session; does not renew its expiration                                                                                                     |
+| POST   | `/auth/logout`      | Valid cookie, exact `Origin`, and `X-Besh-CSRF`; revokes that session and clears the cookie                                                                        |
+| GET    | `/api/account`      | Any member; own `{ "email": null }` or configured email                                                                                                            |
+| PUT    | `/api/account`      | Any member; own `{ "email": "owner@example.com", "password": "<new-password>", "currentPassword": "<current-password>" }`, or `token` instead of `currentPassword` |
+| GET    | `/api/sessions`     | Member's active sessions; owners receive all workspace sessions, with metadata only                                                                                |
+| DELETE | `/api/sessions/:id` | Own session or any session for an owner; returns `{ "ok": true }`                                                                                                  |
+
+Login and restoration return `{ "member": { "id": "...", "name": "...", "role": "owner" }, "csrfToken": "...", "sessionId": "...", "expiresAt": "..." }`. The secret appears only in the `besh_session` HttpOnly, SameSite=Strict cookie, with Secure on HTTPS. Session expiration is fixed at 12 hours. Each member has at most 20 active sessions; the next successful login evicts the oldest transactionally and records an audit event.
+
+Session metadata contains `id`, `memberId`, `memberName`, `createdAt`, `expiresAt`, `lastSeenAt`, and `current`. It excludes secrets, hashes, and payloads. Expired sessions are omitted. An unknown session ID returns `404`; revoking another member's session without owner permission returns `403`. Revoking the current session ends subsequent management access through that cookie.
+
+Updating an account requires a current password or that same member's valid key in the request body, including for bearer clients. The update retains the current cookie session and revokes the member's others. A bearer-authenticated update has no current cookie session and revokes all that member's sessions. Duplicate email returns `409`; invalid proof returns `403`. The member key is unchanged.
+
+Browser login requires the configured `BESH_WEB_URL` origin, or the request URL's exact origin when unset. Use HTTPS outside loopback; HTTP is allowed only for `localhost`, `127.0.0.1`, and `[::1]`. Reverse proxies must configure the public origin; forwarded headers are not trusted. Login limits persist across restarts: 10 invalid attempts per identity in five minutes, 100 total attempts in five minutes, and four concurrent verifications. A successful login clears its identity limit; exceeded limits return `429`. See [workspace accounts and sessions](workspace-auth.md).
 
 ## Workspace
 
@@ -40,6 +62,8 @@ Setup needs the challenge from the local server terminal. It returns `409` once 
 | GET    | `/api/backups/:id`            | Owner; SQLite download                                                               |
 
 Drafts may be incomplete. Publishing and testing require one request node, reachable nodes, valid edges, and a response at every terminal path. Conditions require exactly one `true` and one `false` edge. Cycles are rejected.
+
+Member creation also accepts optional `email` and `password` together, using the same account rules as setup. It still returns a member key once. Member listing exposes only member ID, name, and role; members read their own email through `/api/account`. No invitation email is sent. Removing a member cascades to its account and sessions.
 
 ## Flow format
 
@@ -72,7 +96,7 @@ Create/update responses add `id`, `revision`, `publishedRevision`, and `publishe
 
 ## Spreadsheet data sources
 
-All source routes require an owner or editor member token. Viewers and runtime API keys cannot list, preview, import, refresh, generate, or delete sources.
+All source routes require an authenticated owner or editor, using a workspace session or member token. Viewers and runtime API keys cannot list, preview, import, refresh, generate, or delete sources.
 
 | Method | Path                              | Body / behavior                                                                   |
 | ------ | --------------------------------- | --------------------------------------------------------------------------------- |
@@ -142,4 +166,4 @@ The test endpoint returns `{ "status": 200, "body": {}, "visited": ["start", "do
 
 Flows may include optional `contract.query`, `contract.body`, and `contract.response` schemas. REST draft tests and live calls enforce these rules; GraphQL uses its SDL contract. OpenAPI export describes the selected saved REST draft or immutable published release. See [API rules and OpenAPI](api-contracts.md) for the schema subset, validation behavior, and export boundary.
 
-No arbitrary code, database access, external HTTP requests, social login, WebSocket endpoint, or AI execution is exposed in this version.
+No arbitrary code, database access, external HTTP requests, product social-auth template, WebSocket endpoint, or AI execution is exposed in this version. Workspace email/password and key sessions never replace runtime API keys.

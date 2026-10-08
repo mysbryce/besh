@@ -29,6 +29,9 @@ export function Welcome({
   const [token, setToken] = useState('')
   const [saved, setSaved] = useState(false)
   const [created, setCreated] = useState(false)
+  const [method, setMethod] = useState<'key' | 'password'>('key')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const { task, busy, notice, failed, login, message } = useStudio()
 
   function submit(event: React.FormEvent) {
@@ -46,7 +49,13 @@ export function Welcome({
         setCreated(true)
         message('Workspace created. Save your owner key.')
       } else {
-        await login(token.trim())
+        await login(
+          method === 'password' && !created
+            ? { email: email.trim(), password }
+            : token.trim(),
+        )
+        setToken('')
+        setPassword('')
         if (setup) onSetup(name)
       }
     })
@@ -136,8 +145,30 @@ export function Welcome({
               ? created
                 ? 'Keep this owner key safe. It is shown once.'
                 : 'Choose a name for your workspace. We’ll create an owner key so you can get started.'
-              : 'Use your owner key or a member token to manage the workspace. API keys cannot sign in here.'}
+              : 'Sign in with email and password, or your owner or member key. Configure email sign-in in Account & sessions.'}
           </p>
+          {!setup ? (
+            <div className="login-methods" aria-label="Sign-in method">
+              <Button
+                type="button"
+                variant={method === 'key' ? 'default' : 'outline'}
+                aria-pressed={method === 'key'}
+                disabled={busy}
+                onClick={() => setMethod('key')}
+              >
+                Workspace key
+              </Button>
+              <Button
+                type="button"
+                variant={method === 'password' ? 'default' : 'outline'}
+                aria-pressed={method === 'password'}
+                disabled={busy}
+                onClick={() => setMethod('password')}
+              >
+                Email & password
+              </Button>
+            </div>
+          ) : null}
           <form onSubmit={submit} className="form-stack">
             {setup && !created ? (
               <>
@@ -177,6 +208,31 @@ export function Welcome({
                   </span>
                 </div>
               </>
+            ) : method === 'password' && !created ? (
+              <>
+                <label htmlFor="login-email">Email</label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  autoComplete="username"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  maxLength={254}
+                  required
+                  disabled={busy}
+                />
+                <label htmlFor="login-password">Password</label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  maxLength={128}
+                  required
+                  disabled={busy}
+                />
+              </>
             ) : (
               <>
                 <label htmlFor="owner-token">
@@ -189,6 +245,7 @@ export function Welcome({
                   onChange={(event) => setToken(event.target.value)}
                   readOnly={created}
                   autoComplete="off"
+                  disabled={busy}
                   required
                   className="font-mono"
                 />
@@ -219,13 +276,13 @@ export function Welcome({
                   </>
                 ) : (
                   <small>
-                    <KeyRound size={13} /> Your token stays in memory until this
-                    page closes.
+                    <KeyRound size={13} /> Your key creates a private browser
+                    session. The key is discarded after sign-in.
                   </small>
                 )}
               </>
             )}
-            {failed || created ? (
+            {notice && (failed || created || !setup) ? (
               <p className={failed ? 'form-error' : 'form-note'} role="status">
                 {notice}
               </p>

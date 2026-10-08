@@ -200,6 +200,33 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 8').get()) {
+      db.exec(`
+        CREATE TABLE accounts (
+          member_id TEXT PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
+          email TEXT NOT NULL UNIQUE,
+          password_hash TEXT NOT NULL
+        );
+        CREATE TABLE sessions (
+          id TEXT PRIMARY KEY,
+          member_id TEXT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+          token_hash TEXT NOT NULL UNIQUE,
+          created_at TEXT NOT NULL,
+          expires_at TEXT NOT NULL,
+          last_seen_at TEXT NOT NULL
+        );
+        CREATE TABLE login_limits (
+          identity_hash TEXT PRIMARY KEY,
+          attempts INTEGER NOT NULL,
+          reset_at INTEGER NOT NULL
+        );
+      `)
+      query('INSERT INTO migrations VALUES (8, ?, ?)').run(
+        'workspace accounts and sessions',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -212,6 +239,7 @@ export function openStore(path: string, adminToken?: string) {
       ).run(hash)
 
       if (previous?.token_hash !== hash) {
+        query("DELETE FROM sessions WHERE member_id = 'owner'").run()
         query(
           'INSERT INTO audit (actor, action, resource, created_at) VALUES (?, ?, ?, ?)',
         ).run(
@@ -242,7 +270,7 @@ export function openStore(path: string, adminToken?: string) {
         ).get()!.value,
       }
     },
-    setup(name: string) {
+    setup(name: string, account?: { email: string; passwordHash: string }) {
       const token = crypto.randomUUID() + crypto.randomUUID()
 
       db.transaction(() => {
@@ -252,6 +280,12 @@ export function openStore(path: string, adminToken?: string) {
           hashToken(token),
         )
         query("UPDATE settings SET value = ? WHERE key = 'workspace'").run(name)
+        if (account)
+          query('INSERT INTO accounts VALUES (?, ?, ?)').run(
+            'owner',
+            account.email,
+            account.passwordHash,
+          )
         audit('owner', 'workspace.created', 'workspace')
       })()
 
@@ -260,17 +294,35 @@ export function openStore(path: string, adminToken?: string) {
     listMembers() {
       return query('SELECT id, name, role FROM members ORDER BY name').all()
     },
-    createMember(actor: string, name: string, role: 'editor' | 'viewer') {
+    createMember(
+      actor: string,
+      name: string,
+      role: 'editor' | 'viewer',
+      account?: { email: string; passwordHash: string },
+    ) {
       const member = { id: crypto.randomUUID(), name, role }
       const token = crypto.randomUUID() + crypto.randomUUID()
 
       db.transaction(() => {
+        if (
+          account &&
+          query('SELECT member_id FROM accounts WHERE email = ?').get(
+            account.email,
+          )
+        )
+          throw new ApiError(409, 'Email address unavailable')
         query('INSERT INTO members VALUES (?, ?, ?, ?)').run(
           member.id,
           name,
           role,
           hashToken(token),
         )
+        if (account)
+          query('INSERT INTO accounts VALUES (?, ?, ?)').run(
+            member.id,
+            account.email,
+            account.passwordHash,
+          )
         audit(actor, 'member.created', member.id)
       })()
 

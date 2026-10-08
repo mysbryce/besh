@@ -2,6 +2,8 @@
 
 ## 2026-10-08 decisions
 
+- User corrected social-auth scope: social sign-in means templates for generated product APIs, not the Besh workspace panel. Workspace sign-in uses email/password or member/owner keys. Product social-auth templates remain planned; workspace accounts and cookie sessions are implemented separately.
+- User requested a README banner. An original Besh asset now introduces the visual API workflow; detailed project instructions remain in `docs/`.
 - User requested a visual API creator with Bun/Elysia, React/Zustand, Tailwind/shadcn, database adapters, social auth, plugins, WebSockets, audit/migrations/backups, roles, updates, and a full multi-provider AI agent.
 - User selected **runnable core plus complete roadmap** for first delivery. External integrations and the full agent remain later milestones. Avoid presenting them as installed features.
 - User approved HTTP API, flow executor, and browser workflow as test interfaces. Use the local TDD skill for further changes.
@@ -26,7 +28,9 @@
 - SQLite makes the local wizard work without external services. Product database adapters stay distinct from control storage.
 - Interpret validated graph JSON rather than executing generated code. Untrusted plugin runtime requires a later isolation design.
 - Separate draft and published definitions to avoid changing live endpoints during edits. Revision checks prevent lost updates.
-- Use role-scoped bearer keys for workspace management and separate expiring runtime keys for callers. Whole-query/mutation grants avoid conflating member access with published API execution. Session/social authentication and field/record permissions remain planned.
+- Use role-scoped workspace accounts, sessions, and keys for management and separate expiring runtime keys for callers. Whole-query/mutation grants avoid conflating member access with published API execution. Product social-auth templates and field/record permissions remain planned.
+- Exchange workspace login credentials for fixed-lifetime HttpOnly cookie sessions so reload can restore sign-in without storing member keys or passwords in browser storage. Exact-origin and session-bound CSRF checks protect browser writes while explicit bearer management clients remain compatible. Keep account changes limited to the caller and require fresh credential proof; this avoids granting password changes from session possession alone.
+- Retain owner-key filesystem recovery, but revoke owner sessions when that key changes. Preserve the owner's email/password account and document that it must be changed separately when compromised. Session revocation alone leaves passwords and member keys usable, and a restored backup can revive their earlier states.
 - Use MIT for Besh with Besh's own copyright attribution.
 - Use a bounded explicit schema subset rather than accepting arbitrary JSON Schema keywords. Convert declared numeric/boolean query text only; preserve exact JSON body/response types. Reject invalid input before execution and hide mismatched response data behind a generic 500.
 - Generate OpenAPI 3.1.1 from the chosen saved REST snapshot. Omitted source means published, with no draft fallback. Emit schema/route/security metadata rather than inferring contracts from literals or leaking source rows and credentials. Old flows without rules remain compatible.
@@ -53,5 +57,9 @@
 - The final REST-contract check passed types, 59 backend tests with 514 assertions, production build, and formatting. All three Chrome stories passed in about 1.3 minutes. The preview grew to 165 masked states, including nested rules and real draft/release document downloads.
 - Loading the shared rule validator on demand reduced the initial dashboard bundle from roughly 569 kB to 473.51 kB and removed the build warning. The complete browser suite passed after this change.
 - Preview integration caught offscreen connection handles after adding the rule panel; capture now brings both handles into view and checks the created edge. Visual review also caught an OpenAPI menu mid-fade; capture waits for full opacity instead of adding a fixed delay.
+- Workspace identity slices exercised fixed-lifetime cookies, password/key sign-in, persistent throttling, CSRF/origin checks, permission boundaries, account proof, recovery, and session revocation. Async credential checks are revalidated before session issuance or account updates so changed credentials cannot win a race.
+- Browser regressions caught already-revoked logout leaving stale UI and a new member inheriting the previous navigation page. Logout handles an ended session, and a new session opens API Studio. Failed logout still preserves the active workspace until the server acknowledges it. Visual review placed rejected account proof beside its form and removed empty-field masks that covered an open proof menu.
+- The real built-dashboard regression first observed two blocked `eval` probes from schema validation. Moving browser validator configuration into the first bootstrap dependency removed both without weakening CSP. The tracked production story now verifies zero CSP violations through login, builder mounting, account changes, reload, logout, password sign-in, and Excel upload.
+- The workspace-session delivery passed types, 70 backend tests with 660 assertions, production build, and formatting. Five Chrome stories passed in about 1.4 minutes, and the gallery captured 186 masked states. An actual historical version-7 backup upgraded to version 8 through HTTP with data and runtime behavior preserved; its original hash remained unchanged. The original README banner passed desktop light/dark and phone checks.
 
 See [testing](testing.md), [architecture](architecture.md), and [roadmap](roadmap.md) for durable detail.

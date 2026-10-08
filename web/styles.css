@@ -1401,7 +1401,8 @@ td code {
   font-size: 10px;
 }
 .member-form {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: end;
   gap: 20px;
   background: var(--surface);
@@ -1409,6 +1410,33 @@ td code {
   padding: 26px;
   border-radius: 24px;
   margin-bottom: 24px;
+}
+.login-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 24px 0;
+}
+.account-form {
+  max-width: 640px;
+  padding: 26px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+}
+.account-form h2,
+.session-heading h2 {
+  font-size: 20px;
+  color: var(--text);
+}
+.account-form p,
+.account-form small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.session-heading {
+  margin-top: 36px;
 }
 .member-form label {
   display: flex;
@@ -2260,7 +2288,7 @@ input[type='file']::file-selector-button {
     display: none;
   }
   .member-form {
-    flex-direction: column;
+    grid-template-columns: 1fr;
     align-items: stretch;
     padding: 22px;
   }

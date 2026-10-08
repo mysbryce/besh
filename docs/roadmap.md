@@ -23,8 +23,9 @@ Current limits: one local workspace, exact HTTP paths, four node types, fixed ro
 
 - Implemented: optional REST query/body/response rules, server input/output checks, typed query conversion, recursive field/item forms and limits, generated spreadsheet contracts, and separate saved-draft/published OpenAPI 3.1.1 downloads. GraphQL retains its existing SDL contract.
 - Planned: public endpoint policy, field-level and record-level authorization, key rotation workflows, and release-pinned grants where needed. Current runtime grants still authorize whole operations.
-- Social sign-in: GitHub, Discord, Facebook, Google, generic OIDC.
-- Invites, account recovery, session expiry and revocation.
+- Implemented workspace accounts and cookie sessions: optional email/password or member/owner-key sign-in, fixed 12-hour expiry, session restoration, CSRF/origin checks, bounded persistent login throttling, own-account changes with fresh proof, metadata-only session listing, member-own/owner-all revocation, and a 20-session member limit. Bearer management clients remain compatible.
+- Planned product auth templates: GitHub, Discord, Facebook, Google, and generic OIDC social sign-in for generated APIs, separate from workspace access.
+- Planned workspace invites and account recovery.
 - Per-workspace roles and custom permission grants.
 - Extend GraphQL with reviewed introspection policy, custom scalar contracts, and subscriptions alongside WebSocket work. Whole-query/mutation runtime grants are implemented; field-level grants remain planned.
 - WebSocket flows, lifecycle events, subscriptions, quotas and revocation.
@@ -66,6 +67,6 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 1. Start with `bun install --frozen-lockfile` and `bun run setup`; complete the local wizard.
 2. Run `bun run preview:all` and gather feedback on pages, node configuration, and route design before expanding the graph format.
-3. Continue Milestone 2 with session-based social sign-in, expiry/revocation, account linking, invites, and recovery. Review public endpoint policy and finer data permissions before exposing endpoints publicly.
+3. Review workspace account/session feedback. Design generated-product auth templates, workspace invites, and account recovery separately; none are implemented. Review public endpoint policy and finer data permissions before exposing endpoints publicly.
 4. Add integration tests against each real provider as its adapter is built. Do not mark provider support complete from mocks.
 5. Choose a GitHub repository and private reporting contact before public release, then configure CI and update notices.

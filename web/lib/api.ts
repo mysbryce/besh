@@ -109,16 +109,93 @@ export type AuditEvent = {
 export type Backup = { id: string; bytes: number; createdAt: string }
 export type Migration = { version: number; name: string; applied_at: string }
 
+export type WorkspaceSession = {
+  member: Member
+  csrfToken: string
+  sessionId: string
+  expiresAt: string
+}
+
+export type SessionRecord = {
+  id: string
+  memberId: string
+  memberName: string
+  createdAt: string
+  expiresAt: string
+  lastSeenAt: string
+  current: boolean
+}
+
+let csrfToken = ''
+let sessionRequests = new AbortController()
+let sessionExpired = () => {}
+
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message)
+  }
+}
+
+export function setSessionCredential(value: string) {
+  sessionRequests.abort()
+  sessionRequests = new AbortController()
+  csrfToken = value
+}
+
+export function onSessionExpired(handler: () => void) {
+  sessionExpired = handler
+}
+
+export async function authenticatedFetch(
+  path: string,
+  token = '',
+  options: RequestInit = {},
+) {
+  const headers = new Headers(options.headers)
+  if (token) headers.set('authorization', `Bearer ${token}`)
+  else if (
+    csrfToken &&
+    !['GET', 'HEAD', 'OPTIONS'].includes(options.method ?? 'GET')
+  )
+    headers.set('X-Besh-CSRF', csrfToken)
+
+  const requestScope = sessionRequests
+  const response = await fetch(path, {
+    ...options,
+    headers,
+    credentials: 'same-origin',
+    signal: options.signal ?? requestScope.signal,
+  })
+  if (requestScope !== sessionRequests)
+    throw new Error('Session changed. Try again.')
+  if (
+    response.status === 401 &&
+    !token &&
+    path.startsWith('/api/') &&
+    csrfToken
+  ) {
+    sessionExpired()
+    throw new ApiError(
+      'Your session expired or was revoked. Sign in again.',
+      401,
+    )
+  }
+
+  return response
+}
+
 export async function api<T>(
   path: string,
   token = '',
   method = 'GET',
   body?: unknown,
 ): Promise<T> {
-  const response = await fetch(path, {
+  const response = await authenticatedFetch(path, token, {
     method,
     headers: {
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
       ...(body !== undefined ? { 'content-type': 'application/json' } : {}),
     },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -126,7 +203,10 @@ export async function api<T>(
   const result = await response.json()
 
   if (!response.ok)
-    throw new Error(result.error ?? `Request failed (${response.status})`)
+    throw new ApiError(
+      result.error ?? `Request failed (${response.status})`,
+      response.status,
+    )
 
   return result as T
 }

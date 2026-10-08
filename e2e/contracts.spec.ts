@@ -19,6 +19,7 @@ test('REST API rules are optional and editable through labeled forms', async ({
       PORT: '4312',
       BESH_HOST: '127.0.0.1',
       BESH_ADMIN_TOKEN: token,
+      BESH_WEB_URL: 'http://127.0.0.1:5179',
       BESH_DATABASE_PATH: join(directory, 'besh.sqlite'),
       BESH_BACKUP_DIR: join(directory, 'backups'),
     },
@@ -42,7 +43,9 @@ test('REST API rules are optional and editable through labeled forms', async ({
       .toBe(200)
     await page.route('**/*', async (route) => {
       const url = new URL(route.request().url())
-      if (!/^\/(api\/|setup\/|health$|run\/|graphql\/)/.test(url.pathname)) {
+      if (
+        !/^\/(api\/|auth\/|setup\/|health$|run\/|graphql\/)/.test(url.pathname)
+      ) {
         await route.continue()
         return
       }
@@ -104,10 +107,9 @@ test('REST API rules are optional and editable through labeled forms', async ({
       schema: { type: 'integer' },
     })
     await page.reload()
-    await page.getByLabel('Workspace token').fill(token)
-    await page
-      .getByRole('button', { name: 'Open workspace', exact: true })
-      .click()
+    await expect(
+      page.getByRole('heading', { name: /API Studio/ }),
+    ).toBeVisible()
     await page.getByRole('button', { name: 'API rules', exact: true }).click()
     await expect(
       page.getByLabel('Query field name 1', { exact: true }),
@@ -474,10 +476,9 @@ test('REST API rules are optional and editable through labeled forms', async ({
       },
     })
     await page.reload()
-    await page.getByLabel('Workspace token').fill(token)
-    await page
-      .getByRole('button', { name: 'Open workspace', exact: true })
-      .click()
+    await expect(
+      page.getByRole('heading', { name: /API Studio/ }),
+    ).toBeVisible()
     await page.getByRole('button', { name: 'API rules', exact: true }).click()
     await expect(
       page.getByRole('combobox', { name: 'Body type', exact: true }),

@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Table2,
   Users,
+  UserRound,
   Workflow,
 } from 'lucide-react'
 import { Welcome } from './auth'
@@ -37,10 +38,20 @@ const FlowPicker = lazy(() =>
 const DataSources = lazy(() =>
   import('./data-sources').then((module) => ({ default: module.DataSources })),
 )
+const Account = lazy(() =>
+  import('./account').then((module) => ({ default: module.Account })),
+)
 
 type Setup = { required: boolean; name: string }
 type Page =
-  'builder' | 'data' | 'audit' | 'members' | 'keys' | 'backups' | 'roadmap'
+  | 'builder'
+  | 'data'
+  | 'audit'
+  | 'members'
+  | 'keys'
+  | 'backups'
+  | 'roadmap'
+  | 'account'
 
 const navigation = [
   { id: 'builder', name: 'API Studio', icon: Workflow },
@@ -48,6 +59,7 @@ const navigation = [
   { id: 'audit', name: 'Audit trail', icon: Activity },
   { id: 'members', name: 'Members', icon: Users },
   { id: 'keys', name: 'API keys', icon: KeyRound },
+  { id: 'account', name: 'Account & sessions', icon: UserRound },
   { id: 'backups', name: 'Data & backups', icon: Database },
   { id: 'roadmap', name: 'What’s next', icon: Box },
 ] as const
@@ -62,11 +74,16 @@ export function App() {
   const state = useStudio()
 
   useEffect(() => {
+    setPage('builder')
+  }, [state.sessionId])
+
+  useEffect(() => {
     let active = true
     if (setupKey) history.replaceState(null, '', location.pathname)
     api<Setup>('/setup/status')
       .then((value) => {
         if (active) setSetup(value)
+        if (!value.required) void useStudio.getState().restoreSession()
       })
       .catch((error: Error) => {
         if (active) setSetupError(error.message)
@@ -83,7 +100,21 @@ export function App() {
     return () => window.removeEventListener('beforeunload', warn)
   }, [state.dirty])
 
-  if (!setup)
+  useEffect(() => {
+    if (!state.expiresAt) return
+    const remaining = Date.parse(state.expiresAt) - Date.now()
+    const timer = window.setTimeout(
+      () => {
+        useStudio
+          .getState()
+          .clearSession('Your session expired. Sign in again.')
+      },
+      Math.max(0, remaining),
+    )
+    return () => window.clearTimeout(timer)
+  }, [state.expiresAt])
+
+  if (!setup || (!setup.required && !state.authReady))
     return (
       <main className="loading-screen">
         <span className="brand-icon">b</span>
@@ -182,7 +213,14 @@ export function App() {
           <button
             className="user-profile"
             aria-label="Sign out"
-            onClick={() => switchFlow(state.logout)}
+            onClick={() => {
+              if (
+                state.dirty &&
+                !window.confirm('Discard unsaved draft changes?')
+              )
+                return
+              void state.task(state.logout)
+            }}
             disabled={state.busy}
           >
             <span className="user-avatar">{state.member.name.slice(0, 1)}</span>
@@ -242,6 +280,8 @@ export function App() {
               <Roadmap />
             ) : page === 'keys' ? (
               <RuntimeKeys />
+            ) : page === 'account' ? (
+              <Account />
             ) : (
               <Operations key={page} page={page} />
             )}
@@ -263,7 +303,7 @@ function Roadmap() {
   const items = [
     [
       'Identity & contracts',
-      'Social sign-in, custom permissions, OpenAPI, and WebSocket flows.',
+      'Social sign-in templates for the APIs you create, custom permissions, and WebSocket flows.',
     ],
     [
       'Connect your data',

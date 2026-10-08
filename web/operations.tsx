@@ -13,6 +13,7 @@ import { Select } from './components/ui/select'
 import { Badge } from './components/ui/badge'
 import {
   api,
+  authenticatedFetch,
   type AuditEvent,
   type Backup,
   type Member,
@@ -33,6 +34,8 @@ export function Operations({
   const [name, setName] = useState('')
   const [role, setRole] = useState<'viewer' | 'editor'>('viewer')
   const [issued, setIssued] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -142,10 +145,16 @@ export function Operations({
                   '/api/members',
                   token,
                   'POST',
-                  { name, role },
+                  {
+                    name,
+                    role,
+                    ...(email.trim() ? { email: email.trim(), password } : {}),
+                  },
                 )
                 setIssued(created.token)
                 setName('')
+                setEmail('')
+                setPassword('')
                 await refresh()
                 message('Member created. Save their token; it is shown once.')
               })
@@ -158,6 +167,7 @@ export function Operations({
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 maxLength={80}
+                disabled={busy || !!issued}
                 required
               />
             </label>
@@ -173,6 +183,38 @@ export function Operations({
                   { value: 'editor', label: 'Editor · build and test' },
                 ]}
               />
+            </label>
+            <label>
+              Member email (optional)
+              <Input
+                aria-label="Member email (optional)"
+                type="email"
+                autoComplete="off"
+                maxLength={254}
+                value={email}
+                disabled={busy || !!issued}
+                onChange={(event) => {
+                  setEmail(event.target.value)
+                  if (!event.target.value) setPassword('')
+                }}
+              />
+            </label>
+            <label>
+              Member password
+              <Input
+                aria-label="Member password"
+                type="password"
+                autoComplete="new-password"
+                minLength={12}
+                maxLength={128}
+                value={password}
+                required={!!email.trim()}
+                disabled={busy || !!issued || !email.trim()}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+              <small>
+                12 to 128 characters. Leave email blank for key-only access.
+              </small>
             </label>
             <Button disabled={busy || !!issued}>
               <Plus />
@@ -338,9 +380,9 @@ export function Operations({
                         disabled={busy}
                         onClick={() =>
                           void task(async () => {
-                            const response = await fetch(
+                            const response = await authenticatedFetch(
                               `/api/backups/${backup.id}`,
-                              { headers: { authorization: `Bearer ${token}` } },
+                              token,
                             )
                             if (!response.ok) throw new Error('Download failed')
                             const url = URL.createObjectURL(

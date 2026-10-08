@@ -11,6 +11,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Code style: no semicolons, single quotes, readable spacing, and blank lines between logical steps. Comment only important intent, constraints, and non-obvious behavior. Use Prettier; do not compress several statements onto one line.
 - Use custom styled, accessible controls for checkboxes, radio groups, and dropdowns. Do not expose browser-native widgets. Preserve keyboard interaction, labels, focus, and disabled states.
 - Support real GraphQL APIs alongside REST. Keep schema validation, execution limits, authentication, and draft/release separation at the server boundary.
+- Workspace sign-in uses email/password or member/owner keys. Social sign-in belongs to templates for generated product APIs, never the workspace panel.
 - Keep local setup easy. Provide a first-run wizard; do not require manual environment edits for the basic workflow.
 - Design common workflows for people who do not write code. Use labeled forms, selectors, examples, and data previews. Keep JSON and schema editors optional advanced tools.
 - Support light, dark, and system appearance. Keep text, controls, focus, and error states readable in both themes; respect reduced-motion settings. Persist appearance preferences only, never credentials.

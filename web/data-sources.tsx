@@ -15,6 +15,7 @@ import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import {
   api,
+  authenticatedFetch,
   type DataSource,
   type DataSourceDetail,
   type SavedFlow,
@@ -32,9 +33,8 @@ async function uploadSpreadsheet(
   body.set('name', name)
   body.set('file', file)
 
-  const response = await fetch(path, {
+  const response = await authenticatedFetch(path, token, {
     method,
-    headers: { authorization: `Bearer ${token}` },
     body,
   })
   const result = await response.json()

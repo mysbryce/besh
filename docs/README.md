@@ -5,6 +5,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 ## Use Besh
 
 - [Getting started](getting-started.md): installation, first API, runtime keys, roles, configuration, recovery, project layout, and development commands.
+- [Workspace accounts and sessions](workspace-auth.md): key or email/password sign-in, account changes, session metadata, revocation, and recovery boundaries.
 - [Core API reference](api.md): setup and management HTTP routes, flow format, runtime-key lifecycle, and published REST authentication.
 - [REST API rules and OpenAPI](api-contracts.md): simple field rules, server validation, supported schema subset, and draft/published downloads.
 - [GraphQL APIs](graphql.md): typed schemas, variables, selected operations, runtime grants, and execution limits.

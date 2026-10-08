@@ -80,7 +80,7 @@ The management flow definition includes optional `graphql: { schema: "..." }`, p
 
 `POST /api/flows/:id/graphql/test` accepts the same request envelope and returns `{ status, body, visited }` for the draft. The studio renders that diagnostic wrapper. Published endpoints return the GraphQL envelope directly, such as `{ "data": { ... } }`.
 
-Editors and owners can save and test drafts with their member tokens. Only owners can publish or manage runtime API keys. Published endpoints require a runtime key scoped to this flow. `query` permits queries and `mutation` permits mutations; a key may grant both. Query-only keys cannot run mutations. Owner and member tokens cannot call published endpoints, and runtime keys cannot access management routes or draft tests.
+Editors and owners can save and test drafts with their workspace sessions or member tokens. Only owners can publish or manage runtime API keys. Published endpoints require a runtime key scoped to this flow. `query` permits queries and `mutation` permits mutations; a key may grant both. Query-only keys cannot run mutations. Workspace sessions and owner/member tokens cannot call published endpoints, and runtime keys cannot access management routes or draft tests.
 
 Authorization applies to the selected operation, including its `operationName` when the document contains several operations. Grants cover the whole operation, not individual root fields or data records. Keys require expiration within 366 days and stop working immediately upon expiration or revocation. Scope follows the flow across republishing, so owners must review keys when broadening published behavior.
 

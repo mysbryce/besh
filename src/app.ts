@@ -6,6 +6,12 @@ import { backupService } from './backups'
 import { dataSourceService } from './data-sources'
 import type { SheetFetch } from './google-sheets'
 import { timingSafeEqual } from 'node:crypto'
+import {
+  sessionService,
+  sessionCookie,
+  browserSecurity,
+  optionalAccount,
+} from './sessions'
 
 function bearer(request: Request) {
   return (
@@ -49,10 +55,14 @@ export type AppOptions = {
   adminToken?: string
   setupKey?: string
   sheetFetch?: SheetFetch
+  authOrigin?: string
+  now?: () => number
 }
 
 export function createApp(options: AppOptions) {
+  const browser = browserSecurity(options.authOrigin)
   const store = openStore(options.databasePath, options.adminToken)
+  const sessions = sessionService(store, options.now)
   const sources = dataSourceService(store, options.sheetFetch)
   const flows = flowService(store, sources)
   const backups = backupService(store, options.backupDir)
@@ -60,16 +70,44 @@ export function createApp(options: AppOptions) {
   const management = new Elysia({ prefix: '/api' })
     .resolve(({ request, status }) => {
       const token = bearer(request)
-      const member = store.authenticate(token)
+      const session = request.headers.has('authorization')
+        ? null
+        : sessions.restore(sessionCookie(request))
+      const member = request.headers.has('authorization')
+        ? store.authenticate(token)
+        : session?.member
 
       if (!member) {
         store.audit(store.runtimeActor(token), 'access.denied', 'management')
         return status(401, { error: 'Authentication required' })
       }
 
-      return { member }
+      if (session && !['GET', 'HEAD', 'OPTIONS'].includes(request.method))
+        browser.checkWrite(request, session.csrfToken)
+
+      return { member, session }
     })
     .get('/me', ({ member }) => member)
+    .get('/sessions', ({ member, session }) =>
+      sessions.list(member, session?.sessionId),
+    )
+    .delete('/sessions/:id', ({ member, params }) =>
+      sessions.revoke(member, params.id),
+    )
+    .get('/account', ({ member }) => sessions.account(member.id))
+    .put(
+      '/account',
+      ({ member, session, body }) =>
+        sessions.updateAccount(member, session?.sessionId, body),
+      {
+        body: t.Object({
+          email: t.String({ maxLength: 254 }),
+          password: t.String({ maxLength: 128 }),
+          currentPassword: t.Optional(t.String({ maxLength: 128 })),
+          token: t.Optional(t.String({ maxLength: 200 })),
+        }),
+      },
+    )
     .get('/data-sources', ({ member }) => {
       allow(member, ['owner', 'editor'])
       return sources.list()
@@ -189,14 +227,21 @@ export function createApp(options: AppOptions) {
     })
     .post(
       '/members',
-      ({ member, body }) => {
+      async ({ member, body }) => {
         allow(member, ['owner'])
-        return store.createMember(member.id, body.name, body.role)
+        return store.createMember(
+          member.id,
+          body.name,
+          body.role,
+          await optionalAccount(body),
+        )
       },
       {
         body: t.Object({
           name: t.String({ minLength: 1, maxLength: 80 }),
           role: t.Union([t.Literal('editor'), t.Literal('viewer')]),
+          email: t.Optional(t.String({ maxLength: 254 })),
+          password: t.Optional(t.String({ maxLength: 128 })),
         }),
       },
     )
@@ -298,10 +343,39 @@ export function createApp(options: AppOptions) {
         : { error: message }
     })
     .get('/health', () => ({ status: 'ok', version: '0.1.0' }))
+    .post(
+      '/auth/login',
+      async ({ body, set, request }) => {
+        browser.checkOrigin(request)
+        const result = await sessions.login(body)
+        set.headers['set-cookie'] = browser.cookie(request, result.secret)
+        return result.session
+      },
+      {
+        body: t.Object({
+          token: t.Optional(t.String({ maxLength: 200 })),
+          email: t.Optional(t.String({ maxLength: 254 })),
+          password: t.Optional(t.String({ maxLength: 128 })),
+        }),
+      },
+    )
+    .get('/auth/session', ({ request }) => {
+      const session = sessions.restore(sessionCookie(request))
+      if (!session) throw new ApiError(401, 'Authentication required')
+      return session
+    })
+    .post('/auth/logout', ({ request, set }) => {
+      const session = sessions.restore(sessionCookie(request))
+      if (!session) throw new ApiError(401, 'Authentication required')
+      browser.checkWrite(request, session.csrfToken)
+      const result = sessions.revoke(session.member, session.sessionId)
+      set.headers['set-cookie'] = browser.cookie(request)
+      return result
+    })
     .get('/setup/status', () => store.setupStatus())
     .post(
       '/setup',
-      ({ body }) => {
+      async ({ body }) => {
         if (!store.setupStatus().required)
           throw new ApiError(409, 'Workspace already configured')
         if (
@@ -315,12 +389,14 @@ export function createApp(options: AppOptions) {
             403,
             'Open the setup link from your server terminal',
           )
-        return store.setup(body.name.trim())
+        return store.setup(body.name.trim(), await optionalAccount(body))
       },
       {
         body: t.Object({
           key: t.String({ maxLength: 200 }),
           name: t.String({ minLength: 1, maxLength: 80, pattern: '\\S' }),
+          email: t.Optional(t.String({ maxLength: 254 })),
+          password: t.Optional(t.String({ maxLength: 128 })),
         }),
       },
     )
