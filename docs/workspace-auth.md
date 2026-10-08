@@ -1,6 +1,6 @@
 # Workspace accounts and sessions
 
-Besh workspace sign-in uses a workspace key or email/password. Social sign-in belongs to planned templates for generated product APIs. A workspace account or session cannot call a published API; callers still need its scoped runtime API key.
+Besh workspace sign-in uses a workspace key or email/password. Social sign-in belongs to generated product APIs, with GitHub implemented and other providers planned. A workspace account or session cannot call a published API; callers still need its scoped runtime API key.
 
 ## Sign in
 
@@ -10,7 +10,7 @@ To add email/password sign-in, open **Account & sessions** after signing in with
 
 An account change needs fresh proof even when you already have a browser session. It changes only your own account, keeps your current session, and ends your other sessions. It does not change your workspace key. Email addresses are trimmed, lowercased, and unique across the workspace; passwords retain their exact characters. Email delivery, verification links, password-reset links, and workspace invitations are not implemented.
 
-Owners can add an editor or viewer from **Members**. Enter **Member email (optional)** and **Member password** to create email/password access with the member, or leave email blank for key-only access. The member key still appears once and must be saved. This creates access directly; no invitation email is sent. Members can later change their own account under **Account & sessions**.
+Owners can add an editor, viewer, or custom-role member from **Members**. Enter **Member email (optional)** and **Member password** to create email/password access with the member, or leave email blank for key-only access. The member key still appears once and must be saved. This creates access directly; no invitation email is sent. Members can later change their own account under **Account & sessions**. See [roles and permissions](roles.md) for custom grants and assignment.
 
 ## Manage sessions
 
@@ -19,6 +19,8 @@ The browser keeps an HttpOnly, SameSite=Strict session cookie and restores your 
 Open **Account & sessions** to inspect active sessions. The page identifies **This device** and shows session expiration. Members see their own sessions; owners see all workspace sessions. Use **Refresh sessions** for current metadata or **Revoke** to end a selected session after confirmation.
 
 Ending a session does not disable its member's password or workspace key. The member can sign in again while those credentials remain valid. Remove a member to end that member's access; the bootstrap owner cannot be removed from the member screen.
+
+Changing a member's role ends that member's browser sessions. Changing a custom role's permission set ends sessions for its assigned members. Sign in again with the existing password or workspace key to use the new grants. Every management request resolves current grants on the server; bearer member keys are not rotated and cannot preserve old permissions. Own-account and own-session access remain available even to a custom role with no action grants. Only owners can manage other members' sessions.
 
 ## Browser origin and API clients
 
@@ -34,6 +36,6 @@ Login throttling persists across restarts: 10 invalid attempts for an identity i
 
 Keep the owner key privately even when using email/password. Server-side owner-key recovery is described in [getting started](getting-started.md#data-and-recovery). Changing `BESH_ADMIN_TOKEN` replaces the owner key and ends owner sessions when the key changes. It preserves the owner's existing email/password account. If that password also needs replacement, sign in with the recovered key and update **Account & sessions**, using that key as proof.
 
-Backups include password hashes, session hashes/metadata, and login throttle state. Restoring an older snapshot can restore an old password, an unexpired session, or a key revoked after the snapshot. Review restored member access, accounts, sessions, and runtime keys before serving the restored workspace. Ending sessions alone does not invalidate restored passwords or keys.
+Backups include password hashes, session hashes/metadata, login throttle state, custom roles, and member-role assignments. Restoring an older snapshot can restore an old password, old permission grants, an unexpired session, or a key revoked after the snapshot. Review restored member access, accounts, sessions, and runtime keys before serving the restored workspace. Ending sessions alone does not invalidate restored passwords or keys.
 
 See [API reference](api.md), [architecture](architecture.md#identity-and-roles), and [roadmap](roadmap.md) for supported boundaries and remaining work.

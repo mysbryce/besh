@@ -21,6 +21,7 @@ import {
   type SavedFlow,
 } from './lib/api'
 import { useStudio } from './store'
+import { can } from '../src/permissions'
 
 async function uploadSpreadsheet(
   path: string,
@@ -368,10 +369,15 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const fileInput = useRef<HTMLInputElement>(null)
-  const allowed = member?.role === 'owner' || member?.role === 'editor'
+  const readable = can(member, 'sources.read')
+  const writable = can(member, 'sources.write')
+  const allowed = readable || writable
 
   useEffect(() => {
-    if (!allowed) return
+    if (!readable) {
+      setLoading(false)
+      return
+    }
     let active = true
 
     api<DataSource[]>('/api/data-sources', token)
@@ -397,7 +403,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
     return () => {
       active = false
     }
-  }, [allowed, token])
+  }, [readable, token, member?.id])
 
   function perform(work: () => Promise<void>) {
     void task(async () => {
@@ -447,7 +453,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
         </div>
         <Button
           variant="outline"
-          disabled={busy || loading}
+          disabled={busy || loading || !readable}
           onClick={() =>
             perform(async () => {
               setSources(await api<DataSource[]>('/api/data-sources', token))
@@ -483,138 +489,149 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
         </p>
       ) : null}
       {loading ? <p>Loading data sources…</p> : null}
-      <section className="source-preview source-import">
-        <div className="panel-heading">
-          <h2>Add a data source</h2>
-          <FileSpreadsheet size={20} />
-        </div>
-        <div className="source-import-method">
-          <label htmlFor="import-method">Import method</label>
-          <Select
-            id="import-method"
-            label="Import method"
-            value={importMethod}
-            onValueChange={(value) => {
-              setImportMethod(value)
-              setFile(null)
-              if (fileInput.current) fileInput.current.value = ''
-              setError('')
-            }}
-            options={[
-              { value: 'file', label: 'Spreadsheet file' },
-              { value: 'google', label: 'Public Google Sheet' },
-            ]}
-            disabled={busy}
-          />
-        </div>
-        <form
-          className="source-import-form"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (
-              busy ||
-              loading ||
-              !name.trim() ||
-              (importMethod === 'file' ? !file : !sheetUrl.trim())
-            )
-              return
-
-            perform(async () => {
-              const imported =
-                importMethod === 'file'
-                  ? await uploadSpreadsheet(
-                      '/api/data-sources/import',
-                      token,
-                      name.trim(),
-                      file!,
-                    )
-                  : await api<DataSourceDetail>(
-                      '/api/data-sources/google-sheets',
-                      token,
-                      'POST',
-                      { name: name.trim(), url: sheetUrl.trim() },
-                    )
-              savePreview(imported)
-              setName('')
-              setFile(null)
-              setSheetUrl('')
-              if (fileInput.current) fileInput.current.value = ''
-              message(
-                'Spreadsheet imported. Check your data before creating an API.',
-              )
-            })
-          }}
-        >
-          <label htmlFor="source-name">
-            Source name
-            <Input
-              id="source-name"
-              value={name}
-              maxLength={80}
-              required
+      <fieldset className="source-write-fields" disabled={!writable || busy}>
+        <legend className="sr-only">Manage data sources</legend>
+        <section className="source-preview source-import">
+          <div className="panel-heading">
+            <h2>Add a data source</h2>
+            <FileSpreadsheet size={20} />
+          </div>
+          <div className="source-import-method">
+            <label htmlFor="import-method">Import method</label>
+            <Select
+              id="import-method"
+              label="Import method"
+              value={importMethod}
+              onValueChange={(value) => {
+                setImportMethod(value)
+                setFile(null)
+                if (fileInput.current) fileInput.current.value = ''
+                setError('')
+              }}
+              options={[
+                { value: 'file', label: 'Spreadsheet file' },
+                { value: 'google', label: 'Public Google Sheet' },
+              ]}
               disabled={busy}
-              placeholder="Products"
-              onChange={(event) => setName(event.target.value)}
             />
-          </label>
-          {importMethod === 'file' ? (
-            <label key="file" htmlFor="spreadsheet-file">
-              Spreadsheet file
-              <Input
-                id="spreadsheet-file"
-                ref={fileInput}
-                type="file"
-                accept=".csv,.xlsx"
-                disabled={busy}
-                required
-                onChange={(event) => {
-                  const chosen = event.target.files?.[0] ?? null
-                  setFile(chosen)
-                  if (chosen && !name.trim())
-                    setName(
-                      chosen.name
-                        .replace(/\.[^.]+$/, '')
-                        .replace(/[_-]+/g, ' ')
-                        .slice(0, 80),
-                    )
-                }}
-              />
-            </label>
-          ) : (
-            <label key="google" htmlFor="google-sheet-link">
-              Google Sheets link
-              <Input
-                id="google-sheet-link"
-                type="url"
-                value={sheetUrl}
-                onChange={(event) => setSheetUrl(event.target.value)}
-                placeholder="https://docs.google.com/spreadsheets/d/…/edit"
-                required
-                disabled={busy}
-                aria-describedby="import-source-help"
-              />
-            </label>
-          )}
-          <Button
-            disabled={
-              busy ||
-              loading ||
-              !name.trim() ||
-              (importMethod === 'file' ? !file : !sheetUrl.trim())
-            }
+          </div>
+          <form
+            className="source-import-form"
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (
+                busy ||
+                loading ||
+                !name.trim() ||
+                (importMethod === 'file' ? !file : !sheetUrl.trim())
+              )
+                return
+
+              perform(async () => {
+                const imported =
+                  importMethod === 'file'
+                    ? await uploadSpreadsheet(
+                        '/api/data-sources/import',
+                        token,
+                        name.trim(),
+                        file!,
+                      )
+                    : await api<DataSourceDetail>(
+                        '/api/data-sources/google-sheets',
+                        token,
+                        'POST',
+                        { name: name.trim(), url: sheetUrl.trim() },
+                      )
+                savePreview(imported)
+                setName('')
+                setFile(null)
+                setSheetUrl('')
+                if (fileInput.current) fileInput.current.value = ''
+                message(
+                  'Spreadsheet imported. Check your data before creating an API.',
+                )
+              })
+            }}
           >
-            <Upload />
+            <label htmlFor="source-name">
+              Source name
+              <Input
+                id="source-name"
+                value={name}
+                maxLength={80}
+                required
+                disabled={busy}
+                placeholder="Products"
+                onChange={(event) => setName(event.target.value)}
+              />
+            </label>
+            {importMethod === 'file' ? (
+              <label key="file" htmlFor="spreadsheet-file">
+                Spreadsheet file
+                <Input
+                  id="spreadsheet-file"
+                  ref={fileInput}
+                  type="file"
+                  accept=".csv,.xlsx"
+                  disabled={busy}
+                  required
+                  onChange={(event) => {
+                    const chosen = event.target.files?.[0] ?? null
+                    setFile(chosen)
+                    if (chosen && !name.trim())
+                      setName(
+                        chosen.name
+                          .replace(/\.[^.]+$/, '')
+                          .replace(/[_-]+/g, ' ')
+                          .slice(0, 80),
+                      )
+                  }}
+                />
+              </label>
+            ) : (
+              <label key="google" htmlFor="google-sheet-link">
+                Google Sheets link
+                <Input
+                  id="google-sheet-link"
+                  type="url"
+                  value={sheetUrl}
+                  onChange={(event) => setSheetUrl(event.target.value)}
+                  placeholder="https://docs.google.com/spreadsheets/d/…/edit"
+                  required
+                  disabled={busy}
+                  aria-describedby="import-source-help"
+                />
+              </label>
+            )}
+            <Button
+              disabled={
+                busy ||
+                loading ||
+                !name.trim() ||
+                (importMethod === 'file' ? !file : !sheetUrl.trim())
+              }
+            >
+              <Upload />
+              {importMethod === 'file'
+                ? 'Import spreadsheet'
+                : 'Import Google Sheet'}
+            </Button>
+          </form>
+          <p className="source-note" id="import-source-help">
             {importMethod === 'file'
-              ? 'Import spreadsheet'
-              : 'Import Google Sheet'}
-          </Button>
-        </form>
-        <p className="source-note" id="import-source-help">
-          {importMethod === 'file'
-            ? 'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.'
-            : 'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.'}
+              ? 'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.'
+              : 'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.'}
+          </p>
+        </section>
+      </fieldset>
+      {!writable ? (
+        <p>
+          Manage data sources access is needed to import or change saved rows.
         </p>
-      </section>
+      ) : null}
+      {!readable ? (
+        <p>Read data sources access is needed to browse saved sources.</p>
+      ) : null}
       {sources.length ? (
         <div className="source-selector">
           <label htmlFor="saved-source">Saved data source</label>
@@ -623,7 +640,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
             label="Saved data source"
             value={detail?.id ?? ''}
             placeholder="Choose a data source"
-            disabled={busy || loading}
+            disabled={busy || loading || !readable}
             options={sources.map((source) => ({
               value: source.id,
               label: `${source.name} · ${source.rowCount} rows`,
@@ -693,7 +710,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
             <SourceActions
               key={`${detail.id}:${detail.version}`}
               source={detail}
-              busy={busy || loading}
+              busy={busy || loading || !writable}
               onReplace={(replacement) => {
                 if (
                   !window.confirm(
@@ -753,7 +770,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
                   )
                   setSources(remaining)
                   setDetail(null)
-                  if (remaining[0])
+                  if (readable && remaining[0])
                     setDetail(
                       await api<DataSourceDetail>(
                         `/api/data-sources/${remaining[0].id}`,
@@ -768,7 +785,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
           <ApiFromData
             key={`${detail.id}:${detail.version}`}
             source={detail}
-            busy={busy || loading}
+            busy={busy || loading || !readable || !can(member, 'flows.write')}
             onCreate={(options) => {
               if (
                 useStudio.getState().dirty &&
@@ -786,9 +803,14 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
                   options,
                 )
 
-                useStudio.getState().openCreated(flow)
-                message('API draft created. Test your data, then publish it.')
-                onOpenApi()
+                if (can(member, 'flows.read')) {
+                  useStudio.getState().openCreated(flow)
+                  message('API draft created. Test your data, then publish it.')
+                  onOpenApi()
+                } else
+                  message(
+                    'API draft created. Read APIs access is needed to open API Studio.',
+                  )
               })
             }}
           />

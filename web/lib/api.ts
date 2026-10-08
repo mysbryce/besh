@@ -1,4 +1,5 @@
 import type { Flow } from '../../src/flows/model'
+import type { Permission } from '../../src/permissions'
 
 export async function apiRulesError(
   contract: Flow['contract'],
@@ -80,7 +81,23 @@ export type RuntimeKey = {
 export type Member = {
   id: string
   name: string
-  role: 'owner' | 'editor' | 'viewer'
+  role: 'owner' | 'editor' | 'viewer' | 'custom'
+  permissions: Permission[]
+  roleId?: string
+  roleName?: string
+}
+export type Role = {
+  id: string
+  name: string
+  permissions: Permission[]
+  version: number
+  createdAt: string
+  updatedAt: string
+}
+export function memberRoleName(member: Member | null | undefined) {
+  return member?.role === 'custom'
+    ? (member.roleName ?? 'Custom role')
+    : (member?.role ?? 'Unknown role')
 }
 export type DataSource = {
   id: string

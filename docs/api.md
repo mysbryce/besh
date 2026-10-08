@@ -4,6 +4,8 @@ Management routes accept a workspace session cookie or `Authorization: Bearer <w
 
 GraphQL runtime endpoints use the GraphQL `data`/`errors` envelope. See [GraphQL guide](graphql.md).
 
+Management action permissions are resolved from the member's current role on every request. Built-in owner/editor/viewer behavior is preserved; custom roles grant explicit workspace-wide actions. Only owners administer members, roles, and other members' sessions. Runtime API keys remain separate. See [roles and permissions](roles.md).
+
 ## Setup
 
 | Method | Path            | Behavior                                                                          |
@@ -28,7 +30,7 @@ The setup API also accepts optional `email` and `password` together to create th
 | GET    | `/api/sessions`     | Member's active sessions; owners receive all workspace sessions, with metadata only                                                                                |
 | DELETE | `/api/sessions/:id` | Own session or any session for an owner; returns `{ "ok": true }`                                                                                                  |
 
-Login and restoration return `{ "member": { "id": "...", "name": "...", "role": "owner" }, "csrfToken": "...", "sessionId": "...", "expiresAt": "..." }`. The secret appears only in the `besh_session` HttpOnly, SameSite=Strict cookie, with Secure on HTTPS. Session expiration is fixed at 12 hours. Each member has at most 20 active sessions; the next successful login evicts the oldest transactionally and records an audit event.
+Login and restoration return `{ "member": { "id": "...", "name": "...", "role": "viewer", "permissions": ["flows.read"] }, "csrfToken": "...", "sessionId": "...", "expiresAt": "..." }`. Every public member response includes current `permissions`; custom members also include `roleId` and `roleName`. The secret appears only in the `besh_session` HttpOnly, SameSite=Strict cookie, with Secure on HTTPS. Session expiration is fixed at 12 hours. Each member has at most 20 active sessions; the next successful login evicts the oldest transactionally and records an audit event.
 
 Session metadata contains `id`, `memberId`, `memberName`, `createdAt`, `expiresAt`, `lastSeenAt`, and `current`. It excludes secrets, hashes, and payloads. Expired sessions are omitted. An unknown session ID returns `404`; revoking another member's session without owner permission returns `403`. Revoking the current session ends subsequent management access through that cookie.
 
@@ -38,32 +40,33 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 
 ## Workspace
 
-| Method | Path                                | Permission / body                                                                     |
-| ------ | ----------------------------------- | ------------------------------------------------------------------------------------- |
-| GET    | `/api/me`                           | Any member                                                                            |
-| GET    | `/api/flows`                        | Any member; full drafts and revision metadata                                         |
-| GET    | `/api/flows/:id`                    | Any member                                                                            |
-| GET    | `/api/flows/:id/releases`           | Any member; immutable published revisions and current selection                       |
-| GET    | `/api/flows/:id/releases/:revision` | Any member; selected release definition and current flag                              |
-| GET    | `/api/flows/:id/openapi`            | Any member; `source=draft` or `source=published` (default); saved REST snapshot only  |
-| POST   | `/api/flows`                        | Owner/editor; flow definition                                                         |
-| PUT    | `/api/flows/:id`                    | Owner/editor; flow definition plus current `revision`                                 |
-| POST   | `/api/flows/:id/test`               | Owner/editor; `{ "body": {}, "query": {}, "params": {} }`                             |
-| POST   | `/api/flows/:id/graphql/test`       | Owner/editor; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`   |
-| POST   | `/api/flows/:id/publish`            | Owner; `{ "revision": 1 }`                                                            |
-| POST   | `/api/flows/:id/rollback`           | Owner; `{ "revision": 1, "publishedRevision": 3 }`; selects release 1 if 3 is current |
-| GET    | `/api/members`                      | Owner; no credential hashes or tokens                                                 |
-| POST   | `/api/members`                      | Owner; `{ "name": "Reader", "role": "viewer" }`; role may be `editor`                 |
-| DELETE | `/api/members/:id`                  | Owner; cannot remove bootstrap owner                                                  |
-| GET    | `/api/runtime-keys`                 | Owner; key metadata, including revoked keys; no tokens or hashes                      |
-| POST   | `/api/runtime-keys`                 | Owner; name, published flow ID, grants, expiration; returns the token once            |
-| POST   | `/api/runtime-keys/:id/rotate`      | Owner; replaces an active key with identical scope and expiration; returns token once |
-| DELETE | `/api/runtime-keys/:id`             | Owner; immediate revocation; retains metadata                                         |
-| GET    | `/api/audit`                        | Owner; latest 200 events, newest first                                                |
-| GET    | `/api/migrations`                   | Owner; schema versions in applied order                                               |
-| GET    | `/api/backups`                      | Owner; local backup metadata                                                          |
-| POST   | `/api/backups`                      | Owner; creates snapshot                                                               |
-| GET    | `/api/backups/:id`                  | Owner; SQLite download                                                                |
+| Method | Path                                | Permission / body                                                                       |
+| ------ | ----------------------------------- | --------------------------------------------------------------------------------------- |
+| GET    | `/api/me`                           | Any member; identity and current permissions                                            |
+| GET    | `/api/flows`                        | `flows.read`; full drafts and revision metadata                                         |
+| GET    | `/api/flows/:id`                    | `flows.read`                                                                            |
+| GET    | `/api/flows/:id/releases`           | `flows.read`; immutable revisions and current selection                                 |
+| GET    | `/api/flows/:id/releases/:revision` | `flows.read`; selected definition and current flag                                      |
+| GET    | `/api/flows/:id/openapi`            | `flows.read`; `source=draft` or `source=published` (default)                            |
+| POST   | `/api/flows`                        | `flows.write`; flow definition                                                          |
+| PUT    | `/api/flows/:id`                    | `flows.write`; flow definition plus current `revision`                                  |
+| POST   | `/api/flows/:id/test`               | `flows.test`; `{ "body": {}, "query": {}, "params": {} }`                               |
+| POST   | `/api/flows/:id/graphql/test`       | `flows.test`; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`     |
+| POST   | `/api/flows/:id/publish`            | `flows.publish`; `{ "revision": 1 }`                                                    |
+| POST   | `/api/flows/:id/rollback`           | `flows.publish`; `{ "revision": 1, "publishedRevision": 3 }`; selects 1 if 3 is current |
+| GET    | `/api/members`                      | Owner; member metadata without credential hashes or tokens                              |
+| POST   | `/api/members`                      | Owner; name and `viewer`, `editor`, or `custom` role; custom requires `roleId`          |
+| PUT    | `/api/members/:id/role`             | Owner; `{ "role": "viewer" }` or `{ "role": "custom", "roleId": "..." }`                |
+| DELETE | `/api/members/:id`                  | Owner; cannot remove bootstrap owner                                                    |
+| GET    | `/api/runtime-keys`                 | `runtime-keys.manage`; metadata including revoked keys                                  |
+| POST   | `/api/runtime-keys`                 | `runtime-keys.manage`; name, flow ID, grants, expiration; token once                    |
+| POST   | `/api/runtime-keys/:id/rotate`      | `runtime-keys.manage`; identical scope/expiration replacement; token once               |
+| DELETE | `/api/runtime-keys/:id`             | `runtime-keys.manage`; revocation with retained metadata                                |
+| GET    | `/api/audit`                        | `audit.read`; latest 200 events, newest first                                           |
+| GET    | `/api/migrations`                   | `migrations.read`; control schema versions in applied order                             |
+| GET    | `/api/backups`                      | `backups.manage`; local backup metadata                                                 |
+| POST   | `/api/backups`                      | `backups.manage`; creates full workspace snapshot                                       |
+| GET    | `/api/backups/:id`                  | `backups.manage`; sensitive complete SQLite download                                    |
 
 Drafts may be incomplete. Publishing and testing require one request node, reachable nodes, valid edges, and a response at every terminal path. Conditions require exactly one `true` and one `false` edge. Cycles are rejected.
 
@@ -71,11 +74,25 @@ Release-list entries contain `revision`, `createdAt`, `endpoint: { method, path,
 
 Rollback accepts exactly the two positive integer fields shown above. It changes only the published selection and returns the updated flow metadata; the draft revision and definition stay intact. The server validates the target graph, current dependencies, route availability, and expected current publication before committing with `flow.rolled-back`. Selecting the already current release, a stale publication, or a conflicting route returns `409`. Publication and rollback also return `409` while this flow has an active load test. Runtime keys keep their flow scope and grants; referenced spreadsheet/OAuth data is not rolled back. See [routes and release history](api-routes.md).
 
-Member creation also accepts optional `email` and `password` together, using the same account rules as setup. It still returns a member key once. Member listing exposes only member ID, name, and role; members read their own email through `/api/account`. No invitation email is sent. Removing a member cascades to its account and sessions.
+Member creation also accepts optional `email` and `password` together, using the same account rules as setup. It still returns a member key once. Custom creation accepts `{ "name": "Data reviewer", "role": "custom", "roleId": "<role-id>" }`, validating and assigning the role atomically. Member metadata includes ID, name, role, current permissions, and custom-role ID/name where applicable; members read their own email through `/api/account`. No invitation email is sent. Removing a member cascades to its account and sessions. Owners cannot reassign or remove the bootstrap owner or assign anyone the owner role.
+
+## Custom roles
+
+| Method | Path               | Permission / body                                                           |
+| ------ | ------------------ | --------------------------------------------------------------------------- |
+| GET    | `/api/permissions` | Any member; catalog array `{ id, label, description, group }`               |
+| GET    | `/api/roles`       | Owner; custom role metadata array                                           |
+| POST   | `/api/roles`       | Owner; `{ "name": "Data reviewer", "permissions": ["sources.read"] }`       |
+| PUT    | `/api/roles/:id`   | Owner; exact `{ "name": "Data reviewer", "permissions": [], "version": 1 }` |
+| DELETE | `/api/roles/:id`   | Owner; exact `{ "version": 1 }`; assigned role returns `409`                |
+
+Custom role metadata contains `id`, `name`, `permissions`, `version`, `createdAt`, and `updatedAt`. Creation starts at version 1. Names are trimmed, 1 to 80 characters, control-free, unique under SQLite NOCASE (ASCII case-insensitive), and cannot use a built-in role name. Permissions contain zero to 13 unique supported IDs, with no implied dependencies. Updates/deletion require the positive safe-integer version reviewed by the caller; stale versions return `409`. Unknown roles return `404`.
+
+Member role assignment accepts exactly `{ "role": "editor" }`, `{ "role": "viewer" }`, or `{ "role": "custom", "roleId": "..." }`. Permission changes and assignments commit with `role.updated` or `member.role.updated` and affected `session.revoked` events. Role creation/deletion record `role.created`/`role.deleted`. Changing grants revokes sessions for members assigned to that role; assignment changes revoke the member's sessions. Member keys remain valid but resolve current grants on their next request. Renaming a role does not add privileges. Migration 11 adds `workspace_roles` and `member_roles` without changing existing built-in assignments. See [permission catalog and boundaries](roles.md).
 
 ## Load testing
 
-Every load-test management route requires the workspace owner. Editors and viewers receive `403`; runtime keys cannot access management. Cookie writes require the normal Origin and CSRF checks.
+Every load-test management route requires `load-tests.run`. Owners have it by default, and custom roles can grant it. Built-in editors and viewers receive `403`; runtime keys cannot access management. Cookie writes require the normal Origin and CSRF checks.
 
 | Method | Path                         | Body / behavior                                               |
 | ------ | ---------------------------- | ------------------------------------------------------------- |
@@ -132,7 +149,7 @@ Run records contain `id`, `flowId`, `flowName`, published `revision`, `method`, 
 
 One run can be active at a time; another start returns `409`. Unknown runs return `404`. Canceling an already completed, failed, or interrupted run returns `409`; repeated cancellation of a canceled run is safe. Invalid/unpublished targets, unavailable social flows, configuration, or request input return `400`. A server without a listening local runtime cannot start a test.
 
-Starts authorize repeated calls to the live API. Dashboard write/mutation starts require confirmation; direct owner clients have no separate confirmation field. Besh automatically issues a temporary scoped key, generates its local k6 script, and revokes the key on completion, failure, cancellation, or interruption. Existing caller keys remain unchanged. Restart interrupts rather than resumes active jobs. In-flight requests may finish after cancellation.
+Starts authorize repeated calls to the live API. Dashboard write/mutation starts require confirmation; direct permission-authorized clients have no separate confirmation field. Besh automatically issues a temporary scoped key, generates its local k6 script, and revokes the key on completion, failure, cancellation, or interruption. Existing caller keys remain unchanged. Restart interrupts rather than resumes active jobs. In-flight requests may finish after cancellation.
 
 SQLite history and backups contain endpoint/settings/result metadata, excluding request values, raw tokens, generated scripts, and process logs. Load-test lifecycle audit events likewise record metadata only. See [load testing](load-testing.md) for automatic k6 provisioning, optional administrator configuration, live-write risks, and verification evidence.
 
@@ -171,18 +188,18 @@ Create/update responses add `id`, `revision`, `publishedRevision`, and `publishe
 
 ## Spreadsheet data sources
 
-All source routes require an authenticated owner or editor, using a workspace session or member token. Viewers and runtime API keys cannot list, preview, import, refresh, generate, or delete sources.
+Source listing/detail require `sources.read`; import, replacement, refresh, and deletion require `sources.write`. Generating a draft requires both `sources.read` and `flows.write`. Each permission is checked independently. Owners and editors have these grants by default; custom roles can select them. Built-in viewers and runtime API keys have no source-management access.
 
-| Method | Path                              | Body / behavior                                                                   |
-| ------ | --------------------------------- | --------------------------------------------------------------------------------- |
-| GET    | `/api/data-sources`               | Source metadata array                                                             |
-| GET    | `/api/data-sources/:id`           | Metadata plus first 10 rows                                                       |
-| POST   | `/api/data-sources/import`        | Multipart `name` and CSV/XLSX `file`; imports a snapshot                          |
-| POST   | `/api/data-sources/google-sheets` | JSON `{ "name": "Products", "url": "<public-sheet-share-link>" }`                 |
-| PUT    | `/api/data-sources/:id/import`    | Multipart `file` and optional `name`; replaces an uploaded snapshot               |
-| POST   | `/api/data-sources/:id/refresh`   | Re-fetches a public Google source                                                 |
-| POST   | `/api/data-sources/:id/api`       | JSON name, path, protocol, columns, limit, optional filter; returns a saved draft |
-| DELETE | `/api/data-sources/:id`           | Returns `{ "ok": true }`; referenced draft/published source returns `409`         |
+| Method | Path                              | Body / behavior                                                                          |
+| ------ | --------------------------------- | ---------------------------------------------------------------------------------------- |
+| GET    | `/api/data-sources`               | Source metadata array                                                                    |
+| GET    | `/api/data-sources/:id`           | Metadata plus first 10 rows                                                              |
+| POST   | `/api/data-sources/import`        | Multipart `name` and CSV/XLSX `file`; imports a snapshot                                 |
+| POST   | `/api/data-sources/google-sheets` | JSON `{ "name": "Products", "url": "<public-sheet-share-link>" }`                        |
+| PUT    | `/api/data-sources/:id/import`    | Multipart `file` and optional `name`; replaces an uploaded snapshot                      |
+| POST   | `/api/data-sources/:id/refresh`   | Re-fetches a public Google source                                                        |
+| POST   | `/api/data-sources/:id/api`       | JSON name, path, protocol, columns, limit, optional filter; returns a saved draft        |
+| DELETE | `/api/data-sources/:id`           | Returns `{ "ok": true }`; current draft/current published source reference returns `409` |
 
 Metadata contains `id`, `name`, `kind: "upload" | "google-sheets"`, `columns`, `rowCount`, `version`, `createdAt`, `updatedAt`, and optional `sheetName` or `sourceUrl`. Each column contains its safe API `key`, original `label`, inferred `type: "string" | "number" | "boolean"`, and `nullable`. Detail/import responses add `rows` for the first 10 records.
 
@@ -199,21 +216,21 @@ Generate a draft after reviewing columns:
 }
 ```
 
-Protocol is `rest` or `graphql`; limit is 1 to 100. Filter is optional and performs one equality comparison. Omitting the optional caller value returns all eligible rows up to the limit. Filters help callers search; they do not enforce authorization. The returned flow contains a `data` node with `{ sourceId, columns, limit, filter? }` and a response body reference `$data`. REST filters read query input; generated GraphQL filters read typed root arguments. Publication and runtime-key issuance remain separate owner actions.
+Protocol is `rest` or `graphql`; limit is 1 to 100. Filter is optional and performs one equality comparison. Omitting the optional caller value returns all eligible rows up to the limit. Filters help callers search; they do not enforce authorization. The returned flow contains a `data` node with `{ sourceId, columns, limit, filter? }` and a response body reference `$data`. REST filters read query input; generated GraphQL filters read typed root arguments. Publication and runtime-key issuance require separate `flows.publish` and `runtime-keys.manage` grants.
 
 Reads use the latest source snapshot. Replacement/refresh changes live data without publishing a new graph revision. Migration 7 stores source snapshots and audit changes. See [data sources](data-sources.md) for formats, limits, and private-sheet restrictions.
 
 ## Product login connections
 
-Connection metadata and draft generation require an authenticated owner or editor. Owners alone create, edit, or delete connections. Viewers and runtime keys have no connection-management access. Cookie writes use the usual Origin and CSRF checks.
+Connection metadata requires `auth-connections.read`. Draft generation requires both `auth-connections.read` and `flows.write`. Creating, editing, or deleting connections requires `auth-connections.manage`. Owners have all three; built-in editors can read metadata and generate drafts, while viewers and runtime keys have no connection-management access. Custom roles grant each action explicitly. Cookie writes use the usual Origin and CSRF checks.
 
-| Method | Path                                 | Body / behavior                                                                                                                          |
-| ------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/auth-connections`              | Owner/editor; metadata array                                                                                                             |
-| POST   | `/api/auth-connections`              | Owner; `{ "name": "Product GitHub", "provider": "github", "clientId": "<id>", "clientSecret": "<secret>", "redirectUri": "<callback>" }` |
-| PUT    | `/api/auth-connections/:id`          | Owner; `{ "name": "Product GitHub", "clientId": "<id>", "redirectUri": "<callback>", "clientSecret": "<optional-replacement>" }`         |
-| DELETE | `/api/auth-connections/:id`          | Owner; `{ "ok": true }`; a connection referenced by a draft or release returns `409`                                                     |
-| POST   | `/api/auth-connections/:id/generate` | Owner/editor; `{ "name": "GitHub login", "path": "/login/github", "kind": "rest" }`; `kind` also accepts `graphql`                       |
+| Method | Path                                 | Body / behavior                                                                                                                                              |
+| ------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/api/auth-connections`              | `auth-connections.read`; metadata array                                                                                                                      |
+| POST   | `/api/auth-connections`              | `auth-connections.manage`; `{ "name": "Product GitHub", "provider": "github", "clientId": "<id>", "clientSecret": "<secret>", "redirectUri": "<callback>" }` |
+| PUT    | `/api/auth-connections/:id`          | `auth-connections.manage`; `{ "name": "Product GitHub", "clientId": "<id>", "redirectUri": "<callback>", "clientSecret": "<optional-replacement>" }`         |
+| DELETE | `/api/auth-connections/:id`          | `auth-connections.manage`; `{ "ok": true }`; a connection referenced by a draft or release returns `409`                                                     |
+| POST   | `/api/auth-connections/:id/generate` | `auth-connections.read` + `flows.write`; `{ "name": "GitHub login", "path": "/login/github", "kind": "rest" }`; `kind` also accepts `graphql`                |
 
 Metadata contains `id`, `name`, `provider: "github"`, `clientId`, `redirectUri`, `version`, `createdAt`, and `updatedAt`. It never contains the client secret or encrypted values. Names contain 1 to 80 trimmed characters, client IDs 1 to 200, and secrets 1 to 4096. The callback is at most 1000 characters, uses HTTPS or HTTP loopback, and cannot include user information, a query, or a fragment. It belongs to the product server and must be registered exactly in GitHub.
 
@@ -231,13 +248,31 @@ OpenAPI exports describe generated REST response rules and include 429/502 respo
 
 The product server keeps the runtime key and proof private, sends only the authorization URL to the browser, and handles GitHub's callback itself. See [GitHub product login](product-auth.md) for the complete setup and request examples, provider-verification limits, and separate encryption-key backup procedure.
 
+## Update notices
+
+These routes are owner-only, including for custom roles with all 13 action permissions. Cookie writes use the normal Origin/CSRF checks. Runtime keys cannot access them.
+
+| Method | Path                 | Body / behavior                                                                                            |
+| ------ | -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/updates`       | Current application version, saved settings, and nullable cached last check                                |
+| PUT    | `/api/updates`       | Exact `{ "repositoryUrl": "https://github.com/mysbryce/besh", "includePrereleases": true, "revision": 1 }` |
+| POST   | `/api/updates/check` | Exact `{ "revision": 1 }`; manually check the saved repository                                             |
+
+The response is `{ currentVersion, settings, lastCheck }`. Settings contain `repositoryUrl`, `includePrereleases`, `revision`, and nullable `updatedAt`. Defaults use the public Besh repository shown above, prereleases included, revision 1, and no last check. Saving valid settings increments their revision and clears `lastCheck`.
+
+A check contains `checkedAt`, `status`, `release`, and `error`. Status is `available`, `current`, `no-releases`, or `error`. A release notice contains `version`, `tag`, `name`, `url`, nullable `publishedAt`, and `prerelease`. The checker selects the highest eligible semantic version from the first 20 returned public releases, excludes drafts, and follows the prerelease choice. `available` means that selected version is newer than the running `currentVersion`; it does not establish compatibility or publisher authenticity.
+
+Only canonical HTTPS GitHub repository URLs are accepted; credentials, query strings, fragments, and arbitrary hosts are rejected. Requests go to the fixed official GitHub release-list endpoint without caller tokens, private-repository access, or redirects. The whole request is limited to five seconds; response headers to 64 entries and 32 KiB; the decoded body to 256 KiB. Stale revisions or an active check return `409`; a persistent 60-second cooldown returns `429`. Settings changes during a check discard its result and return `409`. Provider failures save generic `error` status without upstream response details.
+
+Checks never download artifacts, install updates, alter the application version, or migrate workspace data. See [update notices](updates.md) for the **Updates** page and verification limits.
+
 ## Runtime keys
 
-Use an owner member token to issue a key after publishing:
+Use a member token with `runtime-keys.manage` to issue a key after publishing:
 
 ```http
 POST /api/runtime-keys
-Authorization: Bearer <owner-token>
+Authorization: Bearer <key-manager-member-token>
 Content-Type: application/json
 
 {
@@ -256,7 +291,7 @@ The response contains `id`, `name`, `flowId`, `permissions`, `expiresAt`, `creat
 
 ```http
 POST /api/runtime-keys/<key-id>/rotate
-Authorization: Bearer <owner-token>
+Authorization: Bearer <key-manager-member-token>
 ```
 
 Send no body or an empty JSON object `{}`. Any other body, including name, scope, grants, or expiration settings, returns `400`. Cookie-authenticated callers require the usual exact `Origin` and `X-Besh-CSRF` headers.
@@ -268,7 +303,7 @@ A successful `200` response uses the issuance response format above, with a new 
 | `200`  | Replacement committed; save the returned token once                                                                |
 | `400`  | Body is neither omitted nor an empty object                                                                        |
 | `401`  | Missing or invalid workspace management credentials                                                                |
-| `403`  | Authenticated caller is not an owner                                                                               |
+| `403`  | Caller lacks `runtime-keys.manage`                                                                                 |
 | `404`  | Original key does not exist                                                                                        |
 | `409`  | Key is revoked or expired, another replacement won, or its grants no longer match the currently published API type |
 
@@ -276,7 +311,7 @@ Compatibility uses the current published release, not an edited draft. A failed 
 
 Do not automatically retry after a lost response: the replacement may already have committed and its token cannot be fetched again. List key metadata to inspect the state, then revoke/create or replace an active replacement if its token was lost. For uninterrupted handover, manually create another key, update callers, and revoke the original; this route has no grace period. See [runtime API keys](api-keys.md) for the dashboard workflow.
 
-Runtime keys cannot authenticate management routes. Editor and viewer member tokens cannot manage keys. Owner and member tokens cannot invoke published endpoints. Missing, expired, or revoked runtime credentials return `401`; valid keys targeting another flow or an ungranted operation return `403`. GraphQL checks the selected query or mutation before flow execution. Grants do not filter fields or records.
+Runtime keys cannot authenticate management routes. Built-in editor and viewer member tokens cannot manage keys; custom members require `runtime-keys.manage`. Owner and member tokens cannot invoke published endpoints. Missing, expired, or revoked runtime credentials return `401`; valid keys targeting another flow or an ungranted operation return `403`. GraphQL checks the selected query or mutation before flow execution. Grants do not filter fields or records.
 
 Keys follow the flow's published revisions rather than pinning one release. Review grants before republishing broader behavior. Migration 6 adds runtime-key storage; it preserves published releases but intentionally ends member-token runtime access. Existing callers need new runtime credentials.
 

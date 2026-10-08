@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   Box,
   CircleHelp,
+  CloudDownload,
   Database,
   GitBranch,
   LayoutGrid,
@@ -21,7 +22,8 @@ import { Welcome } from './auth'
 import { Button } from './components/ui/button'
 import { Badge } from './components/ui/badge'
 import { useStudio } from './store'
-import { api } from './lib/api'
+import { api, memberRoleName } from './lib/api'
+import { can, permissionCatalog, type Permission } from '../src/permissions'
 import { ThemeControl } from './theme'
 import { GitHubIcon } from './components/github-icon'
 
@@ -49,6 +51,9 @@ const ProductAuth = lazy(() =>
 const LoadTests = lazy(() =>
   import('./load-tests').then((module) => ({ default: module.LoadTests })),
 )
+const Updates = lazy(() =>
+  import('./updates').then((module) => ({ default: module.Updates })),
+)
 
 type Setup = { required: boolean; name: string }
 type Page =
@@ -62,6 +67,7 @@ type Page =
   | 'account'
   | 'product-login'
   | 'load-tests'
+  | 'updates'
 
 const navigation = [
   { id: 'builder', name: 'API Studio', icon: Workflow },
@@ -73,6 +79,7 @@ const navigation = [
   { id: 'keys', name: 'API keys', icon: KeyRound },
   { id: 'account', name: 'Account & sessions', icon: UserRound },
   { id: 'backups', name: 'Data & backups', icon: Database },
+  { id: 'updates', name: 'Updates', icon: CloudDownload },
   { id: 'roadmap', name: 'What’s next', icon: Box },
 ] as const
 
@@ -86,7 +93,7 @@ export function App() {
   const state = useStudio()
 
   useEffect(() => {
-    setPage('builder')
+    setPage(can(state.member, 'flows.read') ? 'builder' : 'account')
   }, [state.sessionId])
 
   useEffect(() => {
@@ -145,6 +152,31 @@ export function App() {
       />
     )
 
+  const pageGrants: Partial<Record<Page, Permission[]>> = {
+    builder: ['flows.read'],
+    data: ['sources.read', 'sources.write'],
+    'product-login': ['auth-connections.read', 'auth-connections.manage'],
+    'load-tests': ['load-tests.run'],
+    audit: ['audit.read'],
+    keys: ['runtime-keys.manage'],
+    backups: ['backups.manage', 'migrations.read'],
+  }
+  const grants = pageGrants[page]
+  const forbidden =
+    page === 'members' || page === 'updates'
+      ? state.member.role !== 'owner'
+      : !!grants && !grants.some((permission) => can(state.member, permission))
+  const deniedTitle =
+    page === 'members' || page === 'updates'
+      ? 'Owner access required'
+      : state.member.role === 'custom' || page === 'builder'
+        ? 'Permission required'
+        : page === 'data'
+          ? 'Editor access required'
+          : page === 'product-login'
+            ? 'Product login needs editor access'
+            : 'Owner access required'
+
   function switchFlow(action: () => void) {
     if (state.dirty && !window.confirm('Discard unsaved draft changes?')) return
     action()
@@ -176,55 +208,61 @@ export function App() {
             <small>Local workspace</small>
           </div>
         </div>
-        <span className="nav-label">WORKSPACE</span>
-        <nav aria-label="Workspace navigation">
-          {navigation.map(({ id, name, icon: Icon }) => (
-            <button
-              key={id}
-              aria-label={name}
-              className={page === id ? 'active' : ''}
-              disabled={state.busy}
-              onClick={() => setPage(id)}
-            >
-              <Icon size={18} />
-              {name}
-              {id === 'builder' ? (
-                <span className="nav-count">{state.flows.length}</span>
-              ) : null}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-api-heading">
-          <span className="nav-label">YOUR APIS</span>
-          <button
-            aria-label="New API"
-            disabled={state.member.role === 'viewer' || state.busy}
-            onClick={() => switchFlow(state.fresh)}
-          >
-            <Plus size={16} />
-          </button>
-        </div>
-        <div className="api-list">
-          {state.flows.length ? (
-            state.flows.map((flow) => (
+        <div className="sidebar-scroll">
+          <span className="nav-label">WORKSPACE</span>
+          <nav aria-label="Workspace navigation">
+            {navigation.map(({ id, name, icon: Icon }) => (
               <button
-                key={flow.id}
+                key={id}
+                aria-label={name}
+                className={page === id ? 'active' : ''}
                 disabled={state.busy}
-                className={state.id === flow.id ? 'selected' : ''}
-                onClick={() => switchFlow(() => state.load(flow))}
+                onClick={() => setPage(id)}
               >
-                <span className="api-dot" />
-                <span>{flow.name}</span>
-                <small>{flow.graphql ? 'GQL' : flow.method}</small>
+                <Icon size={18} />
+                {name}
+                {id === 'builder' ? (
+                  <span className="nav-count">{state.flows.length}</span>
+                ) : null}
               </button>
-            ))
-          ) : (
-            <p>
-              Your next idea starts here.
-              <br />
-              Create your first API.
-            </p>
-          )}
+            ))}
+          </nav>
+          <div className="sidebar-api-heading">
+            <span className="nav-label">YOUR APIS</span>
+            <button
+              aria-label="New API"
+              disabled={
+                !can(state.member, 'flows.read') ||
+                !can(state.member, 'flows.write') ||
+                state.busy
+              }
+              onClick={() => switchFlow(state.fresh)}
+            >
+              <Plus size={16} />
+            </button>
+          </div>
+          <div className="api-list">
+            {state.flows.length ? (
+              state.flows.map((flow) => (
+                <button
+                  key={flow.id}
+                  disabled={state.busy}
+                  className={state.id === flow.id ? 'selected' : ''}
+                  onClick={() => switchFlow(() => state.load(flow))}
+                >
+                  <span className="api-dot" />
+                  <span>{flow.name}</span>
+                  <small>{flow.graphql ? 'GQL' : flow.method}</small>
+                </button>
+              ))
+            ) : (
+              <p>
+                Your next idea starts here.
+                <br />
+                Create your first API.
+              </p>
+            )}
+          </div>
         </div>
         <div className="sidebar-bottom">
           <div className="sidebar-note">
@@ -248,7 +286,7 @@ export function App() {
             <span className="user-avatar">{state.member.name.slice(0, 1)}</span>
             <span>
               <strong>{state.member.name}</strong>
-              <small>{state.member.role}</small>
+              <small>{memberRoleName(state.member)}</small>
             </span>
             <LogOut size={16} />
             <span className="sr-only">Sign out</span>
@@ -295,7 +333,21 @@ export function App() {
         ) : null}
         <main className="main-content">
           <Suspense fallback={<p>Opening studio…</p>}>
-            {page === 'builder' ? (
+            {forbidden ? (
+              <div className="empty-panel">
+                <ShieldCheck />
+                <h1>{deniedTitle}</h1>
+                <p>
+                  {page === 'members'
+                    ? 'Only the owner can manage members and roles.'
+                    : page === 'updates'
+                      ? 'Only the owner can manage Besh release settings and update notices.'
+                      : page === 'load-tests' && state.member.role !== 'custom'
+                        ? `Your ${state.member.role} role cannot run or view workspace load tests. Ask an owner to test the published API.`
+                        : `Your ${memberRoleName(state.member)} role needs ${grants?.map((permission) => permissionCatalog.find((entry) => entry.id === permission)?.label).join(' or ')} access. Ask the workspace owner to review your grants.`}
+                </p>
+              </div>
+            ) : page === 'builder' ? (
               <Builder />
             ) : page === 'data' ? (
               <DataSources onOpenApi={() => setPage('builder')} />
@@ -309,6 +361,8 @@ export function App() {
               <RuntimeKeys />
             ) : page === 'account' ? (
               <Account />
+            ) : page === 'updates' ? (
+              <Updates />
             ) : (
               <Operations key={page} page={page} />
             )}
@@ -330,7 +384,7 @@ function Roadmap() {
   const items = [
     [
       'Identity & contracts',
-      'Social sign-in templates for the APIs you create, custom permissions, and WebSocket flows.',
+      'Social sign-in templates for the APIs you create, further login providers and WebSocket flows.',
     ],
     [
       'Connect your data',

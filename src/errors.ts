@@ -1,4 +1,5 @@
 import type { Member } from './store'
+import { can, type Permission } from './permissions'
 
 export class ApiError extends Error {
   constructor(
@@ -11,4 +12,8 @@ export class ApiError extends Error {
 
 export function allow(member: Member, roles: Member['role'][]) {
   if (!roles.includes(member.role)) throw new ApiError(403, 'Permission denied')
+}
+
+export function requirePermission(member: Member, permission: Permission) {
+  if (!can(member, permission)) throw new ApiError(403, 'Permission denied')
 }

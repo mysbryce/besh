@@ -7,7 +7,7 @@
 - **Draft**: an editable flow. Saving a draft does not change a published endpoint.
 - **Release**: a validated, immutable copy of a flow used by callers.
 - **Release history**: immutable published flow revisions, with the currently selected revision identified separately from the draft.
-- **Rollback**: an owner action that selects an earlier validated release for live callers without changing the draft or restoring mutable dependencies.
+- **Rollback**: a publication-authorized action that selects an earlier validated release for live callers without changing the draft or restoring mutable dependencies.
 - **Path parameter**: a named whole REST path segment, such as `:id` in `/v1/items/:id`, provided by the caller and available as `$input.params.id`.
 - **Versioned route**: an explicit path prefix, such as `/v1` or `/v2`, on separate flows; it does not promise automatic compatibility or caller migration.
 - **API rules**: optional REST path, query, body, and response constraints checked by the server; GraphQL uses its schema instead.
@@ -16,7 +16,7 @@
 - **GraphQL schema**: a typed contract describing query/mutation fields, their arguments, and returned data.
 - **GraphQL operation**: a query or mutation selecting fields from a published schema; variables supply typed argument values.
 - **Run**: one execution of a flow with an input and a result.
-- **Load test**: an owner-started bounded k6 run that repeatedly calls a published API and reports latency, throughput, errors, and configured goals.
+- **Load test**: a permission-authorized bounded k6 run that repeatedly calls a published API and reports latency, throughput, errors, and configured goals.
 - **Virtual user**: one concurrent k6 request loop; Besh permits at most ten per load test.
 - **Load-test goal**: a configured latency, error-rate, or expected-status check used to evaluate a run's results.
 - **Load-test history**: persisted endpoint/configuration metadata and summary metrics, excluding request values, raw tokens, generated scripts, and process logs.
@@ -26,18 +26,22 @@
 - **Column mapping**: the reviewed selection of spreadsheet columns and API field names exposed by a generated API.
 - **Plugin**: a versioned extension that adds nodes or integrations.
 - **Permission**: a named action a member may perform. Roles group permissions.
-- **Member token**: an owner, editor, or viewer credential for workspace management; it cannot invoke published endpoints.
+- **Custom role**: an owner-defined set of workspace action permissions, assigned to members without changing the built-in owner, editor, or viewer roles.
+- **Role version**: a concurrency value required when editing or deleting a custom role; stale values are rejected.
+- **Update notice**: a manually checked public GitHub release version and link; it does not install an update or establish compatibility or authenticity.
+- **Update settings revision**: the expected version of saved repository/prerelease settings, checked before saving or requesting a release notice.
+- **Member token**: a member credential for workspace management under that member's current role; it cannot invoke published endpoints.
 - **Account**: a workspace member's optional email/password sign-in credentials; separate from generated product identities.
 - **Workspace session**: a browser's expiring, revocable workspace sign-in, represented by an HttpOnly cookie; separate from runtime API keys.
 - **Product auth template**: a generated starting flow that begins GitHub authorization and returns a verified provider identity to a product server; it does not sign users into the Besh workspace or issue a product session.
-- **Product login connection**: owner-managed GitHub OAuth app settings with an encrypted server-held client secret and an exact product callback URL.
+- **Product login connection**: permission-managed GitHub OAuth app settings with an encrypted server-held client secret and an exact product callback URL.
 - **Social login node**: a flow step that references a product login connection and handles the `BEGIN` or `COMPLETE` action; `$auth` holds its result.
 - **Product callback**: a route on the product server that receives GitHub's code and state, checks the initiating browser, and completes the attempt through Besh with its server-held proof and runtime key.
 - **Login proof**: a separate sensitive value returned to the product server by `BEGIN`, kept out of the authorization URL and browser, and required once for `COMPLETE`.
 - **Provider subject**: the provider's stable user identifier, paired with the provider name for product identity; distinct from a mutable username or email address.
 - **Secret key file**: the local encryption key for saved provider secrets and PKCE verifiers; separate from SQLite backups and restored with the matching database.
-- **Runtime API key**: a server-issued credential granting REST requests or GraphQL query/mutation operations for one published flow, with required expiration and immediate revocation.
-- **Key replacement**: an owner action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, and exact expiration; the new token appears once and there is no grace period.
+- **Runtime API key**: a server-issued credential granting REST requests or GraphQL query/mutation operations for one published flow, with required expiration and immediate revocation; separate from workspace role permissions.
+- **Key replacement**: a key-management-authorized action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, and exact expiration; the new token appears once and there is no grace period.
 - **Runtime grant**: permission to invoke an entire REST request, GraphQL query, or GraphQL mutation; it does not filter fields or records.
 - **Audit event**: a record of who performed an action, when, and on which resource.
 - **Migration**: a versioned change to a database schema.

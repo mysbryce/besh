@@ -1,6 +1,6 @@
 # Spreadsheet data sources
 
-Create an API from a spreadsheet without writing JSON. Owners and editors can import and manage sources; viewers cannot access source management or previews. Published callers need a separate scoped runtime key.
+Create an API from a spreadsheet without writing JSON. Owners and editors can read and manage sources; built-in viewers cannot. Custom roles can separately grant source reads and changes. Generating an API needs source-read and flow-write permission; there are no implied grants. Published callers need a separate scoped runtime key. See [roles and permissions](roles.md).
 
 ## Import and review
 
@@ -8,7 +8,7 @@ Create an API from a spreadsheet without writing JSON. Owners and editors can im
 2. Import a CSV or Excel `.xlsx` file, or choose a public Google Sheet and paste its standard share link.
 3. Review the preview, inferred column types, and human headers. The first row supplies column names; Excel uses its first worksheet.
 4. Choose API fields, protocol, endpoint path, and rows per request. Review the API field names displayed beside spreadsheet headers.
-5. Create the draft, test it in API Studio, and publish as owner. Issue its runtime key in **API keys**.
+5. Create the draft, test it in API Studio, and publish with publication permission. Issue its runtime key in **API keys** with key-management permission.
 
 Column names become safe, unique API field names. Text, numbers, true/false values, and blank cells are represented explicitly; Excel dates become ISO strings. Mixed-type columns become text. Nested output and custom graph behavior remain available through optional advanced configuration.
 
@@ -16,13 +16,13 @@ Column names become safe, unique API field names. Text, numbers, true/false valu
 
 Uploads save a local snapshot. Replacement imports a new snapshot for the same source. Public Google Sheets are fetched by the server and saved locally; **Refresh saved data** fetches the sheet again. These are manual actions, not background synchronization or write-back to the spreadsheet. Private-sheet OAuth and account connections are not implemented.
 
-Published APIs read the latest saved source snapshot. Refreshing or replacing a source can change live response values without republishing the graph; review the confirmation before proceeding. Owners and editors have this data-management permission. Release history preserves graph definitions, while source snapshots are mutable data.
+Published APIs read the latest saved source snapshot. Refreshing or replacing a source can change live response values without republishing the graph; review the confirmation before proceeding. Owners, editors, and custom members granted source-write permission can make these changes. Release history preserves graph definitions, while source snapshots are mutable data.
 
-Deleting a source used by any draft or published release returns `409`. Remove its references first. Import/refresh/replacement failure leaves the last valid snapshot intact. Workspace backups include source data; store them privately and review restored credentials before serving callers.
+Deleting a source used by a current draft or currently published API returns `409`. Remove those references first. Older release history does not retain the source snapshot or block deletion; rollback to an old graph can fail when its source is missing. Import/refresh/replacement failure leaves the last valid snapshot intact. Workspace backups include source data; store them privately and review restored credentials before serving callers.
 
 ## Generated APIs
 
-REST drafts use a request, spreadsheet-read, and response flow. They return selected rows directly as an array. A GraphQL draft exposes typed `Query.rows` fields matching the selected columns; no mutation or spreadsheet write operation is generated. Both protocols retain normal draft validation, owner-only publication, and scoped runtime authentication.
+REST drafts use a request, spreadsheet-read, and response flow. They return selected rows directly as an array. A GraphQL draft exposes typed `Query.rows` fields matching the selected columns; no mutation or spreadsheet write operation is generated. Both protocols retain normal draft validation, publication permission checks, and scoped runtime authentication.
 
 New REST drafts include [API rules](api-contracts.md) for their selected columns, inferred types/nullability, maximum row count, and optional typed query filter. No source rows are embedded in the OpenAPI download. Older drafts without rules still run. Replacing or refreshing data does not rewrite published rules: a changed snapshot that violates the live response contract fails with a generic 500 until data is corrected or a reviewed contract is republished.
 

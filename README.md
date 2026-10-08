@@ -32,10 +32,11 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 - REST methods and path parameters, plus typed GraphQL queries/mutations.
 - Built-in k6 load testing for published REST/GraphQL APIs, with automatic local setup and optional goals.
 - Optional REST input/response rules and separate draft/published OpenAPI downloads.
-- Owner, editor, and viewer roles; expiring runtime API keys with replacement and revocation.
+- Built-in and custom action roles; expiring runtime API keys with replacement and revocation.
 - Optional email/password sign-in and revocable workspace browser sessions.
 - GitHub product-login templates for REST and GraphQL, with server-held credentials.
 - Local SQLite persistence, audit history, migrations, and tested backups.
+- Manual GitHub release notices with saved repository settings.
 - CSV, Excel (.xlsx), and public Google Sheets snapshots with manual refresh.
 - Readable light/dark themes and keyboard-accessible custom controls.
 - Browser walkthrough and masked page/action preview gallery.

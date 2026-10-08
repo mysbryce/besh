@@ -103,16 +103,17 @@ For a record endpoint, use `/v1/items/:id` and read the path field `id` in your 
 | API rules     | Optional REST path/query/body/response types, required fields, nullability, and server checks           |
 | OpenAPI       | JSON downloads for a saved REST draft or published release, kept separate                               |
 | Drafts        | SQLite persistence; incomplete graphs may be saved                                                      |
-| Publishing    | Graph validation, overlapping-route checks, immutable release history, owner rollback                   |
-| Load testing  | Owner-started local k6 tests of published REST/GraphQL APIs, optional goals, saved summaries            |
+| Publishing    | Graph validation, overlapping-route checks, immutable release history, permission-checked rollback      |
+| Load testing  | Permission-authorized local k6 tests of published REST/GraphQL APIs, optional goals, saved summaries    |
 | Concurrency   | Stale save/publish/rollback requests return `409`; active load tests block live route changes           |
-| Access        | Server-enforced roles; workspace keys or email/password; expiring browser sessions                      |
-| API keys      | Owner-issued keys for one published API, expiring grants, atomic replacement, immediate revocation      |
+| Access        | Built-in/custom action roles; workspace keys or email/password; expiring browser sessions               |
+| API keys      | Permission-issued keys for one published API, expiring grants, atomic replacement, immediate revocation |
 | Audit         | Changes, tests, runs, backups, and access denials; latest 200 visible                                   |
 | Migrations    | Versioned control-database schema history                                                               |
 | Backups       | Consistent SQLite snapshots and authenticated downloads; restore tested                                 |
+| Updates       | Owner-only manual public GitHub release notices; saved settings and cached results; no installation     |
 
-Draft edits do not change a live endpoint. Save and publish a new revision to update it. Members can inspect published revision history; owners can restore an earlier release without changing the draft. Rollback does not restore spreadsheet rows or provider credentials. Published endpoints require a runtime API key; owner and member tokens only access workspace management and permitted draft tests. Public endpoints remain planned.
+Draft edits do not change a live endpoint. Save and publish a new revision to update it. Members with flow-read permission can inspect published history; publication permission allows restoring an earlier release without changing the draft. Rollback does not restore spreadsheet rows or provider credentials. Published endpoints require a runtime API key; owner and member tokens only access workspace management and permitted draft tests. Public endpoints remain planned.
 
 Runtime keys grant REST requests, GraphQL queries, or GraphQL mutations for one published API. Expiration is required and must be within 366 days; the dashboard offers 1, 7, 30, or 90 days. Tokens appear once; save the token before leaving the page. Raw values are not persisted in browser storage, and the server stores their hashes. Revoked or expired keys stop working immediately. Grants cover the whole operation, not individual fields or records. A key follows its API across published revisions, so review grants when republishing broader behavior.
 
@@ -122,7 +123,7 @@ Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/i
 
 ## Load test a published API
 
-Open **Load testing** as the owner. Choose a published API, fill any required request fields, then select **Run load test**. Defaults run one virtual user for five seconds and check a 1000 ms p95 goal with at most 1% errors. You can change the settings, inspect results, cancel a running test, or review saved history.
+Open **Load testing** with load-test permission. Choose a published API, fill any required request fields, then select **Run load test**. Defaults run one virtual user for five seconds and check a 1000 ms p95 goal with at most 1% errors. You can change the settings, inspect results, cancel a running test, or review saved history.
 
 Besh downloads and verifies pinned k6 on first use, then caches it. The first download needs internet access; no manual installation, script, runtime-key creation, or Grafana Cloud account is needed. For GraphQL, review the generated example operation and supply its required arguments; variables use field forms. Advanced JSON input is optional.
 
@@ -130,13 +131,13 @@ Write methods and mutations call the live API repeatedly and require dashboard c
 
 ## Make an API from a spreadsheet
 
-Open **Data sources** with an owner or editor key. Name the source and import a CSV or Excel `.xlsx` file, or choose **Public Google Sheet** and paste its standard share link. Review the first ten rows, detected types, and safe API field names. Choose columns to return, name the API, review its endpoint path and row limit, then select **Create API from data**. This creates a draft; test it before the owner publishes it and creates a caller key.
+Open **Data sources** with source-read and source-write permission, as owners and editors have by default. Name the source and import a CSV or Excel `.xlsx` file, or choose **Public Google Sheet** and paste its standard share link. Review the first ten rows, detected types, and safe API field names. Choose columns to return, name the API, review its endpoint path and row limit, then select **Create API from data** with flow-write permission. This creates a draft; testing, publication, and caller-key creation each require their separate grants.
 
 Imports save snapshots. Upload replacement and Google refresh require confirmation because published APIs read the latest saved source data. Google refresh is manual; private-sheet OAuth and scheduled synchronization are planned. See [spreadsheet data](data-sources.md) for limits and permissions.
 
 ## Add GitHub product login
 
-Open **Product login** as the owner. Save a GitHub OAuth app's client ID, secret, and exact product-server callback URL. Generate a REST or GraphQL draft, test its BEGIN action, review the result and rules, then publish and issue a scoped runtime key. Editors can generate/test drafts but cannot edit credentials or publish.
+Open **Product login** with connection-management permission. Save a GitHub OAuth app's client ID, secret, and exact product-server callback URL. Generate a REST or GraphQL draft with connection-read and flow-write permissions, test its BEGIN action, review the result and rules, then publish and issue a scoped runtime key with those separate grants. Built-in editors can generate/test drafts but cannot edit credentials or publish.
 
 Your product server retains the runtime key and separate proof, sends the authorization URL to the browser, handles GitHub's callback, and completes the attempt through Besh. Besh returns provider identity; your product defines its accounts and sessions. This does not sign users into the Besh workspace. Follow [GitHub product login](product-auth.md) for app registration, callback integration, request examples, test limits, and the required separate encryption-key backup.
 
@@ -144,7 +145,7 @@ Your product server retains the runtime key and separate proof, sends the author
 
 Open **API rules** in the REST studio. Add path, query, body, or response fields using names and type selectors. Path fields follow the route and are always required and non-nullable; other fields have required choices. Body and response fields can also allow null. Nested objects, lists, item rules, and optional limits all use forms. Save and test valid input, then try a missing required field. The server returns 400 for invalid input and a generic 500 for a response that violates its rules. GraphQL uses its own schema.
 
-Choose a saved draft or published release to download its OpenAPI document. Save browser edits before exporting a draft. Published documentation and live rules stay at the last published revision until the owner republishes. Downloads require a workspace member token; calling the documented route requires its runtime API key. See [REST API rules and OpenAPI](api-contracts.md) for a quick example, supported types, and limits.
+Choose a saved draft or published release to download its OpenAPI document. Save browser edits before exporting a draft. Published documentation and live rules stay at the selected published revision until a member with publication permission changes it. Downloads require flow-read permission; calling the documented route requires its runtime API key. See [REST API rules and OpenAPI](api-contracts.md) for a quick example, supported types, and limits.
 
 ## Build a GraphQL API
 
@@ -160,6 +161,8 @@ Each query or mutation root field runs the visual flow. Arguments are available 
 REST and GraphQL keep separate routes and published releases. GraphQL currently uses POST with JSON requests. Subscriptions, custom scalars, and runtime schema introspection are not enabled. See [GraphQL guide](graphql.md) for examples, permissions, and limits.
 
 ## Roles
+
+The table shows unchanged built-in roles. Owners can also create custom roles with selected action grants and assign them to members. Custom grants are independent and workspace-wide; they do not filter product fields or records. See [workspace roles and permissions](roles.md) for the catalog, examples, and session effects.
 
 | Action                                         | Owner | Editor | Viewer |
 | ---------------------------------------------- | ----- | ------ | ------ |
@@ -182,7 +185,7 @@ Member tokens are shown once. Remove a member to invalidate their token, account
 
 Every role can manage its own email/password under **Account & sessions**, with a current password or member key as fresh proof. Members see and revoke their own sessions; owners can inspect and revoke all workspace sessions. Ending a session leaves its member's sign-in credentials usable. See [workspace accounts and sessions](workspace-auth.md).
 
-Owners add editors/viewers from **Members**. Fill **Member email (optional)** and **Member password** for email/password sign-in, or leave email blank for key-only access. Save the issued member key; no invitation email is sent.
+Owners add editors/viewers or custom-role members from **Members**. Fill **Member email (optional)** and **Member password** for email/password sign-in, or leave email blank for key-only access. Save the issued member key; no invitation email is sent. Owners alone manage roles/member assignments and other members' sessions. Grant changes end affected browser sessions; member keys keep working with current server-checked permissions.
 
 ## Data and recovery
 
@@ -254,7 +257,7 @@ Code style: no semicolons, single quotes, blank lines between steps, and comment
 
 ## Planned integrations
 
-PostgreSQL, MySQL/MariaDB, SQLite product data, MongoDB, Supabase, Firebase; generated-product social-auth templates for Discord, Facebook, Google and other identity providers; product sessions and identity linking; WebSocket flows; custom plugins; GitHub update notices; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI. Workspace sign-in uses email/password or member/owner keys.
+PostgreSQL, MySQL/MariaDB, SQLite product data, MongoDB, Supabase, Firebase; generated-product social-auth templates for Discord, Facebook, Google and other identity providers; product sessions and identity linking; WebSocket flows; custom plugins; verified update installation/recovery; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI. Workspace sign-in uses email/password or member/owner keys.
 
 These are roadmap items. Public Google Sheets imports and the GitHub product identity template are implemented; other providers and database adapters are not. GitHub needs a real OAuth app and product-server callback for a live sign-in. No external account is required for local flows or uploaded spreadsheets.
 
@@ -266,10 +269,12 @@ These are roadmap items. Public Google Sheets imports and the GitHub product ide
 - [GraphQL schemas and execution](graphql.md)
 - [REST API rules and OpenAPI downloads](api-contracts.md)
 - [Workspace accounts and sessions](workspace-auth.md)
+- [Workspace roles and permissions](roles.md)
 - [Runtime API keys](api-keys.md)
 - [REST routes and release history](api-routes.md)
 - [Built-in k6 load testing](load-testing.md)
 - [GitHub product login](product-auth.md)
+- [GitHub update notices](updates.md)
 - [AI policy](../AI_POLICY.md) · [Code of conduct](../CODE_OF_CONDUCT.md) · [Security](../SECURITY.md)
 
 MIT licensed. See [LICENSE](../LICENSE) and [third-party notices](../THIRD_PARTY_NOTICES.md).

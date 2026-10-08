@@ -38,6 +38,7 @@ import {
 import { flowSchema, type Flow, type FlowNode } from '../src/flows/model'
 import { socialLoginSchema } from '../src/flows/social-schema'
 import { useStudio, type CanvasNode } from './store'
+import { can } from '../src/permissions'
 import { ReleaseHistory } from './release-history'
 import { ApiRules, OpenApiDownload } from './api-rules'
 import {
@@ -171,9 +172,10 @@ function Inspector({ node }: { node: CanvasNode }) {
   const configure = useStudio((state) => state.configure)
   const message = useStudio((state) => state.message)
   const token = useStudio((state) => state.token)
+  const member = useStudio((state) => state.member)
   const remove = useStudio((state) => state.onNodesChange)
   const readonly = useStudio(
-    (state) => state.member?.role === 'viewer' || state.busy,
+    (state) => !can(state.member, 'flows.write') || state.busy,
   )
 
   function apply() {
@@ -246,6 +248,7 @@ function Inspector({ node }: { node: CanvasNode }) {
         />
       ) : null}
       {node.data.kind === 'data' &&
+      can(member, 'sources.read') &&
       !advanced &&
       'sourceId' in node.data.config ? (
         <DataNodeForm
@@ -262,6 +265,7 @@ function Inspector({ node }: { node: CanvasNode }) {
         />
       ) : null}
       {node.data.kind === 'social' &&
+      can(member, 'auth-connections.read') &&
       !advanced &&
       'connectionId' in node.data.config ? (
         <SocialNodeForm
@@ -276,6 +280,15 @@ function Inspector({ node }: { node: CanvasNode }) {
             message('Configuration applied. Save draft to keep changes.')
           }}
         />
+      ) : null}
+      {node.data.kind === 'data' && !can(member, 'sources.read') ? (
+        <p>Read data sources access is needed to choose saved source fields.</p>
+      ) : null}
+      {node.data.kind === 'social' && !can(member, 'auth-connections.read') ? (
+        <p>
+          Read product login connections access is needed to choose a provider
+          connection.
+        </p>
       ) : null}
       <Button
         className="advanced-toggle"
@@ -330,7 +343,7 @@ function Canvas() {
   } = useStudio()
   const { screenToFlowPosition } = useReactFlow()
   const node = nodes.find((item) => item.id === selected)
-  const editable = member?.role !== 'viewer' && !busy
+  const editable = can(member, 'flows.write') && !busy
 
   return (
     <div className={`canvas-layout ${node ? 'with-inspector' : ''}`}>
@@ -456,7 +469,8 @@ function BuilderSession() {
     socialFlow ? '{"action":"BEGIN"}' : '{}',
   )
   const [operationName, setOperationName] = useState('')
-  const writable = state.member?.role !== 'viewer'
+  const writable = can(state.member, 'flows.write')
+  const testable = can(state.member, 'flows.test')
   const publishedEndpoint = state.flows.find(
     (flow) => flow.id === state.id,
   )?.publishedEndpoint
@@ -518,7 +532,7 @@ function BuilderSession() {
           <Button
             disabled={
               state.busy ||
-              state.member?.role !== 'owner' ||
+              !can(state.member, 'flows.publish') ||
               !state.id ||
               state.dirty
             }
@@ -748,7 +762,7 @@ function BuilderSession() {
             <ProductLoginTest
               input={loginInput}
               onChange={setLoginInput}
-              disabled={!writable || state.busy}
+              disabled={!testable || state.busy}
             />
           ) : state.graphql ? (
             <div className="graphql-inputs">
@@ -759,6 +773,7 @@ function BuilderSession() {
                 className="code-input"
                 spellCheck={false}
                 rows={5}
+                disabled={!testable || state.busy}
                 value={operation}
                 onChange={(event) => setOperation(event.target.value)}
               />
@@ -779,6 +794,7 @@ function BuilderSession() {
                     className="code-input"
                     spellCheck={false}
                     rows={3}
+                    disabled={!testable || state.busy}
                     value={variables}
                     onChange={(event) => setVariables(event.target.value)}
                   />
@@ -788,6 +804,7 @@ function BuilderSession() {
                   <Input
                     id="graphql-operation-name"
                     aria-label="GraphQL operation name"
+                    disabled={!testable || state.busy}
                     value={operationName}
                     onChange={(event) => setOperationName(event.target.value)}
                   />
@@ -799,6 +816,7 @@ function BuilderSession() {
               {advancedInput ? (
                 <Textarea
                   aria-label="Test input"
+                  disabled={!testable || state.busy}
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
                   className="code-input"
@@ -809,7 +827,7 @@ function BuilderSession() {
                 <RequestForm
                   input={input}
                   path={state.path}
-                  disabled={!writable || state.busy}
+                  disabled={!testable || state.busy}
                   onChange={(value, error) => {
                     setInput(value)
                     setInputError(error)
@@ -844,7 +862,7 @@ function BuilderSession() {
           )}
           <Button
             variant="outline"
-            disabled={state.busy || !writable || !state.id || state.dirty}
+            disabled={state.busy || !testable || !state.id || state.dirty}
             onClick={testFlow}
           >
             <Play />

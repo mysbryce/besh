@@ -28,12 +28,12 @@ For the same REST method, two published routes cannot match the same URL. For ex
 
 ## Review and restore a release
 
-Release history lists immutable published revisions and identifies the current one. Workspace owners, editors, and viewers can inspect history and a release definition. Only owners can restore an earlier published revision.
+Release history lists immutable published revisions and identifies the current one. Owners, editors, viewers, and custom members with flow-read permission can inspect history and a release definition. Owners and custom members with publication permission can restore an earlier published revision.
 
 1. Save unfinished edits if needed, then open **Release history**.
 2. Select **Review release N** and inspect its method, path, API type, and step count. The management API also exposes the archived definition.
 3. Review current runtime keys and dependencies before restoring.
-4. Select **Roll back to release N**, then **Confirm rollback** as the owner. The server checks that the current publication still matches the one you reviewed.
+4. Select **Roll back to release N**, then **Confirm rollback** with publication permission. The server checks that the current publication still matches the one you reviewed.
 5. Check the restored endpoint with an appropriate runtime key.
 
 Rollback changes the current publication only. It does not overwrite your draft, add a draft revision, or mutate an old release. Restoring the current release is rejected. A concurrent publication, overlapping route, invalid dependency, or active load test for this flow blocks the change. Refresh history after a conflict and review again.
@@ -44,4 +44,4 @@ A release stores its graph, route, rules, and referenced resource IDs. Spreadshe
 
 Publication and rollback are blocked while that flow has an active load test, so its published route cannot change during the run. Load-test history still records the starting release; tests do not pin mutable data or external resources.
 
-See [API reference](api.md), [API rules and OpenAPI](api-contracts.md), [runtime keys](api-keys.md), and [load testing](load-testing.md).
+See [roles and permissions](roles.md), [API reference](api.md), [API rules and OpenAPI](api-contracts.md), [runtime keys](api-keys.md), and [load testing](load-testing.md).

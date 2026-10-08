@@ -4,6 +4,25 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.4.0-alpha.0 — 2026-10-08
+
+### Added
+
+- Custom workspace roles with 13 explicit action permissions, beginner permission forms, and owner-managed member assignment.
+- Manual GitHub release notices with saved public-repository settings, preview-release filtering, and an owner-only Updates page.
+
+### Fixed
+
+- Members without API-read permission can sign in and manage their own account without private API requests.
+- Permission and CSRF denials now attribute valid cookie sessions to the signed-in member in audit history.
+- Workspace navigation scrolls independently so sign-out stays reachable on short desktop and phone screens.
+
+### Security
+
+- Resolve current grants for bearer and cookie requests; commit role changes with audit and affected session revocation.
+- Reject stale role changes and deletion of assigned roles; keep administration and update notices owner-only.
+- Bound update requests, reject redirects and stale results, and persist check cooldowns across restarts. Notices do not install updates.
+
 ## 0.3.0-alpha.0 — 2026-10-08
 
 ### Added

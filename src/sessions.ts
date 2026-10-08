@@ -77,11 +77,7 @@ export function sessionService(store: Store, now = Date.now) {
       )
       .get(hashToken(token))
     if (!row || Date.parse(row.expires_at) <= now()) return null
-    const member = store
-      .query<Member, [string]>(
-        'SELECT id, name, role FROM members WHERE id = ?',
-      )
-      .get(row.member_id)
+    const member = store.member(row.member_id)
     if (!member) return null
 
     store
@@ -220,18 +216,14 @@ export function sessionService(store: Store, now = Date.now) {
             value.password,
             account?.password_hash ?? (await missingPasswordHash),
           )
-          if (valid && account)
-            member = store
-              .query<Member, [string]>(
-                'SELECT id, name, role FROM members WHERE id = ?',
-              )
-              .get(account.member_id)
+          if (valid && account) member = store.member(account.member_id)
         }
         if (!member) throw new ApiError(401, 'Invalid credentials')
         const secret = randomBytes(32).toString('base64url')
         const id = crypto.randomUUID()
         const createdAt = new Date(now()).toISOString()
         const expiresAt = new Date(now() + sessionLifetime).toISOString()
+        const memberId = member.id
         store.db.transaction(() => {
           if (checkedAccount) {
             const current = store
@@ -244,9 +236,11 @@ export function sessionService(store: Store, now = Date.now) {
               current.email !== checkedAccount.email
             )
               throw new ApiError(401, 'Invalid credentials')
-          } else if (store.authenticate(value.token ?? '')?.id !== member.id) {
+          } else if (store.authenticate(value.token ?? '')?.id !== memberId) {
             throw new ApiError(401, 'Invalid credentials')
           }
+          const currentMember = store.member(memberId)
+          if (!currentMember) throw new ApiError(401, 'Invalid credentials')
           store
             .query('DELETE FROM sessions WHERE expires_at <= ?')
             .run(createdAt)
@@ -254,22 +248,22 @@ export function sessionService(store: Store, now = Date.now) {
             .query<{ id: string }, [string]>(
               'SELECT id FROM sessions WHERE member_id = ? ORDER BY created_at DESC, rowid DESC LIMIT -1 OFFSET 19',
             )
-            .all(member.id)
+            .all(memberId)
           for (const old of evicted) {
             store.query('DELETE FROM sessions WHERE id = ?').run(old.id)
-            store.audit(member.id, 'session.evicted', old.id)
+            store.audit(memberId, 'session.evicted', old.id)
           }
           store
             .query('INSERT INTO sessions VALUES (?, ?, ?, ?, ?, ?)')
             .run(
               id,
-              member.id,
+              memberId,
               hashToken(secret),
               createdAt,
               expiresAt,
               createdAt,
             )
-          store.audit(member.id, 'session.created', id)
+          store.audit(memberId, 'session.created', id)
           store
             .query('DELETE FROM login_limits WHERE identity_hash = ?')
             .run(identity)

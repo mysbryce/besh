@@ -7,6 +7,7 @@ import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import { api, type AuthConnection, type SavedFlow } from './lib/api'
 import { useStudio } from './store'
+import { can } from '../src/permissions'
 
 type ConnectionValues = {
   name: string
@@ -261,11 +262,13 @@ export function ProductAuth({ onOpenApi }: { onOpenApi: () => void }) {
   const [pending, setBusy] = useState(false)
   const busy = pending || state.busy
   const [error, setError] = useState('')
-  const viewer = state.member?.role === 'viewer'
-  const owner = state.member?.role === 'owner'
+  const readable = can(state.member, 'auth-connections.read')
+  const generatable = readable && can(state.member, 'flows.write')
+  const viewer = !readable && !can(state.member, 'auth-connections.manage')
+  const owner = can(state.member, 'auth-connections.manage')
 
   useEffect(() => {
-    if (viewer) return
+    if (!readable) return
     let active = true
     api<AuthConnection[]>('/api/auth-connections', state.token)
       .then((value) => {
@@ -277,7 +280,7 @@ export function ProductAuth({ onOpenApi }: { onOpenApi: () => void }) {
     return () => {
       active = false
     }
-  }, [state.token, viewer])
+  }, [state.token, readable, state.sessionId])
 
   return (
     <>
@@ -353,11 +356,16 @@ export function ProductAuth({ onOpenApi }: { onOpenApi: () => void }) {
                       'POST',
                       values,
                     )
-                    state.openCreated(flow)
-                    state.message(
-                      'Login API draft created. Test it, then publish when ready.',
-                    )
-                    onOpenApi()
+                    if (can(state.member, 'flows.read')) {
+                      state.openCreated(flow)
+                      state.message(
+                        'Login API draft created. Test it, then publish when ready.',
+                      )
+                      onOpenApi()
+                    } else
+                      state.message(
+                        'Login API draft created. Read APIs access is needed to open API Studio.',
+                      )
                   } catch (error) {
                     failure = error
                     throw error
@@ -422,7 +430,12 @@ export function ProductAuth({ onOpenApi }: { onOpenApi: () => void }) {
                 </dl>
                 <div className="source-actions">
                   <Button
-                    disabled={busy || editing !== undefined || !!generating}
+                    disabled={
+                      busy ||
+                      !generatable ||
+                      editing !== undefined ||
+                      !!generating
+                    }
                     onClick={() => setGenerating(connection)}
                   >
                     Create login API

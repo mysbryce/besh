@@ -6,7 +6,7 @@ GitHub is the first implemented provider. Discord, Facebook, Google, and generic
 
 ## What you need
 
-- An owner account in Besh to save the GitHub connection, publish the API, and issue a runtime key. Editors can review connections, generate drafts, and test their own attempts.
+- A Besh owner account or custom grants for managing the connection, publishing the API, and issuing a runtime key. Editors can review connections, generate drafts, and test their own attempts. Each action uses its own [workspace permission](roles.md).
 - A GitHub OAuth app with its client ID and client secret.
 - A product server with a callback route, such as `https://product.example.com/auth/github/callback`. Use HTTP only for local loopback development, such as `http://127.0.0.1:8080/auth/github/callback`.
 - Temporary server-side storage that associates each login attempt with its initiating browser. Store the expected state and separate proof there until completion.
@@ -25,15 +25,15 @@ The callback URL points to your product, rather than `/run`, `/graphql`, or a Be
 
 ## Save a connection and generate a draft
 
-1. Sign in to Besh as the owner and open **Product login**.
+1. Sign in to Besh with product-connection management permission and open **Product login**.
 2. Select **Connect GitHub**. Name the connection and enter the client ID, client secret, and exact callback URL. Select **Save connection**.
 3. On its connection card, select **Create login API**. Enter **API name**, choose REST or GraphQL under **API type**, and set **Endpoint path** to `/login/github`.
 4. Select **Create draft**. It connects **HTTP request** to **GitHub login** to **JSON response**. The social node references the saved connection under **GitHub connection**; the response returns `$auth`.
 5. In **Try it out**, set **Login action** to **BEGIN · Start login** and select **Test flow**. Review the result and expiry. State and proof are hidden in the response display; **Copy authorization URL**, **Copy OAuth state**, and **Copy sensitive proof** are available for your own draft test. A BEGIN result creates an attempt but does not prove GitHub accepted the app credentials. For a draft completion, choose **COMPLETE · Finish login** and enter **Authorization code**, **OAuth state**, and **Login proof** from that same member's attempt and product callback.
-6. Review the generated input/response rules or GraphQL schema. The owner publishes the draft when ready.
+6. Review the generated input/response rules or GraphQL schema. A member with publication permission publishes the draft when ready.
 7. Under **API keys**, issue a key for that published API. Allow **REST requests** for REST, or **GraphQL mutations** for GraphQL, and choose an expiration. Save it in your product server's private configuration.
 
-An editor can generate and test a draft but cannot change provider credentials, publish, or issue runtime keys. A viewer cannot access product connections. Draft-test attempts belong to the member who started them and cannot complete through a published route.
+Built-in editors can generate and test a draft but cannot change provider credentials, publish, or issue runtime keys. Built-in viewers cannot access product connections. Custom roles grant `auth-connections.read` for metadata, `auth-connections.manage` for credential changes, and both `auth-connections.read` and `flows.write` for generation. Testing, publication, and key management need their separate grants. Draft-test attempts belong to the member who started them and cannot complete through a published route.
 
 ## Connect your product server
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Flow } from '../src/flows/model'
 import { api, type SavedFlow } from './lib/api'
 import { useStudio } from './store'
+import { can } from '../src/permissions'
 import { Button } from './components/ui/button'
 import { Badge } from './components/ui/badge'
 
@@ -123,7 +124,7 @@ export function ReleaseHistory() {
   }
 
   function rollback() {
-    if (!detail || !state.id || state.member?.role !== 'owner') return
+    if (!detail || !state.id || !can(state.member, 'flows.publish')) return
     const revision = detail.revision
     const expected = state.publishedRevision
     const id = state.id
@@ -221,7 +222,7 @@ export function ReleaseHistory() {
                     ? 'REST API rules'
                     : 'REST without API rules'}
               </p>
-              {state.member?.role === 'owner' ? (
+              {can(state.member, 'flows.publish') ? (
                 <Button
                   ref={rollbackButton}
                   variant="outline"
@@ -238,7 +239,10 @@ export function ReleaseHistory() {
                   Roll back to release {detail.revision}
                 </Button>
               ) : (
-                <p>Only workspace owners can roll back releases.</p>
+                <p>
+                  Publish and roll back access is needed to change the live
+                  release.
+                </p>
               )}
               {detail.revision === state.publishedRevision ? (
                 <p>This release is already live.</p>

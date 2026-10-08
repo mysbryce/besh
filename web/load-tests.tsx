@@ -15,6 +15,7 @@ import { Textarea } from './components/ui/textarea'
 import { parseRequestInput, RequestForm, routeParameters } from './flow-forms'
 import { api } from './lib/api'
 import { useStudio } from './store'
+import { can } from '../src/permissions'
 
 const defaults: LoadTestConfig = {
   vus: 1,
@@ -62,13 +63,13 @@ export function LoadTests() {
       active.current &&
       state.token === token &&
       state.member?.id === member?.id &&
-      state.member?.role === 'owner' &&
+      can(state.member, 'load-tests.run') &&
       state.sessionId === sessionId
     )
   }
 
   useEffect(() => {
-    if (member?.role !== 'owner') return
+    if (!can(member, 'load-tests.run')) return
     active.current = true
     let alive = true
     let timer: number | undefined
@@ -117,7 +118,7 @@ export function LoadTests() {
       refreshRef.current = null
       window.clearTimeout(timer)
     }
-  }, [token, member?.id, member?.role, sessionId])
+  }, [token, member?.id, member?.role, member?.permissions, sessionId])
 
   async function perform(path: string, body?: LoadTestStart) {
     if (pending.current || useStudio.getState().busy || !current()) return
@@ -153,7 +154,7 @@ export function LoadTests() {
     pending.current = false
   }
 
-  if (member?.role !== 'owner')
+  if (!can(member, 'load-tests.run'))
     return (
       <div className="empty-panel">
         <ShieldCheck />

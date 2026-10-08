@@ -4,12 +4,39 @@ import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { ApiError } from './errors'
 import { z } from 'zod'
+import {
+  builtinPermissions,
+  permissionCatalog,
+  type BuiltInRole,
+  type Permission,
+} from './permissions'
 
 export type Member = {
   id: string
   name: string
-  role: 'owner' | 'editor' | 'viewer'
+  role: BuiltInRole | 'custom'
+  permissions: Permission[]
+  roleId?: string
+  roleName?: string
 }
+
+export type WorkspaceRole = {
+  id: string
+  name: string
+  permissions: Permission[]
+  version: number
+  createdAt: string
+  updatedAt: string
+}
+type RoleRow = {
+  id: string
+  name: string
+  permissions: string
+  version: number
+  created_at: string
+  updated_at: string
+}
+type MemberRow = { id: string; name: string; role: BuiltInRole }
 
 export type RuntimePermission = 'rest' | 'query' | 'mutation'
 
@@ -277,6 +304,28 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 11').get()) {
+      db.exec(`
+        CREATE TABLE workspace_roles (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+          permissions TEXT NOT NULL,
+          version INTEGER NOT NULL CHECK (version > 0),
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        CREATE TABLE member_roles (
+          member_id TEXT PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
+          role_id TEXT NOT NULL REFERENCES workspace_roles(id) ON DELETE RESTRICT
+        );
+        CREATE INDEX member_role_reference ON member_roles(role_id);
+      `)
+      query('INSERT INTO migrations VALUES (11, ?, ?)').run(
+        'custom workspace roles and permissions',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -306,6 +355,87 @@ export function openStore(path: string, adminToken?: string) {
     query(
       'INSERT INTO audit (actor, action, resource, created_at) VALUES (?, ?, ?, ?)',
     ).run(actor, action, resource, new Date().toISOString())
+  }
+
+  function role(row: RoleRow): WorkspaceRole {
+    return {
+      id: row.id,
+      name: row.name,
+      permissions: JSON.parse(row.permissions),
+      version: row.version,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }
+  }
+
+  function resolveMember(id: string): Member | null {
+    const row = query<MemberRow, [string]>(
+      'SELECT id, name, role FROM members WHERE id = ?',
+    ).get(id)
+    if (!row) return null
+    const assignment = query<{ role_id: string }, [string]>(
+      'SELECT role_id FROM member_roles WHERE member_id = ?',
+    ).get(id)
+    if (!assignment || row.role === 'owner')
+      return { ...row, permissions: [...builtinPermissions[row.role]] }
+    const custom = query<RoleRow, [string]>(
+      'SELECT * FROM workspace_roles WHERE id = ?',
+    ).get(assignment.role_id)
+    if (!custom) return null
+    return {
+      id: row.id,
+      name: row.name,
+      role: 'custom',
+      roleId: custom.id,
+      roleName: custom.name,
+      permissions: role(custom).permissions,
+    }
+  }
+
+  function roleInput(value: unknown) {
+    const parsed = z
+      .object({
+        name: z
+          .string()
+          .trim()
+          .min(1)
+          .max(80)
+          .refine(
+            (name) =>
+              !/[\u0000-\u001f\u007f]/.test(name) &&
+              !['owner', 'editor', 'viewer'].includes(name.toLowerCase()),
+          ),
+        permissions: z
+          .array(z.enum(permissionCatalog.map((entry) => entry.id)))
+          .max(permissionCatalog.length)
+          .refine(
+            (permissions) => new Set(permissions).size === permissions.length,
+          ),
+      })
+      .strict()
+      .safeParse(value)
+    if (!parsed.success)
+      throw new ApiError(
+        400,
+        'Choose a role name and distinct supported permissions',
+      )
+    return parsed.data
+  }
+
+  function getRole(id: string) {
+    const row = query<RoleRow, [string]>(
+      'SELECT * FROM workspace_roles WHERE id = ?',
+    ).get(id)
+    if (!row) throw new ApiError(404, 'Role not found')
+    return role(row)
+  }
+
+  function revokeSessions(actor: string, memberId: string) {
+    const sessions = query<{ id: string }, [string]>(
+      'SELECT id FROM sessions WHERE member_id = ?',
+    ).all(memberId)
+    query('DELETE FROM sessions WHERE member_id = ?').run(memberId)
+    for (const session of sessions) audit(actor, 'session.revoked', session.id)
   }
 
   function validateRuntimeScope(
@@ -355,6 +485,133 @@ export function openStore(path: string, adminToken?: string) {
     db,
     query,
     audit,
+    member: resolveMember,
+    listRoles() {
+      return query<RoleRow, []>('SELECT * FROM workspace_roles ORDER BY name')
+        .all()
+        .map(role)
+    },
+    createRole(actor: string, value: unknown) {
+      const input = roleInput(value)
+      const id = crypto.randomUUID()
+      const createdAt = new Date().toISOString()
+      db.transaction(() => {
+        if (
+          query(
+            'SELECT id FROM workspace_roles WHERE name = ? COLLATE NOCASE',
+          ).get(input.name)
+        )
+          throw new ApiError(409, 'Role name is already used')
+        query('INSERT INTO workspace_roles VALUES (?, ?, ?, 1, ?, ?)').run(
+          id,
+          input.name,
+          JSON.stringify(input.permissions),
+          createdAt,
+          createdAt,
+        )
+        audit(actor, 'role.created', id)
+      }).immediate()
+      return role(
+        query<RoleRow, [string]>(
+          'SELECT * FROM workspace_roles WHERE id = ?',
+        ).get(id)!,
+      )
+    },
+    updateRole(actor: string, id: string, value: unknown) {
+      const parsed = z
+        .object({
+          name: z.unknown(),
+          permissions: z.unknown(),
+          version: z.number().int().positive().safe(),
+        })
+        .strict()
+        .safeParse(value)
+      if (!parsed.success)
+        throw new ApiError(400, 'Provide role settings and expected version')
+      const input = roleInput({
+        name: parsed.data.name,
+        permissions: parsed.data.permissions,
+      })
+      db.transaction(() => {
+        const current = getRole(id)
+        if (current.version !== parsed.data.version)
+          throw new ApiError(409, 'Role changed. Reload before saving.')
+        if (
+          query(
+            'SELECT id FROM workspace_roles WHERE id != ? AND name = ? COLLATE NOCASE',
+          ).get(id, input.name)
+        )
+          throw new ApiError(409, 'Role name is already used')
+        query(
+          'UPDATE workspace_roles SET name = ?, permissions = ?, version = version + 1, updated_at = ? WHERE id = ?',
+        ).run(
+          input.name,
+          JSON.stringify(input.permissions),
+          new Date().toISOString(),
+          id,
+        )
+        if (
+          current.permissions.length !== input.permissions.length ||
+          current.permissions.some(
+            (permission) => !input.permissions.includes(permission),
+          )
+        ) {
+          for (const row of query<{ member_id: string }, [string]>(
+            'SELECT member_id FROM member_roles WHERE role_id = ?',
+          ).all(id))
+            revokeSessions(actor, row.member_id)
+        }
+        audit(actor, 'role.updated', id)
+      }).immediate()
+      return getRole(id)
+    },
+    deleteRole(actor: string, id: string, value: unknown) {
+      const parsed = z
+        .object({ version: z.number().int().positive().safe() })
+        .strict()
+        .safeParse(value)
+      if (!parsed.success)
+        throw new ApiError(400, 'Provide the expected role version')
+      db.transaction(() => {
+        const current = getRole(id)
+        if (current.version !== parsed.data.version)
+          throw new ApiError(409, 'Role changed. Reload before deleting.')
+        if (
+          query('SELECT member_id FROM member_roles WHERE role_id = ?').get(id)
+        )
+          throw new ApiError(409, 'Reassign members before deleting this role')
+        query('DELETE FROM workspace_roles WHERE id = ?').run(id)
+        audit(actor, 'role.deleted', id)
+      }).immediate()
+      return { ok: true }
+    },
+    assignMemberRole(
+      actor: string,
+      id: string,
+      assignment:
+        { role: 'editor' | 'viewer' } | { role: 'custom'; roleId: string },
+    ) {
+      db.transaction(() => {
+        const current = resolveMember(id)
+        if (!current) throw new ApiError(404, 'Member not found')
+        if (current.role === 'owner')
+          throw new ApiError(409, 'The owner role cannot be changed')
+        if (assignment.role === 'custom') getRole(assignment.roleId)
+        query('UPDATE members SET role = ? WHERE id = ?').run(
+          assignment.role === 'custom' ? 'viewer' : assignment.role,
+          id,
+        )
+        query('DELETE FROM member_roles WHERE member_id = ?').run(id)
+        if (assignment.role === 'custom')
+          query('INSERT INTO member_roles VALUES (?, ?)').run(
+            id,
+            assignment.roleId,
+          )
+        revokeSessions(actor, id)
+        audit(actor, 'member.role.updated', id)
+      }).immediate()
+      return resolveMember(id)!
+    },
     setupStatus() {
       return {
         required: !query("SELECT id FROM members WHERE id = 'owner'").get(),
@@ -385,18 +642,32 @@ export function openStore(path: string, adminToken?: string) {
       return { token, name }
     },
     listMembers() {
-      return query('SELECT id, name, role FROM members ORDER BY name').all()
+      return query<{ id: string }, []>('SELECT id FROM members ORDER BY name')
+        .all()
+        .map((row) => resolveMember(row.id)!)
     },
     createMember(
       actor: string,
       name: string,
-      role: 'editor' | 'viewer',
+      role: 'editor' | 'viewer' | 'custom',
       account?: { email: string; passwordHash: string },
+      roleId?: string,
     ) {
       const member = { id: crypto.randomUUID(), name, role }
       const token = crypto.randomUUID() + crypto.randomUUID()
 
       db.transaction(() => {
+        if (role === 'custom') {
+          if (
+            !roleId ||
+            !query('SELECT id FROM workspace_roles WHERE id = ?').get(roleId)
+          )
+            throw new ApiError(404, 'Role not found')
+        } else if (roleId !== undefined)
+          throw new ApiError(
+            400,
+            'Built-in roles cannot include a custom role ID',
+          )
         if (
           account &&
           query('SELECT member_id FROM accounts WHERE email = ?').get(
@@ -407,9 +678,14 @@ export function openStore(path: string, adminToken?: string) {
         query('INSERT INTO members VALUES (?, ?, ?, ?)').run(
           member.id,
           name,
-          role,
+          role === 'custom' ? 'viewer' : role,
           hashToken(token),
         )
+        if (role === 'custom')
+          query('INSERT INTO member_roles VALUES (?, ?)').run(
+            member.id,
+            roleId!,
+          )
         if (account)
           query('INSERT INTO accounts VALUES (?, ?, ?)').run(
             member.id,
@@ -417,9 +693,9 @@ export function openStore(path: string, adminToken?: string) {
             account.passwordHash,
           )
         audit(actor, 'member.created', member.id)
-      })()
+      }).immediate()
 
-      return { ...member, token }
+      return { ...resolveMember(member.id)!, token }
     },
     revokeMember(actor: string, id: string) {
       if (id === 'owner')
@@ -555,9 +831,10 @@ export function openStore(path: string, adminToken?: string) {
       return row ? `runtime:${row.id}` : 'anonymous'
     },
     authenticate(token: string): Member | null {
-      return query<Member, [string]>(
-        'SELECT id, name, role FROM members WHERE token_hash = ?',
+      const row = query<{ id: string }, [string]>(
+        'SELECT id FROM members WHERE token_hash = ?',
       ).get(hashToken(token))
+      return row ? resolveMember(row.id) : null
     },
     authenticateRuntime(token: string): RuntimeKey | null {
       const row = query<RuntimeKeyRow, [string]>(

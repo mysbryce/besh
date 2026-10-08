@@ -2,6 +2,7 @@ import { expect, test, type Locator } from '@playwright/test'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { PreviewRecord } from '../scripts/preview-report'
+import type { UpdateState } from '../src/update-model'
 
 test('preview every current page and its actions', async ({
   page,
@@ -11,7 +12,7 @@ test('preview every current page and its actions', async ({
   const directory = process.env.BESH_PREVIEW_DIR!
   const setupKey = process.env.BESH_PREVIEW_SETUP_KEY!
   const records: PreviewRecord[] = []
-  test.setTimeout(300_000)
+  test.setTimeout(420_000)
   const errors: string[] = []
   mkdirSync(join(directory, 'images'), { recursive: true })
   page.on('pageerror', (error) => errors.push(error.message))
@@ -3371,12 +3372,699 @@ test('preview every current page and its actions', async ({
     .click()
   await expect(
     page.getByRole('region', { name: 'Release review' }),
-  ).toContainText('Only workspace owners')
+  ).toContainText('Publish and roll back access')
   await capture(
     'Permissions',
     'Viewer reads release history',
-    'Viewers can inspect release metadata and routes. Rollback and publication remain owner-only actions.',
+    'Viewers can inspect release metadata and routes. Rollback and publication require their own explicit grant.',
   )
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await signIn(owner)
+  await navigate('Members')
+  await expect(
+    page.getByRole('button', { name: 'New role', exact: true }),
+  ).toBeEnabled()
+  await capture(
+    'Members',
+    'Built-in roles and custom role entry',
+    'Owners alone create roles and assign members. Existing owner, editor, and viewer choices stay available.',
+  )
+  await page.getByRole('button', { name: 'New role', exact: true }).click()
+  await page.getByLabel('Role name', { exact: true }).fill('API tester preview')
+  await capture(
+    'Members',
+    'Account-only custom role form',
+    'An empty grant list allows sign-in and management of the member’s own account and sessions.',
+  )
+  await page.getByRole('checkbox', { name: 'Read APIs', exact: true }).check()
+  await page.getByRole('checkbox', { name: 'Test drafts', exact: true }).check()
+  await page
+    .getByRole('checkbox', { name: 'Manage workspace backups', exact: true })
+    .check()
+  await page
+    .getByRole('checkbox', { name: 'Run load tests', exact: true })
+    .check()
+  await capture(
+    'Members',
+    'Grouped action permissions and sensitive grants',
+    'API edit, test, and publication grants are separate. Backup access exposes complete workspace data; load tests can repeat live writes.',
+  )
+  await appearance('Dark')
+  await capture(
+    'Appearance',
+    'Dark custom permission controls',
+    'Permission groups, descriptions, selected checkboxes, and sensitive-grant warnings stay readable in dark appearance.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile dark',
+    'Custom role grant editor',
+    'Permission groups stack into one column without exposing native controls or overflowing the phone viewport.',
+  )
+  await appearance('Light')
+  await capture(
+    'Mobile',
+    'Custom role grant editor',
+    'Light phone layout keeps grant descriptions and save/cancel controls readable.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page
+    .getByRole('checkbox', { name: 'Manage workspace backups', exact: true })
+    .uncheck()
+  await page
+    .getByRole('checkbox', { name: 'Run load tests', exact: true })
+    .uncheck()
+  await page.getByRole('button', { name: 'Save role', exact: true }).click()
+  await notice('Role created')
+  await capture(
+    'Members',
+    'Saved read-and-test role',
+    'The custom role grants API reading and draft testing, while editing and publication remain absent.',
+  )
+  await page
+    .getByLabel('Member name', { exact: true })
+    .fill('Custom API reviewer')
+  await page.getByRole('combobox', { name: 'Member role', exact: true }).click()
+  await capture(
+    'Members',
+    'Assign a custom role during member creation',
+    'The custom role selector joins built-in options. Member creation and assignment happen atomically.',
+  )
+  await page
+    .getByRole('option', {
+      name: 'API tester preview · custom role',
+      exact: true,
+    })
+    .click()
+  await page.getByRole('button', { name: 'Add member', exact: true }).click()
+  const rolePreviewToken = await page
+    .getByLabel('New member token', { exact: true })
+    .inputValue()
+  await capture(
+    'Members',
+    'Custom member credential and role badge',
+    'The one-time member credential is masked. The table shows the human role name and an owner-controlled assignment selector.',
+  )
+  await page.getByRole('button', { name: 'I saved it', exact: true }).click()
+  const rolePreviewRecord = (
+    await (
+      await page.request.get('/api/roles', { headers: rotationHeaders })
+    ).json()
+  ).find((role: { name: string }) => role.name === 'API tester preview')
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await signIn(rolePreviewToken)
+  await expect(
+    page.getByRole('button', { name: 'Save draft', exact: true }),
+  ).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Publish', exact: true }),
+  ).toBeDisabled()
+  await page.getByLabel('Path parameter id', { exact: true }).fill('42')
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByTestId('test-result')).toContainText('"id": 42')
+  await capture(
+    'Permissions',
+    'Custom tester executes saved draft',
+    'This custom role can read and execute the draft through real HTTP. Save and Publish stay disabled, and request fields remain usable for testing.',
+  )
+  await page.request.put(`/api/roles/${rolePreviewRecord.id}`, {
+    headers: rotationHeaders,
+    data: {
+      name: 'Account only preview',
+      permissions: [],
+      version: rolePreviewRecord.version,
+    },
+  })
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByLabel('Workspace token')).toBeVisible()
+  await capture(
+    'Permissions',
+    'Changed grants revoke active browser session',
+    'A real owner grant edit ends this member’s cookie session. The next private request returns to sign-in and clears the prior workspace view.',
+  )
+  await page.getByLabel('Workspace token').fill(rolePreviewToken)
+  await page
+    .getByRole('button', { name: 'Open workspace', exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Account & sessions', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Permissions',
+    'Account-only member landing',
+    'A member without API-reading permission signs in successfully and starts at their own account and sessions, without loading private flow records.',
+  )
+  await page.reload()
+  await expect(
+    page.getByRole('heading', { name: 'Account & sessions', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Permissions',
+    'Account-only session restores after reload',
+    'Reload restores the authenticated account-only workspace and shows the custom role’s human name.',
+  )
+  await navigate('API Studio')
+  await expect(
+    page.getByRole('heading', { name: 'Permission required', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Permissions',
+    'Missing grant blocks private API page',
+    'The dashboard explains the required API-read grant before mounting the builder or fetching private flow records.',
+  )
+  await appearance('Dark')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await navigate('Account & sessions')
+  await capture(
+    'Mobile dark',
+    'Account-only workspace access',
+    'Own-account controls remain available on phones even when every delegated workspace grant is absent.',
+  )
+  await appearance('Light')
+  await capture(
+    'Mobile',
+    'Account-only workspace access',
+    'The local workspace role badge and own-session controls remain readable in light phone appearance.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await signIn(owner)
+  await navigate('Members')
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Delete Account only preview', exact: true })
+    .click()
+  await expect(
+    page.getByRole('region', { name: 'Custom roles' }).getByRole('alert'),
+  ).toContainText(/reassign|assigned/i)
+  await capture(
+    'Members',
+    'Assigned role deletion rejected',
+    'The actual server refuses deleting a role still assigned to a member. Existing membership and grants stay intact.',
+  )
+  await page
+    .getByRole('button', { name: 'Edit Account only preview', exact: true })
+    .click()
+  await page
+    .getByLabel('Role name', { exact: true })
+    .fill('Unsaved conflicting role name')
+  const rolePreviewCurrent = (
+    await (
+      await page.request.get('/api/roles', { headers: rotationHeaders })
+    ).json()
+  ).find((role: { id: string }) => role.id === rolePreviewRecord.id)
+  await page.request.put(`/api/roles/${rolePreviewRecord.id}`, {
+    headers: rotationHeaders,
+    data: {
+      name: 'Current account role',
+      permissions: [],
+      version: rolePreviewCurrent.version,
+    },
+  })
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Save role', exact: true }).click()
+  await expect(
+    page.getByRole('region', { name: 'Custom roles' }).getByRole('alert'),
+  ).toContainText(/changed|version|conflict/i)
+  await capture(
+    'Members',
+    'Concurrent role edit conflict',
+    'An actual competing owner edit increments the role version. The server rejects this stale save; the unsaved form remains available for review.',
+  )
+  await page
+    .getByRole('button', { name: 'Cancel role changes', exact: true })
+    .click()
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  const rolePreviewMemberRow = page
+    .getByRole('row')
+    .filter({ hasText: 'Custom API reviewer' })
+  await rolePreviewMemberRow
+    .getByRole('combobox', {
+      name: 'Role for Custom API reviewer',
+      exact: true,
+    })
+    .click()
+  await page
+    .getByRole('option', { name: 'Viewer · read APIs', exact: true })
+    .click()
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await rolePreviewMemberRow
+    .getByRole('button', { name: 'Change role', exact: true })
+    .click()
+  await expect(rolePreviewMemberRow).toContainText('Current account role')
+  await capture(
+    'Members',
+    'Canceled member role assignment',
+    'Canceling confirmation leaves the custom role assigned. The selected replacement remains a local form choice until confirmed.',
+  )
+  let deliverRoleAssignment!: () => void
+  const roleAssignmentDelivery = new Promise<void>((resolve) => {
+    deliverRoleAssignment = resolve
+  })
+  let receiveRoleAssignment!: () => void
+  const roleAssignmentReceipt = new Promise<void>((resolve) => {
+    receiveRoleAssignment = resolve
+  })
+  await page.route('**/api/members/*/role', async (route) => {
+    const response = await route.fetch()
+    receiveRoleAssignment()
+    await roleAssignmentDelivery
+    await route.fulfill({ response })
+  })
+  page.once('dialog', (dialog) => dialog.accept())
+  await rolePreviewMemberRow
+    .getByRole('button', { name: 'Change role', exact: true })
+    .click()
+  await roleAssignmentReceipt
+  await expect(
+    page.getByRole('button', { name: 'Sign out', exact: true }),
+  ).toBeDisabled()
+  await capture(
+    'Members',
+    'Pending member role change guards navigation',
+    'Only transport delivery is delayed after a real assignment. Duplicate actions, sign-out, and workspace navigation stay blocked while the result is pending.',
+  )
+  deliverRoleAssignment()
+  await notice('Member role updated')
+  await page.unroute('**/api/members/*/role')
+  await capture(
+    'Members',
+    'Confirmed built-in role assignment',
+    'The member now uses Viewer permissions. Assignment ends their prior browser sessions and immediately changes bearer-key permissions.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Delete Current account role', exact: true })
+    .click()
+  await notice('Role deleted')
+  await capture(
+    'Members',
+    'Delete an unused custom role',
+    'After reassignment, the owner can delete the unused role with its current version. Built-in roles remain available.',
+  )
+  await page.route('**/api/permissions', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'Preview permission choices connection interrupted',
+      }),
+    }),
+  )
+  await navigate('Audit trail')
+  await navigate('Members')
+  await expect(
+    page.getByRole('region', { name: 'Custom roles' }).getByRole('alert'),
+  ).toContainText('Preview permission choices connection interrupted')
+  await capture(
+    'Members',
+    'Permission catalog read error',
+    'This labeled transport error blocks role editing until the real permission choices can be retrieved again.',
+  )
+  await page.unroute('**/api/permissions')
+  await page
+    .getByRole('button', { name: 'Retry permission choices', exact: true })
+    .click()
+  await expect(
+    page.getByRole('button', { name: 'New role', exact: true }),
+  ).toBeEnabled()
+  await capture(
+    'Members',
+    'Recover permission catalog choices',
+    'Retry restores the authenticated permission inventory without changing any role or member grants.',
+  )
+  const updateBaseline = (await (
+    await page.request.get('/api/updates', { headers: rotationHeaders })
+  ).json()) as UpdateState
+  let updateNotice: UpdateState = {
+    currentVersion: updateBaseline.currentVersion,
+    settings: {
+      repositoryUrl: 'https://github.com/example/besh',
+      includePrereleases: true,
+      revision: 1,
+      updatedAt: null,
+    },
+    lastCheck: null,
+  }
+  let updateReadError = true
+  let updateSaveConflict = false
+  let updateCheckMode:
+    'available' | 'current' | 'no-releases' | 'error' | 'cooldown' = 'available'
+  let updateGets = 0
+  let updateChecks = 0
+  let delayUpdateCheck = true
+  let deliverUpdateCheck!: () => void
+  const updateCheckDelivery = new Promise<void>((resolve) => {
+    deliverUpdateCheck = resolve
+  })
+  let receiveUpdateCheck!: () => void
+  const updateCheckReceipt = new Promise<void>((resolve) => {
+    receiveUpdateCheck = resolve
+  })
+  await page.route('**/api/updates', async (route) => {
+    if (route.request().method() === 'GET') {
+      updateGets++
+      if (updateReadError)
+        return route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: 'Preview fixture: update settings connection interrupted',
+          }),
+        })
+    } else if (route.request().method() === 'PUT') {
+      if (updateSaveConflict)
+        return route.fulfill({
+          status: 409,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error:
+              'Preview fixture: Update settings changed. Refresh before saving.',
+          }),
+        })
+      const values = route.request().postDataJSON()
+      updateNotice = {
+        ...updateNotice,
+        settings: {
+          repositoryUrl: values.repositoryUrl,
+          includePrereleases: values.includePrereleases,
+          revision: updateNotice.settings.revision + 1,
+          updatedAt: new Date().toISOString(),
+        },
+        lastCheck: null,
+      }
+    }
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(updateNotice),
+    })
+  })
+  await page.route('**/api/updates/check', async (route) => {
+    updateChecks++
+    if (updateCheckMode === 'cooldown')
+      return route.fulfill({
+        status: 429,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error:
+            'Preview fixture: Wait one minute before checking releases again',
+        }),
+      })
+    if (delayUpdateCheck) {
+      receiveUpdateCheck()
+      await updateCheckDelivery
+      delayUpdateCheck = false
+    }
+    updateNotice = {
+      ...updateNotice,
+      lastCheck: {
+        status: updateCheckMode,
+        checkedAt: new Date().toISOString(),
+        release:
+          updateCheckMode === 'available' || updateCheckMode === 'current'
+            ? {
+                version:
+                  updateCheckMode === 'available'
+                    ? '0.99.0-beta.2'
+                    : updateNotice.currentVersion,
+                tag:
+                  updateCheckMode === 'available'
+                    ? 'v0.99.0-beta.2'
+                    : `v${updateNotice.currentVersion}`,
+                name: 'Preview fixture — example public release',
+                url: 'https://github.com/example/besh/releases/tag/v0.99.0-beta.2',
+                publishedAt: new Date().toISOString(),
+                prerelease: true,
+              }
+            : null,
+        error:
+          updateCheckMode === 'error'
+            ? 'Preview fixture: GitHub release check unavailable. Try again later.'
+            : null,
+      },
+    }
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(updateNotice),
+    })
+  })
+  await navigate('Updates')
+  await expect(page.getByRole('alert')).toContainText(
+    'Preview fixture: update settings connection interrupted',
+  )
+  await capture(
+    'Updates',
+    'Update settings read error',
+    'Controlled Besh UI fixture: a saved-settings read fails. No GitHub check or installer runs.',
+  )
+  updateReadError = false
+  await page
+    .getByRole('button', { name: 'Refresh update settings', exact: true })
+    .click()
+  await expect(
+    page.getByLabel('GitHub repository', { exact: true }),
+  ).toHaveValue('https://github.com/example/besh')
+  await capture(
+    'Updates',
+    'Initial release notice settings',
+    'Controlled Besh UI fixture: installed version, public repository choice, and preview-channel control appear before any release check.',
+  )
+  await page
+    .getByLabel('GitHub repository', { exact: true })
+    .fill('https://github.com/example/unsaved')
+  await expect(
+    page.getByRole('button', { name: 'Check releases', exact: true }),
+  ).toBeDisabled()
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page
+    .getByRole('button', { name: 'Refresh update settings', exact: true })
+    .click()
+  await expect(
+    page.getByLabel('GitHub repository', { exact: true }),
+  ).toHaveValue('https://github.com/example/unsaved')
+  await capture(
+    'Updates',
+    'Cancel unsaved update settings refresh',
+    'Controlled Besh UI fixture: canceled discard confirmation preserves the typed repository; release checks remain disabled until settings are saved.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Refresh update settings', exact: true })
+    .click()
+  await page
+    .getByRole('checkbox', { name: 'Include preview releases', exact: true })
+    .uncheck()
+  await capture(
+    'Updates',
+    'Stable release channel selection',
+    'Controlled Besh UI fixture: the keyboard-accessible styled checkbox excludes alpha and beta notices when saved.',
+  )
+  await page
+    .getByRole('button', { name: 'Save update settings', exact: true })
+    .click()
+  await notice('Update settings saved')
+  await page
+    .getByRole('checkbox', { name: 'Include preview releases', exact: true })
+    .check()
+  await page
+    .getByRole('button', { name: 'Save update settings', exact: true })
+    .click()
+  await notice('Update settings saved')
+  await page
+    .getByRole('button', { name: 'Check releases', exact: true })
+    .click()
+  await updateCheckReceipt
+  await expect(
+    page.getByRole('button', { name: 'Sign out', exact: true }),
+  ).toBeDisabled()
+  await capture(
+    'Updates',
+    'Pending release check guards navigation',
+    'Controlled Besh UI fixture: delayed management delivery keeps checking, settings writes, sign-out, and navigation disabled.',
+  )
+  deliverUpdateCheck()
+  await expect(
+    page.getByText('Update available', { exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Updates',
+    'Available GitHub release notice',
+    'Controlled Besh UI fixture: a newer preview release has a public notes link. The application reports versions and offers no installation action.',
+  )
+  const updateCheckCount = updateChecks
+  await page.reload()
+  await expect(page.getByTestId('flow-canvas')).toBeVisible()
+  await navigate('Updates')
+  await expect(
+    page.getByText('Update available', { exact: true }),
+  ).toBeVisible()
+  expect(updateChecks).toBe(updateCheckCount)
+  await capture(
+    'Updates',
+    'Cached release notice after reload',
+    'Controlled Besh UI fixture: opening the page reads the cached result without issuing another GitHub check.',
+  )
+  updateCheckMode = 'cooldown'
+  await page
+    .getByRole('button', { name: 'Check releases', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText('Wait one minute')
+  await capture(
+    'Updates',
+    'Release check cooldown feedback',
+    'Controlled Besh UI fixture: a repeated check receives the one-minute cooldown message while the prior notice remains visible.',
+  )
+  updateCheckMode = 'current'
+  await page
+    .getByRole('button', { name: 'Check releases', exact: true })
+    .click()
+  await expect(
+    page.getByText('No newer release found', { exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Updates',
+    'Installed version is current',
+    'Controlled Besh UI fixture: the matching public release is shown beside the installed version and last-check time.',
+  )
+  updateCheckMode = 'no-releases'
+  await page
+    .getByRole('button', { name: 'Check releases', exact: true })
+    .click()
+  await expect(
+    page.getByText('No matching releases found', { exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Updates',
+    'No matching public releases',
+    'Controlled Besh UI fixture: empty or filtered public releases produce a clear empty result without an install or download action.',
+  )
+  updateCheckMode = 'error'
+  await page
+    .getByRole('button', { name: 'Check releases', exact: true })
+    .click()
+  await expect(
+    page.getByText('Release check failed', { exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Updates',
+    'Failed GitHub release check',
+    'Controlled Besh UI fixture: a safe provider failure is displayed with its check time and a manual retry action.',
+  )
+  updateSaveConflict = true
+  updateNotice = {
+    ...updateNotice,
+    settings: {
+      ...updateNotice.settings,
+      repositoryUrl: 'https://github.com/example/current',
+      revision: updateNotice.settings.revision + 1,
+    },
+    lastCheck: null,
+  }
+  await page
+    .getByLabel('GitHub repository', { exact: true })
+    .fill('https://github.com/example/local-edit')
+  await page
+    .getByRole('button', { name: 'Save update settings', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText('Update settings changed')
+  await capture(
+    'Updates',
+    'Concurrent update settings save conflict',
+    'Controlled Besh UI fixture: a stale revision is rejected and the unsaved local repository remains available for review.',
+  )
+  updateSaveConflict = false
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Refresh update settings', exact: true })
+    .click()
+  await expect(
+    page.getByLabel('GitHub repository', { exact: true }),
+  ).toHaveValue('https://github.com/example/current')
+  await capture(
+    'Updates',
+    'Refresh current release settings',
+    'Controlled Besh UI fixture: confirmed refresh replaces local settings with the current revision and clears the previous repository’s notice.',
+  )
+  await appearance('Dark')
+  await capture(
+    'Appearance',
+    'Dark update notice settings',
+    'Controlled Besh UI fixture: repository inputs, release status, and channel controls use readable dark surfaces.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile dark',
+    'GitHub update notices',
+    'Controlled Besh UI fixture: release settings and notices stack inside the dark phone viewport.',
+  )
+  await appearance('Light')
+  await capture(
+    'Mobile',
+    'GitHub update notices',
+    'Controlled Besh UI fixture: the light phone view keeps repository and manual check controls readable without document overflow.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  const updateGetsBeforeDenial = updateGets
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await signIn(editor)
+  await navigate('Updates')
+  await expect(
+    page.getByRole('heading', { name: 'Owner access required', exact: true }),
+  ).toBeVisible()
+  expect(updateGets).toBe(updateGetsBeforeDenial)
+  await capture(
+    'Permissions',
+    'Editor denied update settings',
+    'Update settings and notices remain owner-only. The denied page makes no private update-state request.',
+  )
+  const updateCatalog = await (
+    await page.request.get('/api/permissions', { headers: rotationHeaders })
+  ).json()
+  const updateCustomRole = await (
+    await page.request.post('/api/roles', {
+      headers: rotationHeaders,
+      data: {
+        name: 'All delegated preview grants',
+        permissions: updateCatalog.map((entry: { id: string }) => entry.id),
+      },
+    })
+  ).json()
+  const updateCustomMember = await (
+    await page.request.post('/api/members', {
+      headers: rotationHeaders,
+      data: {
+        name: 'Delegated administrator',
+        role: 'custom',
+        roleId: updateCustomRole.id,
+      },
+    })
+  ).json()
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await signIn(updateCustomMember.token)
+  await navigate('Updates')
+  await expect(
+    page.getByRole('heading', { name: 'Owner access required', exact: true }),
+  ).toBeVisible()
+  expect(updateGets).toBe(updateGetsBeforeDenial)
+  await capture(
+    'Permissions',
+    'Custom grants do not delegate update administration',
+    'Even all delegated action grants do not include installation-level release settings. The owner boundary blocks mounting and private update-state reads.',
+  )
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await signIn(owner)
+  await page.unroute('**/api/updates')
+  await page.unroute('**/api/updates/check')
   expect(errors).toEqual([])
 
   await context.clearPermissions()

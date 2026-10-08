@@ -5,6 +5,7 @@ import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import type { ApiSchema } from '../src/flows/model'
 import { useStudio } from './store'
+import { can } from '../src/permissions'
 import { api } from './lib/api'
 import { Download } from 'lucide-react'
 import { routeParameters } from './flow-forms'
@@ -293,7 +294,7 @@ function SchemaEditor({
 export function ApiRules() {
   const [expanded, setExpanded] = useState(false)
   const state = useStudio()
-  const disabled = state.member?.role === 'viewer' || state.busy
+  const disabled = !can(state.member, 'flows.write') || state.busy
   const pathNames = routeParameters(state.path)
   const sections = [
     { key: 'query', prefix: 'Query', label: 'Validate query parameters' },

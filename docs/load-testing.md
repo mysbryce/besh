@@ -1,11 +1,11 @@
 # Built-in k6 load testing
 
-Load testing is a main Besh feature. Owners can send repeated requests to a published REST or GraphQL API and inspect latency, throughput, errors, and pass/fail goals from the dashboard. Besh runs a local [Grafana k6 binary](https://grafana.com/docs/k6/latest/set-up/install-k6/); no Grafana Cloud account is required.
+Load testing is a main Besh feature. Owners and custom members with load-test permission can send repeated requests to a published REST or GraphQL API and inspect latency, throughput, errors, and pass/fail goals from the dashboard. Besh runs a local [Grafana k6 binary](https://grafana.com/docs/k6/latest/set-up/install-k6/); no Grafana Cloud account is required.
 
 ## First run
 
 1. Build, test, and publish an API.
-2. Open **Load testing** as the workspace owner and choose the published API.
+2. Open **Load testing** with load-test permission and choose the published API.
 3. Supply any required request fields. For GraphQL, review the generated example operation and its arguments; variable field forms are available.
 4. Select **Run load test**. Confirm repeated live writes when testing a write method or mutation.
 5. Watch the run, then inspect its result and saved history.
@@ -44,13 +44,13 @@ Temporary keys appear in **API keys** as **Managed by load testing**. They are a
 
 ## Live API and permission boundary
 
-Only owners can list targets, start runs, view history, inspect a run, or cancel it. Editors and viewers receive `403`; runtime keys cannot access load-test management. Browser writes use the same origin and CSRF protections as other management actions.
+Load-test permission allows listing targets, starting runs, reading history, inspecting a run, and cancellation. Owners have it by default; custom roles can grant it. Built-in editors and viewers receive `403`; runtime keys cannot access load-test management. Browser writes use the same origin and CSRF protections as other management actions. This permission allows repeated live writes or mutations without requiring separate runtime-key management; Besh prepares a managed temporary key. See [roles and permissions](roles.md).
 
 Targets are this Besh instance's published APIs. Arbitrary URLs, uploaded scripts, custom shell commands, and arbitrary request headers are not accepted. The server derives the method, route, validation rules, and temporary key grants from the published release at start. REST methods and GraphQL queries/mutations use the same live runtime authentication and execution boundary as normal callers. Existing caller keys and grants are unchanged.
 
 Publication and rollback for the tested flow are blocked until its active run finishes or is canceled. History records the starting revision, requests call the live route, and temporary keys follow their flow like other runtime keys. This lock prevents changing that route during the run; it does not freeze spreadsheet snapshots, OAuth credentials, or other mutable dependencies. See [release history](api-routes.md).
 
-Write methods and GraphQL mutations repeatedly invoke the live API. The dashboard asks for confirmation after showing this risk. Direct owner API clients authorize the run by sending the start request; there is no extra confirmation property in its body. There is no transaction rollback or synthetic test database. Published product OAuth/social-login flows are unavailable for automatic load testing: generating manufactured authorization attempts would exercise a different workflow and provider boundary.
+Write methods and GraphQL mutations repeatedly invoke the live API. The dashboard asks for confirmation after showing this risk. Direct permission-authorized API clients authorize the run by sending the start request; there is no extra confirmation property in its body. There is no transaction rollback or synthetic test database. Published product OAuth/social-login flows are unavailable for automatic load testing: generating manufactured authorization attempts would exercise a different workflow and provider boundary.
 
 ## Verification boundary
 

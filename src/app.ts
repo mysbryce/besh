@@ -1,8 +1,10 @@
 import { Elysia, t } from 'elysia'
 import { version } from '../package.json'
 import { z } from 'zod'
+import { permissionCatalog } from './permissions'
+import { updateService, type ReleaseFetch } from './updates'
 import { openStore, hashToken } from './store'
-import { allow, ApiError } from './errors'
+import { allow, ApiError, requirePermission } from './errors'
 import { flowService } from './flows/service'
 import { backupService } from './backups'
 import { dataSourceService } from './data-sources'
@@ -18,6 +20,27 @@ import {
   browserSecurity,
   optionalAccount,
 } from './sessions'
+
+const assignmentFields = {
+  editor: { role: z.literal('editor') },
+  viewer: { role: z.literal('viewer') },
+  custom: { role: z.literal('custom'), roleId: z.string().min(1).max(80) },
+}
+const memberFields = {
+  name: z.string().trim().min(1).max(80),
+  email: z.string().max(254).optional(),
+  password: z.string().max(128).optional(),
+}
+const createMemberSchema = z.discriminatedUnion('role', [
+  z.object({ ...memberFields, ...assignmentFields.editor }).strict(),
+  z.object({ ...memberFields, ...assignmentFields.viewer }).strict(),
+  z.object({ ...memberFields, ...assignmentFields.custom }).strict(),
+])
+const assignmentSchema = z.discriminatedUnion('role', [
+  z.object(assignmentFields.editor).strict(),
+  z.object(assignmentFields.viewer).strict(),
+  z.object(assignmentFields.custom).strict(),
+])
 
 function bearer(request: Request) {
   return (
@@ -63,6 +86,7 @@ export type AppOptions = {
   sheetFetch?: SheetFetch
   authOrigin?: string
   now?: () => number
+  updateFetch?: ReleaseFetch
   oauthFetch?: OAuthFetch
   secretKeyPath?: string
   k6Runner?: K6Runner
@@ -84,6 +108,10 @@ export function createApp(options: AppOptions) {
   }
   const flows = flowService(store, sources, productAuth)
   const backups = backupService(store, options.backupDir)
+  const updates = updateService(store, {
+    fetch: options.updateFetch,
+    now: options.now,
+  })
   const loadTests = loadTestService(
     store,
     options.k6Runner ??
@@ -94,6 +122,7 @@ export function createApp(options: AppOptions) {
     () => (app.server ? `http://127.0.0.1:${app.server.port}` : null),
   )
 
+  const managementActors = new WeakMap<Request, string>()
   const management = new Elysia({ prefix: '/api' })
     .resolve(({ request, status }) => {
       const token = bearer(request)
@@ -109,52 +138,84 @@ export function createApp(options: AppOptions) {
         return status(401, { error: 'Authentication required' })
       }
 
+      managementActors.set(request, member.id)
+
       if (session && !['GET', 'HEAD', 'OPTIONS'].includes(request.method))
         browser.checkWrite(request, session.csrfToken)
 
       return { member, session }
     })
     .get('/me', ({ member }) => member)
-    .get('/load-tests/targets', ({ member }) => {
+    .get('/permissions', () => permissionCatalog)
+    .get('/updates', ({ member }) => {
       allow(member, ['owner'])
+      return updates.get()
+    })
+    .put('/updates', ({ member, body }) => {
+      allow(member, ['owner'])
+      return updates.save(member.id, body)
+    })
+    .post('/updates/check', ({ member, body }) => {
+      allow(member, ['owner'])
+      return updates.check(member.id, body)
+    })
+    .get('/roles', ({ member }) => {
+      allow(member, ['owner'])
+      return store.listRoles()
+    })
+    .post('/roles', ({ member, body }) => {
+      allow(member, ['owner'])
+      return store.createRole(member.id, body)
+    })
+    .put('/roles/:id', ({ member, params, body }) => {
+      allow(member, ['owner'])
+      return store.updateRole(member.id, params.id, body)
+    })
+    .delete('/roles/:id', ({ member, params, body }) => {
+      allow(member, ['owner'])
+      return store.deleteRole(member.id, params.id, body)
+    })
+    .get('/load-tests/targets', ({ member }) => {
+      requirePermission(member, 'load-tests.run')
       return loadTests.targets()
     })
     .get('/load-tests', ({ member }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'load-tests.run')
       return loadTests.list()
     })
     .get('/load-tests/:id', ({ member, params }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'load-tests.run')
       return loadTests.get(params.id)
     })
     .post('/load-tests', ({ member, body, set }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'load-tests.run')
       const run = loadTests.start(member.id, body)
       set.status = 202
       return run
     })
     .post('/load-tests/:id/cancel', ({ member, params }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'load-tests.run')
       return loadTests.cancel(params.id)
     })
     .get('/auth-connections', ({ member }) => {
-      allow(member, ['owner', 'editor'])
+      requirePermission(member, 'auth-connections.read')
       return productAuth.list()
     })
     .post('/auth-connections', ({ member, body }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'auth-connections.manage')
       return productAuth.create(member.id, body)
     })
     .put('/auth-connections/:id', ({ member, params, body }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'auth-connections.manage')
       return productAuth.update(member.id, params.id, body)
     })
     .delete('/auth-connections/:id', ({ member, params }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'auth-connections.manage')
       return productAuth.delete(member.id, params.id)
     })
     .post('/auth-connections/:id/generate', ({ member, params, body }) => {
-      allow(member, ['owner', 'editor'])
+      requirePermission(member, 'auth-connections.read')
+      requirePermission(member, 'flows.write')
       return store.db.transaction(() =>
         flows.create(member.id, productAuth.template(params.id, body)),
       )()
@@ -180,17 +241,17 @@ export function createApp(options: AppOptions) {
       },
     )
     .get('/data-sources', ({ member }) => {
-      allow(member, ['owner', 'editor'])
+      requirePermission(member, 'sources.read')
       return sources.list()
     })
     .get('/data-sources/:id', ({ member, params }) => {
-      allow(member, ['owner', 'editor'])
+      requirePermission(member, 'sources.read')
       return sources.get(params.id)
     })
     .post(
       '/data-sources/import',
       ({ member, body }) => {
-        allow(member, ['owner', 'editor'])
+        requirePermission(member, 'sources.write')
         return sources.importFile(member.id, body.name, body.file)
       },
       {
@@ -198,13 +259,14 @@ export function createApp(options: AppOptions) {
       },
     )
     .post('/data-sources/:id/api', ({ member, params, body }) => {
-      allow(member, ['owner', 'editor'])
+      requirePermission(member, 'sources.read')
+      requirePermission(member, 'flows.write')
       return flows.create(member.id, sources.api(params.id, body))
     })
     .post(
       '/data-sources/google-sheets',
       ({ member, body }) => {
-        allow(member, ['owner', 'editor'])
+        requirePermission(member, 'sources.write')
         return sources.importGoogle(member.id, body.name, body.url)
       },
       {
@@ -217,7 +279,7 @@ export function createApp(options: AppOptions) {
     .put(
       '/data-sources/:id/import',
       ({ member, params, body }) => {
-        allow(member, ['owner', 'editor'])
+        requirePermission(member, 'sources.write')
         return sources.importFile(member.id, body.name, body.file, params.id)
       },
       {
@@ -228,17 +290,27 @@ export function createApp(options: AppOptions) {
       },
     )
     .post('/data-sources/:id/refresh', ({ member, params }) => {
-      allow(member, ['owner', 'editor'])
+      requirePermission(member, 'sources.write')
       return sources.refresh(member.id, params.id)
     })
     .delete('/data-sources/:id', ({ member, params }) => {
-      allow(member, ['owner', 'editor'])
+      requirePermission(member, 'sources.write')
       return sources.delete(member.id, params.id)
     })
-    .get('/flows', () => flows.list())
-    .get('/flows/:id', ({ params }) => flows.get(params.id))
-    .get('/flows/:id/releases', ({ params }) => flows.releases(params.id))
-    .get('/flows/:id/releases/:revision', ({ params }) => {
+    .get('/flows', ({ member }) => {
+      requirePermission(member, 'flows.read')
+      return flows.list()
+    })
+    .get('/flows/:id', ({ member, params }) => {
+      requirePermission(member, 'flows.read')
+      return flows.get(params.id)
+    })
+    .get('/flows/:id/releases', ({ member, params }) => {
+      requirePermission(member, 'flows.read')
+      return flows.releases(params.id)
+    })
+    .get('/flows/:id/releases/:revision', ({ member, params }) => {
+      requirePermission(member, 'flows.read')
       if (
         !/^[1-9]\d*$/.test(params.revision) ||
         !Number.isSafeInteger(Number(params.revision))
@@ -247,7 +319,7 @@ export function createApp(options: AppOptions) {
       return flows.release(params.id, Number(params.revision))
     })
     .post('/flows/:id/rollback', ({ member, params, body }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'flows.publish')
       const result = z
         .object({
           revision: z.number().int().positive().safe(),
@@ -267,7 +339,8 @@ export function createApp(options: AppOptions) {
         result.data.publishedRevision,
       )
     })
-    .get('/flows/:id/openapi', ({ params, request }) => {
+    .get('/flows/:id/openapi', ({ member, params, request }) => {
+      requirePermission(member, 'flows.read')
       const selections = new URL(request.url).searchParams.getAll('source')
       if (selections.length > 1)
         throw new ApiError(400, 'Choose one OpenAPI source')
@@ -281,13 +354,13 @@ export function createApp(options: AppOptions) {
       })
     })
     .post('/flows', ({ member, body }) => {
-      allow(member, ['owner', 'editor'])
+      requirePermission(member, 'flows.write')
       return flows.create(member.id, body)
     })
     .put(
       '/flows/:id',
       ({ member, body, params }) => {
-        allow(member, ['owner', 'editor'])
+        requirePermission(member, 'flows.write')
         return flows.update(member.id, params.id, body.revision, body)
       },
       {
@@ -300,7 +373,7 @@ export function createApp(options: AppOptions) {
     .post(
       '/flows/:id/publish',
       ({ member, params, body }) => {
-        allow(member, ['owner'])
+        requirePermission(member, 'flows.publish')
         return flows.publish(member.id, params.id, body.revision)
       },
       { body: t.Object({ revision: t.Integer({ minimum: 1 }) }) },
@@ -308,7 +381,7 @@ export function createApp(options: AppOptions) {
     .post(
       '/flows/:id/test',
       ({ member, params, body }) => {
-        allow(member, ['owner', 'editor'])
+        requirePermission(member, 'flows.test')
         return flows.test(member.id, params.id, body)
       },
       {
@@ -323,46 +396,50 @@ export function createApp(options: AppOptions) {
       allow(member, ['owner'])
       return store.listMembers()
     })
+    .put('/members/:id/role', ({ member, params, body }) => {
+      allow(member, ['owner'])
+      const parsed = assignmentSchema.safeParse(body)
+      if (!parsed.success)
+        throw new ApiError(400, 'Choose a valid role assignment')
+      return store.assignMemberRole(member.id, params.id, parsed.data)
+    })
     .post('/flows/:id/graphql/test', ({ member, params, body }) => {
-      allow(member, ['owner', 'editor'])
+      requirePermission(member, 'flows.test')
       return flows.testGraphql(member.id, params.id, body)
     })
-    .post(
-      '/members',
-      async ({ member, body }) => {
-        allow(member, ['owner'])
-        return store.createMember(
-          member.id,
-          body.name,
-          body.role,
-          await optionalAccount(body),
+    .post('/members', async ({ member, body }) => {
+      allow(member, ['owner'])
+      const parsed = createMemberSchema.safeParse(body)
+      if (!parsed.success)
+        throw new ApiError(
+          400,
+          'Choose a member name and valid role assignment',
         )
-      },
-      {
-        body: t.Object({
-          name: t.String({ minLength: 1, maxLength: 80 }),
-          role: t.Union([t.Literal('editor'), t.Literal('viewer')]),
-          email: t.Optional(t.String({ maxLength: 254 })),
-          password: t.Optional(t.String({ maxLength: 128 })),
-        }),
-      },
-    )
+      const input = parsed.data
+      return store.createMember(
+        member.id,
+        input.name,
+        input.role,
+        await optionalAccount(input),
+        input.role === 'custom' ? input.roleId : undefined,
+      )
+    })
     .delete('/members/:id', ({ member, params }) => {
       allow(member, ['owner'])
       return store.revokeMember(member.id, params.id)
     })
     .get('/audit', ({ member }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'audit.read')
       return store.listAudit()
     })
     .get('/runtime-keys', ({ member }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'runtime-keys.manage')
       return store.listRuntimeKeys()
     })
     .post(
       '/runtime-keys',
       ({ member, body }) => {
-        allow(member, ['owner'])
+        requirePermission(member, 'runtime-keys.manage')
         return store.createRuntimeKey(member.id, body)
       },
       {
@@ -382,11 +459,11 @@ export function createApp(options: AppOptions) {
       },
     )
     .delete('/runtime-keys/:id', ({ member, params }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'runtime-keys.manage')
       return store.revokeRuntimeKey(member.id, params.id)
     })
     .post('/runtime-keys/:id/rotate', ({ member, params, body }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'runtime-keys.manage')
       if (
         body !== undefined &&
         (body === null ||
@@ -399,24 +476,27 @@ export function createApp(options: AppOptions) {
       return store.rotateRuntimeKey(member.id, params.id)
     })
     .get('/migrations', ({ member }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'migrations.read')
       return store.query('SELECT * FROM migrations ORDER BY version').all()
     })
     .get('/backups', ({ member }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'backups.manage')
       return backups.list()
     })
     .post('/backups', ({ member }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'backups.manage')
       return backups.create(member.id)
     })
     .get('/backups/:id', ({ member, params }) => {
-      allow(member, ['owner'])
+      requirePermission(member, 'backups.manage')
       return backups.download(member.id, params.id)
     })
 
   const app = new Elysia()
-    .onStop(() => loadTests.close())
+    .onStop(() => {
+      loadTests.close()
+      updates.close()
+    })
     .onRequest(async ({ set, request }) => {
       set.headers['cache-control'] = 'no-store'
       set.headers['x-content-type-options'] = 'nosniff'
@@ -431,7 +511,9 @@ export function createApp(options: AppOptions) {
         if (error.status === 401 || error.status === 403) {
           const token = bearer(request)
           store.audit(
-            store.authenticate(token)?.id ?? store.runtimeActor(token),
+            managementActors.get(request) ??
+              store.authenticate(token)?.id ??
+              store.runtimeActor(token),
             'access.denied',
             'api',
           )
@@ -571,6 +653,7 @@ export function createApp(options: AppOptions) {
     close() {
       if (storeClosed) return
       loadTests.close()
+      updates.close()
       store.close()
       storeClosed = true
     },

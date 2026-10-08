@@ -14,6 +14,7 @@ import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import { api, type RuntimeKey, type RuntimePermission } from './lib/api'
 import { useStudio } from './store'
+import { can } from '../src/permissions'
 
 const permissionLabels: Record<RuntimePermission, string> = {
   rest: 'REST requests',
@@ -56,7 +57,7 @@ export function RuntimeKeys() {
   const locked = busy || loading || !!issued
 
   useEffect(() => {
-    if (member?.role !== 'owner') return
+    if (!can(member, 'runtime-keys.manage')) return
 
     active.current = true
     let loadingCurrent = true
@@ -80,7 +81,7 @@ export function RuntimeKeys() {
       active.current = false
       loadingCurrent = false
     }
-  }, [token, member?.id, member?.role, sessionId])
+  }, [token, member?.id, member?.role, member?.permissions, sessionId])
 
   function perform(work: (current: () => boolean) => Promise<void>) {
     const current = () => {
@@ -90,7 +91,7 @@ export function RuntimeKeys() {
         active.current &&
         state.token === token &&
         state.member?.id === member?.id &&
-        state.member?.role === 'owner' &&
+        can(state.member, 'runtime-keys.manage') &&
         state.sessionId === sessionId
       )
     }
@@ -109,7 +110,7 @@ export function RuntimeKeys() {
     })
   }
 
-  if (member?.role !== 'owner')
+  if (!can(member, 'runtime-keys.manage'))
     return (
       <div className="empty-panel">
         <ShieldCheck />
@@ -288,9 +289,15 @@ export function RuntimeKeys() {
       ) : (
         <div className="runtime-key-empty">
           <KeyRound />
-          <h2>Publish an API first</h2>
+          <h2>
+            {can(member, 'flows.read')
+              ? 'Publish an API first'
+              : 'API reading needed for new key choices'}
+          </h2>
           <p>
-            Save and publish a flow in API Studio, then create a caller key.
+            {can(member, 'flows.read')
+              ? 'Save and publish a flow in API Studio, then create a caller key.'
+              : 'Your role can manage existing keys below. Ask the owner for Read APIs access to choose a published API when creating a new key.'}
           </p>
         </div>
       )}
@@ -348,7 +355,9 @@ export function RuntimeKeys() {
                 </td>
                 <td>
                   {flows.find((flow) => flow.id === key.flowId)?.name ??
-                    'Unavailable API'}
+                    (can(member, 'flows.read')
+                      ? 'Unavailable API'
+                      : `API ${key.flowId.slice(0, 8)}`)}
                 </td>
                 <td>
                   {key.permissions

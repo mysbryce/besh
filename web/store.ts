@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { can } from '../src/permissions'
 import {
   addEdge,
   applyNodeChanges,
@@ -157,7 +158,9 @@ export const useStudio = create<Studio>((set, get) => ({
       typeof credentials === 'string' ? { token: credentials } : credentials,
     )
     setSessionCredential(session.csrfToken)
-    const flows = await api<SavedFlow[]>('/api/flows')
+    const flows = can(session.member, 'flows.read')
+      ? await api<SavedFlow[]>('/api/flows')
+      : []
     set({
       token: '',
       member: session.member,
@@ -177,7 +180,9 @@ export const useStudio = create<Studio>((set, get) => ({
       try {
         const session = await api<WorkspaceSession>('/auth/session')
         setSessionCredential(session.csrfToken)
-        const flows = await api<SavedFlow[]>('/api/flows')
+        const flows = can(session.member, 'flows.read')
+          ? await api<SavedFlow[]>('/api/flows')
+          : []
         set({
           member: session.member,
           sessionId: session.sessionId,

@@ -34,7 +34,8 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Replace runtime keys atomically with their audit events. Preserve exact scope and expiry, show the new token once, and keep navigation blocked while its request is pending.
 - Validate flows before execution and publication. Bound graph, request, and response sizes.
 - Never evaluate uploaded JavaScript inside the server process.
-- Keep load tests owner-only, bounded, and restricted to the local published API. Use generated k6 scripts and temporary scoped keys; never accept arbitrary target URLs, uploaded scripts, or CLI options. Persist summaries, not request payloads, process logs, or secrets.
+- Keep load tests permission-authorized, bounded, and restricted to the local published API. Owners have the grant by default; custom roles need `load-tests.run`. Use generated k6 scripts and temporary scoped keys; never accept arbitrary target URLs, uploaded scripts, or CLI options. Persist summaries, not request payloads, process logs, or secrets.
+- Resolve current workspace action grants at the server on every request. Keep member/role administration and update notices owner-only. Permission changes and member assignments revoke affected browser sessions with audit; runtime keys keep their separate scope.
 - Keep secrets on the server; store credential hashes where possible. Do not log tokens or payloads by default.
 - Encrypt product OAuth secrets and PKCE verifiers with the private key file. Back up that file separately from SQLite; never commit it or recreate it while encrypted records exist.
 - Save audit events with state changes. Keep migration history and test backup restoration.

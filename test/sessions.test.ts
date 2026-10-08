@@ -49,7 +49,11 @@ test('member key creates a private cookie session restored after reload', async 
   )
   expect(session.response.headers.get('set-cookie')).toContain('Path=/')
   expect(session.response.headers.get('set-cookie')).toContain('Max-Age=43200')
-  expect(session.member).toEqual({ id: 'owner', name: 'Owner', role: 'owner' })
+  expect(session.member).toMatchObject({
+    id: 'owner',
+    name: 'Owner',
+    role: 'owner',
+  })
   expect(session.csrfToken).toBeString()
   expect(JSON.stringify(session.member)).not.toContain(ownerToken)
 

@@ -19,7 +19,7 @@ For a greeting at `GET /hello`:
 
 Required means a field must be present. Nullable means its value may be JSON `null`. These are separate choices: a required nullable field must still appear. A string field does not accept a number merely because that number could be displayed as text.
 
-Saving updates the draft only. Live validation and the published documentation use the immutable release until the owner publishes a new revision.
+Saving updates the draft only. Live validation and the published documentation use the immutable release until a member with publication permission publishes a new revision.
 
 ## Request and response behavior
 
@@ -46,7 +46,7 @@ GET and HEAD cannot declare a body contract. A flow using GraphQL cannot also us
 
 Choose the saved draft or published release in the OpenAPI controls, then download its JSON document. Save changes first to export a draft: the server exports persisted state, not unsaved browser edits. A published download requires a published REST release and continues to describe that release while its draft is edited.
 
-Workspace members can download permitted API definitions. Runtime API keys cannot access this management route and are used only when calling the documented endpoint.
+Owners, editors, viewers, and custom members with flow-read permission can download permitted API definitions. Runtime API keys cannot access this management route and are used only when calling the documented endpoint.
 
 ```http
 GET /api/flows/<flow-id>/openapi?source=published

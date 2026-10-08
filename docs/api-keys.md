@@ -2,12 +2,14 @@
 
 Runtime API keys let a caller use one published Besh API. They are separate from workspace sign-in: owner/member keys and browser sessions manage the workspace, while runtime keys call published endpoints.
 
-Only owners can create, list, replace, or revoke runtime keys. Each key has a name, one published API, allowed operations, and an expiration. REST keys allow **REST requests**. GraphQL keys allow **GraphQL queries**, **GraphQL mutations**, or both. These grants cover entire operations; field and record authorization remain planned.
+Owners and custom members with runtime-key management permission can create, list, replace, or revoke runtime keys. Built-in editors and viewers cannot. Each key has a name, one published API, allowed operations, and an expiration. REST keys allow **REST requests**. GraphQL keys allow **GraphQL queries**, **GraphQL mutations**, or both. These grants cover entire operations; field and record authorization remain planned. Workspace role grants do not change issued runtime credentials; see [roles and permissions](roles.md).
+
+The dashboard also needs `flows.read` to list APIs when choosing a target for a new key. Key-management permission alone still allows listing, replacing, and revoking existing keys. The management API can issue a key for a known published flow ID without granting API reading.
 
 ## Create and use a key
 
 1. Save, test, and publish your API in **API Studio**.
-2. Open **API keys** as the owner.
+2. Open **API keys** with runtime-key management permission.
 3. Choose the published API, give the key a recognizable name, and select the required operations.
 4. Choose an expiration. The dashboard offers 1, 7, 30, or 90 days; the management API accepts a future date within 366 days.
 5. Select **Create API key**. Copy the token and save it privately before acknowledging that you saved it.
