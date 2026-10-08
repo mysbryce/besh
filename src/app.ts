@@ -315,6 +315,19 @@ export function createApp(options: AppOptions) {
       allow(member, ['owner'])
       return store.revokeRuntimeKey(member.id, params.id)
     })
+    .post('/runtime-keys/:id/rotate', ({ member, params, body }) => {
+      allow(member, ['owner'])
+      if (
+        body !== undefined &&
+        (body === null ||
+          typeof body !== 'object' ||
+          Array.isArray(body) ||
+          Object.keys(body).length > 0)
+      )
+        throw new ApiError(400, 'Replacement does not accept settings')
+
+      return store.rotateRuntimeKey(member.id, params.id)
+    })
     .get('/migrations', ({ member }) => {
       allow(member, ['owner'])
       return store.query('SELECT * FROM migrations ORDER BY version').all()

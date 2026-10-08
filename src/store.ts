@@ -290,6 +290,49 @@ export function openStore(path: string, adminToken?: string) {
     ).run(actor, action, resource, new Date().toISOString())
   }
 
+  function validateRuntimeScope(
+    flowId: string,
+    permissions: RuntimePermission[],
+    conflict = false,
+  ) {
+    const flow = query<{ published: string | null }, [string]>(
+      'SELECT published FROM flows WHERE id = ?',
+    ).get(flowId)
+    if (!flow) throw new ApiError(404, 'Flow not found')
+    if (!flow.published)
+      throw new ApiError(
+        conflict ? 409 : 400,
+        'Publish this API before issuing a runtime key',
+      )
+    const graphql = Boolean(JSON.parse(flow.published).graphql)
+    if (
+      !permissions.length ||
+      new Set(permissions).size !== permissions.length ||
+      permissions.some((permission) =>
+        graphql
+          ? !['query', 'mutation'].includes(permission)
+          : permission !== 'rest',
+      )
+    )
+      throw new ApiError(
+        conflict ? 409 : 400,
+        'Permissions must match the published API type',
+      )
+  }
+
+  function insertRuntimeKey(actor: string, key: RuntimeKey, token: string) {
+    query('INSERT INTO runtime_keys VALUES (?, ?, ?, ?, ?, ?, ?, NULL)').run(
+      key.id,
+      key.name,
+      key.flowId,
+      JSON.stringify(key.permissions),
+      hashToken(token),
+      key.expiresAt,
+      key.createdAt,
+    )
+    audit(actor, 'runtime-key.created', key.id)
+  }
+
   return {
     db,
     query,
@@ -420,45 +463,50 @@ export function openStore(path: string, adminToken?: string) {
       const token = `besh_${randomBytes(32).toString('base64url')}`
 
       db.transaction(() => {
-        const flow = query<{ published: string | null }, [string]>(
-          'SELECT published FROM flows WHERE id = ?',
-        ).get(value.flowId)
-        if (!flow) throw new ApiError(404, 'Flow not found')
-        if (!flow.published)
-          throw new ApiError(
-            400,
-            'Publish this API before issuing a runtime key',
-          )
-        const graphql = Boolean(JSON.parse(flow.published).graphql)
-        if (
-          !value.permissions.length ||
-          new Set(value.permissions).size !== value.permissions.length ||
-          value.permissions.some((permission) =>
-            graphql
-              ? !['query', 'mutation'].includes(permission)
-              : permission !== 'rest',
-          )
-        )
-          throw new ApiError(
-            400,
-            'Permissions must match the published API type',
-          )
-
-        query(
-          'INSERT INTO runtime_keys VALUES (?, ?, ?, ?, ?, ?, ?, NULL)',
-        ).run(
-          key.id,
-          key.name,
-          key.flowId,
-          JSON.stringify(key.permissions),
-          hashToken(token),
-          key.expiresAt,
-          key.createdAt,
-        )
-        audit(actor, 'runtime-key.created', key.id)
+        validateRuntimeScope(key.flowId, key.permissions)
+        insertRuntimeKey(actor, key, token)
       })()
 
       return { ...key, token }
+    },
+    rotateRuntimeKey(actor: string, id: string) {
+      return db
+        .transaction(() => {
+          const row = query<RuntimeKeyRow, [string]>(
+            'SELECT id, name, flow_id, permissions, expires_at, created_at, revoked_at FROM runtime_keys WHERE id = ?',
+          ).get(id)
+          if (!row) throw new ApiError(404, 'Runtime key not found')
+
+          const now = Date.now()
+          if (
+            row.revoked_at ||
+            !Number.isFinite(Date.parse(row.expires_at)) ||
+            Date.parse(row.expires_at) <= now
+          )
+            throw new ApiError(
+              409,
+              'Only active, unexpired runtime keys can be replaced',
+            )
+
+          const key: RuntimeKey = {
+            ...runtimeKey(row),
+            id: crypto.randomUUID(),
+            createdAt: new Date(now).toISOString(),
+            revokedAt: null,
+          }
+          validateRuntimeScope(key.flowId, key.permissions, true)
+          const token = `besh_${randomBytes(32).toString('base64url')}`
+
+          query('UPDATE runtime_keys SET revoked_at = ? WHERE id = ?').run(
+            key.createdAt,
+            id,
+          )
+          audit(actor, 'runtime-key.revoked', id)
+          insertRuntimeKey(actor, key, token)
+
+          return { ...key, token }
+        })
+        .immediate()
     },
     revokeRuntimeKey(actor: string, id: string) {
       db.transaction(() => {

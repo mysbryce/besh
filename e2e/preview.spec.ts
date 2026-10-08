@@ -2498,6 +2498,342 @@ test('preview every current page and its actions', async ({
     'Editor generates product login drafts',
     'Editors see metadata and can create drafts, while connection changes and publication remain owner actions.',
   )
+
+  await page.getByRole('button', { name: /Sign out/ }).click()
+  await signIn(owner)
+  await navigate('API keys')
+  await expect(page.getByText('Loading API keys…')).toHaveCount(0)
+  const rotationHeaders = { authorization: `Bearer ${owner}` }
+  const rotationBefore = await (
+    await page.request.get('/api/runtime-keys', { headers: rotationHeaders })
+  ).json()
+  const readerBefore = rotationBefore.find(
+    (key: { name: string }) => key.name === 'GraphQL reader',
+  )
+  const rotationFlows = await (
+    await page.request.get('/api/flows', { headers: rotationHeaders })
+  ).json()
+  const rotationFlow = rotationFlows.find(
+    (flow: { name: string }) => flow.name === 'Welcome endpoint',
+  )
+  await page.getByLabel('Key name', { exact: true }).fill('Replacement demo')
+  await page
+    .getByRole('combobox', { name: 'Published API', exact: true })
+    .click()
+  await page
+    .getByRole('option', { name: 'Welcome endpoint', exact: true })
+    .click()
+  const rotationIssued = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/runtime-keys') &&
+      response.request().method() === 'POST',
+  )
+  await page
+    .getByRole('button', { name: 'Create API key', exact: true })
+    .click()
+  const rotationOriginal = await (await rotationIssued).json()
+  await page
+    .getByRole('button', { name: 'I saved this API key', exact: true })
+    .click()
+  const replacementRow = () =>
+    page
+      .getByRole('row')
+      .filter({ hasText: 'Replacement demo' })
+      .filter({
+        has: page.getByText('Active', { exact: true }),
+      })
+  await expect(
+    replacementRow().getByRole('button', { name: 'Replace key', exact: true }),
+  ).toBeEnabled()
+  await capture(
+    'API keys',
+    'Review immediate key replacement',
+    'An active caller key can be replaced without changing its published API, permissions, or expiration. Update the caller after replacement.',
+  )
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await replacementRow()
+    .getByRole('button', { name: 'Replace key', exact: true })
+    .click()
+  expect(
+    (
+      await page.request.post('/run/welcome', {
+        headers: { authorization: `Bearer ${rotationOriginal.token}` },
+        data: { name: 'Ada' },
+      })
+    ).status(),
+  ).toBe(202)
+  await capture(
+    'API keys',
+    'Cancel caller key replacement',
+    'Canceling confirmation leaves the original caller key active. Its real HTTP request still succeeds.',
+  )
+  const replacementResponse = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/runtime-keys/${rotationOriginal.id}/rotate`),
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await replacementRow()
+    .getByRole('button', { name: 'Replace key', exact: true })
+    .click()
+  const replacementResult = await replacementResponse
+  expect(replacementResult.status()).toBe(200)
+  const replacement = await replacementResult.json()
+  expect(replacement.id).not.toBe(rotationOriginal.id)
+  expect(replacement.flowId).toBe(rotationOriginal.flowId)
+  expect(replacement.permissions).toEqual(['rest'])
+  expect(replacement.expiresAt).toBe(rotationOriginal.expiresAt)
+  await expect(
+    page.getByRole('region', { name: 'Save API key', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Create API key', exact: true }),
+  ).toBeDisabled()
+  await expect(
+    replacementRow().getByRole('button', { name: 'Replace key', exact: true }),
+  ).toBeDisabled()
+  await capture(
+    'API keys',
+    'Replacement key shown once',
+    'The real server atomically revokes the old key and issues a new credential with unchanged scope and expiry. Its one-time value is masked.',
+  )
+  await page.getByRole('button', { name: 'Copy API key', exact: true }).click()
+  expect(
+    await page.evaluate(
+      (secret) =>
+        navigator.clipboard.readText().then((value) => value === secret),
+      replacement.token,
+    ),
+  ).toBe(true)
+  await capture(
+    'API keys',
+    'Copy replacement caller key',
+    'Copy saves the replacement to the clipboard through an explicit action. The screenshot keeps the credential hidden.',
+  )
+  await appearance('Dark')
+  await capture(
+    'API keys',
+    'Dark one-time replacement key',
+    'Metadata, immediate replacement guidance, and masked credential actions remain readable in dark appearance.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile dark',
+    'Replacement API key',
+    'Phone layout contains the scoped metadata and one-time replacement actions in dark appearance.',
+  )
+  await appearance('Light')
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile',
+    'Replacement API key',
+    'Light phone layout keeps copy and acknowledgment accessible while the credential is masked.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page
+    .getByRole('button', { name: 'I saved this API key', exact: true })
+    .click()
+  await expect(page.getByLabel('New API key', { exact: true })).toHaveCount(0)
+  await capture(
+    'API keys',
+    'Acknowledge replacement key',
+    'Acknowledgment clears the one-time credential. The old revoked record and new active record remain visible.',
+  )
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await notice('API keys refreshed')
+  await capture(
+    'API keys',
+    'Refresh replacement metadata',
+    'A real metadata refresh preserves both history and unchanged replacement permissions/expiration without returning tokens.',
+  )
+  expect(
+    (
+      await page.request.post('/run/welcome', {
+        headers: { authorization: `Bearer ${rotationOriginal.token}` },
+        data: { name: 'Ada' },
+      })
+    ).status(),
+  ).toBe(401)
+  const replacementLive = await page.request.post('/run/welcome', {
+    headers: { authorization: `Bearer ${replacement.token}` },
+    data: { name: 'Ada' },
+  })
+  expect(replacementLive.status()).toBe(202)
+  expect(await replacementLive.json()).toEqual({
+    message: 'New draft response',
+  })
+  await capture(
+    'API keys',
+    'Old caller rejected and new caller succeeds',
+    'Real published REST requests return 401 with the old key and the existing HTTP 202 response with the replacement.',
+  )
+
+  const readerRow = page
+    .getByRole('row')
+    .filter({ hasText: 'GraphQL reader' })
+    .filter({ has: page.getByText('Active', { exact: true }) })
+  const readerRotated = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/runtime-keys/${readerBefore.id}/rotate`),
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await readerRow
+    .getByRole('button', { name: 'Replace key', exact: true })
+    .click()
+  const readerReplacement = await (await readerRotated).json()
+  expect(readerReplacement.permissions).toEqual(['query'])
+  expect(readerReplacement.expiresAt).toBe(readerBefore.expiresAt)
+  await expect(
+    page.getByRole('region', { name: 'Save API key', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'API keys',
+    'Replace a GraphQL reader key',
+    'A query-only GraphQL credential stays query-only. The published release is used even when its editable draft has an invalid schema.',
+  )
+  await page
+    .getByRole('button', { name: 'I saved this API key', exact: true })
+    .click()
+  const readerHeaders = { authorization: `Bearer ${readerReplacement.token}` }
+  expect(
+    (
+      await page.request.post('/graphql/greeting', {
+        headers: { authorization: `Bearer ${graphKey}` },
+        data: { query: '{ greet(name: "Ada") { name } }' },
+      })
+    ).status(),
+  ).toBe(401)
+  const readerLive = await page.request.post('/graphql/greeting', {
+    headers: readerHeaders,
+    data: { query: '{ greet(name: "Ada") { message name } }' },
+  })
+  expect(await readerLive.json()).toEqual({
+    data: { greet: { message: 'Hello from GraphQL', name: 'Ada' } },
+  })
+  expect(
+    (
+      await page.request.post('/graphql/greeting', {
+        headers: readerHeaders,
+        data: { query: 'mutation { greet(name: "Grace") { name } }' },
+      })
+    ).status(),
+  ).toBe(403)
+  await capture(
+    'API keys',
+    'Replacement preserves GraphQL grants',
+    'The new key serves the published query, rejects mutations with 403, and the old key returns 401. Replacement cannot broaden access.',
+  )
+
+  const staleKey = await (
+    await page.request.post('/api/runtime-keys', {
+      headers: rotationHeaders,
+      data: {
+        name: 'Stale replacement',
+        flowId: rotationFlow.id,
+        permissions: ['rest'],
+        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+      },
+    })
+  ).json()
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await notice('API keys refreshed')
+  expect(
+    (
+      await page.request.delete(`/api/runtime-keys/${staleKey.id}`, {
+        headers: rotationHeaders,
+      })
+    ).status(),
+  ).toBe(200)
+  const rejectedReplacement = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/runtime-keys/${staleKey.id}/rotate`),
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('row')
+    .filter({ hasText: 'Stale replacement' })
+    .getByRole('button', { name: 'Replace key', exact: true })
+    .click()
+  expect((await rejectedReplacement).status()).toBe(409)
+  await expect(page.getByRole('alert')).toBeVisible()
+  await capture(
+    'API keys',
+    'Server rejects a stale replacement',
+    'The key was revoked through another real management request after this list loaded. Replacement returns 409 with a helpful error and no new credential.',
+  )
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await notice('API keys refreshed')
+  await expect(
+    page
+      .getByRole('row')
+      .filter({ hasText: 'Stale replacement' })
+      .getByRole('button', { name: 'Replace key', exact: true }),
+  ).toHaveCount(0)
+  await capture(
+    'API keys',
+    'Refresh revoked replacement state',
+    'Refreshing reads current server metadata and removes replacement controls from the revoked record.',
+  )
+  const shortKey = await (
+    await page.request.post('/api/runtime-keys', {
+      headers: rotationHeaders,
+      data: {
+        name: 'Expired replacement',
+        flowId: rotationFlow.id,
+        permissions: ['rest'],
+        expiresAt: new Date(Date.now() + 150).toISOString(),
+      },
+    })
+  ).json()
+  await expect
+    .poll(() => Date.now() >= Date.parse(shortKey.expiresAt))
+    .toBe(true)
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await notice('API keys refreshed')
+  const expiredRow = page
+    .getByRole('row')
+    .filter({ hasText: 'Expired replacement' })
+  await expect(expiredRow).toContainText('Expired')
+  await expect(
+    expiredRow.getByRole('button', { name: 'Replace key', exact: true }),
+  ).toHaveCount(0)
+  await capture(
+    'API keys',
+    'Expired keys cannot be replaced',
+    'An expired credential cannot be revived or extended through replacement. Create a new reviewed caller key instead.',
+  )
+  await navigate('Audit trail')
+  await expect(
+    page
+      .getByRole('cell', { name: 'runtime-key.revoked', exact: true })
+      .first(),
+  ).toBeVisible()
+  await expect(
+    page
+      .getByRole('cell', { name: 'runtime-key.created', exact: true })
+      .first(),
+  ).toBeVisible()
+  await capture(
+    'Audit trail',
+    'Key replacement audit history',
+    'Old-key revocation and new-key creation are recorded in the same transaction. Audit records contain resource IDs and actors, never credential values.',
+  )
+  await page.getByRole('button', { name: /Sign out/ }).click()
+  await signIn(editor)
+  await navigate('API keys')
+  await expect(
+    page.getByRole('heading', { name: 'Owner access required', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Permissions',
+    'Editor denied API key replacement',
+    'Editors cannot issue, replace, or revoke runtime credentials. Management rights are separate from published caller access.',
+  )
   expect(errors).toEqual([])
 
   await context.clearPermissions()

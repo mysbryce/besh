@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   Copy,
   KeyRound,
@@ -24,6 +24,7 @@ const permissionLabels: Record<RuntimePermission, string> = {
 export function RuntimeKeys() {
   const token = useStudio((state) => state.token)
   const member = useStudio((state) => state.member)
+  const sessionId = useStudio((state) => state.sessionId)
   const flows = useStudio((state) => state.flows)
   const busy = useStudio((state) => state.busy)
   const task = useStudio((state) => state.task)
@@ -39,6 +40,7 @@ export function RuntimeKeys() {
   const [issued, setIssued] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const active = useRef(false)
   const published = flows.filter((flow) => flow.publishedEndpoint)
   const selected = published.find((flow) => flow.id === flowId) ?? published[0]
   const endpoint = selected?.publishedEndpoint
@@ -56,31 +58,51 @@ export function RuntimeKeys() {
   useEffect(() => {
     if (member?.role !== 'owner') return
 
-    let active = true
+    active.current = true
+    let loadingCurrent = true
+    setLoading(true)
+    setKeys([])
+    setIssued('')
+    setError('')
 
     api<RuntimeKey[]>('/api/runtime-keys', token)
       .then((records) => {
-        if (active) setKeys(records)
+        if (loadingCurrent) setKeys(records)
       })
       .catch((reason: Error) => {
-        if (active) setError(reason.message)
+        if (loadingCurrent) setError(reason.message)
       })
       .finally(() => {
-        if (active) setLoading(false)
+        if (loadingCurrent) setLoading(false)
       })
 
     return () => {
-      active = false
+      active.current = false
+      loadingCurrent = false
     }
-  }, [token, member?.role])
+  }, [token, member?.id, member?.role, sessionId])
 
-  function perform(work: () => Promise<void>) {
+  function perform(work: (current: () => boolean) => Promise<void>) {
+    const current = () => {
+      const state = useStudio.getState()
+
+      return (
+        active.current &&
+        state.token === token &&
+        state.member?.id === member?.id &&
+        state.member?.role === 'owner' &&
+        state.sessionId === sessionId
+      )
+    }
+
     void task(async () => {
+      if (!current()) return
       setError('')
 
       try {
-        await work()
+        await work(current)
       } catch (reason) {
+        if (!current()) return
         setError(reason instanceof Error ? reason.message : 'Request failed')
         throw reason
       }
@@ -108,8 +130,14 @@ export function RuntimeKeys() {
           variant="outline"
           disabled={busy || loading}
           onClick={() =>
-            perform(async () => {
-              setKeys(await api<RuntimeKey[]>('/api/runtime-keys', token))
+            perform(async (current) => {
+              const records = await api<RuntimeKey[]>(
+                '/api/runtime-keys',
+                token,
+              )
+              if (!current()) return
+
+              setKeys(records)
               message('API keys refreshed.')
             })
           }
@@ -135,7 +163,7 @@ export function RuntimeKeys() {
             event.preventDefault()
             if (locked || !name.trim() || !permissions.length) return
 
-            perform(async () => {
+            perform(async (current) => {
               const created = await api<RuntimeKey & { token: string }>(
                 '/api/runtime-keys',
                 token,
@@ -150,6 +178,7 @@ export function RuntimeKeys() {
                 },
               )
               const { token: secret, ...record } = created
+              if (!current()) return
 
               setIssued(secret)
               setKeys((current) => [record, ...current])
@@ -280,8 +309,10 @@ export function RuntimeKeys() {
             variant="outline"
             disabled={busy}
             onClick={() =>
-              perform(async () => {
+              perform(async (current) => {
                 await navigator.clipboard.writeText(issued)
+                if (!current()) return
+
                 message('API key copied.')
               })
             }
@@ -330,12 +361,70 @@ export function RuntimeKeys() {
                   </Badge>
                 </td>
                 <td>
+                  {!key.revokedAt && Date.parse(key.expiresAt) > Date.now() ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={locked}
+                      onClick={() => {
+                        if (locked) return
+                        if (
+                          !window.confirm(
+                            `Replace API key ${key.name}? The old key stops working immediately. The new key keeps the same API, permissions, and expiry. Save the new key and update your caller.`,
+                          )
+                        )
+                          return
+
+                        perform(async (current) => {
+                          let replacement: RuntimeKey & { token: string }
+
+                          try {
+                            replacement = await api<
+                              RuntimeKey & { token: string }
+                            >(
+                              `/api/runtime-keys/${key.id}/rotate`,
+                              token,
+                              'POST',
+                            )
+                          } catch (reason) {
+                            const detail =
+                              reason instanceof Error
+                                ? reason.message
+                                : 'Request failed'
+
+                            throw new Error(
+                              `${detail}. Could not confirm key replacement. Refresh API keys before trying again. If the old key is revoked, create a new API key and update your caller.`,
+                            )
+                          }
+                          if (!current()) return
+                          const { token: secret, ...record } = replacement
+
+                          setIssued(secret)
+                          setKeys((records) => [
+                            record,
+                            ...records.map((previous) =>
+                              previous.id === key.id
+                                ? { ...previous, revokedAt: record.createdAt }
+                                : previous,
+                            ),
+                          ])
+                          message(
+                            'API key replaced. Update your caller now; the old key no longer works.',
+                          )
+                        })
+                      }}
+                    >
+                      <RefreshCw />
+                      Replace key
+                    </Button>
+                  ) : null}
                   {!key.revokedAt ? (
                     <Button
                       variant="ghost"
                       size="sm"
-                      disabled={busy}
+                      disabled={locked}
                       onClick={() => {
+                        if (locked) return
                         if (
                           !window.confirm(
                             `Revoke API key ${key.name}? Existing callers will lose access.`,
@@ -343,15 +432,19 @@ export function RuntimeKeys() {
                         )
                           return
 
-                        perform(async () => {
+                        perform(async (current) => {
                           await api(
                             `/api/runtime-keys/${key.id}`,
                             token,
                             'DELETE',
                           )
-                          setKeys(
-                            await api<RuntimeKey[]>('/api/runtime-keys', token),
+                          const records = await api<RuntimeKey[]>(
+                            '/api/runtime-keys',
+                            token,
                           )
+                          if (!current()) return
+
+                          setKeys(records)
                           message('API key revoked.')
                         })
                       }}

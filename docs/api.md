@@ -38,28 +38,29 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 
 ## Workspace
 
-| Method | Path                          | Permission / body                                                                    |
-| ------ | ----------------------------- | ------------------------------------------------------------------------------------ |
-| GET    | `/api/me`                     | Any member                                                                           |
-| GET    | `/api/flows`                  | Any member; full drafts and revision metadata                                        |
-| GET    | `/api/flows/:id`              | Any member                                                                           |
-| GET    | `/api/flows/:id/openapi`      | Any member; `source=draft` or `source=published` (default); saved REST snapshot only |
-| POST   | `/api/flows`                  | Owner/editor; flow definition                                                        |
-| PUT    | `/api/flows/:id`              | Owner/editor; flow definition plus current `revision`                                |
-| POST   | `/api/flows/:id/test`         | Owner/editor; `{ "body": {}, "query": {} }`                                          |
-| POST   | `/api/flows/:id/graphql/test` | Owner/editor; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`  |
-| POST   | `/api/flows/:id/publish`      | Owner; `{ "revision": 1 }`                                                           |
-| GET    | `/api/members`                | Owner; no credential hashes or tokens                                                |
-| POST   | `/api/members`                | Owner; `{ "name": "Reader", "role": "viewer" }`; role may be `editor`                |
-| DELETE | `/api/members/:id`            | Owner; cannot remove bootstrap owner                                                 |
-| GET    | `/api/runtime-keys`           | Owner; key metadata, including revoked keys; no tokens or hashes                     |
-| POST   | `/api/runtime-keys`           | Owner; name, published flow ID, grants, expiration; returns the token once           |
-| DELETE | `/api/runtime-keys/:id`       | Owner; immediate revocation; retains metadata                                        |
-| GET    | `/api/audit`                  | Owner; latest 200 events, newest first                                               |
-| GET    | `/api/migrations`             | Owner; schema versions in applied order                                              |
-| GET    | `/api/backups`                | Owner; local backup metadata                                                         |
-| POST   | `/api/backups`                | Owner; creates snapshot                                                              |
-| GET    | `/api/backups/:id`            | Owner; SQLite download                                                               |
+| Method | Path                           | Permission / body                                                                     |
+| ------ | ------------------------------ | ------------------------------------------------------------------------------------- |
+| GET    | `/api/me`                      | Any member                                                                            |
+| GET    | `/api/flows`                   | Any member; full drafts and revision metadata                                         |
+| GET    | `/api/flows/:id`               | Any member                                                                            |
+| GET    | `/api/flows/:id/openapi`       | Any member; `source=draft` or `source=published` (default); saved REST snapshot only  |
+| POST   | `/api/flows`                   | Owner/editor; flow definition                                                         |
+| PUT    | `/api/flows/:id`               | Owner/editor; flow definition plus current `revision`                                 |
+| POST   | `/api/flows/:id/test`          | Owner/editor; `{ "body": {}, "query": {} }`                                           |
+| POST   | `/api/flows/:id/graphql/test`  | Owner/editor; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`   |
+| POST   | `/api/flows/:id/publish`       | Owner; `{ "revision": 1 }`                                                            |
+| GET    | `/api/members`                 | Owner; no credential hashes or tokens                                                 |
+| POST   | `/api/members`                 | Owner; `{ "name": "Reader", "role": "viewer" }`; role may be `editor`                 |
+| DELETE | `/api/members/:id`             | Owner; cannot remove bootstrap owner                                                  |
+| GET    | `/api/runtime-keys`            | Owner; key metadata, including revoked keys; no tokens or hashes                      |
+| POST   | `/api/runtime-keys`            | Owner; name, published flow ID, grants, expiration; returns the token once            |
+| POST   | `/api/runtime-keys/:id/rotate` | Owner; replaces an active key with identical scope and expiration; returns token once |
+| DELETE | `/api/runtime-keys/:id`        | Owner; immediate revocation; retains metadata                                         |
+| GET    | `/api/audit`                   | Owner; latest 200 events, newest first                                                |
+| GET    | `/api/migrations`              | Owner; schema versions in applied order                                               |
+| GET    | `/api/backups`                 | Owner; local backup metadata                                                          |
+| POST   | `/api/backups`                 | Owner; creates snapshot                                                               |
+| GET    | `/api/backups/:id`             | Owner; SQLite download                                                                |
 
 Drafts may be incomplete. Publishing and testing require one request node, reachable nodes, valid edges, and a response at every terminal path. Conditions require exactly one `true` and one `false` edge. Cycles are rejected.
 
@@ -148,6 +149,8 @@ Generation returns a normal saved draft and does not publish or issue a runtime 
 
 BEGIN returns nullable result fields `{ authorizationUrl, state, proof, expiresAt, identity }` with no identity yet. COMPLETE requires `code`, `state`, and the separate server-held `proof`, and returns identity `{ provider: "github", subject, username, name, avatarUrl }` with the other fields null. Attempts expire after ten minutes, are single-use, and bind the flow/revision, caller, and connection version. Published calls require the same flow-scoped runtime key for both actions; draft attempts bind the testing member. Provider tokens and client secrets are never returned. Product cookies, JWTs, accounts, email linking, and record authorization are not provided.
 
+Replacing a runtime key does not transfer pending product login attempts. The new key cannot complete BEGIN attempts started by the old key; start a new attempt after replacement.
+
 OAuth flows allow one social node and selected mutation operations allow one login root call. Pending attempts are limited to ten per credential/flow and a thousand total. Provider exchange permits four concurrent calls, a five-second overall deadline, and 64 KiB per provider response. Invalid action fields or attempts return 400, exhausted attempt/concurrency limits return 429, and provider failures return the generic 502 `GitHub login could not be completed`. GraphQL wraps execution failures in its standard errors envelope.
 
 OpenAPI exports describe generated REST response rules and include 429/502 responses for flows containing a social node. Login lifecycle audits use `product-login.started`, `product-login.consumed`, and `product-login.completed` or `product-login.failed`; insertion/consumption commit with their events. Events contain caller scope and flow ID without sensitive attempt or provider values.
@@ -175,9 +178,35 @@ Name must contain 1 to 80 characters after trimming. Expiration must be a future
 
 The response contains `id`, `name`, `flowId`, `permissions`, `expiresAt`, `createdAt`, `revokedAt: null`, and a one-time `token`. `GET /api/runtime-keys` returns the same metadata without tokens or hashes. Revocation returns `{ "ok": true }` and retains `revokedAt`. Repeating revocation succeeds; an unknown key returns `404`.
 
+### Replace an active key
+
+```http
+POST /api/runtime-keys/<key-id>/rotate
+Authorization: Bearer <owner-token>
+```
+
+Send no body or an empty JSON object `{}`. Any other body, including name, scope, grants, or expiration settings, returns `400`. Cookie-authenticated callers require the usual exact `Origin` and `X-Besh-CSRF` headers.
+
+A successful `200` response uses the issuance response format above, with a new `id`, `createdAt`, and one-time `token`. It preserves the original `name`, `flowId`, `permissions`, and exact `expiresAt`. Replacement does not renew expiration or change grants. The old revocation, new hash-only key insertion, and `runtime-key.revoked` / `runtime-key.created` audit events commit in one transaction. Their resource IDs identify the old and new keys respectively; audit records contain no token or credential hash.
+
+| Status | Meaning                                                                                                            |
+| ------ | ------------------------------------------------------------------------------------------------------------------ |
+| `200`  | Replacement committed; save the returned token once                                                                |
+| `400`  | Body is neither omitted nor an empty object                                                                        |
+| `401`  | Missing or invalid workspace management credentials                                                                |
+| `403`  | Authenticated caller is not an owner                                                                               |
+| `404`  | Original key does not exist                                                                                        |
+| `409`  | Key is revoked or expired, another replacement won, or its grants no longer match the currently published API type |
+
+Compatibility uses the current published release, not an edited draft. A failed replacement leaves the old key unchanged. Concurrent replacements allow only one winner. New requests using the old token return `401` immediately after the commit; requests already authenticated may finish.
+
+Do not automatically retry after a lost response: the replacement may already have committed and its token cannot be fetched again. List key metadata to inspect the state, then revoke/create or replace an active replacement if its token was lost. For uninterrupted handover, manually create another key, update callers, and revoke the original; this route has no grace period. See [runtime API keys](api-keys.md) for the dashboard workflow.
+
 Runtime keys cannot authenticate management routes. Editor and viewer member tokens cannot manage keys. Owner and member tokens cannot invoke published endpoints. Missing, expired, or revoked runtime credentials return `401`; valid keys targeting another flow or an ungranted operation return `403`. GraphQL checks the selected query or mutation before flow execution. Grants do not filter fields or records.
 
 Keys follow the flow's published revisions rather than pinning one release. Review grants before republishing broader behavior. Migration 6 adds runtime-key storage; it preserves published releases but intentionally ends member-token runtime access. Existing callers need new runtime credentials.
+
+Replacement uses the existing key and audit tables without a schema migration. Restoring a backup restores that snapshot's key state and can reactivate a key revoked or replaced later. Review restored keys before resuming callers.
 
 ## Runtime
 

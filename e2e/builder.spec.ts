@@ -32,6 +32,10 @@ test('build, move, save, test and publish a flow through the dashboard', async (
   ).toBeDisabled()
   await page.getByLabel('I saved my owner key').check()
   await page.getByRole('button', { name: 'Enter studio' }).click()
+  await expect(page.getByTestId('flow-canvas')).toBeVisible()
+  await expect(
+    page.locator('.flow-card').filter({ hasText: 'JSON response' }),
+  ).toBeVisible()
   await page.getByRole('combobox', { name: 'Appearance' }).click()
   await page.getByRole('option', { name: 'Dark', exact: true }).click()
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')

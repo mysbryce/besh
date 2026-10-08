@@ -30,6 +30,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Check authentication and permissions on the server for every management operation.
 - Keep member credentials limited to management and draft tests. Published APIs require a separate, unexpired runtime key scoped to the published flow and operation type. Never add a member-key bypass.
 - Derive endpoint permissions and displayed URLs from the published release, not an edited draft. Query/mutation grants do not replace future field or record authorization.
+- Replace runtime keys atomically with their audit events. Preserve exact scope and expiry, show the new token once, and keep navigation blocked while its request is pending.
 - Validate flows before execution and publication. Bound graph, request, and response sizes.
 - Never evaluate uploaded JavaScript inside the server process.
 - Keep secrets on the server; store credential hashes where possible. Do not log tokens or payloads by default.

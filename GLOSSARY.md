@@ -29,6 +29,7 @@
 - **Provider subject**: the provider's stable user identifier, paired with the provider name for product identity; distinct from a mutable username or email address.
 - **Secret key file**: the local encryption key for saved provider secrets and PKCE verifiers; separate from SQLite backups and restored with the matching database.
 - **Runtime API key**: a server-issued credential granting REST requests or GraphQL query/mutation operations for one published flow, with required expiration and immediate revocation.
+- **Key replacement**: an owner action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, and exact expiration; the new token appears once and there is no grace period.
 - **Runtime grant**: permission to invoke an entire REST request, GraphQL query, or GraphQL mutation; it does not filter fields or records.
 - **Audit event**: a record of who performed an action, when, and on which resource.
 - **Migration**: a versioned change to a database schema.

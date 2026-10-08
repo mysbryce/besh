@@ -198,6 +198,56 @@ test('built dashboard signs in, restores sessions and imports Excel under strict
     await expect(page.getByTestId('test-result')).not.toContainText(
       attempt.state,
     )
+    await page.getByRole('button', { name: 'Publish', exact: true }).click()
+    await page.getByRole('button', { name: 'API keys', exact: true }).click()
+    await page.getByLabel('Key name', { exact: true }).fill('Built caller')
+    const keyCreated = page.waitForResponse(
+      (response) =>
+        response.url() === backend + '/api/runtime-keys' &&
+        response.request().method() === 'POST',
+    )
+    await page
+      .getByRole('button', { name: 'Create API key', exact: true })
+      .click()
+    const original = await (await keyCreated).json()
+    const runtimeUrl = await page
+      .getByLabel('Published endpoint URL', { exact: true })
+      .inputValue()
+    await page
+      .getByRole('button', { name: 'I saved this API key', exact: true })
+      .click()
+    const rotation = page.waitForResponse(
+      (response) =>
+        response.url() === `${backend}/api/runtime-keys/${original.id}/rotate`,
+    )
+    page.once('dialog', (dialog) => dialog.accept())
+    await page
+      .getByRole('row')
+      .filter({ hasText: 'Built caller' })
+      .getByRole('button', { name: 'Replace key', exact: true })
+      .click()
+    const rotated = await rotation
+    expect(rotated.status()).toBe(200)
+    const replacement = await rotated.json()
+    await expect(
+      page.getByRole('region', { name: 'Save API key', exact: true }),
+    ).toBeVisible()
+    expect(
+      (
+        await page.request.post(runtimeUrl, {
+          headers: { authorization: `Bearer ${original.token}` },
+          data: { action: 'BEGIN' },
+        })
+      ).status(),
+    ).toBe(401)
+    const nextAttempt = await page.request.post(runtimeUrl, {
+      headers: { authorization: `Bearer ${replacement.token}` },
+      data: { action: 'BEGIN' },
+    })
+    expect(nextAttempt.status()).toBe(200)
+    expect(new URL((await nextAttempt.json()).authorizationUrl).hostname).toBe(
+      'github.com',
+    )
     expect(pageErrors).toEqual([])
     expect(policyViolations).toEqual([])
   } finally {

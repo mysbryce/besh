@@ -104,7 +104,7 @@ Input references replace a whole value and preserve JSON types. Supported roots 
 | Publishing    | Graph validation, route conflict checks, immutable release history                                      |
 | Concurrency   | Stale save/publish requests return `409`                                                                |
 | Access        | Server-enforced roles; workspace keys or email/password; expiring browser sessions                      |
-| API keys      | Owner-issued keys for one published API, expiring grants, immediate revocation                          |
+| API keys      | Owner-issued keys for one published API, expiring grants, atomic replacement, immediate revocation      |
 | Audit         | Changes, tests, runs, backups, and access denials; latest 200 visible                                   |
 | Migrations    | Versioned control-database schema history                                                               |
 | Backups       | Consistent SQLite snapshots and authenticated downloads; restore tested                                 |
@@ -112,6 +112,8 @@ Input references replace a whole value and preserve JSON types. Supported roots 
 Draft edits do not change a live endpoint. Save and publish a new revision to update it. Published endpoints require a runtime API key; owner and member tokens only access workspace management and permitted draft tests. Public endpoints remain planned.
 
 Runtime keys grant REST requests, GraphQL queries, or GraphQL mutations for one published API. Expiration is required and must be within 366 days; the dashboard offers 1, 7, 30, or 90 days. Tokens appear once; save the token before leaving the page. Raw values are not persisted in browser storage, and the server stores their hashes. Revoked or expired keys stop working immediately. Grants cover the whole operation, not individual fields or records. A key follows its API across published revisions, so review grants when republishing broader behavior.
+
+To replace an active token, open **API keys**, select **Replace key**, and confirm. Save the returned token and update your callers: the original stops accepting new requests immediately. Replacement keeps the same name, API, operations, and exact expiration; it does not extend access. Already authenticated requests may finish. For gradual handover, manually create another key, update callers, then revoke the original. Revoked or expired keys need a new issuance. See [runtime API keys](api-keys.md) for confirmation, lost-response recovery, product login attempts, and backup behavior.
 
 Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/input/output limits. Spreadsheet uploads use a separate bounded multipart route. General network requests and external database execution nodes remain planned.
 
@@ -160,7 +162,7 @@ REST and GraphQL keep separate routes and published releases. GraphQL currently 
 | Change own email/password with proof           | Yes   | Yes    | Yes    |
 | Inspect/revoke own browser sessions            | Yes   | Yes    | Yes    |
 | Inspect/revoke other members' sessions         | Yes   | No     | No     |
-| Create/list/revoke runtime API keys            | Yes   | No     | No     |
+| Create/list/replace/revoke runtime API keys    | Yes   | No     | No     |
 | Call published endpoints with member key       | No    | No     | No     |
 
 Member tokens are shown once. Remove a member to invalidate their token, account, and sessions. The owner key cannot be revoked from the member screen. Owner and member keys do not expire automatically in this preview; browser sessions and runtime API keys expire. Runtime keys cannot manage the workspace or test drafts.
@@ -182,7 +184,7 @@ To restore without overwriting your current workspace:
 3. Copy a downloaded backup to a new filename, such as `data/restored.sqlite`.
 4. Set `BESH_DATABASE_PATH=data/restored.sqlite` in `.env`. If the backup contains product connections, keep its matching `besh-secrets.key` beside the restored database or set `BESH_SECRET_KEY_PATH` to the matching private key path. Restart.
 5. Sign in with credentials valid at backup time. Check flows, logs, and a test response before using the restored copy.
-6. Review restored accounts and sessions, and revoke or rotate restored keys. A snapshot can restore old passwords, unexpired sessions, and runtime keys revoked after it was taken. Ending sessions alone does not disable restored passwords or member keys.
+6. Review restored accounts and sessions, and revoke or replace restored keys. A snapshot can restore old passwords, unexpired sessions, and runtime keys revoked or replaced after it was taken, while omitting later replacements. Ending sessions alone does not disable restored passwords or member keys. Key hashes in a backup cannot recover a lost raw token.
 
 Only Besh's control database is backed up. External database backups, schedules, retention, encryption, and remote storage are planned.
 
@@ -249,6 +251,7 @@ These are roadmap items. Public Google Sheets imports and the GitHub product ide
 - [GraphQL schemas and execution](graphql.md)
 - [REST API rules and OpenAPI downloads](api-contracts.md)
 - [Workspace accounts and sessions](workspace-auth.md)
+- [Runtime API keys](api-keys.md)
 - [GitHub product login](product-auth.md)
 - [AI policy](../AI_POLICY.md) · [Code of conduct](../CODE_OF_CONDUCT.md) · [Security](../SECURITY.md)
 

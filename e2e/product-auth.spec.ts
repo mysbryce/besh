@@ -204,10 +204,12 @@ test('owners connect GitHub for product APIs through labeled forms', async ({
       .click()
     await generationReached
     try {
-      await page
-        .getByRole('button', { name: 'API Studio', exact: true })
-        .click()
-      await expect(page.getByLabel('API name', { exact: true })).toBeDisabled()
+      await expect(
+        page.getByRole('button', { name: 'API Studio', exact: true }),
+      ).toBeDisabled()
+      await expect(
+        page.getByRole('button', { name: 'Create draft', exact: true }),
+      ).toBeDisabled()
     } finally {
       releaseGeneration()
     }

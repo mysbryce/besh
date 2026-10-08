@@ -28,6 +28,7 @@ Besh gives the flow editor most of the space. Navigation, setup, and workspace c
 - Common API tasks use labeled forms: response fields, conditions, test values, spreadsheet columns, and row limits. Put JSON and schema editors under Advanced. Preserve complex existing values when a form cannot represent them.
 - Spreadsheet setup follows import, inspect rows, choose fields, and create a draft. Publishing and issuing a runtime key remain explicit actions.
 - Product login follows connect GitHub, create a REST or GraphQL draft, review its graph, and publish. Use password fields for provider secrets and login proofs. Keep proof values out of visible test output and preview screenshots; explain the product server's role beside the template.
+- API key replacement confirms immediate loss of access for the old key and preserves its API, permissions, and expiry. Reuse the one-time copy/save controls. Block navigation while a workspace task is pending so a successful credential response cannot disappear before it is shown.
 
 ## Review
 

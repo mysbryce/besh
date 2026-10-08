@@ -100,11 +100,11 @@ export function App() {
   }, [setupKey])
 
   useEffect(() => {
-    if (!state.dirty) return
+    if (!state.dirty && !state.busy) return
     const warn = (event: BeforeUnloadEvent) => event.preventDefault()
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [state.dirty])
+  }, [state.dirty, state.busy])
 
   useEffect(() => {
     if (!state.expiresAt) return
@@ -148,7 +148,16 @@ export function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Besh home">
+        <a
+          className="brand"
+          href="/"
+          aria-label="Besh home"
+          aria-disabled={state.busy}
+          tabIndex={state.busy ? -1 : undefined}
+          onClick={(event) => {
+            if (state.busy) event.preventDefault()
+          }}
+        >
           <span className="brand-icon">b</span>besh
           <span className="brand-period">.</span>
         </a>
@@ -168,6 +177,7 @@ export function App() {
               key={id}
               aria-label={name}
               className={page === id ? 'active' : ''}
+              disabled={state.busy}
               onClick={() => setPage(id)}
             >
               <Icon size={18} />
@@ -257,6 +267,7 @@ export function App() {
               variant="ghost"
               size="icon"
               aria-label="Help & roadmap"
+              disabled={state.busy}
               onClick={() => setPage('roadmap')}
             >
               <CircleHelp size={18} />
