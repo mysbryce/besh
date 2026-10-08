@@ -21,6 +21,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Run relevant tests, type checks, build, and formatting before committing. Run browser tests for editor behavior changes.
 - Keep page and action previews current when changing dashboard behavior. Run `bun run preview:all --no-serve` and inspect affected screenshots; keep generated previews out of Git.
 - Commit completed work with Conventional Commits, for example `feat(flows): publish validated API flows` or `fix(auth): reject expired credentials`.
+- Bump `package.json` for every completed change delivery and update `CHANGELOG.md` in the same tested commit. Follow `docs/releases.md`: fixes use patch, new features use minor, incomplete releases use `alpha`. Never bump to `1.0.0` or above without the maintainer's explicit confirmation.
 - Never commit secrets, generated data, dependencies, or build output. Never hide tests or this file in `.gitignore`.
 - Preserve unrelated user edits. Do not force push, reset history, or publish without authorization.
 - Document what works, what remains planned, and exact checks run. Never claim an adapter works based only on a type definition or mock.
@@ -33,6 +34,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Replace runtime keys atomically with their audit events. Preserve exact scope and expiry, show the new token once, and keep navigation blocked while its request is pending.
 - Validate flows before execution and publication. Bound graph, request, and response sizes.
 - Never evaluate uploaded JavaScript inside the server process.
+- Keep load tests owner-only, bounded, and restricted to the local published API. Use generated k6 scripts and temporary scoped keys; never accept arbitrary target URLs, uploaded scripts, or CLI options. Persist summaries, not request payloads, process logs, or secrets.
 - Keep secrets on the server; store credential hashes where possible. Do not log tokens or payloads by default.
 - Encrypt product OAuth secrets and PKCE verifiers with the private key file. Back up that file separately from SQLite; never commit it or recreate it while encrypted records exist.
 - Save audit events with state changes. Keep migration history and test backup restoration.

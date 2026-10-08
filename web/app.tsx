@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import {
   Activity,
+  Gauge,
   ArrowUpRight,
   Box,
   CircleHelp,
@@ -45,6 +46,9 @@ const Account = lazy(() =>
 const ProductAuth = lazy(() =>
   import('./product-auth').then((module) => ({ default: module.ProductAuth })),
 )
+const LoadTests = lazy(() =>
+  import('./load-tests').then((module) => ({ default: module.LoadTests })),
+)
 
 type Setup = { required: boolean; name: string }
 type Page =
@@ -57,11 +61,13 @@ type Page =
   | 'roadmap'
   | 'account'
   | 'product-login'
+  | 'load-tests'
 
 const navigation = [
   { id: 'builder', name: 'API Studio', icon: Workflow },
   { id: 'data', name: 'Data sources', icon: Table2 },
   { id: 'product-login', name: 'Product login', icon: GitHubIcon },
+  { id: 'load-tests', name: 'Load testing', icon: Gauge },
   { id: 'audit', name: 'Audit trail', icon: Activity },
   { id: 'members', name: 'Members', icon: Users },
   { id: 'keys', name: 'API keys', icon: KeyRound },
@@ -295,6 +301,8 @@ export function App() {
               <DataSources onOpenApi={() => setPage('builder')} />
             ) : page === 'product-login' ? (
               <ProductAuth onOpenApi={() => setPage('builder')} />
+            ) : page === 'load-tests' ? (
+              <LoadTests />
             ) : page === 'roadmap' ? (
               <Roadmap />
             ) : page === 'keys' ? (

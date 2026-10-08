@@ -11,6 +11,8 @@ const { app, close, setupRequired } = createApp({
   setupKey,
   authOrigin: process.env.BESH_WEB_URL,
   secretKeyPath: process.env.BESH_SECRET_KEY_PATH,
+  k6BinaryPath: process.env.BESH_K6_PATH,
+  k6CacheDir: process.env.BESH_K6_CACHE_DIR,
   databasePath: process.env.BESH_DATABASE_PATH ?? 'data/besh.sqlite',
   backupDir: process.env.BESH_BACKUP_DIR ?? 'data/backups',
 })

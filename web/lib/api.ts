@@ -75,6 +75,7 @@ export type RuntimeKey = {
   expiresAt: string
   createdAt: string
   revokedAt: string | null
+  managedBy?: 'load-test'
 }
 export type Member = {
   id: string

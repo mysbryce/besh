@@ -66,6 +66,66 @@ Drafts may be incomplete. Publishing and testing require one request node, reach
 
 Member creation also accepts optional `email` and `password` together, using the same account rules as setup. It still returns a member key once. Member listing exposes only member ID, name, and role; members read their own email through `/api/account`. No invitation email is sent. Removing a member cascades to its account and sessions.
 
+## Load testing
+
+Every load-test management route requires the workspace owner. Editors and viewers receive `403`; runtime keys cannot access management. Cookie writes require the normal Origin and CSRF checks.
+
+| Method | Path                         | Body / behavior                                               |
+| ------ | ---------------------------- | ------------------------------------------------------------- |
+| GET    | `/api/load-tests/targets`    | Published endpoint targets and any automatic-test restriction |
+| GET    | `/api/load-tests`            | Latest 100 run records, newest first                          |
+| GET    | `/api/load-tests/:id`        | One run; unknown ID returns `404`                             |
+| POST   | `/api/load-tests`            | Starts a run; returns its record with `202`                   |
+| POST   | `/api/load-tests/:id/cancel` | Cancels a running run; returns its updated record             |
+
+A default REST start needs only `{ "flowId": "<published-flow-id>" }` when its contract needs no input. Optional settings and request fields:
+
+```json
+{
+  "flowId": "<published-flow-id>",
+  "config": {
+    "vus": 1,
+    "durationSeconds": 5,
+    "p95Ms": 1000,
+    "maxErrorRate": 0.01,
+    "expectedStatus": null
+  },
+  "request": {
+    "query": { "name": "Ada" },
+    "body": null
+  }
+}
+```
+
+`vus` is an integer from 1 to 10; `durationSeconds` is an integer from 1 to 30. `p95Ms` is from 1 to 60,000, `maxErrorRate` is a fraction from 0 to 1, and `expectedStatus` is `null` for any 2xx or an exact integer from 200 to 599. Omitted settings use the values shown above. Query values are strings, with at most 64 fields, 256-character names, and 4096-character values. Serialized request input is limited to 16 KiB with normal JSON nesting limits; the encoded target URL is limited to 8 KiB. GET and HEAD reject a non-null body. Unknown configuration/request fields are rejected.
+
+For GraphQL, use `request.graphql` with the published schema:
+
+```json
+{
+  "flowId": "<published-graphql-flow-id>",
+  "request": {
+    "graphql": {
+      "query": "query Greeting($name: String!) { greeting(name: $name) { message } }",
+      "variables": { "name": "Ada" },
+      "operationName": "Greeting"
+    }
+  }
+}
+```
+
+The operation document is limited to 16,384 characters, and an optional operation name to 100. Normal published-schema validation and GraphQL execution budgets apply. The server derives the temporary key's query/mutation grant from the selected operation. REST input cannot substitute for a GraphQL operation.
+
+Target records contain `id`, `name`, published `revision`, `method`, `path`, `graphql` schema metadata or `null`, and `unavailableReason`. Targets derive from the release, even after editing a different draft route. Run metadata captures the starting release, while requests invoke its live route; avoid republishing during a test because execution is not release-pinned. Product-login/social flows are unavailable for automatic tests. The server accepts no arbitrary target URL, scripts, shell command, or custom headers.
+
+Run records contain `id`, `flowId`, `flowName`, published `revision`, `method`, `path`, boolean `graphql`, resolved `config`, `status`, `createdAt`, nullable `finishedAt`, nullable `summary`, and nullable safe `error`. Summary fields are `requests`, `requestsPerSecond`, `failedRequests`, `checkRate`, `avgMs`, `p95Ms`, `maxMs`, and `thresholdsPassed`; rates use fractions or requests per second, and latency uses milliseconds. Status is `running`, `completed`, `failed`, `canceled`, or `interrupted`. Missing a goal still produces `completed` with `thresholdsPassed: false`; `failed` means provisioning/runner failure.
+
+One run can be active at a time; another start returns `409`. Unknown runs return `404`. Canceling an already completed, failed, or interrupted run returns `409`; repeated cancellation of a canceled run is safe. Invalid/unpublished targets, unavailable social flows, configuration, or request input return `400`. A server without a listening local runtime cannot start a test.
+
+Starts authorize repeated calls to the live API. Dashboard write/mutation starts require confirmation; direct owner clients have no separate confirmation field. Besh automatically issues a temporary scoped key, generates its local k6 script, and revokes the key on completion, failure, cancellation, or interruption. Existing caller keys remain unchanged. Restart interrupts rather than resumes active jobs. In-flight requests may finish after cancellation.
+
+SQLite history and backups contain endpoint/settings/result metadata, excluding request values, raw tokens, generated scripts, and process logs. Load-test lifecycle audit events likewise record metadata only. See [load testing](load-testing.md) for automatic k6 provisioning, optional administrator configuration, live-write risks, and verification evidence.
+
 ## Flow format
 
 ```json
@@ -176,7 +236,7 @@ Content-Type: application/json
 
 Name must contain 1 to 80 characters after trimming. Expiration must be a future ISO date with timezone within 366 days. A REST flow accepts `rest`; a GraphQL flow accepts `query`, `mutation`, or both. Empty, duplicate, or protocol-incompatible grants are rejected. One key scopes to one published flow ID.
 
-The response contains `id`, `name`, `flowId`, `permissions`, `expiresAt`, `createdAt`, `revokedAt: null`, and a one-time `token`. `GET /api/runtime-keys` returns the same metadata without tokens or hashes. Revocation returns `{ "ok": true }` and retains `revokedAt`. Repeating revocation succeeds; an unknown key returns `404`.
+The response contains `id`, `name`, `flowId`, `permissions`, `expiresAt`, `createdAt`, `revokedAt: null`, and a one-time `token`. `GET /api/runtime-keys` returns the same metadata without tokens or hashes. Keys owned by load-test jobs additionally contain `managedBy: "load-test"`; ordinary caller keys omit it. These temporary keys are revoked automatically and cannot be replaced (`409`). Manual revocation is allowed and interrupts their caller access. Revocation returns `{ "ok": true }` and retains `revokedAt`. Repeating revocation succeeds; an unknown key returns `404`.
 
 ### Replace an active key
 

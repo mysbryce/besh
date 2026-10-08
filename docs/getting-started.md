@@ -2,7 +2,7 @@
 
 Build APIs by connecting nodes. Test a draft, inspect its response, and publish when ready.
 
-Besh is an early, local development preview. Visual REST and GraphQL APIs, spreadsheet snapshots, public Google Sheets imports, and a GitHub product login template work. The GitHub exchange is tested with controlled provider responses; a live OAuth app round trip still needs your credentials and product callback. Database adapters and the full AI agent remain planned. See the [roadmap](roadmap.md).
+Besh is an early, local development preview. Build visual REST and GraphQL APIs, then use built-in k6 load testing to check their published behavior. Spreadsheet snapshots, public Google Sheets imports, and a GitHub product login template also work. The GitHub exchange is tested with controlled provider responses; a live OAuth app round trip still needs your credentials and product callback. Database adapters and the full AI agent remain planned. See the [roadmap](roadmap.md).
 
 ## Start in two commands
 
@@ -102,6 +102,7 @@ Input references replace a whole value and preserve JSON types. Supported roots 
 | OpenAPI       | JSON downloads for a saved REST draft or published release, kept separate                               |
 | Drafts        | SQLite persistence; incomplete graphs may be saved                                                      |
 | Publishing    | Graph validation, route conflict checks, immutable release history                                      |
+| Load testing  | Owner-started local k6 tests of published REST/GraphQL APIs, optional goals, saved summaries            |
 | Concurrency   | Stale save/publish requests return `409`                                                                |
 | Access        | Server-enforced roles; workspace keys or email/password; expiring browser sessions                      |
 | API keys      | Owner-issued keys for one published API, expiring grants, atomic replacement, immediate revocation      |
@@ -116,6 +117,14 @@ Runtime keys grant REST requests, GraphQL queries, or GraphQL mutations for one 
 To replace an active token, open **API keys**, select **Replace key**, and confirm. Save the returned token and update your callers: the original stops accepting new requests immediately. Replacement keeps the same name, API, operations, and exact expiration; it does not extend access. Already authenticated requests may finish. For gradual handover, manually create another key, update callers, then revoke the original. Revoked or expired keys need a new issuance. See [runtime API keys](api-keys.md) for confirmation, lost-response recovery, product login attempts, and backup behavior.
 
 Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/input/output limits. Spreadsheet uploads use a separate bounded multipart route. General network requests and external database execution nodes remain planned.
+
+## Load test a published API
+
+Open **Load testing** as the owner. Choose a published API, fill any required request fields, then select **Run load test**. Defaults run one virtual user for five seconds and check a 1000 ms p95 goal with at most 1% errors. You can change the settings, inspect results, cancel a running test, or review saved history.
+
+Besh downloads and verifies pinned k6 on first use, then caches it. The first download needs internet access; no manual installation, script, runtime-key creation, or Grafana Cloud account is needed. For GraphQL, review the generated example operation and supply its required arguments; variables use field forms. Advanced JSON input is optional.
+
+Write methods and mutations call the live API repeatedly and require dashboard confirmation. Tests do not roll back side effects. Product login APIs cannot be load tested automatically. One run is allowed at a time, with at most ten virtual users and thirty seconds of scheduled load. See [load testing](load-testing.md) for results, permissions, configuration, and recovery limits.
 
 ## Make an API from a spreadsheet
 
@@ -205,6 +214,8 @@ Configuration is optional. Copy `.env.example` to `.env` only when needed.
 | `BESH_SETUP_KEY`       | Optional setup challenge; generated automatically otherwise                          |
 | `BESH_WEB_URL`         | Exact browser origin for authentication and setup link; dev command sets it          |
 | `BESH_API_URL`         | Vite proxy target; defaults to `http://127.0.0.1:3000`                               |
+| `BESH_K6_PATH`         | Optional trusted existing k6 executable; otherwise provision automatically           |
+| `BESH_K6_CACHE_DIR`    | Optional k6 cache directory; defaults to `.cache/k6`                                 |
 
 If you change `PORT` during development, also set `BESH_API_URL` to that port. The dashboard uses port `5173`. It fails clearly if the port is already occupied.
 
@@ -252,6 +263,7 @@ These are roadmap items. Public Google Sheets imports and the GitHub product ide
 - [REST API rules and OpenAPI downloads](api-contracts.md)
 - [Workspace accounts and sessions](workspace-auth.md)
 - [Runtime API keys](api-keys.md)
+- [Built-in k6 load testing](load-testing.md)
 - [GitHub product login](product-auth.md)
 - [AI policy](../AI_POLICY.md) · [Code of conduct](../CODE_OF_CONDUCT.md) · [Security](../SECURITY.md)
 

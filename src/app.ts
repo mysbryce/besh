@@ -4,6 +4,9 @@ import { allow, ApiError } from './errors'
 import { flowService } from './flows/service'
 import { backupService } from './backups'
 import { dataSourceService } from './data-sources'
+import { loadTestService } from './load-tests'
+import { createK6Runner } from './k6'
+import type { K6Runner } from './load-test-model'
 import type { SheetFetch } from './google-sheets'
 import { productAuthService, type OAuthFetch } from './product-auth'
 import { timingSafeEqual } from 'node:crypto'
@@ -60,6 +63,9 @@ export type AppOptions = {
   now?: () => number
   oauthFetch?: OAuthFetch
   secretKeyPath?: string
+  k6Runner?: K6Runner
+  k6BinaryPath?: string
+  k6CacheDir?: string
 }
 
 export function createApp(options: AppOptions) {
@@ -76,6 +82,15 @@ export function createApp(options: AppOptions) {
   }
   const flows = flowService(store, sources, productAuth)
   const backups = backupService(store, options.backupDir)
+  const loadTests = loadTestService(
+    store,
+    options.k6Runner ??
+      createK6Runner({
+        binaryPath: options.k6BinaryPath,
+        cacheDir: options.k6CacheDir,
+      }),
+    () => (app.server ? `http://127.0.0.1:${app.server.port}` : null),
+  )
 
   const management = new Elysia({ prefix: '/api' })
     .resolve(({ request, status }) => {
@@ -98,6 +113,28 @@ export function createApp(options: AppOptions) {
       return { member, session }
     })
     .get('/me', ({ member }) => member)
+    .get('/load-tests/targets', ({ member }) => {
+      allow(member, ['owner'])
+      return loadTests.targets()
+    })
+    .get('/load-tests', ({ member }) => {
+      allow(member, ['owner'])
+      return loadTests.list()
+    })
+    .get('/load-tests/:id', ({ member, params }) => {
+      allow(member, ['owner'])
+      return loadTests.get(params.id)
+    })
+    .post('/load-tests', ({ member, body, set }) => {
+      allow(member, ['owner'])
+      const run = loadTests.start(member.id, body)
+      set.status = 202
+      return run
+    })
+    .post('/load-tests/:id/cancel', ({ member, params }) => {
+      allow(member, ['owner'])
+      return loadTests.cancel(params.id)
+    })
     .get('/auth-connections', ({ member }) => {
       allow(member, ['owner', 'editor'])
       return productAuth.list()
@@ -346,6 +383,7 @@ export function createApp(options: AppOptions) {
     })
 
   const app = new Elysia()
+    .onStop(() => loadTests.close())
     .onRequest(async ({ set, request }) => {
       set.headers['cache-control'] = 'no-store'
       set.headers['x-content-type-options'] = 'nosniff'
@@ -489,9 +527,15 @@ export function createApp(options: AppOptions) {
       })
     })
 
+  let storeClosed = false
   return {
     app,
-    close: store.close,
+    close() {
+      if (storeClosed) return
+      loadTests.close()
+      store.close()
+      storeClosed = true
+    },
     setupRequired: store.setupStatus().required,
   }
 }

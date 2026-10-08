@@ -21,6 +21,7 @@ export type RuntimeKey = {
   expiresAt: string
   createdAt: string
   revokedAt: string | null
+  managedBy?: 'load-test'
 }
 
 type RuntimeKeyRow = {
@@ -259,6 +260,23 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 10').get()) {
+      db.exec(`
+        CREATE TABLE load_tests (
+          id TEXT PRIMARY KEY,
+          metadata TEXT NOT NULL,
+          status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed', 'canceled', 'interrupted')),
+          runtime_key_id TEXT NOT NULL REFERENCES runtime_keys(id),
+          actor TEXT NOT NULL
+        );
+        CREATE UNIQUE INDEX one_running_load_test ON load_tests((1)) WHERE status = 'running';
+      `)
+      query('INSERT INTO migrations VALUES (10, ?, ?)').run(
+        'built-in local load tests',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -419,11 +437,14 @@ export function openStore(path: string, adminToken?: string) {
       return query('SELECT * FROM audit ORDER BY id DESC LIMIT 200').all()
     },
     listRuntimeKeys() {
-      return query<RuntimeKeyRow, []>(
-        'SELECT id, name, flow_id, permissions, expires_at, created_at, revoked_at FROM runtime_keys ORDER BY rowid DESC',
+      return query<RuntimeKeyRow & { managed: number }, []>(
+        'SELECT id, name, flow_id, permissions, expires_at, created_at, revoked_at, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys ORDER BY rowid DESC',
       )
         .all()
-        .map(runtimeKey)
+        .map((row): RuntimeKey => ({
+          ...runtimeKey(row),
+          ...(row.managed ? { managedBy: 'load-test' } : {}),
+        }))
     },
     createRuntimeKey(
       actor: string,
@@ -476,6 +497,12 @@ export function openStore(path: string, adminToken?: string) {
             'SELECT id, name, flow_id, permissions, expires_at, created_at, revoked_at FROM runtime_keys WHERE id = ?',
           ).get(id)
           if (!row) throw new ApiError(404, 'Runtime key not found')
+
+          // Load-test credentials stay private and expire with their owning job.
+          if (
+            query('SELECT id FROM load_tests WHERE runtime_key_id = ?').get(id)
+          )
+            throw new ApiError(409, 'Load test keys are managed automatically')
 
           const now = Date.now()
           if (

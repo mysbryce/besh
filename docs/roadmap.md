@@ -2,6 +2,19 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Main feature: built-in k6 load testing
+
+The current feature slice makes load testing part of the normal Besh workflow. Choose a published REST or GraphQL API, supply required fields, and start with safe small defaults. Manual installation, scripts, credential setup, and Grafana Cloud are not required; test settings are optional.
+
+- Owner-only published targets, run creation, result/history reads, and cancellation.
+- Automatic pinned official k6 provisioning, archive checksum verification, local executable caching, and optional trusted-path/cache configuration.
+- Published REST contract and GraphQL schema/operation validation; automatically issued temporary operation-scoped keys with lifecycle revocation.
+- One active run, one virtual user/five seconds by default, bounded ten-user/thirty-second configuration, latency/error/status goals, and aggregate summaries.
+- Dashboard confirmation for repeated live writes and mutations; product OAuth/social flows excluded from automatic tests.
+- SQLite run metadata/settings/results, backup inclusion, metadata-only audit lifecycle, restart interruption, and no persisted input or raw credential values.
+
+Verification status and exact platform evidence belong in [testing](testing.md). Native download/execution must be observed separately from controlled-runner or browser tests. See [load testing](load-testing.md) for setup, use, result meaning, and limits. Long-running/scheduled tests, arbitrary external targets, custom scripts, distributed load, Grafana Cloud, and production capacity certification are outside this slice.
+
 ## Milestone 1: runnable core — implemented
 
 - Visual flow editor: add, move, connect, configure, and remove nodes.
@@ -59,7 +72,7 @@ Current limits: one local workspace, exact HTTP paths, five node types, fixed ro
 - Verified update artifacts, compatibility checks, backup, migration and rollback.
 - CI release pipeline with conventional commits and changelog generation.
 - Worker isolation, queues, horizontal scaling and production observability.
-- Load, penetration, recovery and tenant-isolation tests.
+- Broader sustained/distributed load, penetration, recovery and tenant-isolation tests beyond current bounded local k6 runs.
 
 ## Completion gates
 
@@ -68,7 +81,8 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 ## Next Steps
 
 1. Start with `bun install --frozen-lockfile` and `bun run setup`; complete the local wizard.
-2. Run `bun run preview:all` and gather feedback on pages, node configuration, and route design before expanding the graph format.
-3. Review the runtime-key replacement workflow and caller handover. Use [runtime API keys](api-keys.md) for immediate replacement, manual gradual handover, and restored-key review. Review workspace account/session feedback and the GitHub product login workflow. A real GitHub OAuth app, exact product-server callback, and privately backed-up encryption key are still needed to verify a live round trip. Product sessions, identity linking, workspace invites, and account recovery remain planned.
-4. Add integration tests against each real provider as its adapter is built. Do not mark live provider configuration verified from mocks. Review public endpoint policy and finer data permissions before exposing product data.
-5. Choose a GitHub repository and private reporting contact before public release, then configure CI and update notices.
+2. Publish an API and review built-in [load testing](load-testing.md) with defaults, required input, optional goals, result history, and live-write confirmation. Keep native k6 provisioning/execution evidence separate from controlled-runner checks.
+3. Run `bun run preview:all` and gather feedback on pages, node configuration, and route design before expanding the graph format.
+4. Review the runtime-key replacement workflow and caller handover. Use [runtime API keys](api-keys.md) for immediate replacement, manual gradual handover, and restored-key review. Review workspace account/session feedback and the GitHub product login workflow. A real GitHub OAuth app, exact product-server callback, and privately backed-up encryption key are still needed to verify a live round trip. Product sessions, identity linking, workspace invites, and account recovery remain planned.
+5. Add integration tests against each real provider as its adapter is built. Do not mark live provider configuration verified from mocks. Review public endpoint policy and finer data permissions before exposing product data.
+6. Choose a GitHub repository and private reporting contact before public release, then configure CI and update notices.

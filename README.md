@@ -30,6 +30,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 - Visual editor with response fields, input references, conditions, and spreadsheet reads; advanced JSON remains optional.
 - Saved drafts, validated publication, and immutable releases.
 - REST methods and typed GraphQL queries/mutations.
+- Built-in k6 load testing for published REST/GraphQL APIs, with automatic local setup and optional goals.
 - Optional REST input/response rules and separate draft/published OpenAPI downloads.
 - Owner, editor, and viewer roles; expiring runtime API keys with replacement and revocation.
 - Optional email/password sign-in and revocable workspace browser sessions.
@@ -41,7 +42,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 
 ## Documentation
 
-[Documentation index](docs/README.md) · [Getting started](docs/getting-started.md) · [API reference](docs/api.md) · [Product login](docs/product-auth.md) · [Roadmap](docs/roadmap.md)
+[Documentation index](docs/README.md) · [Getting started](docs/getting-started.md) · [Load testing](docs/load-testing.md) · [API reference](docs/api.md) · [Roadmap](docs/roadmap.md)
 
 [Contributing](docs/contributing.md) · [Security](SECURITY.md) · [AI policy](AI_POLICY.md)
 

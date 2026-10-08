@@ -7,6 +7,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [Getting started](getting-started.md): installation, first API, runtime keys, roles, configuration, recovery, project layout, and development commands.
 - [Workspace accounts and sessions](workspace-auth.md): key or email/password sign-in, account changes, session metadata, revocation, and recovery boundaries.
 - [Runtime API keys](api-keys.md): create, use, replace, revoke, expire, save one-time tokens, and review restored access.
+- [Built-in k6 load testing](load-testing.md): published API targets, automatic local k6 setup, optional goals, live write confirmation, results, and history.
 - [GitHub product login](product-auth.md): OAuth app setup, generated REST/GraphQL drafts, server-held proof, product callbacks, identity results, and encryption-key backups.
 - [Core API reference](api.md): setup and management HTTP routes, flow format, runtime-key lifecycle, and published REST authentication.
 - [REST API rules and OpenAPI](api-contracts.md): simple field rules, server validation, supported schema subset, and draft/published downloads.
@@ -24,6 +25,8 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [Context and decisions](context.md): current user constraints, architecture choices, and resolved regressions.
 - [Repository presentation](repository.md): suggested public description and topics.
 - [Contributing](contributing.md): development workflow and contribution expectations.
+- [Versions and releases](releases.md): version bumps, prerelease labels, verification, and explicit approval before `1.0.0`.
+- [Changelog](../CHANGELOG.md): dated version changes and development history.
 - [Agent instructions](../AGENTS.md): repository work rules and security requirements.
 
 ## Policies

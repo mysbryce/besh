@@ -13,7 +13,7 @@ Goal: help teams build secure, documented APIs with a visual editor.
 7. Record state changes and their audit events together. Keep migration history. Back up before destructive changes and test restore procedures.
 8. Add integrations through capability-based adapters. Unsupported features fail clearly. A provider listed in a roadmap is not a working integration.
 9. Keep AI providers replaceable. Use typed tools with the caller's permissions. Models cannot grant themselves access. Codex CLI requires a separate, restricted process adapter; an HTTP provider adapter cannot substitute for it.
-10. Check GitHub releases for update notices. Do not execute downloaded code or silently migrate a running installation. Pin dependencies and release artifacts.
+10. Check GitHub releases for update notices. Do not execute application updates or silently migrate a running installation. Pin dependencies and release artifacts. Built-in load testing provisions only the explicitly selected, checksum-verified official k6 binary on first use; it does not update Besh.
 
 ## Runtime boundary
 
@@ -34,6 +34,24 @@ The member-authenticated OpenAPI route selects a saved draft or published releas
 Checkboxes and dropdowns use local styled components built on Radix primitives. Keep labels, keyboard navigation, disabled states, and focus return intact. Browser-native form controls may exist as hidden accessibility/form plumbing; no native checkbox, radio, or select is exposed as the visual control. New radio groups must follow the same rule.
 
 Basic response, condition, and REST request editing uses labeled field forms. Raw JSON is an optional advanced view; complex nested values are preserved. Returning from advanced request input validates the full body/query envelope before mounting the form, including text-only query values. Input strings resembling reference syntax stay literal request values. Light/dark appearance uses shared tokens, a same-origin initialization script compatible with the content security policy, and accessible custom controls; see [design system](design.md).
+
+## Load-test boundary
+
+Built-in k6 load testing is a main product workflow, separate from draft testing. Owners select an immutable published REST or GraphQL endpoint, supply validated request input, and optionally change bounded load and result goals. Defaults require no manual binary installation, scripts, credential setup, or Grafana Cloud. Labeled REST input and GraphQL variable forms are the common input path; GraphQL operations start from an editable generated example. Advanced JSON configuration stays optional.
+
+`Owner -> load-test management API -> published-release validation -> temporary runtime key -> native k6 child -> published runtime API -> summary/history`
+
+Only owners can list targets, start, inspect, list history, or cancel jobs. The server derives the target's method, route, rules, and operation grants from its published release; it accepts no arbitrary URL, script, shell command, or caller-defined headers. REST contracts and GraphQL schema/operation budgets validate input before launch. Published product-login flows containing social nodes are excluded from automatic load testing.
+
+Tests use a temporary, expiring, single-flow runtime key with only the needed REST/query/mutation grant. State changes and key/audit lifecycle commit transactionally; completion, failure, cancellation, and restart interruption revoke the key. Existing caller keys and grants are unaffected. This uses the runtime authentication boundary rather than bypassing it with owner identity. Keys remain flow-scoped under the normal republishing policy; broader field/record authorization and release-pinned grants remain planned.
+
+One active job per workspace, at most ten virtual users, at most thirty seconds of scheduled load, and a fixed 0.2-second pause bound the current feature. These limits do not isolate normal callers from resource use. Write methods and GraphQL mutations make repeated live calls; the dashboard requires confirmation, and direct owner API starts authorize the request without an extra confirmation field. There is no rollback. Cancellation stops further work while in-flight requests may finish; restart interrupts unfinished jobs without resuming them.
+
+The native child runs a server-generated k6 script, never uploaded JavaScript inside Bun. First use provisions pinned k6 2.3.0 from the official Grafana release, verifies the archive SHA-256, and caches it under `.cache/k6`. First download requires network access; cached runs can work offline. Automatic provisioning targets Windows amd64, Linux amd64/arm64, and macOS amd64/arm64; execution evidence is recorded separately in [testing](testing.md). `BESH_K6_PATH` can select an administrator-trusted existing executable, and `BESH_K6_CACHE_DIR` can relocate the cache. Neither is required for the normal workflow. A local executable override is not a member-upload capability or an isolation sandbox.
+
+Migration 10 adds SQLite load-test history: endpoint/revision metadata, settings, status/timestamps, safe error, and aggregate result. Backups include that history. Request values, raw tokens, generated scripts, and process logs are excluded from persisted history and audit metadata. Results expose counts, throughput, failed requests, success-check rate, average/p95/max latency, and goal status. Missed goals produce a completed report with `thresholdsPassed: false`; provisioning or runner failure yields a failed job. A bounded local result does not certify production capacity or security.
+
+See [load testing](load-testing.md) and [core API](api.md).
 
 ## Spreadsheet data boundary
 

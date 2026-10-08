@@ -231,6 +231,15 @@ test('preview every current page and its actions', async ({
     'No published APIs',
     'Caller credentials require a published flow. The empty page explains how to publish first.',
   )
+  await navigate('Load testing')
+  await expect(
+    page.getByRole('heading', { name: 'Publish an API first' }),
+  ).toBeVisible()
+  await capture(
+    'Load testing',
+    'Publish before load testing',
+    'The empty page explains how to publish a live API before testing. No k6 installation or caller credential is requested.',
+  )
   await navigate('API Studio')
 
   await page.getByRole('button', { name: 'New API', exact: true }).click()
@@ -1814,6 +1823,7 @@ test('preview every current page and its actions', async ({
     'API Studio',
     'Data sources',
     'Product login',
+    'Load testing',
     'Members',
     'API keys',
     'Data & backups',
@@ -1870,6 +1880,7 @@ test('preview every current page and its actions', async ({
     'API Studio',
     'Data sources',
     'Product login',
+    'Load testing',
     'Members',
     'API keys',
     'Data & backups',
@@ -2833,6 +2844,272 @@ test('preview every current page and its actions', async ({
     'Permissions',
     'Editor denied API key replacement',
     'Editors cannot issue, replace, or revoke runtime credentials. Management rights are separate from published caller access.',
+  )
+
+  await navigate('Load testing')
+  await expect(
+    page.getByRole('heading', { name: 'Owner access required' }),
+  ).toBeVisible()
+  await capture(
+    'Permissions',
+    'Editor denied load testing',
+    'Only workspace owners can run, cancel, or view load tests. Published caller access remains separate.',
+  )
+  await page.getByRole('button', { name: /Sign out/ }).click()
+  await signIn(owner)
+  await navigate('Load testing')
+  await expect(
+    page.getByRole('combobox', { name: 'Published API' }),
+  ).toBeVisible()
+  await page.getByRole('combobox', { name: 'Published API' }).click()
+  await capture(
+    'Load testing',
+    'Choose a published load target',
+    'The custom dropdown lists actual published APIs. Draft changes do not supply the displayed route or schema.',
+  )
+  await page.getByRole('option', { name: /Welcome endpoint/ }).click()
+  await expect(
+    page.getByRole('button', { name: 'Run load test', exact: true }),
+  ).toBeEnabled()
+  await capture(
+    'Load testing',
+    'Default k6 test ready',
+    'The ready-to-run test uses one virtual user for five seconds. Besh prepares k6 and temporary API access automatically.',
+  )
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page.getByRole('button', { name: 'Run load test', exact: true }).click()
+  await expect(page.getByText('No load tests yet.')).toBeVisible()
+  await capture(
+    'Load testing',
+    'Cancel live load confirmation',
+    'Declining the repeated live-request confirmation creates no job and sends no load.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Run load test', exact: true }).click()
+  const loadResults = page.getByRole('region', { name: 'Load test results' })
+  await expect(loadResults).toContainText('Preparing k6 or running')
+  await capture(
+    'Load testing',
+    'Real k6 run in progress',
+    'A real native k6 process calls the published local API. Navigation stays available while the server owns the job.',
+  )
+  await expect(loadResults).toContainText('All limits passed', {
+    timeout: 30_000,
+  })
+  await capture(
+    'Load testing',
+    'Default k6 report',
+    'Actual k6 metrics show request count, throughput, HTTP errors, response checks, average, p95, and slowest response. This small local run does not certify production capacity.',
+  )
+  await page.reload()
+  await expect(page.getByTestId('flow-canvas')).toBeVisible()
+  await navigate('Load testing')
+  await expect(loadResults).toContainText('All limits passed')
+  await capture(
+    'Load testing',
+    'Restore load history after reload',
+    'Saved metadata and summary return after session restoration. Request values and temporary credentials are not in history.',
+  )
+  await page.getByRole('combobox', { name: 'Published API' }).click()
+  await page.getByRole('option', { name: /Welcome endpoint/ }).click()
+  await page
+    .getByRole('button', { name: 'Request inputs', exact: true })
+    .click()
+  await page.getByRole('button', { name: 'Add query parameter' }).click()
+  await page.getByLabel('Query name 1', { exact: true }).fill('product')
+  await page.getByLabel('Query value 1', { exact: true }).fill('demo')
+  await page.getByRole('button', { name: 'Add body field' }).click()
+  await page.getByLabel('Body name 1', { exact: true }).fill('name')
+  await page.getByLabel('Body value 1', { exact: true }).fill('Ada')
+  await capture(
+    'Load testing',
+    'Load request field forms',
+    'Query and body fields use readable forms. Common REST tests do not need JSON editing.',
+  )
+  await page
+    .getByRole('button', { name: 'Advanced request JSON', exact: true })
+    .click()
+  await capture(
+    'Load testing',
+    'Optional advanced load request',
+    'An optional JSON editor preserves the same query/body values for complex inputs.',
+  )
+  await page
+    .getByRole('button', { name: 'Advanced request JSON', exact: true })
+    .click()
+  await page.getByRole('button', { name: 'Load settings', exact: true }).click()
+  await page.getByLabel('Virtual users', { exact: true }).fill('2')
+  await page.getByLabel('Duration in seconds', { exact: true }).fill('1')
+  await page.getByRole('combobox', { name: 'Expected response' }).click()
+  await capture(
+    'Load testing',
+    'Custom load settings dropdown',
+    'Optional virtual-user, duration, response-time, error-budget, and expected-status controls use custom keyboard-accessible dropdowns.',
+  )
+  await page.getByRole('option', { name: 'A specific status' }).click()
+  await page.getByLabel('Expected status', { exact: true }).fill('201')
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Run load test', exact: true }).click()
+  await expect(loadResults).toContainText('Some limits failed', {
+    timeout: 15_000,
+  })
+  await capture(
+    'Load testing',
+    'Completed report with failed checks',
+    'The live endpoint returns 202 while this test expects 201. k6 records failed response checks instead of treating a completed run as a pass.',
+  )
+  await appearance('Dark')
+  await capture(
+    'Load testing',
+    'Dark k6 report',
+    'Load settings, limits, metrics, and history remain readable in dark appearance.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile dark',
+    'k6 report and settings',
+    'Metrics and custom settings stay inside the phone viewport in dark appearance.',
+  )
+  await appearance('Light')
+  await capture(
+    'Mobile',
+    'k6 report and settings',
+    'Light phone layout keeps load results and optional settings readable without document overflow.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.getByRole('combobox', { name: 'Published API' }).click()
+  await page.getByRole('option', { name: /GraphQL greeting/ }).click()
+  await expect(page.getByLabel('GraphQL query or mutation')).not.toHaveValue('')
+  await capture(
+    'Load testing',
+    'GraphQL load test example',
+    'The query example comes from the actual published schema, even while its saved draft is invalid. Besh detects query or mutation access automatically.',
+  )
+  await page
+    .getByLabel('GraphQL query or mutation')
+    .fill(
+      'mutation LoadGreeting($name: String!) { greet(name: $name) { message name } }',
+    )
+  await page.getByLabel('New variable name', { exact: true }).fill('name')
+  await page.getByRole('button', { name: 'Add variable', exact: true }).click()
+  await page.getByLabel('Variable name', { exact: true }).fill('Ada')
+  await page.getByRole('button', { name: 'Load settings', exact: true }).click()
+  await page.getByLabel('Duration in seconds', { exact: true }).fill('1')
+  await capture(
+    'Load testing',
+    'GraphQL mutation variable forms',
+    'Operation text can use variables supplied through labeled fields. JSON remains optional for nested variables.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Run load test', exact: true }).click()
+  await expect(loadResults).toContainText('All limits passed', {
+    timeout: 15_000,
+  })
+  await capture(
+    'Load testing',
+    'Real GraphQL k6 report',
+    'Actual native k6 calls the published mutation and checks both its HTTP status and GraphQL data without errors.',
+  )
+  await page.getByLabel('Duration in seconds', { exact: true }).fill('30')
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Run load test', exact: true }).click()
+  await expect(
+    loadResults.getByRole('button', { name: 'Cancel run' }),
+  ).toBeEnabled()
+  const previewLoads = await (
+    await page.request.get('/api/load-tests', { headers: rotationHeaders })
+  ).json()
+  const activeLoad = previewLoads.find(
+    (run: { status: string }) => run.status === 'running',
+  )
+  expect(activeLoad).toBeTruthy()
+  await navigate('API keys')
+  const managedPreviewKey = page
+    .getByRole('row')
+    .filter({ hasText: `Load test ${activeLoad.id}` })
+  await expect(managedPreviewKey).toContainText('Managed by load testing')
+  await expect(
+    managedPreviewKey.getByRole('button', { name: 'Replace key', exact: true }),
+  ).toHaveCount(0)
+  await capture(
+    'API keys',
+    'Managed temporary load test key',
+    'The active job key is labeled managed. Replacement is unavailable; the server keeps its raw token private and revokes it automatically.',
+  )
+  await navigate('Load testing')
+  await expect(
+    loadResults.getByRole('button', { name: 'Cancel run' }),
+  ).toBeEnabled()
+  await loadResults.getByRole('button', { name: 'Cancel run' }).click()
+  await expect(loadResults).toContainText('Canceled')
+  await capture(
+    'Load testing',
+    'Cancel active k6 run',
+    'Cancel revokes the temporary runtime key and stops the process. Requests already sent may finish; their effects are not rolled back.',
+  )
+  await page.getByRole('combobox', { name: 'Published API' }).click()
+  await page.getByRole('option', { name: /GitHub REST login/ }).click()
+  await expect(
+    page.getByText('Product login APIs cannot be load tested automatically', {
+      exact: true,
+    }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Run load test', exact: true }),
+  ).toBeDisabled()
+  await capture(
+    'Load testing',
+    'Product login excluded from automatic load',
+    'The published GitHub login flow cannot manufacture repeated authorization attempts through load testing.',
+  )
+  await page.route('**/api/load-tests/targets', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Preview connection interrupted' }),
+    }),
+  )
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await expect(
+    page
+      .getByRole('alert')
+      .filter({ hasText: 'Preview connection interrupted' }),
+  ).toBeVisible()
+  await capture(
+    'Load testing',
+    'Load history connection error',
+    'This labeled controlled transport failure shows helpful Refresh recovery. Completed report data remains available.',
+  )
+  await page.unroute('**/api/load-tests/targets')
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await expect(
+    page
+      .getByRole('alert')
+      .filter({ hasText: 'Preview connection interrupted' }),
+  ).toHaveCount(0)
+  await capture(
+    'Load testing',
+    'Refresh load testing metadata',
+    'Refresh recovers current published targets and recent reports from real HTTP routes.',
+  )
+  await navigate('Audit trail')
+  await expect(
+    page.getByRole('cell', { name: 'load-test.canceled', exact: true }).first(),
+  ).toBeVisible()
+  await expect(
+    page
+      .getByRole('cell', { name: 'load-test.completed', exact: true })
+      .first(),
+  ).toBeVisible()
+  await capture(
+    'Audit trail',
+    'Load test audit events',
+    'Job start, completion, cancellation, and temporary key lifecycle use metadata-only audit records.',
   )
   expect(errors).toEqual([])
 

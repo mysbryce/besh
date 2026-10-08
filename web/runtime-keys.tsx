@@ -340,7 +340,12 @@ export function RuntimeKeys() {
           <tbody>
             {keys.map((key) => (
               <tr key={key.id}>
-                <td>{key.name}</td>
+                <td>
+                  <div>{key.name}</div>
+                  {key.managedBy === 'load-test' ? (
+                    <Badge variant="outline">Managed by load testing</Badge>
+                  ) : null}
+                </td>
                 <td>
                   {flows.find((flow) => flow.id === key.flowId)?.name ??
                     'Unavailable API'}
@@ -361,7 +366,9 @@ export function RuntimeKeys() {
                   </Badge>
                 </td>
                 <td>
-                  {!key.revokedAt && Date.parse(key.expiresAt) > Date.now() ? (
+                  {!key.managedBy &&
+                  !key.revokedAt &&
+                  Date.parse(key.expiresAt) > Date.now() ? (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -427,7 +434,9 @@ export function RuntimeKeys() {
                         if (locked) return
                         if (
                           !window.confirm(
-                            `Revoke API key ${key.name}? Existing callers will lose access.`,
+                            key.managedBy === 'load-test'
+                              ? 'Revoke this temporary load test key? Remaining requests from this run will be rejected.'
+                              : `Revoke API key ${key.name}? Existing callers will lose access.`,
                           )
                         )
                           return

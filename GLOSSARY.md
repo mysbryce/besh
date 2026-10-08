@@ -12,6 +12,10 @@
 - **GraphQL schema**: a typed contract describing query/mutation fields, their arguments, and returned data.
 - **GraphQL operation**: a query or mutation selecting fields from a published schema; variables supply typed argument values.
 - **Run**: one execution of a flow with an input and a result.
+- **Load test**: an owner-started bounded k6 run that repeatedly calls a published API and reports latency, throughput, errors, and configured goals.
+- **Virtual user**: one concurrent k6 request loop; Besh permits at most ten per load test.
+- **Load-test goal**: a configured latency, error-rate, or expected-status check used to evaluate a run's results.
+- **Load-test history**: persisted endpoint/configuration metadata and summary metrics, excluding request values, raw tokens, generated scripts, and process logs.
 - **Connection**: a reference to a database or service. Credentials stay on the server.
 - **Data source**: an imported CSV/Excel file or public Google Sheet whose rows are saved as a versioned local snapshot.
 - **Snapshot**: the current saved rows and inferred column types for a data source; refresh/replacement updates the data used by published APIs.

@@ -10,6 +10,7 @@ AI assistance is welcome. Contributors remain responsible for every change.
 - Review generated code for security, correctness, licensing, and accessibility.
 - Disclose substantial AI assistance in pull requests. Name tests actually run.
 - Never invent test results, integrations, benchmarks, sources, or project state.
+- Update the version and `CHANGELOG.md` for each completed delivery. Follow [version rules](docs/releases.md); never approve or bump a `1.0.0` release without the maintainer's explicit confirmation.
 - Never upload secrets, private customer data, or production backups to a model.
 - Respect user changes. Do not rewrite history or publish without authorization.
 
