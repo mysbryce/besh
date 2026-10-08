@@ -6,6 +6,8 @@
 - **Edge**: a connection that chooses which node runs next.
 - **Draft**: an editable flow. Saving a draft does not change a published endpoint.
 - **Release**: a validated, immutable copy of a flow used by callers.
+- **GraphQL schema**: a typed contract describing query/mutation fields, their arguments, and returned data.
+- **GraphQL operation**: a query or mutation selecting fields from a published schema; variables supply typed argument values.
 - **Run**: one execution of a flow with an input and a result.
 - **Connection**: a reference to a database or service. Credentials stay on the server.
 - **Plugin**: a versioned extension that adds nodes or integrations.

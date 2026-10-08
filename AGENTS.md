@@ -9,6 +9,8 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Vault unavailable for this project. Use repository docs for working context. Never access `D:\VAULT\__codex` directly. If vault notes are supplied later, propose linked Markdown updates for manual save.
 - Use Bun, Elysia, React, Zustand, Tailwind CSS, and shadcn/ui. Avoid adding frameworks without a concrete need.
 - Code style: no semicolons, single quotes, readable spacing, and blank lines between logical steps. Comment only important intent, constraints, and non-obvious behavior. Use Prettier; do not compress several statements onto one line.
+- Use custom styled, accessible controls for checkboxes, radio groups, and dropdowns. Do not expose browser-native widgets. Preserve keyboard interaction, labels, focus, and disabled states.
+- Support real GraphQL APIs alongside REST. Keep schema validation, execution limits, authentication, and draft/release separation at the server boundary.
 - Keep local setup easy. Provide a first-run wizard; do not require manual environment edits for the basic workflow.
 - Keep folders shallow: `src/` server, `web/` dashboard, `test/` backend tests, `e2e/` browser tests, `docs/` design notes.
 - Read applicable local skills when requested. Current requested skills: `tdd`, `wait-what`, `handoff`.

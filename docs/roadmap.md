@@ -12,6 +12,7 @@ This is the product plan. Planned features are not implementation claims.
 - Tests through user-approved public HTTP, executor, and browser interfaces.
 - Clear setup, contribution, security, AI, and community policies.
 - Reproducible gallery of current pages, actions, error states, permissions, and phone layouts.
+- Custom styled accessible controls and per-API GraphQL schemas, query/mutation execution, variables, and bounded field selection.
 
 Current limits: one local workspace, exact HTTP paths, three node types, fixed roles, manual SQLite backups. No external providers are enabled. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
 
@@ -21,6 +22,7 @@ Current limits: one local workspace, exact HTTP paths, three node types, fixed r
 - Invites, account recovery, session expiry and revocation.
 - Per-workspace roles and custom permission grants.
 - Input/output schemas, generated OpenAPI, API keys and scoped tokens.
+- Extend GraphQL with scoped per-operation grants, reviewed introspection policy, custom scalar contracts, and subscriptions alongside WebSocket work.
 - WebSocket flows, lifecycle events, subscriptions, quotas and revocation.
 - Path parameters, versioned routes, rollback, pagination, retry and error nodes.
 

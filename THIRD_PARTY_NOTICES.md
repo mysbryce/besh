@@ -2,7 +2,7 @@
 
 Besh uses open-source dependencies. Their licenses remain in their installed packages and apply to their respective code.
 
-The components in `web/components/ui/` were generated using [shadcn/ui](https://github.com/shadcn-ui/ui) and adapted for local utility imports and project formatting.
+The button, badge, input, and textarea components in `web/components/ui/` were generated using [shadcn/ui](https://github.com/shadcn-ui/ui) and adapted for local utility imports and project formatting. The custom checkbox and select components use [Radix primitives](https://www.radix-ui.com/primitives). GraphQL execution uses [GraphQL.js](https://www.graphql-js.org/).
 
 shadcn/ui is MIT licensed:
 

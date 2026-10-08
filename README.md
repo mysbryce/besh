@@ -87,23 +87,37 @@ Input references replace a whole value and preserve JSON types. Supported roots 
 
 ## What works
 
-| Feature     | Current behavior                                                         |
-| ----------- | ------------------------------------------------------------------------ |
-| Setup       | One-time browser wizard with a server-issued setup link                  |
-| Editor      | Add, move, connect, configure, and remove nodes                          |
-| Nodes       | HTTP request, condition, JSON response                                   |
-| HTTP        | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; exact paths                |
-| Drafts      | SQLite persistence; incomplete graphs may be saved                       |
-| Publishing  | Graph validation, route conflict checks, immutable release history       |
-| Concurrency | Stale save/publish requests return `409`                                 |
-| Access      | Server-enforced owner, editor, and viewer roles; revocable member tokens |
-| Audit       | Changes, tests, runs, backups, and access denials; latest 200 visible    |
-| Migrations  | Versioned control-database schema history                                |
-| Backups     | Consistent SQLite snapshots and authenticated downloads; restore tested  |
+| Feature     | Current behavior                                                                           |
+| ----------- | ------------------------------------------------------------------------------------------ |
+| Setup       | One-time browser wizard with a server-issued setup link                                    |
+| Editor      | Add, move, connect, configure, and remove nodes                                            |
+| Nodes       | HTTP request, condition, JSON response                                                     |
+| HTTP        | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; exact paths                                  |
+| GraphQL     | Per-API typed schemas, queries/mutations, variables, field selection and bounded execution |
+| Drafts      | SQLite persistence; incomplete graphs may be saved                                         |
+| Publishing  | Graph validation, route conflict checks, immutable release history                         |
+| Concurrency | Stale save/publish requests return `409`                                                   |
+| Access      | Server-enforced owner, editor, and viewer roles; revocable member tokens                   |
+| Audit       | Changes, tests, runs, backups, and access denials; latest 200 visible                      |
+| Migrations  | Versioned control-database schema history                                                  |
+| Backups     | Consistent SQLite snapshots and authenticated downloads; restore tested                    |
 
 Draft edits do not change a live endpoint. Save and publish a new revision to update it. All generated endpoints currently require a workspace token. Per-endpoint credentials and public endpoints are planned.
 
 Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/input/output limits. The HTTP server also limits request bodies to 256 KiB. No network or database execution nodes are included yet.
+
+## Build a GraphQL API
+
+1. Create an API and choose **GraphQL** in **API type**.
+2. Set its path, such as `/greeting`. It will accept POST at `/graphql/greeting`.
+3. Edit **GraphQL schema**. The starter schema exposes `hello { message }`.
+4. Configure response nodes to return data matching your schema.
+5. Save, enter a GraphQL operation and variables, then select **Test flow**.
+6. Publish and call the endpoint with your workspace token.
+
+Each query or mutation root field runs the visual flow. Arguments are available under `$input.body`; conditions can branch on `query.field` and `query.operation`. GraphQL applies field selection, types, aliases, fragments, and nullability to the returned response body.
+
+REST and GraphQL keep separate routes and published releases. GraphQL currently uses POST with JSON requests. Subscriptions, custom scalars, and runtime schema introspection are not enabled. See [GraphQL guide](docs/graphql.md) for examples, permissions, and limits.
 
 ## Roles
 
@@ -187,6 +201,7 @@ These are roadmap items, not enabled providers. No credentials or external accou
 - [Architecture](docs/architecture.md) · [Roadmap](docs/roadmap.md) · [API reference](docs/api.md)
 - [Testing](docs/testing.md) · [Glossary](GLOSSARY.md) · [Agent instructions](AGENTS.md)
 - [Page/action previews and Git ignore rules](docs/preview.md)
+- [GraphQL schemas and execution](docs/graphql.md)
 - [AI policy](AI_POLICY.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Security](SECURITY.md)
 
 MIT licensed, like [Elysia](https://github.com/elysiajs/elysia). See [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).

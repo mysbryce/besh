@@ -2,6 +2,7 @@ import { ApiError } from '../errors'
 import type { Store } from '../store'
 import { assertJsonLimit, executeFlow, validateFlow } from './engine'
 import { flowSchema, type Flow, type FlowInput } from './model'
+import { executeGraphql, graphqlSchema } from './graphql'
 
 type Row = {
   id: string
@@ -37,7 +38,9 @@ export function flowService(store: Store) {
 
   function valid(value: unknown) {
     try {
-      return validateFlow(value)
+      const flow = validateFlow(value)
+      if (flow.graphql) graphqlSchema(flow)
+      return flow
     } catch (error) {
       throw new ApiError(
         400,
@@ -100,8 +103,13 @@ export function flowService(store: Store) {
 
         const definition = valid(JSON.parse(row.definition))
         const conflict = query(
-          "SELECT id FROM flows WHERE id != ? AND json_extract(published, '$.method') = ? AND json_extract(published, '$.path') = ?",
-        ).get(id, definition.method, definition.path)
+          "SELECT id FROM flows WHERE id != ? AND json_extract(published, '$.method') = ? AND json_extract(published, '$.path') = ? AND (json_extract(published, '$.graphql') IS NOT NULL) = ?",
+        ).get(
+          id,
+          definition.method,
+          definition.path,
+          definition.graphql ? 1 : 0,
+        )
         if (conflict)
           throw new ApiError(409, 'This method and path are already published')
 
@@ -120,18 +128,39 @@ export function flowService(store: Store) {
       return present(get(id))
     },
     test(actor: string, id: string, input: FlowInput) {
-      const result = executeFlow(valid(JSON.parse(get(id).definition)), input)
+      const definition = valid(JSON.parse(get(id).definition))
+      if (definition.graphql)
+        throw new ApiError(400, 'Use the GraphQL test endpoint')
+      const result = executeFlow(definition, input)
       audit(actor, 'flow.tested', id)
+      return result
+    },
+    testGraphql(actor: string, id: string, input: unknown) {
+      const definition = valid(JSON.parse(get(id).definition))
+      if (!definition.graphql)
+        throw new ApiError(400, 'This API does not have a GraphQL schema')
+      const result = executeGraphql(definition, input)
+      audit(actor, 'graphql.tested', id)
       return result
     },
     run(actor: string, method: string, path: string, input: FlowInput) {
       const row = query<Row, [string, string]>(
-        "SELECT * FROM flows WHERE json_extract(published, '$.method') = ? AND json_extract(published, '$.path') = ?",
+        "SELECT * FROM flows WHERE json_extract(published, '$.method') = ? AND json_extract(published, '$.path') = ? AND json_extract(published, '$.graphql') IS NULL",
       ).get(method, path)
       if (!row?.published) throw new ApiError(404, 'Endpoint not found')
 
       const result = executeFlow(JSON.parse(row.published), input)
       audit(actor, 'flow.executed', row.id)
+      return result
+    },
+    graphql(actor: string, path: string, input: unknown) {
+      const row = query<Row, [string]>(
+        "SELECT * FROM flows WHERE json_extract(published, '$.path') = ? AND json_extract(published, '$.graphql') IS NOT NULL",
+      ).get(path)
+      if (!row?.published) throw new ApiError(404, 'Endpoint not found')
+
+      const result = executeGraphql(JSON.parse(row.published), input)
+      audit(actor, 'graphql.executed', row.id)
       return result
     },
   }

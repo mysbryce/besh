@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createApp } from '../src/app'
-import { helloFlow } from './fixtures'
+import { helloFlow, graphqlFlow } from './fixtures'
 import { writeFileSync } from 'node:fs'
 
 const adminToken = 'test-only-admin-token-32-characters-long'
@@ -47,6 +47,258 @@ function workspace() {
     )
   return { request, server, options }
 }
+
+test('a published GraphQL endpoint resolves typed fields and variables', async () => {
+  const { request } = workspace()
+  const draft = await (await request('/api/flows', 'POST', graphqlFlow)).json()
+  expect(
+    (await request(`/api/flows/${draft.id}/publish`, 'POST', { revision: 1 }))
+      .status,
+  ).toBe(200)
+
+  const response = await request('/graphql/hello', 'POST', {
+    query: 'query Greeting($name: String!) { greet(name: $name) { name } }',
+    variables: { name: 'Ada' },
+    operationName: 'Greeting',
+  })
+  expect(response.status).toBe(200)
+  expect(await response.json()).toEqual({ data: { greet: { name: 'Ada' } } })
+})
+
+test('GraphQL resolves nested root types from flow data without rerunning the flow', async () => {
+  const { request } = workspace()
+  const definition = {
+    ...graphqlFlow,
+    graphql: { schema: 'type Query { item: Query name: String child: Query }' },
+    nodes: [
+      graphqlFlow.nodes[0],
+      {
+        ...graphqlFlow.nodes[1],
+        config: {
+          status: 200,
+          body: { name: 'outer', child: { name: 'inner' } },
+        },
+      },
+    ],
+  }
+  const draft = await (await request('/api/flows', 'POST', definition)).json()
+  const result = await (
+    await request(`/api/flows/${draft.id}/graphql/test`, 'POST', {
+      query: '{ item { name child { name } } }',
+    })
+  ).json()
+  expect(result.body).toEqual({
+    data: { item: { name: 'outer', child: { name: 'inner' } } },
+  })
+  expect(result.visited).toEqual(['request', 'response'])
+
+  const tooDeep = `{ item { ${'child { '.repeat(12)} name ${'}'.repeat(12)} } }`
+  const limited = await (
+    await request(`/api/flows/${draft.id}/graphql/test`, 'POST', {
+      query: tooDeep,
+    })
+  ).json()
+  expect(limited.status).toBe(400)
+  expect(limited.body.errors[0].message).toContain('depth limit')
+})
+
+test('GraphQL execution errors do not reveal unselected flow data', async () => {
+  const { request } = workspace()
+  const draft = await (
+    await request('/api/flows', 'POST', {
+      ...graphqlFlow,
+      nodes: [
+        graphqlFlow.nodes[0],
+        {
+          ...graphqlFlow.nodes[1],
+          config: {
+            status: 200,
+            body: {
+              message: { secret: 'private-value-must-stay-hidden' },
+              name: 'Ada',
+            },
+          },
+        },
+      ],
+    })
+  ).json()
+  const result = await request(`/api/flows/${draft.id}/graphql/test`, 'POST', {
+    query: '{ greet(name: "Ada") { message } }',
+  })
+  const body = await result.json()
+  expect(body.body).toHaveProperty('errors')
+  expect(JSON.stringify(body)).not.toContain('private-value-must-stay-hidden')
+  expect(body.body.errors[0].message).toBe(
+    'GraphQL field could not be resolved',
+  )
+})
+
+test('GraphQL rejects invalid input before execution and protects draft releases', async () => {
+  const { request } = workspace()
+  const draft = await (await request('/api/flows', 'POST', graphqlFlow)).json()
+  const operation = {
+    query:
+      'mutation Greeting($name: String!) { greet(name: $name) { message name } }',
+    variables: { name: 'Ada' },
+  }
+
+  expect((await request('/graphql/hello', 'POST', operation)).status).toBe(404)
+  const preview = await request(
+    `/api/flows/${draft.id}/graphql/test`,
+    'POST',
+    operation,
+  )
+  expect(preview.status).toBe(200)
+  expect(await preview.json()).toMatchObject({
+    body: { data: { greet: { message: 'Hello, Besh!', name: 'Ada' } } },
+  })
+  await request(`/api/flows/${draft.id}/publish`, 'POST', { revision: 1 })
+  expect((await request('/graphql/hello', 'POST', operation, '')).status).toBe(
+    401,
+  )
+  expect((await request('/graphql/hello')).status).toBe(405)
+
+  for (const body of [
+    { query: '{ greet(name: "Ada") { unknown } }' },
+    {
+      query: 'query ($name: String!) { greet(name: $name) { name } }',
+      variables: { name: 123 },
+    },
+    { query: '{' },
+    {},
+    [{ query: '{ __typename }' }],
+  ]) {
+    const invalid = await request('/graphql/hello', 'POST', body)
+    expect(invalid.status).toBe(400)
+    expect(await invalid.json()).toHaveProperty('errors')
+  }
+
+  const viewer = await (
+    await request('/api/members', 'POST', {
+      name: 'GraphQL reader',
+      role: 'viewer',
+    })
+  ).json()
+  expect(
+    (
+      await request(
+        `/api/flows/${draft.id}/graphql/test`,
+        'POST',
+        operation,
+        viewer.token,
+      )
+    ).status,
+  ).toBe(403)
+  expect(
+    (
+      await request(
+        `/api/flows/${draft.id}/publish`,
+        'POST',
+        { revision: 1 },
+        viewer.token,
+      )
+    ).status,
+  ).toBe(403)
+  expect(
+    (await request('/graphql/hello', 'POST', operation, viewer.token)).status,
+  ).toBe(200)
+
+  const changed = {
+    ...graphqlFlow,
+    nodes: [
+      graphqlFlow.nodes[0],
+      {
+        ...graphqlFlow.nodes[1],
+        config: {
+          status: 200,
+          body: { message: 'Draft message', name: '$input.body.name' },
+        },
+      },
+    ],
+    revision: 1,
+  }
+  await request(`/api/flows/${draft.id}`, 'PUT', changed)
+  expect(
+    await (await request('/graphql/hello', 'POST', operation)).json(),
+  ).toEqual({ data: { greet: { message: 'Hello, Besh!', name: 'Ada' } } })
+  await request(`/api/flows/${draft.id}/publish`, 'POST', { revision: 2 })
+  expect(
+    await (await request('/graphql/hello', 'POST', operation)).json(),
+  ).toEqual({ data: { greet: { message: 'Draft message', name: 'Ada' } } })
+  expect((await request('/run/hello', 'POST')).status).toBe(404)
+  const events = await (await request('/api/audit')).json()
+  expect(events.map((event: { action: string }) => event.action)).toContain(
+    'graphql.executed',
+  )
+  expect(events.map((event: { action: string }) => event.action)).toContain(
+    'graphql.tested',
+  )
+})
+
+test('GraphQL bounds operations and rejects unsupported schemas before publication', async () => {
+  const { request } = workspace()
+  const draft = await (await request('/api/flows', 'POST', graphqlFlow)).json()
+  await request(`/api/flows/${draft.id}/publish`, 'POST', { revision: 1 })
+
+  for (const query of [
+    `{ ${Array.from({ length: 17 }, (_, index) => `g${index}: greet(name: "Ada") { name }`).join(' ')} }`,
+    `{ greet(name: "Ada") { ${Array.from({ length: 201 }, (_, index) => `n${index}: name`).join(' ')} } }`,
+    '{ __schema { types { name } } }',
+  ]) {
+    const response = await request('/graphql/hello', 'POST', { query })
+    expect(response.status).toBe(400)
+    expect(await response.json()).toHaveProperty('errors')
+  }
+
+  for (const definition of [
+    { ...graphqlFlow, method: 'GET' },
+    {
+      ...graphqlFlow,
+      graphql: { schema: 'type Query { broken: MissingType }' },
+    },
+    {
+      ...graphqlFlow,
+      graphql: {
+        schema:
+          'type Query { value: String } type Subscription { tick: String }',
+      },
+    },
+    {
+      ...graphqlFlow,
+      graphql: { schema: 'scalar Date\ntype Query { value: Date }' },
+    },
+  ]) {
+    const invalid = await (
+      await request('/api/flows', 'POST', definition)
+    ).json()
+    expect(
+      (
+        await request(`/api/flows/${invalid.id}/publish`, 'POST', {
+          revision: 1,
+        })
+      ).status,
+    ).toBe(400)
+  }
+
+  const duplicate = await (
+    await request('/api/flows', 'POST', graphqlFlow)
+  ).json()
+  expect(
+    (
+      await request(`/api/flows/${duplicate.id}/publish`, 'POST', {
+        revision: 1,
+      })
+    ).status,
+  ).toBe(409)
+  const rest = await (
+    await request('/api/flows', 'POST', { ...helloFlow, method: 'POST' })
+  ).json()
+  expect(
+    (await request(`/api/flows/${rest.id}/publish`, 'POST', { revision: 1 }))
+      .status,
+  ).toBe(200)
+  expect((await request('/run/hello', 'POST')).status).toBe(200)
+})
 
 test('management routes require a valid token and identify the owner', async () => {
   const { request } = workspace()
@@ -167,6 +419,8 @@ test('backups restore published flows and migration history survives restarts', 
   const { request, options } = workspace()
   const flow = await (await request('/api/flows', 'POST', helloFlow)).json()
   await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 1 })
+  const graph = await (await request('/api/flows', 'POST', graphqlFlow)).json()
+  await request(`/api/flows/${graph.id}/publish`, 'POST', { revision: 1 })
 
   const backupResponse = await request('/api/backups', 'POST')
   expect(backupResponse.status).toBe(200)
@@ -184,10 +438,29 @@ test('backups restore published flows and migration history survives restarts', 
       }),
     )
     expect(await response.json()).toEqual({ message: 'Hello, Besh!' })
-    const migrations = await (await request('/api/migrations')).json()
+    const graphResponse = await restored.app.handle(
+      new Request('http://localhost/graphql/hello', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ query: '{ greet(name: "Ada") { name } }' }),
+      }),
+    )
+    expect(await graphResponse.json()).toEqual({
+      data: { greet: { name: 'Ada' } },
+    })
+    const migrations = await (
+      await restored.app.handle(
+        new Request('http://localhost/api/migrations', {
+          headers: { authorization: `Bearer ${adminToken}` },
+        }),
+      )
+    ).json()
     expect(
       migrations.map((migration: { version: number }) => migration.version),
-    ).toEqual([1, 2, 3, 4])
+    ).toEqual([1, 2, 3, 4, 5])
     expect(await (await request('/api/backups')).json()).toHaveLength(1)
   } finally {
     restored.close()

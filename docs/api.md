@@ -2,6 +2,8 @@
 
 Management routes use `Authorization: Bearer <workspace-token>`. Send JSON for request bodies. Responses use JSON except backup downloads. Error responses have `{ "error": "message" }`.
 
+GraphQL runtime endpoints use the GraphQL `data`/`errors` envelope. See [GraphQL guide](graphql.md).
+
 ## Setup
 
 | Method | Path            | Behavior                                                                          |
@@ -14,23 +16,24 @@ Setup needs the challenge from the local server terminal. It returns `409` once 
 
 ## Workspace
 
-| Method | Path                     | Permission / body                                                     |
-| ------ | ------------------------ | --------------------------------------------------------------------- |
-| GET    | `/api/me`                | Any member                                                            |
-| GET    | `/api/flows`             | Any member; full drafts and revision metadata                         |
-| GET    | `/api/flows/:id`         | Any member                                                            |
-| POST   | `/api/flows`             | Owner/editor; flow definition                                         |
-| PUT    | `/api/flows/:id`         | Owner/editor; flow definition plus current `revision`                 |
-| POST   | `/api/flows/:id/test`    | Owner/editor; `{ "body": {}, "query": {} }`                           |
-| POST   | `/api/flows/:id/publish` | Owner; `{ "revision": 1 }`                                            |
-| GET    | `/api/members`           | Owner; no credential hashes or tokens                                 |
-| POST   | `/api/members`           | Owner; `{ "name": "Reader", "role": "viewer" }`; role may be `editor` |
-| DELETE | `/api/members/:id`       | Owner; cannot remove bootstrap owner                                  |
-| GET    | `/api/audit`             | Owner; latest 200 events, newest first                                |
-| GET    | `/api/migrations`        | Owner; schema versions in applied order                               |
-| GET    | `/api/backups`           | Owner; local backup metadata                                          |
-| POST   | `/api/backups`           | Owner; creates snapshot                                               |
-| GET    | `/api/backups/:id`       | Owner; SQLite download                                                |
+| Method | Path                          | Permission / body                                                                   |
+| ------ | ----------------------------- | ----------------------------------------------------------------------------------- |
+| GET    | `/api/me`                     | Any member                                                                          |
+| GET    | `/api/flows`                  | Any member; full drafts and revision metadata                                       |
+| GET    | `/api/flows/:id`              | Any member                                                                          |
+| POST   | `/api/flows`                  | Owner/editor; flow definition                                                       |
+| PUT    | `/api/flows/:id`              | Owner/editor; flow definition plus current `revision`                               |
+| POST   | `/api/flows/:id/test`         | Owner/editor; `{ "body": {}, "query": {} }`                                         |
+| POST   | `/api/flows/:id/graphql/test` | Owner/editor; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }` |
+| POST   | `/api/flows/:id/publish`      | Owner; `{ "revision": 1 }`                                                          |
+| GET    | `/api/members`                | Owner; no credential hashes or tokens                                               |
+| POST   | `/api/members`                | Owner; `{ "name": "Reader", "role": "viewer" }`; role may be `editor`               |
+| DELETE | `/api/members/:id`            | Owner; cannot remove bootstrap owner                                                |
+| GET    | `/api/audit`                  | Owner; latest 200 events, newest first                                              |
+| GET    | `/api/migrations`             | Owner; schema versions in applied order                                             |
+| GET    | `/api/backups`                | Owner; local backup metadata                                                        |
+| POST   | `/api/backups`                | Owner; creates snapshot                                                             |
+| GET    | `/api/backups/:id`            | Owner; SQLite download                                                              |
 
 Drafts may be incomplete. Publishing and testing require one request node, reachable nodes, valid edges, and a response at every terminal path. Conditions require exactly one `true` and one `false` edge. Cycles are rejected.
 

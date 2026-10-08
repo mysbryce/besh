@@ -15,13 +15,15 @@ test('preview every current page and its actions', async ({
   page.on('pageerror', (error) => errors.push(error.message))
 
   async function capture(group: string, title: string, detail: string) {
+    const dropdownOpen = (await page.getByRole('listbox').count()) > 0
+    if (!dropdownOpen) await page.evaluate(() => window.scrollTo(0, 0))
     const image = `images/${String(records.length + 1).padStart(2, '0')}-${title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/-$/, '')}.png`
     await page.screenshot({
       path: join(directory, image),
-      fullPage: true,
+      fullPage: !dropdownOpen,
       animations: 'disabled',
       mask: [
         page.getByLabel('Your owner key', { exact: true }),
@@ -143,7 +145,13 @@ test('preview every current page and its actions', async ({
 
   await page.getByRole('button', { name: 'New API', exact: true }).click()
   await page.getByLabel('API name').fill('Welcome endpoint')
-  await page.getByLabel('HTTP method').selectOption('POST')
+  await page.getByRole('combobox', { name: 'HTTP method' }).click()
+  await capture(
+    'API Studio',
+    'Custom method dropdown',
+    'A styled dropdown supports keyboard navigation, selection, Escape, and focus return.',
+  )
+  await page.getByRole('option', { name: 'POST', exact: true }).click()
   await page.getByLabel('Endpoint path').fill('/welcome')
   await capture(
     'API Studio',
@@ -462,7 +470,15 @@ test('preview every current page and its actions', async ({
     'Acknowledging a saved token removes its one-time display.',
   )
   await page.getByLabel('Member name').fill('Demo editor')
-  await page.getByLabel('Member role').selectOption('editor')
+  await page.getByRole('combobox', { name: 'Member role' }).click()
+  await capture(
+    'Members',
+    'Custom role dropdown',
+    'Member roles use the shared styled dropdown with accessible option labels.',
+  )
+  await page
+    .getByRole('option', { name: 'Editor · build and test', exact: true })
+    .click()
   await page.getByRole('button', { name: 'Add member', exact: true }).click()
   const editor = await page.getByLabel('New member token').inputValue()
   await page.getByRole('button', { name: 'I saved it', exact: true }).click()
@@ -610,6 +626,117 @@ test('preview every current page and its actions', async ({
       })
     ).status(),
   ).toBe(401)
+
+  await page.getByRole('button', { name: 'New API', exact: true }).click()
+  await page.getByLabel('API name').fill('GraphQL greeting')
+  await page.getByLabel('Endpoint path').fill('/greeting')
+  await page.getByRole('combobox', { name: 'API type' }).click()
+  await capture(
+    'GraphQL',
+    'Choose API type',
+    'Each visual API can use REST or GraphQL. GraphQL exposes its own POST endpoint.',
+  )
+  await page.getByRole('option', { name: 'GraphQL', exact: true }).click()
+  await capture(
+    'GraphQL',
+    'Schema editor',
+    'An editable GraphQL schema defines queries, mutations, arguments, and response types.',
+  )
+  await page
+    .getByLabel('GraphQL schema')
+    .fill(
+      'type Query { greet(name: String!): Greeting! } type Mutation { greet(name: String!): Greeting! } type Greeting { message: String! name: String! }',
+    )
+  await page
+    .locator('.react-flow__node')
+    .filter({ hasText: 'JSON response' })
+    .click()
+  await configure({
+    status: 200,
+    body: { message: 'Hello from GraphQL', name: '$input.body.name' },
+  })
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await notice('Draft saved')
+  await capture(
+    'GraphQL',
+    'Save typed API',
+    'Arguments become flow body input. Query and mutation root fields run the visual flow.',
+  )
+  await page
+    .getByLabel('GraphQL operation', { exact: true })
+    .fill('query Greeting($name: String!) { greet(name: $name) { name } }')
+  await page.getByLabel('GraphQL operation name').fill('Greeting')
+  await page.getByLabel('GraphQL variables').fill('{"name":"Ada"}')
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByTestId('test-result')).toContainText('"name": "Ada"')
+  await expect(page.getByTestId('test-result')).not.toContainText(
+    'Hello from GraphQL',
+  )
+  await capture(
+    'GraphQL',
+    'Query variables and field selection',
+    'A named operation resolves variables and returns only the requested name field.',
+  )
+  await page.getByLabel('GraphQL variables').fill('{"name":123}')
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByTestId('test-result')).toContainText('errors')
+  await expect(page.getByTestId('test-result')).toContainText('400')
+  await capture(
+    'GraphQL',
+    'Typed variable error',
+    'The schema rejects a numeric variable where String is required before running any flow.',
+  )
+  await page.getByLabel('GraphQL operation name').fill('')
+  await page
+    .getByLabel('GraphQL operation', { exact: true })
+    .fill('mutation { greet(name: "Grace") { message name } }')
+  await page.getByLabel('GraphQL variables').fill('{}')
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByTestId('test-result')).toContainText('Grace')
+  await capture(
+    'GraphQL',
+    'Test mutation',
+    'GraphQL mutations run through the same authenticated, bounded flow executor.',
+  )
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await notice('/graphql/greeting')
+  const graphResponse = await page.request.post('/graphql/greeting', {
+    headers: { authorization: `Bearer ${owner}` },
+    data: { query: '{ greet(name: "Ada") { message name } }' },
+  })
+  expect(await graphResponse.json()).toEqual({
+    data: { greet: { message: 'Hello from GraphQL', name: 'Ada' } },
+  })
+  await capture(
+    'GraphQL',
+    'Publish GraphQL endpoint',
+    'The live POST /graphql/greeting endpoint returned typed GraphQL data over HTTP.',
+  )
+  await page
+    .getByLabel('GraphQL schema')
+    .fill('type Query { broken: MissingType }')
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await notice('Draft saved')
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await notice('Unknown type')
+  await capture(
+    'GraphQL',
+    'Invalid schema cannot publish',
+    'Invalid schema can remain a draft. Publishing fails and the previous release stays live.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  ).toBe(true)
+  await capture(
+    'GraphQL',
+    'Phone schema and test editor',
+    'GraphQL schema and operation editors remain within the phone viewport.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.getByRole('button', { name: /Stock availability/ }).click()
 
   await page.setViewportSize({ width: 390, height: 844 })
   for (const name of [

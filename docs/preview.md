@@ -31,7 +31,9 @@ Playwright needs Node.js 22.22.1 or newer. Installed Chrome is detected at its s
 | Permissions    | Viewer studio, denied administration pages, editor controls, revoked token rejected                                                                                                                                                               |
 | Phone layout   | All five dashboard pages and login at 390px width, visible canvas, no document overflow, accessible sign-out                                                                                                                                      |
 
-The current walkthrough produces 60 screenshots. The stock condition example is seeded through the public HTTP API; its runs are performed through the dashboard. The connection-error example is deliberately simulated at the HTTP boundary. Other recorded operations use the real local server and SQLite.
+The current walkthrough produces 71 screenshots. The stock condition example is seeded through the public HTTP API; its runs are performed through the dashboard. The connection-error example is deliberately simulated at the HTTP boundary. Other recorded operations use the real local server and SQLite.
+
+GraphQL previews cover API type choice, schema editing, saving, named queries, variables and field selection, type errors, mutations, live publication, invalid schema rejection, and phone layout. The method and role dropdowns are also captured open. Checkbox and dropdown controls use custom styling with keyboard support.
 
 Native browser confirmation dialogs are checked through their accept/cancel results. Screenshots show the resulting page rather than browser chrome. This is an action walkthrough, not an exhaustive combination of every input, browser, device, or network failure. External integrations remain roadmap cards until implemented.
 

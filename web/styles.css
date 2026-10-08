@@ -258,10 +258,70 @@ select:focus-visible {
   gap: 9px;
   align-items: center;
 }
-.checkbox-row input {
+.custom-checkbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   height: 16px;
   width: 16px;
-  accent-color: #245c3c;
+  border: 1px solid #93a88a;
+  border-radius: 4px;
+  background: #fff;
+}
+.custom-checkbox[data-state='checked'] {
+  background: #245c3c;
+  border-color: #245c3c;
+  color: #fff;
+}
+.custom-checkbox:disabled {
+  opacity: 0.5;
+}
+.select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #dbe3d1;
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: #fff;
+  font-size: 12px;
+  text-align: left;
+}
+.select-trigger:disabled {
+  opacity: 0.5;
+}
+.select-content {
+  z-index: 50;
+  min-width: var(--radix-select-trigger-width);
+  max-height: min(320px, var(--radix-select-content-available-height));
+  overflow: hidden;
+  border: 1px solid #dbe3d1;
+  border-radius: 8px;
+  padding: 5px;
+  background: #fff;
+  box-shadow: 0 8px 25px #18241c20;
+}
+.select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  outline: none;
+  font-size: 12px;
+  cursor: pointer;
+}
+.select-item[data-highlighted] {
+  background: #edf4e7;
+  color: #245c3c;
+}
+.select-scroll {
+  display: flex;
+  justify-content: center;
+  padding: 4px;
 }
 .form-error {
   color: #a33030 !important;
@@ -583,7 +643,7 @@ select:focus-visible {
   border-right: 1px solid #e6eae1;
   padding-right: 18px;
 }
-.endpoint-bar select {
+.endpoint-bar .select-trigger {
   color: #3b7e4e;
   background: #edf6e8;
   border-radius: 4px;
@@ -617,6 +677,32 @@ select:focus-visible {
   border-radius: 9px;
   background: #fff;
   overflow: hidden;
+}
+.graphql-schema {
+  margin-bottom: 20px;
+  padding: 18px;
+  border: 1px solid #dde4d7;
+  border-radius: 9px;
+  background: #fff;
+}
+.graphql-schema p {
+  font-size: 11px;
+  color: #718468;
+  line-height: 1.8;
+  margin-top: 12px;
+}
+.graphql-schema label {
+  font-weight: 600;
+  font-size: 12px;
+}
+.graphql-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.graphql-inputs label {
+  font-size: 11px;
+  color: #718468;
 }
 .editor-toolbar {
   height: 48px;
@@ -989,7 +1075,7 @@ td code {
 .member-form input {
   background: #fff;
 }
-.member-form select {
+.member-form .select-trigger {
   background: #fff;
   border: 1px solid #dbe3d1;
   border-radius: 6px;

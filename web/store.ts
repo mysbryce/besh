@@ -47,6 +47,7 @@ type Studio = {
   name: string
   method: Flow['method']
   path: string
+  graphql: Flow['graphql']
   revision: number
   publishedRevision: number | null
   nodes: CanvasNode[]
@@ -61,7 +62,9 @@ type Studio = {
   logout: () => void
   fresh: () => void
   load: (flow: SavedFlow) => void
-  edit: (fields: Partial<Pick<Studio, 'name' | 'path' | 'method'>>) => void
+  edit: (
+    fields: Partial<Pick<Studio, 'name' | 'path' | 'method' | 'graphql'>>,
+  ) => void
   onNodesChange: (changes: NodeChange<CanvasNode>[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
   connect: (connection: Connection) => void
@@ -70,6 +73,7 @@ type Studio = {
   select: (id: string | null) => void
   save: () => Promise<SavedFlow>
   test: (body: unknown, query: Record<string, string>) => Promise<void>
+  testGraphql: (input: unknown) => Promise<void>
   publish: () => Promise<void>
   task: (work: () => Promise<void>) => Promise<void>
   message: (notice: string, failed?: boolean) => void
@@ -81,6 +85,7 @@ function editState(flow?: SavedFlow) {
     name: flow?.name ?? 'Untitled API',
     method: flow?.method ?? ('GET' as Flow['method']),
     path: flow?.path ?? '/hello',
+    graphql: flow?.graphql,
     revision: flow?.revision ?? 0,
     publishedRevision: flow?.publishedRevision ?? null,
     nodes: flow
@@ -219,6 +224,7 @@ export const useStudio = create<Studio>((set, get) => ({
       name: state.name,
       method: state.method,
       path: state.path,
+      graphql: state.graphql,
       nodes: state.nodes.map((node) => ({
         id: node.id,
         type: node.data.kind,
@@ -279,9 +285,25 @@ export const useStudio = create<Studio>((set, get) => ({
     set((current) => ({
       publishedRevision: flow.publishedRevision,
       flows: current.flows.map((item) => (item.id === flow.id ? flow : item)),
-      notice: `Published · ${flow.method} /run${flow.path}`,
+      notice: `Published · ${flow.method} ${flow.graphql ? '/graphql' : '/run'}${flow.path}`,
       failed: false,
     }))
+  },
+
+  async testGraphql(input) {
+    const state = get()
+    if (!state.id || state.dirty) throw new Error('Save draft before testing.')
+    const result = await api<FlowResult>(
+      `/api/flows/${state.id}/graphql/test`,
+      state.token,
+      'POST',
+      input,
+    )
+    set({
+      result,
+      notice: `GraphQL test complete · ${result.status} response`,
+      failed: result.status >= 400,
+    })
   },
 
   async task(work) {

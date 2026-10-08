@@ -148,7 +148,7 @@ export function App() {
               >
                 <span className="api-dot" />
                 <span>{flow.name}</span>
-                <small>{flow.method}</small>
+                <small>{flow.graphql ? 'GQL' : flow.method}</small>
               </button>
             ))
           ) : (

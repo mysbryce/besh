@@ -1,6 +1,10 @@
 import { readFileSync } from 'node:fs'
 
 const styles = readFileSync(new URL('./preview.css', import.meta.url), 'utf8')
+const interactions = readFileSync(
+  new URL('./preview-filter.js', import.meta.url),
+  'utf8',
+)
 
 export type PreviewRecord = {
   page: string
@@ -52,10 +56,25 @@ export function renderPreview(records: PreviewRecord[]) {
             type="search"
             placeholder="Search pages, actions, or errors…"
             aria-label="Search previews"
-          /><select id="group" aria-label="Filter by page">
-            <option value="">All pages</option>
-            ${groups.map((group) => `<option>${escape(group)}</option>`).join('')}</select
-          ><span id="count">${records.length} previews</span
+          />
+          <div class="filter-field">
+            <button
+              id="group"
+              type="button"
+              role="combobox"
+              aria-label="Filter by page"
+              aria-controls="page-options"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+            >
+              <span id="group-label">All pages</span
+              ><span aria-hidden="true">⌄</span>
+            </button>
+            <div id="page-options" role="listbox" aria-label="Pages" hidden>
+              ${['', ...groups].map((group, index) => `<div id="page-option-${index}" role="option" aria-selected="${index === 0}" data-value="${escape(group)}">${escape(group || 'All pages')}</div>`).join('')}
+            </div>
+          </div>
+          <span id="count" aria-live="polite">${records.length} previews</span
           ><a href="manifest.json">Action manifest</a>
         </div>
         <main>
@@ -68,25 +87,7 @@ export function renderPreview(records: PreviewRecord[]) {
           preview pages yet.
         </footer>
         <script>
-          const search = document.querySelector('#search')
-          const group = document.querySelector('#group')
-          function filter() {
-            let count = 0
-            for (const card of document.querySelectorAll('article')) {
-              card.hidden =
-                !card.textContent
-                  .toLowerCase()
-                  .includes(search.value.toLowerCase()) ||
-                (group.value && card.dataset.page !== group.value)
-              if (!card.hidden) count++
-            }
-            document.querySelector('#count').textContent = count + ' previews'
-            document.querySelector('#empty').style.display = count
-              ? 'none'
-              : 'block'
-          }
-          search.addEventListener('input', filter)
-          group.addEventListener('change', filter)
+          ${interactions}
         </script>
       </body>
     </html>`

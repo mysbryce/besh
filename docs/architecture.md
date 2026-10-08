@@ -25,6 +25,10 @@ Start with request, condition, response, and safe data transformation nodes. Lat
 
 HTTP targets: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. CONNECT and TRACE need separate threat review. OpenAPI describes HTTP operations; WebSocket messages need their own schemas and lifecycle rules.
 
+GraphQL uses one POST endpoint per visual API at `/graphql/<path>`. Optional SDL lives inside the versioned flow definition; each root field runs the flow with arguments as input. GraphQL.js handles schema and operation validation and typed field selection. Runtime budgets include expanded fragments, depth, root calls, and output size. REST routes remain under `/run/<path>`. See [GraphQL guide](graphql.md) for supported behavior.
+
+Checkboxes and dropdowns use local styled components built on Radix primitives. Keep labels, keyboard navigation, disabled states, and focus return intact. Browser-native form controls may exist as hidden accessibility/form plumbing; no native checkbox, radio, or select is exposed as the visual control. New radio groups must follow the same rule.
+
 ## Extensions
 
 | Adapter     | Required boundary                                                                        |

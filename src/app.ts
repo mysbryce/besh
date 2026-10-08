@@ -80,6 +80,10 @@ export function createApp(options: AppOptions) {
       allow(member, ['owner'])
       return store.listMembers()
     })
+    .post('/flows/:id/graphql/test', ({ member, params, body }) => {
+      allow(member, ['owner', 'editor'])
+      return flows.testGraphql(member.id, params.id, body)
+    })
     .post(
       '/members',
       ({ member, body }) => {
@@ -138,7 +142,9 @@ export function createApp(options: AppOptions) {
           )
         }
         set.status = error.status
-        return { error: error.message }
+        return new URL(request.url).pathname.startsWith('/graphql/')
+          ? { errors: [{ message: error.message }] }
+          : { error: error.message }
       }
 
       set.status =
@@ -147,14 +153,15 @@ export function createApp(options: AppOptions) {
           : code === 'VALIDATION' || code === 'PARSE'
             ? 400
             : 500
-      return {
-        error:
-          code === 'NOT_FOUND'
-            ? 'Not found'
-            : code === 'VALIDATION' || code === 'PARSE'
-              ? 'Invalid request'
-              : 'Internal server error',
-      }
+      const message =
+        code === 'NOT_FOUND'
+          ? 'Not found'
+          : code === 'VALIDATION' || code === 'PARSE'
+            ? 'Invalid request'
+            : 'Internal server error'
+      return new URL(request.url).pathname.startsWith('/graphql/')
+        ? { errors: [{ message }] }
+        : { error: message }
     })
     .get('/health', () => ({ status: 'ok', version: '0.1.0' }))
     .get('/setup/status', () => store.setupStatus())
@@ -184,6 +191,29 @@ export function createApp(options: AppOptions) {
       },
     )
     .use(management)
+    .all('/graphql/*', ({ request, params, body }) => {
+      const member = store.authenticate(bearer(request))
+      if (!member) throw new ApiError(401, 'Authentication required')
+      if (request.method !== 'POST')
+        return new Response(
+          JSON.stringify({
+            errors: [{ message: 'GraphQL endpoints accept POST requests' }],
+          }),
+          {
+            status: 405,
+            headers: {
+              allow: 'POST',
+              'content-type': 'application/graphql-response+json',
+            },
+          },
+        )
+
+      const result = flows.graphql(member.id, `/${params['*']}`, body)
+      return new Response(JSON.stringify(result.body), {
+        status: result.status,
+        headers: { 'content-type': 'application/graphql-response+json' },
+      })
+    })
     .all('/run/*', ({ request, params, body, query }) => {
       const token = bearer(request)
       const member = store.authenticate(token)

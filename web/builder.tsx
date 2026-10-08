@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
+import { Select } from './components/ui/select'
 import { Textarea } from './components/ui/textarea'
 import { Badge } from './components/ui/badge'
 import { flowSchema, type Flow, type FlowNode } from '../src/flows/model'
@@ -292,10 +293,23 @@ function Canvas() {
 export function Builder() {
   const state = useStudio()
   const [input, setInput] = useState('{\n  "body": {},\n  "query": {}\n}')
+  const [operation, setOperation] = useState('{ hello { message } }')
+  const [variables, setVariables] = useState('{}')
+  const [operationName, setOperationName] = useState('')
   const writable = state.member?.role !== 'viewer'
 
   function testFlow() {
     void state.task(async () => {
+      if (state.graphql) {
+        await state.testGraphql({
+          query: operation,
+          variables: JSON.parse(variables),
+          ...(operationName.trim()
+            ? { operationName: operationName.trim() }
+            : {}),
+        })
+        return
+      }
       const parsed: unknown = JSON.parse(input)
       if (
         !parsed ||
@@ -365,27 +379,55 @@ export function Builder() {
           />
         </div>
         <div>
-          <label htmlFor="api-method">METHOD</label>
-          <select
-            id="api-method"
-            aria-label="HTTP method"
-            value={state.method}
+          <label htmlFor="api-type">API TYPE</label>
+          <Select
+            id="api-type"
+            label="API type"
+            value={state.graphql ? 'graphql' : 'rest'}
             disabled={!writable || state.busy}
-            onChange={(event) =>
-              state.edit({ method: event.target.value as Flow['method'] })
+            onValueChange={(value) =>
+              state.edit({
+                graphql:
+                  value === 'graphql'
+                    ? {
+                        schema:
+                          'type Query {\n  hello: Greeting!\n}\n\ntype Greeting {\n  message: String!\n}',
+                      }
+                    : undefined,
+                ...(value === 'graphql' ? { method: 'POST' } : {}),
+              })
             }
-          >
-            {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map(
-              (method) => (
-                <option key={method}>{method}</option>
-              ),
-            )}
-          </select>
+            options={[
+              { value: 'rest', label: 'REST' },
+              { value: 'graphql', label: 'GraphQL' },
+            ]}
+          />
+        </div>
+        <div>
+          <label htmlFor="api-method">METHOD</label>
+          <Select
+            id="api-method"
+            label="HTTP method"
+            value={state.method}
+            disabled={!writable || state.busy || !!state.graphql}
+            onValueChange={(value) =>
+              state.edit({ method: value as Flow['method'] })
+            }
+            options={[
+              'GET',
+              'POST',
+              'PUT',
+              'PATCH',
+              'DELETE',
+              'HEAD',
+              'OPTIONS',
+            ].map((method) => ({ value: method, label: method }))}
+          />
         </div>
         <div className="path-field">
           <label htmlFor="api-path">ENDPOINT PATH</label>
           <div>
-            <span>/run</span>
+            <span>{state.graphql ? '/graphql' : '/run'}</span>
             <Input
               id="api-path"
               aria-label="Endpoint path"
@@ -400,6 +442,31 @@ export function Builder() {
           <span>Token protected</span>
         </div>
       </div>
+      {state.graphql ? (
+        <section className="graphql-schema">
+          <div className="panel-heading">
+            <label htmlFor="graphql-schema">GraphQL schema</label>
+            <span>TYPED CONTRACT</span>
+          </div>
+          <Textarea
+            id="graphql-schema"
+            aria-label="GraphQL schema"
+            className="code-input"
+            rows={7}
+            spellCheck={false}
+            value={state.graphql.schema}
+            disabled={!writable || state.busy}
+            onChange={(event) =>
+              state.edit({ graphql: { schema: event.target.value } })
+            }
+          />
+          <p>
+            Each query or mutation field runs this flow. Read arguments with{' '}
+            <code>$input.body.name</code>. Branch on <code>query.field</code> or{' '}
+            <code>query.operation</code> for different operations.
+          </p>
+        </section>
+      ) : null}
       <section className="editor-panel">
         <div className="editor-toolbar">
           <div>
@@ -425,16 +492,50 @@ export function Builder() {
         <div className="test-request">
           <div className="panel-heading">
             <strong>Try it out</strong>
-            <span>JSON INPUT</span>
+            <span>{state.graphql ? 'GRAPHQL OPERATION' : 'JSON INPUT'}</span>
           </div>
-          <Textarea
-            aria-label="Test input"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            className="code-input"
-            spellCheck={false}
-            rows={4}
-          />
+          {state.graphql ? (
+            <div className="graphql-inputs">
+              <label htmlFor="graphql-operation">Operation</label>
+              <Textarea
+                id="graphql-operation"
+                aria-label="GraphQL operation"
+                className="code-input"
+                spellCheck={false}
+                rows={5}
+                value={operation}
+                onChange={(event) => setOperation(event.target.value)}
+              />
+              <label htmlFor="graphql-variables">Variables (JSON)</label>
+              <Textarea
+                id="graphql-variables"
+                aria-label="GraphQL variables"
+                className="code-input"
+                spellCheck={false}
+                rows={3}
+                value={variables}
+                onChange={(event) => setVariables(event.target.value)}
+              />
+              <label htmlFor="graphql-operation-name">
+                Operation name (optional)
+              </label>
+              <Input
+                id="graphql-operation-name"
+                aria-label="GraphQL operation name"
+                value={operationName}
+                onChange={(event) => setOperationName(event.target.value)}
+              />
+            </div>
+          ) : (
+            <Textarea
+              aria-label="Test input"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              className="code-input"
+              spellCheck={false}
+              rows={4}
+            />
+          )}
           <Button
             variant="outline"
             disabled={state.busy || !writable || !state.id || state.dirty}

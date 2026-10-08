@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
+import { Select } from './components/ui/select'
 import { Badge } from './components/ui/badge'
 import {
   api,
@@ -162,16 +163,16 @@ export function Operations({
             </label>
             <label>
               Role
-              <select
-                aria-label="Member role"
+              <Select
+                label="Member role"
                 value={role}
-                onChange={(event) =>
-                  setRole(event.target.value as 'viewer' | 'editor')
-                }
-              >
-                <option value="viewer">Viewer · read APIs</option>
-                <option value="editor">Editor · build and test</option>
-              </select>
+                disabled={busy || !!issued}
+                onValueChange={(value) => setRole(value as 'viewer' | 'editor')}
+                options={[
+                  { value: 'viewer', label: 'Viewer · read APIs' },
+                  { value: 'editor', label: 'Editor · build and test' },
+                ]}
+              />
             </label>
             <Button disabled={busy || !!issued}>
               <Plus />

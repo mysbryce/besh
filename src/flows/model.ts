@@ -10,6 +10,7 @@ export const flowSchema = z.object({
     .string()
     .max(160)
     .regex(/^\/[a-zA-Z0-9/_-]+$/),
+  graphql: z.object({ schema: z.string().min(1).max(16_384) }).optional(),
   nodes: z
     .array(
       z.discriminatedUnion('type', [

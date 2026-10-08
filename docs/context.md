@@ -8,6 +8,8 @@
 - User prefers no semicolons, single quotes, readable spacing, blank lines, and comments only for important intent. Captured in Prettier and `AGENTS.md`.
 - User requested simple installation with a setup wizard. Basic startup now creates the workspace through a one-time local setup link. Environment overrides remain optional for deployment/recovery.
 - User requested broader Git ignore rules and previews of every page and action. Preview output is reproducible, isolated, masked, and ignored; the gallery covers the implemented core rather than inventing integration screens.
+- User requires custom styled checkbox, radio, and dropdown controls. Current checkbox/dropdowns now use shared accessible components; the gallery uses its own keyboard-operated dropdown.
+- User confirmed GraphQL per visual API, with real typed schemas, queries/mutations, variables, and field selection. GraphQL endpoints now share flow lifecycle and permissions; full external data providers remain planned.
 - No vault state was supplied; user stated vault unavailable. Repository docs hold current decisions. No direct vault access occurred.
 
 ## Choices and reasons

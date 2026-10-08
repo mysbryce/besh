@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
+import { Checkbox } from './components/ui/checkbox'
 import { api } from './lib/api'
 import { useStudio } from './store'
 
@@ -176,10 +177,11 @@ export function Welcome({
                       Copy owner key
                     </Button>
                     <label className="checkbox-row">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={saved}
-                        onChange={(event) => setSaved(event.target.checked)}
+                        onCheckedChange={(checked) =>
+                          setSaved(checked === true)
+                        }
                       />
                       I saved my owner key
                     </label>

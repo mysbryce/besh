@@ -13,6 +13,7 @@ export default defineConfig({
     proxy: {
       '/api': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',
       '/run': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',
+      '/graphql': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',
       '/health': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',
       '/setup': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',
     },

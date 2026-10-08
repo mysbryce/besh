@@ -110,6 +110,20 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 5').get()) {
+      db.exec(`
+        DROP INDEX published_route;
+        CREATE UNIQUE INDEX published_route ON flows (
+          (json_extract(published, '$.graphql') IS NOT NULL),
+          json_extract(published, '$.method'), json_extract(published, '$.path')
+        ) WHERE published IS NOT NULL;
+      `)
+      query('INSERT INTO migrations VALUES (5, ?, ?)').run(
+        'GraphQL endpoint routes',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,

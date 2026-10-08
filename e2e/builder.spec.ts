@@ -10,11 +10,30 @@ test('build, move, save, test and publish a flow through the dashboard', async (
   await page.getByRole('button', { name: 'Create workspace' }).click()
   const token = await page.getByLabel('Your owner key').inputValue()
   expect(token.length).toBeGreaterThan(32)
+  await expect(
+    page.getByRole('checkbox', { name: 'I saved my owner key' }),
+  ).toHaveJSProperty('tagName', 'BUTTON')
+  await page.getByRole('checkbox', { name: 'I saved my owner key' }).focus()
+  await page.keyboard.press('Space')
+  await expect(
+    page.getByRole('checkbox', { name: 'I saved my owner key' }),
+  ).toBeChecked()
+  await page.keyboard.press('Space')
+  await expect(
+    page.getByRole('button', { name: 'Enter studio' }),
+  ).toBeDisabled()
   await page.getByLabel('I saved my owner key').check()
   await page.getByRole('button', { name: 'Enter studio' }).click()
   await page.getByRole('button', { name: 'New API' }).click()
   await expect(page.getByLabel('API name')).toHaveValue('Untitled API')
   await page.getByLabel('API name').fill('Browser greeting')
+  const method = page.getByRole('combobox', { name: 'HTTP method' })
+  await expect(method).toHaveJSProperty('tagName', 'BUTTON')
+  await method.focus()
+  await page.keyboard.press('ArrowDown')
+  await expect(page.getByRole('listbox')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(method).toBeFocused()
   await page.getByLabel('Endpoint path').fill('/browser-hello')
 
   const node = page
@@ -116,5 +135,51 @@ test('build, move, save, test and publish a flow through the dashboard', async (
   page.once('dialog', (dialog) => dialog.dismiss())
   await page.getByRole('button', { name: /Browser greeting/ }).click()
   await expect(page.getByLabel('API name')).toHaveValue('Unsaved idea')
+
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'New API', exact: true }).click()
+  await page.getByLabel('API name').fill('GraphQL browser API')
+  await page.getByLabel('Endpoint path').fill('/browser-graphql')
+  await page.getByRole('combobox', { name: 'API type' }).click()
+  await page.getByRole('option', { name: 'GraphQL', exact: true }).click()
+  await page
+    .getByLabel('GraphQL schema')
+    .fill(
+      'type Query { greet(name: String!): Greeting! } type Mutation { greet(name: String!): Greeting! } type Greeting { message: String! name: String! }',
+    )
+  await page
+    .locator('.react-flow__node')
+    .filter({ hasText: 'JSON response' })
+    .click()
+  await page
+    .getByLabel('Node configuration')
+    .fill(
+      '{"status":200,"body":{"message":"GraphQL works","name":"$input.body.name"}}',
+    )
+  await page.getByRole('button', { name: 'Apply configuration' }).click()
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText('Draft saved')
+  await page
+    .getByLabel('GraphQL operation', { exact: true })
+    .fill('query Greeting($name: String!) { greet(name: $name) { name } }')
+  await page.getByLabel('GraphQL variables').fill('{"name":"Ada"}')
+  await page.getByLabel('GraphQL operation name').fill('Greeting')
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByTestId('test-result')).toContainText('"name": "Ada"')
+  await expect(page.getByTestId('test-result')).not.toContainText(
+    'GraphQL works',
+  )
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await expect(page.getByRole('status')).toContainText(
+    '/graphql/browser-graphql',
+  )
+  const graphql = await page.request.post('/graphql/browser-graphql', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { query: 'mutation { greet(name: "Grace") { message name } }' },
+  })
+  expect(await graphql.json()).toEqual({
+    data: { greet: { message: 'GraphQL works', name: 'Grace' } },
+  })
+  await page.screenshot({ path: 'test-results/graphql.png', fullPage: true })
   expect(errors).toEqual([])
 })
