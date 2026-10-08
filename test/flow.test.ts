@@ -17,15 +17,15 @@ export const greeting = {
   edges: [{ id: 'one', source: 'request', target: 'response' }],
 }
 
-test('a request flow returns the configured JSON response', () => {
-  expect(executeFlow(greeting, { body: null, query: {} })).toEqual({
+test('a request flow returns the configured JSON response', async () => {
+  expect(await executeFlow(greeting, { body: null, query: {} })).toEqual({
     status: 200,
     body: { message: 'Hello, Besh!' },
     visited: ['request', 'response'],
   })
 })
 
-test('invalid graphs cannot be published or run', () => {
+test('invalid graphs cannot be published or run', async () => {
   const invalid = [
     { ...greeting, nodes: [...greeting.nodes, greeting.nodes[0]] },
     {
@@ -59,10 +59,12 @@ test('invalid graphs cannot be published or run', () => {
     },
   ]
   for (const graph of invalid) expect(() => validateFlow(graph)).toThrow()
-  expect(() => executeFlow(invalid[1], { body: null, query: {} })).toThrow()
+  await expect(
+    executeFlow(invalid[1], { body: null, query: {} }),
+  ).rejects.toThrow()
 })
 
-test('conditions select a response and input references preserve JSON types', () => {
+test('conditions select a response and input references preserve JSON types', async () => {
   const flow = {
     ...greeting,
     method: 'POST',
@@ -97,7 +99,7 @@ test('conditions select a response and input references preserve JSON types', ()
     ],
   }
   expect(
-    executeFlow(flow, {
+    await executeFlow(flow, {
       body: { active: true, name: 'Ada', count: 3 },
       query: {},
     }),
@@ -106,13 +108,13 @@ test('conditions select a response and input references preserve JSON types', ()
     body: { user: 'Ada', count: 3 },
     visited: ['request', 'check', 'yes'],
   })
-  expect(executeFlow(flow, { body: { active: false }, query: {} }).status).toBe(
-    403,
-  )
+  expect(
+    (await executeFlow(flow, { body: { active: false }, query: {} })).status,
+  ).toBe(403)
   expect(() =>
     validateFlow({ ...flow, edges: flow.edges.slice(0, 2) }),
   ).toThrow()
-  expect(() =>
+  await expect(
     executeFlow(
       {
         ...greeting,
@@ -126,12 +128,12 @@ test('conditions select a response and input references preserve JSON types', ()
       },
       { body: {}, query: {} },
     ),
-  ).toThrow()
+  ).rejects.toThrow()
 })
 
-test('executor bounds input, output and configuration nesting', () => {
+test('executor bounds input, output and configuration nesting', async () => {
   const input = { body: { value: 'x'.repeat(300_000) }, query: {} }
-  expect(() => executeFlow(greeting, input)).toThrow('limit')
+  await expect(executeFlow(greeting, input)).rejects.toThrow('limit')
   const largeResponse = {
     ...greeting,
     nodes: [
@@ -142,7 +144,7 @@ test('executor bounds input, output and configuration nesting', () => {
       },
     ],
   }
-  expect(() => executeFlow(largeResponse, { body: null, query: {} })).toThrow(
-    'limit',
-  )
+  await expect(
+    executeFlow(largeResponse, { body: null, query: {} }),
+  ).rejects.toThrow('limit')
 })

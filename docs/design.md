@@ -27,6 +27,7 @@ Besh gives the flow editor most of the space. Navigation, setup, and workspace c
 - Appearance offers Light, Dark, and System. Save only the appearance preference in local storage; apply it before the dashboard paints and follow operating-system changes in System mode. Workspace sign-in uses an HttpOnly cookie; passwords and member keys are not stored in local storage.
 - Common API tasks use labeled forms: response fields, conditions, test values, spreadsheet columns, and row limits. Put JSON and schema editors under Advanced. Preserve complex existing values when a form cannot represent them.
 - Spreadsheet setup follows import, inspect rows, choose fields, and create a draft. Publishing and issuing a runtime key remain explicit actions.
+- Product login follows connect GitHub, create a REST or GraphQL draft, review its graph, and publish. Use password fields for provider secrets and login proofs. Keep proof values out of visible test output and preview screenshots; explain the product server's role beside the template.
 
 ## Review
 

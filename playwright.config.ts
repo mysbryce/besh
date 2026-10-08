@@ -27,6 +27,7 @@ export default defineConfig({
         BESH_WEB_URL: 'http://127.0.0.1:5179',
         BESH_DATABASE_PATH: join(directory, 'besh.sqlite'),
         BESH_BACKUP_DIR: join(directory, 'backups'),
+        BESH_SECRET_KEY_PATH: join(directory, 'besh-secrets.key'),
       },
     },
     {

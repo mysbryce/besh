@@ -4,7 +4,7 @@
 
 Build and publish APIs visually. Connect nodes, test drafts, and publish REST or GraphQL endpoints with scoped access and audit logs.
 
-Besh is an early local development preview. Database adapters, social-auth API templates, plugins, and the AI operator remain planned.
+Besh is an early local development preview. Database adapters, more login providers, plugins, and the AI operator remain planned.
 
 ## Start locally
 
@@ -33,6 +33,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 - Optional REST input/response rules and separate draft/published OpenAPI downloads.
 - Owner, editor, and viewer roles; separate expiring runtime API keys.
 - Optional email/password sign-in and revocable workspace browser sessions.
+- GitHub product-login templates for REST and GraphQL, with server-held credentials.
 - Local SQLite persistence, audit history, migrations, and tested backups.
 - CSV, Excel (.xlsx), and public Google Sheets snapshots with manual refresh.
 - Readable light/dark themes and keyboard-accessible custom controls.
@@ -40,7 +41,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 
 ## Documentation
 
-[Documentation index](docs/README.md) · [Getting started](docs/getting-started.md) · [API reference](docs/api.md) · [GraphQL](docs/graphql.md) · [Roadmap](docs/roadmap.md)
+[Documentation index](docs/README.md) · [Getting started](docs/getting-started.md) · [API reference](docs/api.md) · [Product login](docs/product-auth.md) · [Roadmap](docs/roadmap.md)
 
 [Contributing](docs/contributing.md) · [Security](SECURITY.md) · [AI policy](AI_POLICY.md)
 

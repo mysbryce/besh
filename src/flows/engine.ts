@@ -12,6 +12,13 @@ import { ApiError } from '../errors'
 export function validateFlow(value: unknown) {
   assertJsonLimit(value)
   const flow = flowSchema.parse(value)
+  if (flow.nodes.filter((node) => node.type === 'social').length > 1)
+    throw new Error('Use at most one product login node per flow')
+  if (
+    flow.nodes.some((node) => node.type === 'social') &&
+    flow.method !== 'POST'
+  )
+    throw new Error('Product login APIs use POST')
   const nodes = new Map(flow.nodes.map((node) => [node.id, node]))
   if (nodes.size !== flow.nodes.length)
     throw new Error('Node IDs must be unique')
@@ -105,28 +112,30 @@ function resolveValue(
   input: ReturnType<typeof prepareInput>,
   data: unknown = null,
   depth = 0,
+  auth: unknown = null,
 ): unknown {
   if (depth > 20) throw new Error('Response nesting limit exceeded')
   if (typeof value === 'string' && value.startsWith('$input.'))
     return readPath(input, value.slice(7))
   if (value === '$data') return data
+  if (value === '$auth') return auth
   if (Array.isArray(value))
-    return value.map((item) => resolveValue(item, input, data, depth + 1))
+    return value.map((item) => resolveValue(item, input, data, depth + 1, auth))
   if (value && typeof value === 'object')
     return Object.fromEntries(
       Object.entries(value).map(([key, item]) => [
         key,
-        resolveValue(item, input, data, depth + 1),
+        resolveValue(item, input, data, depth + 1, auth),
       ]),
     )
   return value
 }
 
-export function executeFlow(
+export async function executeFlow(
   value: unknown,
   input: FlowInput,
   context: FlowContext = {},
-): FlowResult {
+): Promise<FlowResult> {
   assertJsonLimit(input)
   const flow = validateFlow(value)
   const prepared = prepareInput(flow.contract, input)
@@ -135,10 +144,11 @@ export function executeFlow(
   )
   const visited: string[] = []
   let data: unknown = null
+  let auth: unknown = null
   while (node && visited.length < 64) {
     visited.push(node.id)
     if (node.type === 'response') {
-      const body = resolveValue(node.config.body, prepared, data)
+      const body = resolveValue(node.config.body, prepared, data, 0, auth)
       assertJsonLimit(body)
       if (flow.contract?.response) {
         try {
@@ -148,6 +158,12 @@ export function executeFlow(
         }
       }
       return { status: node.config.status, body, visited }
+    }
+    if (node.type === 'social') {
+      if (!context.social)
+        throw new Error('Product auth connections are unavailable')
+      auth = await context.social(node.config, prepared)
+      assertJsonLimit(auth)
     }
     if (node.type === 'data') {
       if (!context.readData) throw new Error('Data sources are unavailable')

@@ -21,7 +21,13 @@
 - **Member token**: an owner, editor, or viewer credential for workspace management; it cannot invoke published endpoints.
 - **Account**: a workspace member's optional email/password sign-in credentials; separate from generated product identities.
 - **Workspace session**: a browser's expiring, revocable workspace sign-in, represented by an HttpOnly cookie; separate from runtime API keys.
-- **Product auth template**: a planned starting flow for authenticating users of a generated product API, including future social-provider sign-in; it does not sign users into the Besh workspace.
+- **Product auth template**: a generated starting flow that begins GitHub authorization and returns a verified provider identity to a product server; it does not sign users into the Besh workspace or issue a product session.
+- **Product login connection**: owner-managed GitHub OAuth app settings with an encrypted server-held client secret and an exact product callback URL.
+- **Social login node**: a flow step that references a product login connection and handles the `BEGIN` or `COMPLETE` action; `$auth` holds its result.
+- **Product callback**: a route on the product server that receives GitHub's code and state, checks the initiating browser, and completes the attempt through Besh with its server-held proof and runtime key.
+- **Login proof**: a separate sensitive value returned to the product server by `BEGIN`, kept out of the authorization URL and browser, and required once for `COMPLETE`.
+- **Provider subject**: the provider's stable user identifier, paired with the provider name for product identity; distinct from a mutable username or email address.
+- **Secret key file**: the local encryption key for saved provider secrets and PKCE verifiers; separate from SQLite backups and restored with the matching database.
 - **Runtime API key**: a server-issued credential granting REST requests or GraphQL query/mutation operations for one published flow, with required expiration and immediate revocation.
 - **Runtime grant**: permission to invoke an entire REST request, GraphQL query, or GraphQL mutation; it does not filter fields or records.
 - **Audit event**: a record of who performed an action, when, and on which resource.

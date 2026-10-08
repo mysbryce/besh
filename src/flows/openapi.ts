@@ -39,6 +39,10 @@ export function flowOpenapi(
     413: 'Request body size limit exceeded',
     500: 'Response rules failed or internal execution error',
   }
+  if (flow.nodes.some((node) => node.type === 'social')) {
+    failures[429] = 'Product login attempt or exchange limit exceeded'
+    failures[502] = 'GitHub login could not be completed'
+  }
   const errorSchema = {
     type: 'object',
     properties: { error: { type: 'string' } },

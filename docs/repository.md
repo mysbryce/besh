@@ -21,4 +21,4 @@ google-sheets
 excel
 ```
 
-These are repository metadata suggestions. They do not claim a public repository was configured or published. Public Google Sheets imports work; database adapters, generated-product social-auth templates, and the AI operator remain planned. Workspace sign-in uses email/password or member/owner keys.
+These are repository metadata suggestions. They do not claim a public repository was configured or published. Public Google Sheets imports and the GitHub product identity template are implemented; database adapters, other social providers, and the AI operator remain planned. Controlled GitHub tests do not verify a live OAuth app. Workspace sign-in uses email/password or member/owner keys.

@@ -33,6 +33,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Validate flows before execution and publication. Bound graph, request, and response sizes.
 - Never evaluate uploaded JavaScript inside the server process.
 - Keep secrets on the server; store credential hashes where possible. Do not log tokens or payloads by default.
+- Encrypt product OAuth secrets and PKCE verifiers with the private key file. Back up that file separately from SQLite; never commit it or recreate it while encrypted records exist.
 - Save audit events with state changes. Keep migration history and test backup restoration.
 - Separate editable drafts from published releases.
 - Use parameterized queries. Keep product database connections separate from Besh's control database.

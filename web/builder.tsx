@@ -27,7 +27,16 @@ import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import { Textarea } from './components/ui/textarea'
 import { Badge } from './components/ui/badge'
+import { GitHubIcon } from './components/github-icon'
+import {
+  ProductLoginTest,
+  LoginResultActions,
+  maskedLoginResult,
+  loginMutation,
+  type LoginInput,
+} from './product-login-test'
 import { flowSchema, type Flow, type FlowNode } from '../src/flows/model'
+import { socialLoginSchema } from '../src/flows/social-schema'
 import { useStudio, type CanvasNode } from './store'
 import { ApiRules, OpenApiDownload } from './api-rules'
 import {
@@ -36,6 +45,7 @@ import {
   parseRequestInput,
   RequestForm,
   ResponseForm,
+  SocialNodeForm,
 } from './flow-forms'
 
 const nodeInfo = {
@@ -58,6 +68,11 @@ const nodeInfo = {
     label: 'Spreadsheet rows',
     description: 'Read selected columns',
     icon: Database,
+  },
+  social: {
+    label: 'GitHub login',
+    description: 'Resolve a product identity',
+    icon: GitHubIcon,
   },
 }
 
@@ -97,6 +112,11 @@ const FlowCard = memo(function FlowCard({
               {'field' in data.config ? data.config.field : 'body.active'}
             </code>
           </>
+        ) : data.kind === 'social' ? (
+          <>
+            <span>PROVIDER</span>
+            <code>GitHub OAuth</code>
+          </>
         ) : data.kind === 'data' ? (
           <>
             <span>ROWS</span>
@@ -112,7 +132,9 @@ const FlowCard = memo(function FlowCard({
           </>
         )}
       </div>
-      {data.kind === 'request' || data.kind === 'data' ? (
+      {data.kind === 'request' ||
+      data.kind === 'data' ||
+      data.kind === 'social' ? (
         <Handle type="source" position={Position.Right} />
       ) : null}
       {data.kind === 'condition' ? (
@@ -181,9 +203,11 @@ function Inspector({ node }: { node: CanvasNode }) {
           ? 'Compare an input field with a value. Connect both true and false outputs.'
           : node.data.kind === 'response'
             ? 'Choose a status and add response fields. Values can be fixed or read from the request.'
-            : node.data.kind === 'data'
-              ? 'Choose which spreadsheet rows and columns your API returns.'
-              : 'Connect this node to the first step in your API.'}
+            : node.data.kind === 'social'
+              ? 'Connect a GitHub app for your product. BEGIN starts login; COMPLETE verifies the callback.'
+              : node.data.kind === 'data'
+                ? 'Choose which spreadsheet rows and columns your API returns.'
+                : 'Connect this node to the first step in your API.'}
       </p>
       {node.data.kind === 'response' &&
       !advanced &&
@@ -225,6 +249,22 @@ function Inspector({ node }: { node: CanvasNode }) {
         <DataNodeForm
           config={
             node.data.config as Extract<FlowNode, { type: 'data' }>['config']
+          }
+          token={token}
+          disabled={readonly}
+          onError={(error) => message(error, true)}
+          onApply={(value) => {
+            configure(node.id, value)
+            message('Configuration applied. Save draft to keep changes.')
+          }}
+        />
+      ) : null}
+      {node.data.kind === 'social' &&
+      !advanced &&
+      'connectionId' in node.data.config ? (
+        <SocialNodeForm
+          config={
+            node.data.config as Extract<FlowNode, { type: 'social' }>['config']
           }
           token={token}
           disabled={readonly}
@@ -385,12 +425,20 @@ export function Builder() {
 
 function BuilderSession() {
   const state = useStudio()
+  const socialFlow = state.nodes.some((node) => node.data.kind === 'social')
+  const [loginInput, setLoginInput] = useState<LoginInput>({
+    action: 'BEGIN',
+    code: '',
+    state: '',
+    proof: '',
+  })
   const [input, setInput] = useState('{\n  "body": {},\n  "query": {}\n}')
   const [advancedInput, setAdvancedInput] = useState(false)
   const [inputError, setInputError] = useState('')
   const [advancedSchema, setAdvancedSchema] = useState(false)
   const [advancedGraphql, setAdvancedGraphql] = useState(false)
   const [operation, setOperation] = useState(() => {
+    if (socialFlow && state.graphql) return loginMutation
     const data = state.nodes.find((node) => node.data.kind === 'data')
     if (
       state.graphql &&
@@ -402,7 +450,9 @@ function BuilderSession() {
     }
     return '{ hello { message } }'
   })
-  const [variables, setVariables] = useState('{}')
+  const [variables, setVariables] = useState(
+    socialFlow ? '{"action":"BEGIN"}' : '{}',
+  )
   const [operationName, setOperationName] = useState('')
   const writable = state.member?.role !== 'viewer'
   const publishedEndpoint = state.flows.find(
@@ -411,6 +461,14 @@ function BuilderSession() {
 
   function testFlow() {
     void state.task(async () => {
+      if (socialFlow) {
+        const values =
+          loginInput.action === 'BEGIN' ? { action: 'BEGIN' } : loginInput
+        if (state.graphql)
+          await state.testGraphql({ query: loginMutation, variables: values })
+        else await state.test(values, {})
+        return
+      }
       if (state.graphql) {
         await state.testGraphql({
           query: operation,
@@ -501,8 +559,9 @@ function BuilderSession() {
                 graphql:
                   value === 'graphql'
                     ? {
-                        schema:
-                          'type Query {\n  hello: Greeting!\n}\n\ntype Greeting {\n  message: String!\n}',
+                        schema: socialFlow
+                          ? socialLoginSchema
+                          : 'type Query {\n  hello: Greeting!\n}\n\ntype Greeting {\n  message: String!\n}',
                       }
                     : undefined,
                 ...(value === 'graphql' ? { method: 'POST' } : {}),
@@ -596,9 +655,11 @@ function BuilderSession() {
             <span>TYPED CONTRACT</span>
           </div>
           <p>
-            {state.nodes.some((node) => node.data.kind === 'data')
-              ? 'Returns selected spreadsheet fields as typed rows. Test the generated query below before publishing.'
-              : 'Response fields must match your typed contract. Open Advanced schema to review or customize it.'}
+            {socialFlow
+              ? 'A typed login mutation starts or completes GitHub login. BEGIN returns an authorization URL; COMPLETE returns the verified product identity.'
+              : state.nodes.some((node) => node.data.kind === 'data')
+                ? 'Returns selected spreadsheet fields as typed rows. Test the generated query below before publishing.'
+                : 'Response fields must match your typed contract. Open Advanced schema to review or customize it.'}
           </p>
           <Button
             variant="ghost"
@@ -665,7 +726,13 @@ function BuilderSession() {
               {state.graphql ? 'GRAPHQL OPERATION' : 'REQUEST DETAILS'}
             </span>
           </div>
-          {state.graphql ? (
+          {socialFlow ? (
+            <ProductLoginTest
+              input={loginInput}
+              onChange={setLoginInput}
+              disabled={!writable || state.busy}
+            />
+          ) : state.graphql ? (
             <div className="graphql-inputs">
               <label htmlFor="graphql-operation">Operation</label>
               <Textarea
@@ -776,9 +843,15 @@ function BuilderSession() {
           </div>
           <pre data-testid="test-result">
             {state.result
-              ? JSON.stringify(state.result, null, 2)
+              ? JSON.stringify(maskedLoginResult(state.result), null, 2)
               : '// Save your draft, then run a test.\n// Your response will appear here.'}
           </pre>
+          {socialFlow && state.result ? (
+            <LoginResultActions
+              value={state.result}
+              onMessage={state.message}
+            />
+          ) : null}
         </div>
       </section>
     </>

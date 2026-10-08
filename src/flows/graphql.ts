@@ -1,7 +1,7 @@
 import {
   buildASTSchema,
   assertValidSchema,
-  executeSync,
+  execute,
   parse,
   validate,
   specifiedRules,
@@ -49,6 +49,7 @@ export function graphqlSchema(flow: Flow) {
 function operationLimits(
   document: DocumentNode,
   operationName?: string | null,
+  maxRoots = 16,
 ) {
   const operation = getOperationAST(document, operationName)
   if (!operation) throw new Error('Choose one operation with operationName')
@@ -69,7 +70,9 @@ function operationLimits(
       if (node.kind === Kind.FIELD) {
         fields++
         if (depth === 1) roots++
-        if (fields > 200 || roots > 16)
+        if (roots > maxRoots && maxRoots === 1)
+          throw new Error('Use one product login root per mutation')
+        if (fields > 200 || roots > maxRoots)
           throw new Error(
             'GraphQL field limit exceeded (200 fields, 16 root fields)',
           )
@@ -91,12 +94,12 @@ function failure(message: string): FlowResult {
   return { status: 400, body: { errors: [{ message }] }, visited: [] }
 }
 
-export function executeGraphql(
+export async function executeGraphql(
   flow: Flow,
   value: unknown,
   permissions?: readonly RuntimePermission[],
   context: FlowContext = {},
-): FlowResult {
+): Promise<FlowResult> {
   try {
     assertJsonLimit(value)
   } catch {
@@ -126,8 +129,17 @@ export function executeGraphql(
         body: { errors: errors.map((error) => error.toJSON()) },
         visited: [],
       }
-    fields = operationLimits(document, request.operationName)
-    operation = getOperationAST(document, request.operationName)!.operation
+    const selected = getOperationAST(document, request.operationName)
+    if (!selected) throw new Error('Choose one operation with operationName')
+    operation = selected.operation
+    fields = operationLimits(
+      document,
+      request.operationName,
+      operation === 'mutation' &&
+        flow.nodes.some((node) => node.type === 'social')
+        ? 1
+        : 16,
+    )
   } catch (error) {
     return failure(
       error instanceof Error
@@ -145,7 +157,7 @@ export function executeGraphql(
   const visited: string[] = []
   let resolutions = 0
   let estimatedBytes = 0
-  const result = executeSync({
+  const result = await execute({
     schema,
     document,
     variableValues: request.variables,
@@ -160,7 +172,14 @@ export function executeGraphql(
         (info.parentType === schema.getQueryType() ||
           info.parentType === schema.getMutationType())
       ) {
-        const run = executeFlow(
+        if (
+          flow.nodes.some((node) => node.type === 'social') &&
+          info.operation.operation !== 'mutation'
+        ) {
+          if (info.fieldName === 'info') return 'GitHub product login'
+          throw new GraphQLError('Product login requires a mutation')
+        }
+        const promise = executeFlow(
           flow,
           {
             body: args,
@@ -171,17 +190,19 @@ export function executeGraphql(
           },
           context,
         )
-        visited.push(...run.visited)
-        if (run.status >= 400)
-          throw new GraphQLError(`Flow returned HTTP ${run.status}`, {
-            extensions: { code: 'FLOW_ERROR', status: run.status },
-          })
-        estimatedBytes += Buffer.byteLength(JSON.stringify(run.body)) * fields
-        if (estimatedBytes > 262_144)
-          throw new GraphQLError('GraphQL response budget exceeded', {
-            extensions: { code: 'EXECUTION_LIMIT' },
-          })
-        return run.body
+        return promise.then((run) => {
+          visited.push(...run.visited)
+          if (run.status >= 400)
+            throw new GraphQLError(`Flow returned HTTP ${run.status}`, {
+              extensions: { code: 'FLOW_ERROR', status: run.status },
+            })
+          estimatedBytes += Buffer.byteLength(JSON.stringify(run.body)) * fields
+          if (estimatedBytes > 262_144)
+            throw new GraphQLError('GraphQL response budget exceeded', {
+              extensions: { code: 'EXECUTION_LIMIT' },
+            })
+          return run.body
+        })
       }
       return source && Object.hasOwn(source, info.fieldName)
         ? source[info.fieldName]

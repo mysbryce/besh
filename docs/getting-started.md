@@ -2,7 +2,7 @@
 
 Build APIs by connecting nodes. Test a draft, inspect its response, and publish when ready.
 
-Besh is an early, local development preview. Visual REST and GraphQL APIs, spreadsheet snapshots, and public Google Sheets imports work. Database adapters and the full AI agent remain planned. See the [roadmap](roadmap.md).
+Besh is an early, local development preview. Visual REST and GraphQL APIs, spreadsheet snapshots, public Google Sheets imports, and a GitHub product login template work. The GitHub exchange is tested with controlled provider responses; a live OAuth app round trip still needs your credentials and product callback. Database adapters and the full AI agent remain planned. See the [roadmap](roadmap.md).
 
 ## Start in two commands
 
@@ -88,25 +88,26 @@ Input references replace a whole value and preserve JSON types. Supported roots 
 
 ## What works
 
-| Feature     | Current behavior                                                                           |
-| ----------- | ------------------------------------------------------------------------------------------ |
-| Setup       | One-time browser wizard with a server-issued setup link                                    |
-| Editor      | Add, move, connect, configure, and remove nodes                                            |
-| Nodes       | HTTP request, condition, spreadsheet rows, JSON response                                   |
-| Data        | CSV/Excel uploads and public Google Sheets, saved previews, typed column mapping           |
-| Appearance  | Light, dark, or system theme; keyboard-accessible custom controls                          |
-| HTTP        | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; exact paths                                  |
-| GraphQL     | Per-API typed schemas, queries/mutations, variables, field selection and bounded execution |
-| API rules   | Optional REST query/body/response types, required fields, nullability, and server checks   |
-| OpenAPI     | JSON downloads for a saved REST draft or published release, kept separate                  |
-| Drafts      | SQLite persistence; incomplete graphs may be saved                                         |
-| Publishing  | Graph validation, route conflict checks, immutable release history                         |
-| Concurrency | Stale save/publish requests return `409`                                                   |
-| Access      | Server-enforced roles; workspace keys or email/password; expiring browser sessions         |
-| API keys    | Owner-issued keys for one published API, expiring grants, immediate revocation             |
-| Audit       | Changes, tests, runs, backups, and access denials; latest 200 visible                      |
-| Migrations  | Versioned control-database schema history                                                  |
-| Backups     | Consistent SQLite snapshots and authenticated downloads; restore tested                    |
+| Feature       | Current behavior                                                                                        |
+| ------------- | ------------------------------------------------------------------------------------------------------- |
+| Setup         | One-time browser wizard with a server-issued setup link                                                 |
+| Editor        | Add, move, connect, configure, and remove nodes                                                         |
+| Nodes         | HTTP request, condition, spreadsheet rows, GitHub social login, JSON response                           |
+| Data          | CSV/Excel uploads and public Google Sheets, saved previews, typed column mapping                        |
+| Product login | GitHub OAuth connection, generated REST/GraphQL identity draft; product server handles callback/session |
+| Appearance    | Light, dark, or system theme; keyboard-accessible custom controls                                       |
+| HTTP          | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; exact paths                                               |
+| GraphQL       | Per-API typed schemas, queries/mutations, variables, field selection and bounded execution              |
+| API rules     | Optional REST query/body/response types, required fields, nullability, and server checks                |
+| OpenAPI       | JSON downloads for a saved REST draft or published release, kept separate                               |
+| Drafts        | SQLite persistence; incomplete graphs may be saved                                                      |
+| Publishing    | Graph validation, route conflict checks, immutable release history                                      |
+| Concurrency   | Stale save/publish requests return `409`                                                                |
+| Access        | Server-enforced roles; workspace keys or email/password; expiring browser sessions                      |
+| API keys      | Owner-issued keys for one published API, expiring grants, immediate revocation                          |
+| Audit         | Changes, tests, runs, backups, and access denials; latest 200 visible                                   |
+| Migrations    | Versioned control-database schema history                                                               |
+| Backups       | Consistent SQLite snapshots and authenticated downloads; restore tested                                 |
 
 Draft edits do not change a live endpoint. Save and publish a new revision to update it. Published endpoints require a runtime API key; owner and member tokens only access workspace management and permitted draft tests. Public endpoints remain planned.
 
@@ -119,6 +120,12 @@ Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/i
 Open **Data sources** with an owner or editor key. Name the source and import a CSV or Excel `.xlsx` file, or choose **Public Google Sheet** and paste its standard share link. Review the first ten rows, detected types, and safe API field names. Choose columns to return, name the API, review its endpoint path and row limit, then select **Create API from data**. This creates a draft; test it before the owner publishes it and creates a caller key.
 
 Imports save snapshots. Upload replacement and Google refresh require confirmation because published APIs read the latest saved source data. Google refresh is manual; private-sheet OAuth and scheduled synchronization are planned. See [spreadsheet data](data-sources.md) for limits and permissions.
+
+## Add GitHub product login
+
+Open **Product login** as the owner. Save a GitHub OAuth app's client ID, secret, and exact product-server callback URL. Generate a REST or GraphQL draft, test its BEGIN action, review the result and rules, then publish and issue a scoped runtime key. Editors can generate/test drafts but cannot edit credentials or publish.
+
+Your product server retains the runtime key and separate proof, sends the authorization URL to the browser, handles GitHub's callback, and completes the attempt through Besh. Besh returns provider identity; your product defines its accounts and sessions. This does not sign users into the Besh workspace. Follow [GitHub product login](product-auth.md) for app registration, callback integration, request examples, test limits, and the required separate encryption-key backup.
 
 ## Add REST API rules
 
@@ -141,18 +148,20 @@ REST and GraphQL keep separate routes and published releases. GraphQL currently 
 
 ## Roles
 
-| Action                                   | Owner | Editor | Viewer |
-| ---------------------------------------- | ----- | ------ | ------ |
-| Read drafts                              | Yes   | Yes    | Yes    |
-| Create/edit/test drafts                  | Yes   | Yes    | No     |
-| Import/read/manage spreadsheet sources   | Yes   | Yes    | No     |
-| Publish                                  | Yes   | No     | No     |
-| Members, audit, migrations, backups      | Yes   | No     | No     |
-| Change own email/password with proof     | Yes   | Yes    | Yes    |
-| Inspect/revoke own browser sessions      | Yes   | Yes    | Yes    |
-| Inspect/revoke other members' sessions   | Yes   | No     | No     |
-| Create/list/revoke runtime API keys      | Yes   | No     | No     |
-| Call published endpoints with member key | No    | No     | No     |
+| Action                                         | Owner | Editor | Viewer |
+| ---------------------------------------------- | ----- | ------ | ------ |
+| Read drafts                                    | Yes   | Yes    | Yes    |
+| Create/edit/test drafts                        | Yes   | Yes    | No     |
+| Import/read/manage spreadsheet sources         | Yes   | Yes    | No     |
+| Read product login connections/generate drafts | Yes   | Yes    | No     |
+| Create/edit/delete product login connections   | Yes   | No     | No     |
+| Publish                                        | Yes   | No     | No     |
+| Members, audit, migrations, backups            | Yes   | No     | No     |
+| Change own email/password with proof           | Yes   | Yes    | Yes    |
+| Inspect/revoke own browser sessions            | Yes   | Yes    | Yes    |
+| Inspect/revoke other members' sessions         | Yes   | No     | No     |
+| Create/list/revoke runtime API keys            | Yes   | No     | No     |
+| Call published endpoints with member key       | No    | No     | No     |
 
 Member tokens are shown once. Remove a member to invalidate their token, account, and sessions. The owner key cannot be revoked from the member screen. Owner and member keys do not expire automatically in this preview; browser sessions and runtime API keys expire. Runtime keys cannot manage the workspace or test drafts.
 
@@ -162,14 +171,16 @@ Owners add editors/viewers from **Members**. Fill **Member email (optional)** an
 
 ## Data and recovery
 
-Workspace data lives in `data/besh.sqlite`. Backups live in `data/backups/`. Both folders are ignored by Git. Backups contain credential hashes and workspace data; store them privately.
+Workspace data lives in `data/besh.sqlite`. Backups live in `data/backups/`. Both folders are ignored by Git. Backups contain credential hashes, workspace data, spreadsheet rows, and encrypted provider secrets; store them privately.
+
+Saving a product login connection creates `data/besh-secrets.key` automatically by default. This local encryption key is not included in SQLite backup downloads. Back it up privately and separately; a restored database needs the original matching key. Never commit it. If encrypted records exist without the key, Besh fails startup rather than replacing it. See [product credential recovery](product-auth.md#back-up-the-encryption-key).
 
 To restore without overwriting your current workspace:
 
 1. Stop Besh.
 2. Keep the existing database and its `-wal` / `-shm` files together. Do not replace a live database.
 3. Copy a downloaded backup to a new filename, such as `data/restored.sqlite`.
-4. Set `BESH_DATABASE_PATH=data/restored.sqlite` in `.env` and restart.
+4. Set `BESH_DATABASE_PATH=data/restored.sqlite` in `.env`. If the backup contains product connections, keep its matching `besh-secrets.key` beside the restored database or set `BESH_SECRET_KEY_PATH` to the matching private key path. Restart.
 5. Sign in with credentials valid at backup time. Check flows, logs, and a test response before using the restored copy.
 6. Review restored accounts and sessions, and revoke or rotate restored keys. A snapshot can restore old passwords, unexpired sessions, and runtime keys revoked after it was taken. Ending sessions alone does not disable restored passwords or member keys.
 
@@ -181,16 +192,17 @@ If you lose the owner key, stop Besh and generate a new long random value. Set `
 
 Configuration is optional. Copy `.env.example` to `.env` only when needed.
 
-| Variable             | Default / purpose                                                           |
-| -------------------- | --------------------------------------------------------------------------- |
-| `PORT`               | API port, `3000`                                                            |
-| `BESH_HOST`          | API host, `127.0.0.1`                                                       |
-| `BESH_DATABASE_PATH` | `data/besh.sqlite`                                                          |
-| `BESH_BACKUP_DIR`    | `data/backups`                                                              |
-| `BESH_ADMIN_TOKEN`   | Optional recovery/automation key, at least 32 random characters             |
-| `BESH_SETUP_KEY`     | Optional setup challenge; generated automatically otherwise                 |
-| `BESH_WEB_URL`       | Exact browser origin for authentication and setup link; dev command sets it |
-| `BESH_API_URL`       | Vite proxy target; defaults to `http://127.0.0.1:3000`                      |
+| Variable               | Default / purpose                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------ |
+| `PORT`                 | API port, `3000`                                                                     |
+| `BESH_HOST`            | API host, `127.0.0.1`                                                                |
+| `BESH_DATABASE_PATH`   | `data/besh.sqlite`                                                                   |
+| `BESH_BACKUP_DIR`      | `data/backups`                                                                       |
+| `BESH_SECRET_KEY_PATH` | `besh-secrets.key` beside the control database; optional private encryption-key path |
+| `BESH_ADMIN_TOKEN`     | Optional recovery/automation key, at least 32 random characters                      |
+| `BESH_SETUP_KEY`       | Optional setup challenge; generated automatically otherwise                          |
+| `BESH_WEB_URL`         | Exact browser origin for authentication and setup link; dev command sets it          |
+| `BESH_API_URL`         | Vite proxy target; defaults to `http://127.0.0.1:3000`                               |
 
 If you change `PORT` during development, also set `BESH_API_URL` to that port. The dashboard uses port `5173`. It fails clearly if the port is already occupied.
 
@@ -225,9 +237,9 @@ Code style: no semicolons, single quotes, blank lines between steps, and comment
 
 ## Planned integrations
 
-PostgreSQL, MySQL/MariaDB, SQLite product data, MongoDB, Supabase, Firebase; generated-product social-auth templates for GitHub, Discord, Facebook, Google and other identity providers; WebSocket flows; custom plugins; GitHub update notices; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI. Workspace sign-in uses email/password or member/owner keys.
+PostgreSQL, MySQL/MariaDB, SQLite product data, MongoDB, Supabase, Firebase; generated-product social-auth templates for Discord, Facebook, Google and other identity providers; product sessions and identity linking; WebSocket flows; custom plugins; GitHub update notices; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI. Workspace sign-in uses email/password or member/owner keys.
 
-These are roadmap items. Public Google Sheets imports already work; product social-auth templates and database adapters do not. No external account is required for local flows or uploaded spreadsheets.
+These are roadmap items. Public Google Sheets imports and the GitHub product identity template are implemented; other providers and database adapters are not. GitHub needs a real OAuth app and product-server callback for a live sign-in. No external account is required for local flows or uploaded spreadsheets.
 
 ## Read more
 
@@ -237,6 +249,7 @@ These are roadmap items. Public Google Sheets imports already work; product soci
 - [GraphQL schemas and execution](graphql.md)
 - [REST API rules and OpenAPI downloads](api-contracts.md)
 - [Workspace accounts and sessions](workspace-auth.md)
+- [GitHub product login](product-auth.md)
 - [AI policy](../AI_POLICY.md) · [Code of conduct](../CODE_OF_CONDUCT.md) · [Security](../SECURITY.md)
 
 MIT licensed. See [LICENSE](../LICENSE) and [third-party notices](../THIRD_PARTY_NOTICES.md).

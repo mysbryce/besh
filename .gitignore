@@ -19,6 +19,7 @@ dist/
 
 data/
 backups/
+besh-secrets.key
 *.sqlite
 *.sqlite3
 *.db

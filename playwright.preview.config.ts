@@ -25,7 +25,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'bun src/index.ts',
+      command: 'bun e2e/product-auth-server.ts',
       url: 'http://127.0.0.1:4322/health',
       env: {
         PORT: '4322',
@@ -35,6 +35,7 @@ export default defineConfig({
         BESH_WEB_URL: 'http://127.0.0.1:5180',
         BESH_DATABASE_PATH: resolve(directory, 'workspace/besh.sqlite'),
         BESH_BACKUP_DIR: resolve(directory, 'workspace/backups'),
+        BESH_SECRET_KEY_PATH: resolve(directory, 'workspace/besh-secrets.key'),
       },
     },
     {

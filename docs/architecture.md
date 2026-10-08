@@ -21,7 +21,7 @@ Goal: help teams build secure, documented APIs with a visual editor.
 
 The executor must limit graph size, steps, input size, execution time, and output size. Validate node configuration and all edges. Reject cycles until bounded loops are designed. Errors must not reveal credentials or stack traces.
 
-Implemented nodes are request, condition, response, and bounded spreadsheet reads. Optional REST contracts validate query/body input before execution and returned JSON before delivery. Later add broader transformations, database operations, outbound HTTP, plugins, retries, subflows, and explicit error paths. A finite graph cannot promise support for every possible API.
+Implemented nodes are request, condition, response, bounded spreadsheet reads, and GitHub social login. Optional REST contracts validate query/body input before execution and returned JSON before delivery. Later add broader transformations, database operations, general outbound HTTP, plugins, retries, subflows, and explicit error paths. A finite graph cannot promise support for every possible API.
 
 HTTP targets: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. CONNECT and TRACE need separate threat review. OpenAPI describes HTTP operations; WebSocket messages need their own schemas and lifecycle rules.
 
@@ -45,18 +45,38 @@ New generated REST drafts also include contracts derived from selected column ty
 
 Published graph definitions remain immutable, while source data is mutable: manual replacement or Google refresh changes the saved snapshot read by existing APIs. Owners/editors can perform this data change; it does not grant publication rights. Sources referenced by a draft or release cannot be deleted. Snapshot data is included in workspace backups. Database adapters and private Google OAuth remain separate planned capabilities.
 
+## Product login boundary
+
+Migration 9 stores GitHub OAuth app connections and short-lived login attempts. Owners alone manage provider credentials; owners/editors read metadata and generate or test drafts. Viewers have no connection access. Metadata excludes secrets, hashes, and encrypted values. Changes and audit records commit together. Referenced connections cannot be deleted, and a missing connection prevents testing or publication.
+
+A generated draft connects request -> social -> response. The social config references `connectionId`, and `$auth` holds a bounded result. REST uses POST with BEGIN/COMPLETE actions and generated body/response rules, including nullable result fields and typed identity fields. GraphQL uses typed `LoginAction` arguments on `Mutation.login`; the server returns a static `Query.info` result without executing social login. Generated flows remain ordinary saved drafts subject to the existing validation, owner publication, immutable release, and scoped runtime-key boundaries.
+
+The product server invokes BEGIN with a runtime key, retains the separately returned sensitive proof and expected state associated with the initiating browser, and sends only GitHub's authorization URL to that browser. GitHub redirects to the product's registered callback. The product server validates its browser/state association and invokes COMPLETE with code, state, and its saved proof through the same runtime key. Besh has no public callback or product login frontend. Runtime keys and proofs must never enter browser code, storage, or URLs.
+
+BEGIN uses authorization-code S256 PKCE with `read:user`. State and proof are hash-stored, the PKCE verifier is encrypted, and attempts expire in ten minutes. Attempts bind the flow ID/revision, runtime key or draft-testing member, and connection version. A valid completion is consumed before the provider exchange. Reuse, a changed connection/revision, a wrong caller, expiry, or mismatched proof fails. Network access is limited to fixed GitHub token/profile endpoints with a five-second overall deadline, 64 KiB per response, four concurrent exchanges, and no arbitrary redirects. Ten pending attempts per credential/flow and a thousand total bound stored attempts. One social node per flow and one login root call per selected OAuth mutation bound execution. Provider failures return generic errors without provider tokens or payloads.
+
+Completion returns a normalized identity containing provider, stable subject, username, and nullable name/avatar URL. Provider access tokens and client secrets remain server-side and are not returned to products. Product accounts, sessions/JWTs, email linking, and field/record authorization are separate planned work. The workspace panel continues to use email/password or member keys. Other social providers remain planned; controlled GitHub boundary tests do not prove a real OAuth app or deployed callback works.
+
+Attempt insertion and consumption commit transactionally with `product-login.started` and `product-login.consumed` audit events. Provider exchange records `product-login.completed` or `product-login.failed`. Events identify the credential scope and flow without code, state, proof, verifier, provider tokens, or payload details.
+
+Published flow definitions keep immutable routes, rules, and connection IDs. Credential contents remain mutable references: owner edits increment the connection version, invalidate pending attempts, and change credentials used by future live calls without republishing the graph. Review this lifecycle separately from release changes.
+
+Provider client secrets and PKCE verifiers are encrypted with AES-256-GCM in SQLite. A 32-byte local key is created lazily when saving the first connection, by default at `besh-secrets.key` beside the control database. `AppOptions.secretKeyPath` / `BESH_SECRET_KEY_PATH` overrides that location. Startup fails if encrypted rows exist and their key is missing; it never silently recreates the key. This is local encryption at rest, not an OS-keystore integration. SQLite backups omit the key file: keep a separate private key backup and restore it with the matching database. Existing workspace data and spreadsheet rows in those backups remain sensitive.
+
+See [GitHub product login](product-auth.md) for app setup, server integration, backup recovery, and verification limits.
+
 ## Extensions
 
-| Adapter     | Required boundary                                                                        |
-| ----------- | ---------------------------------------------------------------------------------------- |
-| SQL         | Prepared parameters, pools, transactions, dialect-specific migrations and backup         |
-| MongoDB     | Typed document filters, bounded queries, index management, no raw operator injection     |
-| Supabase    | Server-held secrets, RLS-aware access, explicit tenant ownership                         |
-| Firebase    | Verified identity, scoped Admin SDK operations, security rules and export strategy       |
-| Social auth | OAuth state, PKCE where supported, redirect allowlist, identity linking safeguards       |
-| Plugin      | Manifest, API version, integrity, capability grants, isolated runtime, resource limits   |
-| AI          | Provider configuration, redaction, tool permissions, budgets, approval and audit         |
-| WebSocket   | Origin and authentication checks, message schemas, rate limits, revocation and reconnect |
+| Adapter     | Required boundary                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------ |
+| SQL         | Prepared parameters, pools, transactions, dialect-specific migrations and backup                       |
+| MongoDB     | Typed document filters, bounded queries, index management, no raw operator injection                   |
+| Supabase    | Server-held secrets, RLS-aware access, explicit tenant ownership                                       |
+| Firebase    | Verified identity, scoped Admin SDK operations, security rules and export strategy                     |
+| Social auth | Current GitHub identity flow; other providers need state, PKCE, exact redirects and linking safeguards |
+| Plugin      | Manifest, API version, integrity, capability grants, isolated runtime, resource limits                 |
+| AI          | Provider configuration, redaction, tool permissions, budgets, approval and audit                       |
+| WebSocket   | Origin and authentication checks, message schemas, rate limits, revocation and reconnect               |
 
 Uploaded plugin code must run in a real process/container isolation boundary before public uploads are enabled. A JavaScript VM or Bun Worker is not a security sandbox. Declarative plugins can be introduced earlier with a constrained schema.
 
@@ -64,7 +84,7 @@ Uploaded plugin code must run in a real process/container isolation boundary bef
 
 Initial single-workspace roles: owner, editor, viewer. Owner manages members, publication, backups, and settings. Editor edits and tests drafts. Viewer reads allowed resources. Add custom permissions and multi-workspace isolation with explicit tests before claiming multi-tenancy.
 
-Workspace sign-in uses email/password or member/owner keys. Social sign-in belongs only to planned templates for generated product APIs: GitHub, Discord, Facebook, Google, and generic OIDC where supported. These templates require their own product identity, redirect, linking, and authorization design; they do not authenticate the workspace panel.
+Workspace sign-in uses email/password or member/owner keys. The GitHub social template belongs to generated product APIs and returns provider identity to a product server; it does not authenticate the workspace panel. Discord, Facebook, Google, and generic OIDC remain planned. Product account/session creation, linking, and authorization are separate from the implemented identity exchange.
 
 Migration 8 adds optional workspace accounts, browser sessions, and persistent login throttle state. Accounts use unique normalized email addresses and Argon2id password hashes; member keys remain valid. Login creates a random hash-stored session secret in an HttpOnly, SameSite=Strict cookie, with Secure for HTTPS origins. Sessions expire after a fixed 12 hours without renewal. A member has at most 20 active sessions; a new login evicts the oldest transactionally with an audit event. Password verification runs asynchronously with at most four concurrent login verifications. Login permits 10 invalid attempts per identity and 100 total attempts per five-minute window, with bounded persistent throttle storage.
 

@@ -90,6 +90,24 @@ test('preview every current page and its actions', async ({
     ).toBeVisible()
   }
 
+  async function fitLoginGraph() {
+    await page.getByRole('button', { name: 'Fit View', exact: true }).click()
+    await expect(page.locator('.react-flow__node')).toHaveCount(3)
+    await expect
+      .poll(() =>
+        page.locator('.canvas').evaluate((canvas) => {
+          const bounds = canvas.getBoundingClientRect()
+          return [...canvas.querySelectorAll('.react-flow__node')].every(
+            (node) => {
+              const box = node.getBoundingClientRect()
+              return box.left >= bounds.left && box.right <= bounds.right
+            },
+          )
+        }),
+      )
+      .toBe(true)
+  }
+
   async function configure(config: unknown) {
     if (!(await page.getByLabel('Node configuration').isVisible())) {
       await page
@@ -1277,6 +1295,15 @@ test('preview every current page and its actions', async ({
     'Viewer account and own sessions',
     'A viewer can configure their own password and revoke their own sessions. Owner sessions are not listed.',
   )
+  await navigate('Product login')
+  await expect(
+    page.getByRole('heading', { name: 'Product login needs editor access' }),
+  ).toBeVisible()
+  await capture(
+    'Permissions',
+    'Viewer denied product login',
+    'Viewers cannot inspect product OAuth connections or generate login APIs. The server enforces this role boundary.',
+  )
   await page.getByRole('button', { name: /Sign out/ }).click()
   await signIn(editor)
   await expect(
@@ -1786,6 +1813,7 @@ test('preview every current page and its actions', async ({
   for (const name of [
     'API Studio',
     'Data sources',
+    'Product login',
     'Members',
     'API keys',
     'Data & backups',
@@ -1841,6 +1869,7 @@ test('preview every current page and its actions', async ({
   for (const name of [
     'API Studio',
     'Data sources',
+    'Product login',
     'Members',
     'API keys',
     'Data & backups',
@@ -2001,7 +2030,7 @@ test('preview every current page and its actions', async ({
   await capture(
     'Authentication',
     'Email and password sign-in',
-    'Workspace sign-in offers email/password or a workspace key. Social sign-in belongs to future generated-API templates.',
+    'Workspace sign-in offers email/password or a workspace key. Social sign-in belongs to generated-product API templates.',
   )
   await page
     .getByLabel('Email', { exact: true })
@@ -2074,6 +2103,400 @@ test('preview every current page and its actions', async ({
     'Authentication',
     'Current session revoked',
     'Revoking this device invalidates its server session and returns to workspace sign-in.',
+  )
+
+  await signIn(owner)
+  await navigate('Product login')
+  await expect(
+    page.getByRole('heading', { name: 'Start with your GitHub app' }),
+  ).toBeVisible()
+  await capture(
+    'Product login',
+    'Connect a product OAuth app',
+    'Product login is separate from workspace sign-in. Owners configure a GitHub OAuth app; editors create API drafts from it.',
+  )
+
+  async function connectionForm() {
+    await page
+      .getByLabel('Connection name', { exact: true })
+      .fill('Demo product')
+    await page
+      .getByLabel('GitHub client ID', { exact: true })
+      .fill('disposable-preview-client')
+    await page
+      .getByLabel('GitHub client secret', { exact: true })
+      .fill('disposable-preview-secret')
+    await page
+      .getByLabel('Callback URL', { exact: true })
+      .fill('https://product.example.test/login/callback')
+  }
+
+  await page
+    .getByRole('button', { name: 'Connect GitHub', exact: true })
+    .click()
+  await capture(
+    'Product login',
+    'GitHub connection form',
+    'Labeled fields collect a name, client ID, secret, and the product server callback. Registration help links to GitHub.',
+  )
+  await connectionForm()
+  await page
+    .getByLabel('Callback URL', { exact: true })
+    .fill('http://product.example.test/login/callback')
+  await page
+    .getByRole('button', { name: 'Save connection', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toBeVisible()
+  await capture(
+    'Product login',
+    'Unsafe callback rejected',
+    'The real server rejects HTTP callbacks outside loopback. The error stays beside the connection form; the secret is masked.',
+  )
+  await page
+    .getByLabel('Callback URL', { exact: true })
+    .fill('https://product.example.test/login/callback')
+  await capture(
+    'Product login',
+    'Review GitHub connection',
+    'Disposable demo credentials are entered for the walkthrough. This does not verify a real GitHub application.',
+  )
+  await page
+    .getByRole('button', { name: 'Save connection', exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Demo product', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Product login',
+    'Saved GitHub connection',
+    'Connection cards show metadata only. The encrypted client secret is never returned by the metadata API.',
+  )
+  await page
+    .getByRole('button', { name: 'Edit connection', exact: true })
+    .click()
+  await expect(
+    page.getByLabel('GitHub client secret', { exact: true }),
+  ).toHaveValue('')
+  await capture(
+    'Product login',
+    'Edit without reading a secret',
+    'The saved secret cannot be read back. Leaving its field blank preserves it when settings are saved.',
+  )
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await capture(
+    'Product login',
+    'Cancel connection editing',
+    'Canceling leaves the saved connection unchanged.',
+  )
+  await page
+    .getByRole('button', { name: 'Edit connection', exact: true })
+    .click()
+  await page
+    .getByRole('button', { name: 'Save connection', exact: true })
+    .click()
+  await expect(
+    page.getByText('GitHub · version 2', { exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Product login',
+    'Save connection settings',
+    'Saving increments the connection version and invalidates pending login attempts while preserving an omitted secret.',
+  )
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page
+    .getByRole('button', { name: 'Delete connection', exact: true })
+    .click()
+  await capture(
+    'Product login',
+    'Cancel connection deletion',
+    'Canceling confirmation keeps the provider connection.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Delete connection', exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Demo product', exact: true }),
+  ).toHaveCount(0)
+  await capture(
+    'Product login',
+    'Delete unused connection',
+    'The real server deletes an unused connection after confirmation and records the change in the audit trail.',
+  )
+  await page
+    .getByRole('button', { name: 'Connect GitHub', exact: true })
+    .click()
+  await connectionForm()
+  await page
+    .getByRole('button', { name: 'Save connection', exact: true })
+    .click()
+  await expect(
+    page.getByRole('heading', { name: 'Demo product', exact: true }),
+  ).toBeVisible()
+  await page
+    .getByRole('button', { name: 'Create login API', exact: true })
+    .click()
+  await capture(
+    'Product login',
+    'Create a login API draft',
+    'Choose an API name, endpoint path, and REST or GraphQL. Generation saves a draft and never publishes it automatically.',
+  )
+  await page.getByRole('combobox', { name: 'API type', exact: true }).click()
+  await capture(
+    'Product login',
+    'Choose login API protocol',
+    'The custom dropdown supports keyboard selection of REST or GraphQL.',
+  )
+  await page.keyboard.press('Escape')
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click()
+  await capture(
+    'Product login',
+    'Cancel login API creation',
+    'Canceling returns to connection metadata without creating a draft.',
+  )
+  await page
+    .getByRole('button', { name: 'Create login API', exact: true })
+    .click()
+  await page.getByLabel('API name', { exact: true }).fill('GitHub REST login')
+  await page
+    .getByLabel('Endpoint path', { exact: true })
+    .fill('/login/github-preview')
+  await page.getByRole('button', { name: 'Create draft', exact: true }).click()
+  await expect(page.locator('.flow-card.social')).toContainText('GitHub login')
+  await page.locator('.flow-card.social').click()
+  await expect(
+    page.getByRole('combobox', { name: 'GitHub connection', exact: true }),
+  ).toHaveText('Demo product')
+  await fitLoginGraph()
+  await capture(
+    'Product login API',
+    'Generated REST login graph',
+    'A saved request → GitHub login → response graph uses the connection reference and typed REST rules. No JSON editing is needed.',
+  )
+  await page
+    .getByRole('combobox', { name: 'GitHub connection', exact: true })
+    .click()
+  await capture(
+    'Product login API',
+    'Review the GitHub connection',
+    'The node selects a server-held connection by name. Its client secret never enters the graph or inspector.',
+  )
+  await page.keyboard.press('Escape')
+
+  const beginLogin = page.waitForResponse((response) =>
+    /\/api\/flows\/[^/]+\/test$/.test(response.url()),
+  )
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  const attempt = (await (await beginLogin).json()).body
+  await expect(page.getByTestId('test-result')).toContainText(
+    'authorizationUrl',
+  )
+  await expect(page.getByTestId('test-result')).not.toContainText(attempt.proof)
+  await expect(page.getByTestId('test-result')).not.toContainText(attempt.state)
+  await capture(
+    'Product login API',
+    'Start a draft login attempt',
+    'The real server creates a bound ten-minute attempt and S256 authorization URL. State, proof, and the URL challenge are hidden in the visible response.',
+  )
+  await page
+    .getByRole('button', { name: 'Copy sensitive proof', exact: true })
+    .click()
+  expect(
+    await page.evaluate(
+      (proof) =>
+        navigator.clipboard.readText().then((value) => value === proof),
+      attempt.proof,
+    ),
+  ).toBe(true)
+  await capture(
+    'Product login API',
+    'Copy server-held proof explicitly',
+    'Copying a sensitive proof requires an explicit action. The value stays hidden in the preview and belongs on the product server.',
+  )
+  await page
+    .getByRole('combobox', { name: 'Login action', exact: true })
+    .click()
+  await capture(
+    'Product login API',
+    'Choose the login step',
+    'A custom selector switches between starting login and completing the callback. COMPLETE uses labeled credential fields.',
+  )
+  await page
+    .getByRole('option', { name: 'COMPLETE · Finish login', exact: true })
+    .click()
+  await page
+    .getByLabel('Authorization code', { exact: true })
+    .fill('simulated-preview-code')
+  await page.getByLabel('OAuth state', { exact: true }).fill('invalid-state')
+  await page.getByLabel('Login proof', { exact: true }).fill('invalid-proof')
+  await capture(
+    'Product login API',
+    'Complete login fields',
+    'Code, state, and proof use masked inputs. Real applications receive code/state at their registered callback and retrieve proof from their server storage.',
+  )
+  const rejectedLogin = page.waitForResponse((response) =>
+    /\/api\/flows\/[^/]+\/test$/.test(response.url()),
+  )
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  expect((await rejectedLogin).status()).toBe(400)
+  await capture(
+    'Product login API',
+    'Rejected login attempt',
+    'Invalid state/proof is rejected by the real Besh server before any provider exchange. The valid earlier attempt remains usable.',
+  )
+  await page.getByLabel('OAuth state', { exact: true }).fill(attempt.state)
+  await page.getByLabel('Login proof', { exact: true }).fill(attempt.proof)
+  const completedLogin = page.waitForResponse((response) =>
+    /\/api\/flows\/[^/]+\/test$/.test(response.url()),
+  )
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  const identity = (await (await completedLogin).json()).body.identity
+  expect(identity.subject).toBe('4242')
+  await expect(page.getByTestId('test-result')).toContainText(
+    'simulated-github-user',
+  )
+  await capture(
+    'Product login API',
+    'Simulated GitHub identity',
+    'Only GitHub token/profile responses are simulated. Real Besh validation, one-time consumption, execution, persistence, and audit return a typed demo identity.',
+  )
+  const replayedLogin = page.waitForResponse((response) =>
+    /\/api\/flows\/[^/]+\/test$/.test(response.url()),
+  )
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  expect((await replayedLogin).status()).toBe(400)
+  await capture(
+    'Product login API',
+    'Consumed attempt cannot replay',
+    'The real server rejects reuse of the completed state/proof before calling the simulated provider.',
+  )
+  await appearance('Dark')
+  await capture(
+    'Product login API',
+    'Dark login form and identity',
+    'The generated graph, masked callback fields, identity response, and errors remain readable in dark appearance.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  await fitLoginGraph()
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile dark',
+    'Product login API',
+    'Phone layout contains the generated graph, callback form, and response in dark appearance.',
+  )
+  await appearance('Light')
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile',
+    'Product login API',
+    'The same generated login API stays contained and readable in light appearance at phone width.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await fitLoginGraph()
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await notice('Published · POST /run/login/github-preview')
+  await navigate('Product login')
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Delete connection', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText('referenced')
+  await capture(
+    'Product login',
+    'Referenced connection cannot delete',
+    'A real server check prevents deleting a connection used by a saved draft or release.',
+  )
+  await page
+    .getByRole('button', { name: 'Create login API', exact: true })
+    .click()
+  await page
+    .getByLabel('API name', { exact: true })
+    .fill('GitHub GraphQL login')
+  await page
+    .getByLabel('Endpoint path', { exact: true })
+    .fill('/login/github-preview')
+  await page.getByRole('combobox', { name: 'API type', exact: true }).click()
+  await page.getByRole('option', { name: 'GraphQL', exact: true }).click()
+  await capture(
+    'Product login',
+    'Create typed GraphQL login',
+    'GraphQL generates a real LoginAction enum, login mutation, and typed identity response under its separate route namespace.',
+  )
+  await page.getByRole('button', { name: 'Create draft', exact: true }).click()
+  await expect(
+    page.getByRole('combobox', { name: 'Login action', exact: true }),
+  ).toHaveText('BEGIN · Start login')
+  await capture(
+    'Product login API',
+    'Generated GraphQL login graph',
+    'The generated mutation and variables are ready. The same BEGIN/COMPLETE field form works without schema or JSON editing.',
+  )
+  const graphqlLogin = page.waitForResponse((response) =>
+    /\/api\/flows\/[^/]+\/graphql\/test$/.test(response.url()),
+  )
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  expect((await graphqlLogin).status()).toBe(200)
+  await expect(page.getByTestId('test-result')).toContainText(
+    'authorizationUrl',
+  )
+  await capture(
+    'Product login API',
+    'Test typed GraphQL login',
+    'A real GraphQL mutation starts the draft attempt and returns only requested fields. Sensitive response values remain hidden.',
+  )
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await notice('Published · POST /graphql/login/github-preview')
+  await capture(
+    'Product login API',
+    'Published GraphQL login',
+    'Publishing creates an immutable GraphQL release. Its callers require a separately issued key with mutation permission.',
+  )
+  await navigate('Product login')
+  await appearance('Dark')
+  await capture(
+    'Dark workspace pages',
+    'Connected product login',
+    'Connection metadata and template actions stay readable in dark appearance.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile dark',
+    'Connected product login',
+    'Phone connection cards contain client metadata and the product callback URL without document overflow.',
+  )
+  await appearance('Light')
+  await capture(
+    'Mobile',
+    'Connected product login',
+    'Light phone layout keeps template creation and connection management accessible.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.getByRole('button', { name: /Sign out/ }).click()
+  await signIn(editor)
+  await navigate('Product login')
+  await expect(
+    page.getByRole('button', { name: 'Create login API', exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Edit connection', exact: true }),
+  ).toHaveCount(0)
+  await capture(
+    'Permissions',
+    'Editor generates product login drafts',
+    'Editors see metadata and can create drafts, while connection changes and publication remain owner actions.',
   )
   expect(errors).toEqual([])
 

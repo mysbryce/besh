@@ -19,6 +19,7 @@ test('built dashboard signs in, restores sessions and imports Excel under strict
     BESH_ADMIN_TOKEN: token,
     BESH_DATABASE_PATH: join(directory, 'workspace.sqlite'),
     BESH_BACKUP_DIR: join(directory, 'backups'),
+    BESH_SECRET_KEY_PATH: join(directory, 'besh-secrets.key'),
   }
   delete env.BESH_WEB_URL
   const server = spawn('bun', ['src/index.ts'], {
@@ -150,6 +151,53 @@ test('built dashboard signs in, restores sessions and imports Excel under strict
     await expect(
       page.getByRole('cell', { name: 'Ada', exact: true }),
     ).toBeVisible()
+    await page
+      .getByRole('button', { name: 'Product login', exact: true })
+      .click()
+    await page
+      .getByRole('button', { name: 'Connect GitHub', exact: true })
+      .click()
+    await page
+      .getByLabel('Connection name', { exact: true })
+      .fill('Built product')
+    await page
+      .getByLabel('GitHub client ID', { exact: true })
+      .fill('built-client')
+    await page
+      .getByLabel('GitHub client secret', { exact: true })
+      .fill('disposable-built-secret')
+    await page
+      .getByLabel('Callback URL', { exact: true })
+      .fill('https://product.example.test/login/callback')
+    await page
+      .getByRole('button', { name: 'Save connection', exact: true })
+      .click()
+    await expect(
+      page.getByRole('heading', { name: 'Built product', exact: true }),
+    ).toBeVisible()
+    await page
+      .getByRole('button', { name: 'Create login API', exact: true })
+      .click()
+    await page
+      .getByRole('button', { name: 'Create draft', exact: true })
+      .click()
+    await expect(page.locator('.flow-card.social')).toContainText(
+      'GitHub login',
+    )
+    const started = page.waitForResponse((response) =>
+      /\/api\/flows\/[^/]+\/test$/.test(response.url()),
+    )
+    await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+    const login = await started
+    expect(login.status()).toBe(200)
+    const attempt = (await login.json()).body
+    expect(new URL(attempt.authorizationUrl).hostname).toBe('github.com')
+    await expect(page.getByTestId('test-result')).not.toContainText(
+      attempt.proof,
+    )
+    await expect(page.getByTestId('test-result')).not.toContainText(
+      attempt.state,
+    )
     expect(pageErrors).toEqual([])
     expect(policyViolations).toEqual([])
   } finally {

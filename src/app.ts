@@ -5,6 +5,7 @@ import { flowService } from './flows/service'
 import { backupService } from './backups'
 import { dataSourceService } from './data-sources'
 import type { SheetFetch } from './google-sheets'
+import { productAuthService, type OAuthFetch } from './product-auth'
 import { timingSafeEqual } from 'node:crypto'
 import {
   sessionService,
@@ -57,6 +58,8 @@ export type AppOptions = {
   sheetFetch?: SheetFetch
   authOrigin?: string
   now?: () => number
+  oauthFetch?: OAuthFetch
+  secretKeyPath?: string
 }
 
 export function createApp(options: AppOptions) {
@@ -64,7 +67,14 @@ export function createApp(options: AppOptions) {
   const store = openStore(options.databasePath, options.adminToken)
   const sessions = sessionService(store, options.now)
   const sources = dataSourceService(store, options.sheetFetch)
-  const flows = flowService(store, sources)
+  let productAuth: ReturnType<typeof productAuthService>
+  try {
+    productAuth = productAuthService(store, options)
+  } catch (error) {
+    store.close()
+    throw error
+  }
+  const flows = flowService(store, sources, productAuth)
   const backups = backupService(store, options.backupDir)
 
   const management = new Elysia({ prefix: '/api' })
@@ -88,6 +98,28 @@ export function createApp(options: AppOptions) {
       return { member, session }
     })
     .get('/me', ({ member }) => member)
+    .get('/auth-connections', ({ member }) => {
+      allow(member, ['owner', 'editor'])
+      return productAuth.list()
+    })
+    .post('/auth-connections', ({ member, body }) => {
+      allow(member, ['owner'])
+      return productAuth.create(member.id, body)
+    })
+    .put('/auth-connections/:id', ({ member, params, body }) => {
+      allow(member, ['owner'])
+      return productAuth.update(member.id, params.id, body)
+    })
+    .delete('/auth-connections/:id', ({ member, params }) => {
+      allow(member, ['owner'])
+      return productAuth.delete(member.id, params.id)
+    })
+    .post('/auth-connections/:id/generate', ({ member, params, body }) => {
+      allow(member, ['owner', 'editor'])
+      return store.db.transaction(() =>
+        flows.create(member.id, productAuth.template(params.id, body)),
+      )()
+    })
     .get('/sessions', ({ member, session }) =>
       sessions.list(member, session?.sessionId),
     )
@@ -401,7 +433,7 @@ export function createApp(options: AppOptions) {
       },
     )
     .use(management)
-    .all('/graphql/*', ({ request, params, body }) => {
+    .all('/graphql/*', async ({ request, params, body }) => {
       const key = store.authenticateRuntime(bearer(request))
       if (!key) throw new ApiError(401, 'Authentication required')
       if (request.method !== 'POST')
@@ -418,18 +450,18 @@ export function createApp(options: AppOptions) {
           },
         )
 
-      const result = flows.graphql(key, `/${params['*']}`, body)
+      const result = await flows.graphql(key, `/${params['*']}`, body)
       return new Response(JSON.stringify(result.body), {
         status: result.status,
         headers: { 'content-type': 'application/graphql-response+json' },
       })
     })
-    .all('/run/*', ({ request, params, body, query }) => {
+    .all('/run/*', async ({ request, params, body, query }) => {
       const token = bearer(request)
       const key = store.authenticateRuntime(token)
       if (!key) throw new ApiError(401, 'Authentication required')
 
-      const result = flows.run(key, request.method, `/${params['*']}`, {
+      const result = await flows.run(key, request.method, `/${params['*']}`, {
         body: body ?? null,
         query,
       })

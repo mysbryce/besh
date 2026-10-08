@@ -635,7 +635,7 @@ test('nullable body and Unicode character lengths agree in runtime and draft rul
   expect(tested.body).toBe('😀')
 })
 
-test('executor validates input before reaching an unavailable data boundary', () => {
+test('executor validates input before reaching an unavailable data boundary', async () => {
   const flow = {
     ...helloFlow,
     contract: {
@@ -660,10 +660,10 @@ test('executor validates input before reaching an unavailable data boundary', ()
       { id: 'two', source: 'data', target: 'response' },
     ],
   }
-  expect(() =>
+  await expect(
     executeFlow(flow, { body: null, query: { count: 'invalid' } }),
-  ).toThrow('Input query.count must match integer rules')
-  expect(() =>
+  ).rejects.toThrow('Input query.count must match integer rules')
+  await expect(
     executeFlow(flow, { body: null, query: { count: '1' } }),
-  ).toThrow('Data sources are unavailable')
+  ).rejects.toThrow('Data sources are unavailable')
 })

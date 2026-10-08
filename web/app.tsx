@@ -22,6 +22,7 @@ import { Badge } from './components/ui/badge'
 import { useStudio } from './store'
 import { api } from './lib/api'
 import { ThemeControl } from './theme'
+import { GitHubIcon } from './components/github-icon'
 
 const Builder = lazy(() =>
   import('./builder').then((module) => ({ default: module.Builder })),
@@ -41,6 +42,9 @@ const DataSources = lazy(() =>
 const Account = lazy(() =>
   import('./account').then((module) => ({ default: module.Account })),
 )
+const ProductAuth = lazy(() =>
+  import('./product-auth').then((module) => ({ default: module.ProductAuth })),
+)
 
 type Setup = { required: boolean; name: string }
 type Page =
@@ -52,10 +56,12 @@ type Page =
   | 'backups'
   | 'roadmap'
   | 'account'
+  | 'product-login'
 
 const navigation = [
   { id: 'builder', name: 'API Studio', icon: Workflow },
   { id: 'data', name: 'Data sources', icon: Table2 },
+  { id: 'product-login', name: 'Product login', icon: GitHubIcon },
   { id: 'audit', name: 'Audit trail', icon: Activity },
   { id: 'members', name: 'Members', icon: Users },
   { id: 'keys', name: 'API keys', icon: KeyRound },
@@ -276,6 +282,8 @@ export function App() {
               <Builder />
             ) : page === 'data' ? (
               <DataSources onOpenApi={() => setPage('builder')} />
+            ) : page === 'product-login' ? (
+              <ProductAuth onOpenApi={() => setPage('builder')} />
             ) : page === 'roadmap' ? (
               <Roadmap />
             ) : page === 'keys' ? (

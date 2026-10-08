@@ -17,14 +17,15 @@ This is the product plan. Planned features are not implementation claims.
 - Beginner response/request/condition/data field forms with optional advanced JSON, generated GraphQL queries and optional schema editing, readable light/dark themes, and a mobile saved-API picker.
 - CSV/Excel imports and public Google Sheets snapshots, reviewed column mapping, generated REST/typed GraphQL drafts, bounded data reads, manual snapshot replacement/refresh, and referenced-source deletion protection.
 
-Current limits: one local workspace, exact HTTP paths, four node types, fixed roles, manual SQLite backups, and read-only spreadsheet snapshots. Google Sheets supports public exports; private OAuth, spreadsheet write-back, and database adapters remain planned. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
+Current limits: one local workspace, exact HTTP paths, five node types, fixed roles, manual SQLite backups, and read-only spreadsheet snapshots. Google Sheets supports public exports; private OAuth, spreadsheet write-back, and database adapters remain planned. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
 
 ## Milestone 2: identity and API contracts
 
 - Implemented: optional REST query/body/response rules, server input/output checks, typed query conversion, recursive field/item forms and limits, generated spreadsheet contracts, and separate saved-draft/published OpenAPI 3.1.1 downloads. GraphQL retains its existing SDL contract.
 - Planned: public endpoint policy, field-level and record-level authorization, key rotation workflows, and release-pinned grants where needed. Current runtime grants still authorize whole operations.
 - Implemented workspace accounts and cookie sessions: optional email/password or member/owner-key sign-in, fixed 12-hour expiry, session restoration, CSRF/origin checks, bounded persistent login throttling, own-account changes with fresh proof, metadata-only session listing, member-own/owner-all revocation, and a 20-session member limit. Bearer management clients remain compatible.
-- Planned product auth templates: GitHub, Discord, Facebook, Google, and generic OIDC social sign-in for generated APIs, separate from workspace access.
+- Implemented GitHub product identity template: owner-managed encrypted OAuth connections, owner/editor draft generation, REST POST or typed GraphQL login mutation, ten-minute state/proof with S256 PKCE, one-use caller/flow/revision/connection binding, and normalized identity output. Product servers retain runtime keys and separate proof, handle their own callbacks, and create their own sessions. Controlled GitHub responses test the boundary; no live OAuth app round trip has been verified.
+- Planned product auth expansion: Discord, Facebook, Google, generic OIDC, product sessions/accounts, and reviewed identity linking. These do not change workspace sign-in.
 - Planned workspace invites and account recovery.
 - Per-workspace roles and custom permission grants.
 - Extend GraphQL with reviewed introspection policy, custom scalar contracts, and subscriptions alongside WebSocket work. Whole-query/mutation runtime grants are implemented; field-level grants remain planned.
@@ -34,7 +35,7 @@ Current limits: one local workspace, exact HTTP paths, four node types, fixed ro
 ## Milestone 3: data and plugins
 
 - SQLite, PostgreSQL, MySQL/MariaDB, MongoDB, Supabase, Firebase adapters.
-- Connection testing and encrypted secret references.
+- Database connection testing and encrypted secret references beyond the current GitHub credential storage.
 - Private Google Sheets OAuth, spreadsheet write-back, and scheduled synchronization beyond current manual public-sheet snapshots.
 - Parameterized query builder and explicit transaction capabilities.
 - Migration plans with dry runs, backup gates and restore verification.
@@ -67,6 +68,6 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 1. Start with `bun install --frozen-lockfile` and `bun run setup`; complete the local wizard.
 2. Run `bun run preview:all` and gather feedback on pages, node configuration, and route design before expanding the graph format.
-3. Review workspace account/session feedback. Design generated-product auth templates, workspace invites, and account recovery separately; none are implemented. Review public endpoint policy and finer data permissions before exposing endpoints publicly.
-4. Add integration tests against each real provider as its adapter is built. Do not mark provider support complete from mocks.
+3. Review workspace account/session feedback and the GitHub product login workflow. Connect a real GitHub OAuth app and exact product-server callback, verify a complete round trip, and back up the separate encryption key privately. Product sessions, identity linking, workspace invites, and account recovery remain planned.
+4. Add integration tests against each real provider as its adapter is built. Do not mark live provider configuration verified from mocks. Review public endpoint policy and finer data permissions before exposing product data.
 5. Choose a GitHub repository and private reporting contact before public release, then configure CI and update notices.

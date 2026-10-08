@@ -128,6 +128,32 @@ Protocol is `rest` or `graphql`; limit is 1 to 100. Filter is optional and perfo
 
 Reads use the latest source snapshot. Replacement/refresh changes live data without publishing a new graph revision. Migration 7 stores source snapshots and audit changes. See [data sources](data-sources.md) for formats, limits, and private-sheet restrictions.
 
+## Product login connections
+
+Connection metadata and draft generation require an authenticated owner or editor. Owners alone create, edit, or delete connections. Viewers and runtime keys have no connection-management access. Cookie writes use the usual Origin and CSRF checks.
+
+| Method | Path                                 | Body / behavior                                                                                                                          |
+| ------ | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/auth-connections`              | Owner/editor; metadata array                                                                                                             |
+| POST   | `/api/auth-connections`              | Owner; `{ "name": "Product GitHub", "provider": "github", "clientId": "<id>", "clientSecret": "<secret>", "redirectUri": "<callback>" }` |
+| PUT    | `/api/auth-connections/:id`          | Owner; `{ "name": "Product GitHub", "clientId": "<id>", "redirectUri": "<callback>", "clientSecret": "<optional-replacement>" }`         |
+| DELETE | `/api/auth-connections/:id`          | Owner; `{ "ok": true }`; a connection referenced by a draft or release returns `409`                                                     |
+| POST   | `/api/auth-connections/:id/generate` | Owner/editor; `{ "name": "GitHub login", "path": "/login/github", "kind": "rest" }`; `kind` also accepts `graphql`                       |
+
+Metadata contains `id`, `name`, `provider: "github"`, `clientId`, `redirectUri`, `version`, `createdAt`, and `updatedAt`. It never contains the client secret or encrypted values. Names contain 1 to 80 trimmed characters, client IDs 1 to 200, and secrets 1 to 4096. The callback is at most 1000 characters, uses HTTPS or HTTP loopback, and cannot include user information, a query, or a fragment. It belongs to the product server and must be registered exactly in GitHub.
+
+Omitting `clientSecret` during an update retains the existing secret. Updating a connection increments its version, affects future uses of its live credential reference, and invalidates pending login attempts. Creation, updates, deletion, and generation are audited. Missing connections fail draft testing and publication.
+
+Generation returns a normal saved draft and does not publish or issue a runtime key. REST uses POST with body and response rules, including nullable authorization/state/proof/expiry fields and a typed nullable identity. GraphQL exposes `Mutation.login` with `LoginAction` values `BEGIN` and `COMPLETE`, plus a harmless static `Query.info`. Both templates connect request, social, and response nodes. Social config is `{ "connectionId": "<id>" }`; the response body is `$auth`.
+
+BEGIN returns nullable result fields `{ authorizationUrl, state, proof, expiresAt, identity }` with no identity yet. COMPLETE requires `code`, `state`, and the separate server-held `proof`, and returns identity `{ provider: "github", subject, username, name, avatarUrl }` with the other fields null. Attempts expire after ten minutes, are single-use, and bind the flow/revision, caller, and connection version. Published calls require the same flow-scoped runtime key for both actions; draft attempts bind the testing member. Provider tokens and client secrets are never returned. Product cookies, JWTs, accounts, email linking, and record authorization are not provided.
+
+OAuth flows allow one social node and selected mutation operations allow one login root call. Pending attempts are limited to ten per credential/flow and a thousand total. Provider exchange permits four concurrent calls, a five-second overall deadline, and 64 KiB per provider response. Invalid action fields or attempts return 400, exhausted attempt/concurrency limits return 429, and provider failures return the generic 502 `GitHub login could not be completed`. GraphQL wraps execution failures in its standard errors envelope.
+
+OpenAPI exports describe generated REST response rules and include 429/502 responses for flows containing a social node. Login lifecycle audits use `product-login.started`, `product-login.consumed`, and `product-login.completed` or `product-login.failed`; insertion/consumption commit with their events. Events contain caller scope and flow ID without sensitive attempt or provider values.
+
+The product server keeps the runtime key and proof private, sends only the authorization URL to the browser, and handles GitHub's callback itself. See [GitHub product login](product-auth.md) for the complete setup and request examples, provider-verification limits, and separate encryption-key backup procedure.
+
 ## Runtime keys
 
 Use an owner member token to issue a key after publishing:
@@ -166,4 +192,4 @@ The test endpoint returns `{ "status": 200, "body": {}, "visited": ["start", "do
 
 Flows may include optional `contract.query`, `contract.body`, and `contract.response` schemas. REST draft tests and live calls enforce these rules; GraphQL uses its SDL contract. OpenAPI export describes the selected saved REST draft or immutable published release. See [API rules and OpenAPI](api-contracts.md) for the schema subset, validation behavior, and export boundary.
 
-No arbitrary code, database access, external HTTP requests, product social-auth template, WebSocket endpoint, or AI execution is exposed in this version. Workspace email/password and key sessions never replace runtime API keys.
+The GitHub social node performs only its bounded provider exchange and profile read. Arbitrary code, database access, general external HTTP request nodes, other social providers, WebSocket endpoints, and AI execution remain unimplemented. Workspace email/password and key sessions never replace runtime API keys.

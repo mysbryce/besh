@@ -64,6 +64,11 @@ export const flowSchema = z
           }),
           z.object({
             ...base,
+            type: z.literal('social'),
+            config: z.object({ connectionId: z.string().min(1).max(80) }),
+          }),
+          z.object({
+            ...base,
             type: z.literal('response'),
             config: z.object({
               status: z.number().int().min(200).max(599),
@@ -100,6 +105,10 @@ export const flowSchema = z
 export type Flow = z.infer<typeof flowSchema>
 export type FlowNode = Flow['nodes'][number]
 export type DataReadConfig = Extract<FlowNode, { type: 'data' }>['config']
-export type FlowContext = { readData?: (config: DataReadConfig) => unknown }
+export type SocialConfig = Extract<FlowNode, { type: 'social' }>['config']
+export type FlowContext = {
+  readData?: (config: DataReadConfig) => unknown
+  social?: (config: SocialConfig, input: { body: unknown }) => Promise<unknown>
+}
 export type FlowInput = { body: unknown; query: Record<string, string> }
 export type FlowResult = { status: number; body: unknown; visited: string[] }

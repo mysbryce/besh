@@ -227,6 +227,38 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 9').get()) {
+      db.exec(`
+        CREATE TABLE auth_connections (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          provider TEXT NOT NULL CHECK (provider = 'github'),
+          client_id TEXT NOT NULL,
+          secret TEXT NOT NULL,
+          redirect_uri TEXT NOT NULL,
+          version INTEGER NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+        CREATE TABLE oauth_attempts (
+          state_hash TEXT PRIMARY KEY,
+          proof_hash TEXT NOT NULL,
+          verifier TEXT NOT NULL,
+          flow_id TEXT NOT NULL REFERENCES flows(id),
+          revision INTEGER NOT NULL,
+          scope TEXT NOT NULL,
+          connection_id TEXT NOT NULL REFERENCES auth_connections(id),
+          connection_version INTEGER NOT NULL,
+          expires_at INTEGER NOT NULL
+        );
+        CREATE INDEX oauth_attempt_scope ON oauth_attempts(scope, flow_id);
+      `)
+      query('INSERT INTO migrations VALUES (9, ?, ?)').run(
+        'generated product OAuth connections',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,

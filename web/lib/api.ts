@@ -99,6 +99,16 @@ export type DataSource = {
   sourceUrl?: string
 }
 export type DataSourceDetail = DataSource & { rows: Record<string, unknown>[] }
+export type AuthConnection = {
+  id: string
+  name: string
+  provider: 'github'
+  clientId: string
+  redirectUri: string
+  version: number
+  createdAt: string
+  updatedAt: string
+}
 export type AuditEvent = {
   id: number
   actor: string

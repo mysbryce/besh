@@ -149,7 +149,7 @@ export function renderPreview(records: PreviewRecord[]) {
         <p id="empty">No previews match this filter.</p>
         <footer>
           Planned integrations appear only on the roadmap. External databases,
-          social-auth API templates, WebSockets, custom plugins, and AI are not
+          additional login providers, WebSockets, custom plugins, and AI are not
           functional preview pages yet.
         </footer>
         <script>

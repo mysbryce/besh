@@ -10,6 +10,12 @@ In **Data sources**, choose GraphQL, review the column-to-field mapping and row 
 
 Selected spreadsheet columns become fields on the row type; an optional filter becomes a named root argument. Generated APIs expose queries only. The published graph and schema change only on publication, while reads use the source's latest saved snapshot. Confirm replacements and manual Google refreshes carefully. Private-sheet OAuth, writeback, and scheduled synchronization remain planned. See [spreadsheet data](data-sources.md).
 
+## GitHub product login
+
+In **Product login**, generate a GraphQL draft from a saved GitHub OAuth connection. It exposes `Mutation.login` with a `LoginAction` enum (`BEGIN` or `COMPLETE`), optional code/state/proof arguments, and a typed identity result. Login requires a mutation grant. Its static `Query.info` requires a query grant and does not run the social node. A selected OAuth mutation allows only one root call; ordinary GraphQL APIs retain their existing root budget.
+
+Your product server holds the runtime key and separate proof, associates the attempt with its initiating browser, and completes login after handling its own registered callback. The template returns identity without provider tokens or product sessions. See [GitHub product login](product-auth.md) for setup, mutation examples, security limits, and the separate encryption-key backup.
+
 ## Example
 
 Set path to `/greeting` and use this schema:
@@ -67,7 +73,7 @@ Mutations use the same transport, for example `mutation { greet(name: "Grace") {
 
 ## How fields map to a flow
 
-- Each top-level query or mutation field runs this API's visual flow once. Aliases and fragments follow GraphQL execution rules.
+- Each top-level query or mutation field runs this API's visual flow once, except static `Query.info` on a social-login flow. Other query fields on such a flow cannot execute social login. Aliases and fragments follow GraphQL execution rules within the root limits.
 - Arguments, including typed input objects, become flow `body`. Use `$input.body.name` to read one argument.
 - Flow `query.field` contains the schema field name. Flow `query.operation` is `query` or `mutation`. Use conditions to choose different branches.
 - The response body becomes that root field's value. Nested objects resolve their own data properties; they do not start another flow.
@@ -86,7 +92,7 @@ Authorization applies to the selected operation, including its `operationName` w
 
 Invalid schemas can be saved as drafts but cannot be tested or published. Draft edits do not alter live GraphQL behavior until publication. Duplicate GraphQL paths return `409`. REST `/run/greeting` and GraphQL `/graphql/greeting` may coexist. Migration 5 adds protocol-aware route uniqueness while preserving old REST routes.
 
-GraphQL tests and calls record `graphql.tested` and `graphql.executed` audit events. Queries, variables, tokens, and returned data are not stored in these audit records. Workspace backups include GraphQL drafts, schemas, releases, and runtime-key hashes and metadata. Restoring a snapshot can restore key access revoked afterward; review and rotate or revoke restored keys.
+GraphQL tests and executed flows record `graphql.tested` and `graphql.executed` audit events. The static product-info query does not execute a flow. Queries, variables, tokens, and returned data are not stored in these audit records. Workspace backups include GraphQL drafts, schemas, releases, and runtime-key hashes and metadata. Restoring a snapshot can restore key access revoked afterward; review and rotate or revoke restored keys. Backups with product OAuth connections need their separately saved matching encryption key.
 
 ## Transport and limits
 
@@ -94,7 +100,7 @@ GraphQL tests and calls record `graphql.tested` and `graphql.executed` audit eve
 - Runtime responses use `application/graphql-response+json`. Invalid documents/variables return `400`; executed operations return `200`, potentially with `errors` and partial/null `data`.
 - Tokens are required; authentication and route failures use their normal HTTP status.
 - Schemas and operations: at most 16,384 characters and 2,000 parser tokens each.
-- Selected operation: depth 12, 200 expanded field selections, and 16 root selections. Fragment expansion counts toward limits.
+- Selected operation: depth 12, 200 expanded field selections, and 16 root selections. A mutation on a social-login flow allows one root selection. Fragment expansion counts toward limits.
 - Execution: 5,000 resolver calls; 256 KiB input/output limits and a conservative response budget based on root data size multiplied by selected fields. A large response can hit this budget even when a smaller subset was requested.
 - Existing graph and JSON nesting limits still apply.
 

@@ -5,6 +5,7 @@ import { flowSchema, type Flow, type FlowInput } from './model'
 import { executeGraphql, graphqlSchema } from './graphql'
 import type { dataSourceService } from '../data-sources'
 import { flowOpenapi } from './openapi'
+import type { productAuthService } from '../product-auth'
 
 type Row = {
   id: string
@@ -17,6 +18,10 @@ type Row = {
 export function flowService(
   store: Store,
   sources: Pick<ReturnType<typeof dataSourceService>, 'validate' | 'read'>,
+  productAuth: Pick<
+    ReturnType<typeof productAuthService>,
+    'validate' | 'social'
+  >,
 ) {
   const { db, query, audit } = store
 
@@ -46,6 +51,7 @@ export function flowService(
       const flow = validateFlow(value)
       if (flow.graphql) graphqlSchema(flow)
       sources.validate(flow)
+      productAuth.validate(flow)
       return flow
     } catch (error) {
       throw new ApiError(
@@ -72,14 +78,23 @@ export function flowService(
     }
   }
 
-  function execute(
+  async function execute(
     actor: string,
     id: string,
     definition: unknown,
     input: FlowInput,
+    revision: number,
   ) {
     try {
-      return executeFlow(definition, input, { readData: sources.read })
+      return await executeFlow(definition, input, {
+        readData: sources.read,
+        social: (config, input) =>
+          productAuth.social(config, input, {
+            flowId: id,
+            revision,
+            scope: actor,
+          }),
+      })
     } catch (error) {
       if (
         error instanceof ApiError &&
@@ -177,25 +192,33 @@ export function flowService(
 
       return present(get(id))
     },
-    test(actor: string, id: string, input: FlowInput) {
-      const definition = valid(JSON.parse(get(id).definition))
+    async test(actor: string, id: string, input: FlowInput) {
+      const row = get(id)
+      const definition = valid(JSON.parse(row.definition))
       if (definition.graphql)
         throw new ApiError(400, 'Use the GraphQL test endpoint')
-      const result = execute(actor, id, definition, input)
+      const result = await execute(actor, id, definition, input, row.revision)
       audit(actor, 'flow.tested', id)
       return result
     },
-    testGraphql(actor: string, id: string, input: unknown) {
-      const definition = valid(JSON.parse(get(id).definition))
+    async testGraphql(actor: string, id: string, input: unknown) {
+      const row = get(id)
+      const definition = valid(JSON.parse(row.definition))
       if (!definition.graphql)
         throw new ApiError(400, 'This API does not have a GraphQL schema')
-      const result = executeGraphql(definition, input, undefined, {
+      const result = await executeGraphql(definition, input, undefined, {
         readData: sources.read,
+        social: (config, input) =>
+          productAuth.social(config, input, {
+            flowId: id,
+            revision: row.revision,
+            scope: actor,
+          }),
       })
       audit(actor, 'graphql.tested', id)
       return result
     },
-    run(key: RuntimeKey, method: string, path: string, input: FlowInput) {
+    async run(key: RuntimeKey, method: string, path: string, input: FlowInput) {
       const row = query<Row, [string, string]>(
         "SELECT * FROM flows WHERE json_extract(published, '$.method') = ? AND json_extract(published, '$.path') = ? AND json_extract(published, '$.graphql') IS NULL",
       ).get(method, path)
@@ -203,16 +226,17 @@ export function flowService(
       if (row.id !== key.flowId || !key.permissions.includes('rest'))
         throw new ApiError(403, 'Runtime key does not allow this endpoint')
 
-      const result = execute(
+      const result = await execute(
         `runtime:${key.id}`,
         row.id,
         JSON.parse(row.published),
         input,
+        row.published_revision!,
       )
       audit(`runtime:${key.id}`, 'flow.executed', row.id)
       return result
     },
-    graphql(key: RuntimeKey, path: string, input: unknown) {
+    async graphql(key: RuntimeKey, path: string, input: unknown) {
       const row = query<Row, [string]>(
         "SELECT * FROM flows WHERE json_extract(published, '$.path') = ? AND json_extract(published, '$.graphql') IS NOT NULL",
       ).get(path)
@@ -220,11 +244,19 @@ export function flowService(
       if (row.id !== key.flowId || key.permissions.includes('rest'))
         throw new ApiError(403, 'Runtime key does not allow this endpoint')
 
-      const result = executeGraphql(
+      const result = await executeGraphql(
         JSON.parse(row.published),
         input,
         key.permissions,
-        { readData: sources.read },
+        {
+          readData: sources.read,
+          social: (config, input) =>
+            productAuth.social(config, input, {
+              flowId: row.id,
+              revision: row.published_revision!,
+              scope: `runtime:${key.id}`,
+            }),
+        },
       )
       if (result.visited.length)
         audit(`runtime:${key.id}`, 'graphql.executed', row.id)

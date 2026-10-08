@@ -634,7 +634,11 @@ test('accounts and sessions persist through restart and an actual downloaded bac
   const migrations = await (
     await request('/api/migrations', 'GET', undefined, headers)
   ).json()
-  expect(migrations.at(-1)).toMatchObject({
+  expect(
+    migrations.find(
+      (migration: { version: number }) => migration.version === 8,
+    ),
+  ).toMatchObject({
     version: 8,
     name: 'workspace accounts and sessions',
   })

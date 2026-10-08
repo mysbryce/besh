@@ -5,7 +5,7 @@ import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import { Checkbox } from './components/ui/checkbox'
-import { api, type DataSource } from './lib/api'
+import { api, type DataSource, type AuthConnection } from './lib/api'
 import type { DataReadConfig } from '../src/flows/model'
 
 type ValueType =
@@ -259,6 +259,12 @@ export function ResponseForm({
       </label>
       {config.body === '$data' ? (
         <p>Return spreadsheet rows selected by the data step.</p>
+      ) : config.body === '$auth' ? (
+        <p>
+          Return the GitHub login result: authorization URL for BEGIN, or
+          verified identity for COMPLETE. The proof belongs on your product
+          server.
+        </p>
       ) : rows ? (
         <FieldRows rows={rows} onChange={setRows} disabled={disabled} />
       ) : (
@@ -282,6 +288,67 @@ export function ResponseForm({
             )
           }
         }}
+      >
+        Apply configuration
+      </Button>
+    </div>
+  )
+}
+
+export function SocialNodeForm({
+  config,
+  token,
+  disabled,
+  onApply,
+  onError,
+}: {
+  config: { connectionId: string }
+  token: string
+  disabled: boolean
+  onApply: (config: { connectionId: string }) => void
+  onError: (message: string) => void
+}) {
+  const [connections, setConnections] = useState<AuthConnection[]>([])
+  const [selected, setSelected] = useState(config.connectionId)
+
+  useEffect(() => {
+    let active = true
+    api<AuthConnection[]>('/api/auth-connections', token)
+      .then((value) => {
+        if (active) setConnections(value)
+      })
+      .catch((error: Error) => {
+        if (active) onError(error.message)
+      })
+    return () => {
+      active = false
+    }
+  }, [token])
+
+  return (
+    <div className="simple-form">
+      <label>
+        GitHub connection
+        <Select
+          label="GitHub connection"
+          value={selected}
+          onValueChange={setSelected}
+          options={connections.map((connection) => ({
+            value: connection.id,
+            label: connection.name,
+          }))}
+          disabled={disabled}
+          placeholder="Choose a connection"
+        />
+      </label>
+      <p className="field-help">
+        Credentials stay on the server. Configure provider apps in Product
+        login.
+      </p>
+      <Button
+        variant="outline"
+        disabled={disabled || !selected}
+        onClick={() => onApply({ connectionId: selected })}
       >
         Apply configuration
       </Button>

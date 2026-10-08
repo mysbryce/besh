@@ -1,11 +1,12 @@
 # Besh documentation
 
-Use this index for setup, supported API behavior, development checks, and planned work. Besh currently runs as a local workspace with spreadsheet snapshots; database adapters and AI execution remain planned.
+Use this index for setup, supported API behavior, development checks, and planned work. Besh currently runs as a local workspace with spreadsheet snapshots and a GitHub product login template; database adapters and AI execution remain planned.
 
 ## Use Besh
 
 - [Getting started](getting-started.md): installation, first API, runtime keys, roles, configuration, recovery, project layout, and development commands.
 - [Workspace accounts and sessions](workspace-auth.md): key or email/password sign-in, account changes, session metadata, revocation, and recovery boundaries.
+- [GitHub product login](product-auth.md): OAuth app setup, generated REST/GraphQL drafts, server-held proof, product callbacks, identity results, and encryption-key backups.
 - [Core API reference](api.md): setup and management HTTP routes, flow format, runtime-key lifecycle, and published REST authentication.
 - [REST API rules and OpenAPI](api-contracts.md): simple field rules, server validation, supported schema subset, and draft/published downloads.
 - [GraphQL APIs](graphql.md): typed schemas, variables, selected operations, runtime grants, and execution limits.
