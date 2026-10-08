@@ -1,13 +1,48 @@
 import { Database, type SQLQueryBindings, type Statement } from 'bun:sqlite'
-import { createHash } from 'node:crypto'
+import { createHash, randomBytes } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { ApiError } from './errors'
+import { z } from 'zod'
 
 export type Member = {
   id: string
   name: string
   role: 'owner' | 'editor' | 'viewer'
+}
+
+export type RuntimePermission = 'rest' | 'query' | 'mutation'
+
+export type RuntimeKey = {
+  id: string
+  name: string
+  flowId: string
+  permissions: RuntimePermission[]
+  expiresAt: string
+  createdAt: string
+  revokedAt: string | null
+}
+
+type RuntimeKeyRow = {
+  id: string
+  name: string
+  flow_id: string
+  permissions: string
+  expires_at: string
+  created_at: string
+  revoked_at: string | null
+}
+
+function runtimeKey(row: RuntimeKeyRow): RuntimeKey {
+  return {
+    id: row.id,
+    name: row.name,
+    flowId: row.flow_id,
+    permissions: JSON.parse(row.permissions),
+    expiresAt: row.expires_at,
+    createdAt: row.created_at,
+    revokedAt: row.revoked_at,
+  }
 }
 
 export const hashToken = (token: string) =>
@@ -124,6 +159,47 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 6').get()) {
+      db.exec(`
+        CREATE TABLE runtime_keys (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          flow_id TEXT NOT NULL REFERENCES flows(id),
+          permissions TEXT NOT NULL,
+          token_hash TEXT NOT NULL UNIQUE,
+          expires_at TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          revoked_at TEXT
+        );
+      `)
+      query('INSERT INTO migrations VALUES (6, ?, ?)').run(
+        'scoped runtime credentials',
+        new Date().toISOString(),
+      )
+    }
+
+    if (!query('SELECT version FROM migrations WHERE version = 7').get()) {
+      db.exec(`
+        CREATE TABLE data_sources (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          kind TEXT NOT NULL CHECK (kind IN ('upload', 'google-sheets')),
+          columns TEXT NOT NULL,
+          rows TEXT NOT NULL,
+          row_count INTEGER NOT NULL,
+          version INTEGER NOT NULL,
+          source_url TEXT,
+          sheet_name TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        );
+      `)
+      query('INSERT INTO migrations VALUES (7, ?, ?)').run(
+        'spreadsheet data snapshots',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -215,10 +291,129 @@ export function openStore(path: string, adminToken?: string) {
     listAudit() {
       return query('SELECT * FROM audit ORDER BY id DESC LIMIT 200').all()
     },
+    listRuntimeKeys() {
+      return query<RuntimeKeyRow, []>(
+        'SELECT id, name, flow_id, permissions, expires_at, created_at, revoked_at FROM runtime_keys ORDER BY rowid DESC',
+      )
+        .all()
+        .map(runtimeKey)
+    },
+    createRuntimeKey(
+      actor: string,
+      value: {
+        name: string
+        flowId: string
+        permissions: RuntimePermission[]
+        expiresAt: string
+      },
+    ) {
+      const name = value.name.trim()
+      const expiration = Date.parse(value.expiresAt)
+      const now = Date.now()
+      if (!name || name.length > 80)
+        throw new ApiError(400, 'Key name must contain 1 to 80 characters')
+      if (
+        !z.string().datetime({ offset: true }).safeParse(value.expiresAt)
+          .success ||
+        !Number.isFinite(expiration) ||
+        expiration <= now ||
+        expiration > now + 366 * 86_400_000
+      )
+        throw new ApiError(
+          400,
+          'Expiration must be a valid future date within 366 days',
+        )
+
+      const key: RuntimeKey = {
+        id: crypto.randomUUID(),
+        name,
+        flowId: value.flowId,
+        permissions: value.permissions,
+        expiresAt: new Date(expiration).toISOString(),
+        createdAt: new Date(now).toISOString(),
+        revokedAt: null,
+      }
+      const token = `besh_${randomBytes(32).toString('base64url')}`
+
+      db.transaction(() => {
+        const flow = query<{ published: string | null }, [string]>(
+          'SELECT published FROM flows WHERE id = ?',
+        ).get(value.flowId)
+        if (!flow) throw new ApiError(404, 'Flow not found')
+        if (!flow.published)
+          throw new ApiError(
+            400,
+            'Publish this API before issuing a runtime key',
+          )
+        const graphql = Boolean(JSON.parse(flow.published).graphql)
+        if (
+          !value.permissions.length ||
+          new Set(value.permissions).size !== value.permissions.length ||
+          value.permissions.some((permission) =>
+            graphql
+              ? !['query', 'mutation'].includes(permission)
+              : permission !== 'rest',
+          )
+        )
+          throw new ApiError(
+            400,
+            'Permissions must match the published API type',
+          )
+
+        query(
+          'INSERT INTO runtime_keys VALUES (?, ?, ?, ?, ?, ?, ?, NULL)',
+        ).run(
+          key.id,
+          key.name,
+          key.flowId,
+          JSON.stringify(key.permissions),
+          hashToken(token),
+          key.expiresAt,
+          key.createdAt,
+        )
+        audit(actor, 'runtime-key.created', key.id)
+      })()
+
+      return { ...key, token }
+    },
+    revokeRuntimeKey(actor: string, id: string) {
+      db.transaction(() => {
+        if (
+          !query(
+            'UPDATE runtime_keys SET revoked_at = COALESCE(revoked_at, ?) WHERE id = ?',
+          ).run(new Date().toISOString(), id).changes
+        )
+          throw new ApiError(404, 'Runtime key not found')
+        audit(actor, 'runtime-key.revoked', id)
+      })()
+
+      return { ok: true }
+    },
+    runtimeActor(token: string) {
+      const row = query<{ id: string }, [string]>(
+        'SELECT id FROM runtime_keys WHERE token_hash = ?',
+      ).get(hashToken(token))
+      return row ? `runtime:${row.id}` : 'anonymous'
+    },
     authenticate(token: string): Member | null {
       return query<Member, [string]>(
         'SELECT id, name, role FROM members WHERE token_hash = ?',
       ).get(hashToken(token))
+    },
+    authenticateRuntime(token: string): RuntimeKey | null {
+      const row = query<RuntimeKeyRow, [string]>(
+        'SELECT id, name, flow_id, permissions, expires_at, created_at, revoked_at FROM runtime_keys WHERE token_hash = ?',
+      ).get(hashToken(token))
+
+      if (
+        !row ||
+        row.revoked_at ||
+        !Number.isFinite(Date.parse(row.expires_at)) ||
+        Date.parse(row.expires_at) <= Date.now()
+      )
+        return null
+
+      return runtimeKey(row)
     },
     close() {
       // Own statements so database handles close deterministically on Bun 1.3.

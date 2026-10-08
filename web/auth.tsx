@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import {
   ArrowRight,
+  Braces,
   Check,
   Copy,
   KeyRound,
   ShieldCheck,
-  Workflow,
+  GitBranch,
 } from 'lucide-react'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Checkbox } from './components/ui/checkbox'
 import { api } from './lib/api'
 import { useStudio } from './store'
+import { ThemeControl } from './theme'
 
 export function Welcome({
   setup,
@@ -58,33 +60,62 @@ export function Welcome({
           <span className="brand-period">.</span>
         </a>
         <div className="welcome-copy">
-          <span className="eyebrow">YOUR IDEAS. CONNECTED.</span>
+          <span className="eyebrow">A SPACE FOR YOUR NEXT IDEA</span>
           <h1>
-            Great APIs
+            Your next API.
             <br />
-            start with
-            <br />
-            <em>a connection.</em>
+            <em>Clearly connected.</em>
           </h1>
           <p>
-            A visual space to build, test, and publish your next API. From first
-            request to final response.
+            Turn an idea into an endpoint. Build visually, test your flow, and
+            publish when you’re ready.
           </p>
-          <div className="welcome-diagram">
-            <span>
-              <Workflow size={21} /> Request
-            </span>
-            <i />
-            <span>
-              <Check size={21} /> Response
-            </span>
+          <div className="welcome-workcards" aria-hidden="true">
+            <article className="sample-card sample-rest">
+              <div className="sample-card-heading">
+                <span className="sample-icon">
+                  <ArrowRight size={18} />
+                </span>
+                <strong>REST API</strong>
+                <span className="sample-method">GET</span>
+              </div>
+              <code>/hello?name=Ada</code>
+              <p>Start with a simple request.</p>
+            </article>
+            <article className="sample-card sample-response">
+              <div className="sample-card-heading">
+                <span className="sample-icon">
+                  <Braces size={18} />
+                </span>
+                <strong>JSON response</strong>
+                <span className="sample-method">200</span>
+              </div>
+              <pre>{'{\n  "message": "Hello, Ada!"\n}'}</pre>
+              <div className="sample-flow">
+                <span>Request</span>
+                <GitBranch size={16} />
+                <span>Response</span>
+              </div>
+            </article>
+            <article className="sample-card sample-graphql">
+              <div className="sample-card-heading">
+                <span className="sample-icon">
+                  <GitBranch size={18} />
+                </span>
+                <strong>GraphQL API</strong>
+              </div>
+              <code>{'{ hello { message } }'}</code>
+              <p>Ask for exactly what you need.</p>
+            </article>
           </div>
         </div>
         <div className="welcome-footer">
-          <ShieldCheck size={16} /> Local-first. Built with Bun & Elysia.
+          <ShieldCheck size={16} /> Your workspace. Your APIs. Private by
+          default.
         </div>
       </section>
       <section className="welcome-form">
+        <ThemeControl />
         <div className="setup-card">
           <span className="step-label">
             {setup
@@ -103,9 +134,9 @@ export function Welcome({
           <p>
             {setup
               ? created
-                ? 'This key gives owner access. Keep it somewhere safe. Besh stores only its hash.'
-                : 'Choose a name. Besh will prepare its local database and create your owner key.'
-              : 'Use your owner key or a member token to continue.'}
+                ? 'Keep this owner key safe. It is shown once.'
+                : 'Choose a name for your workspace. We’ll create an owner key so you can get started.'
+              : 'Use your owner key or a member token to manage the workspace. API keys cannot sign in here.'}
           </p>
           <form onSubmit={submit} className="form-stack">
             {setup && !created ? (
@@ -136,10 +167,10 @@ export function Welcome({
                 ) : null}
                 <div className="setup-features">
                   <span>
-                    <Check /> SQLite database
+                    <Check /> Visual API Studio
                   </span>
                   <span>
-                    <Check /> Audit & migration logs
+                    <Check /> Separate drafts and releases
                   </span>
                   <span>
                     <Check /> Private workspace
@@ -214,7 +245,9 @@ export function Welcome({
               <ArrowRight />
             </Button>
           </form>
-          <p className="setup-footnote">Besh 0.1 · Local development preview</p>
+          <p className="setup-footnote">
+            A small start. Something worth building.
+          </p>
         </div>
       </section>
     </main>

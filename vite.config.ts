@@ -10,6 +10,9 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
+    watch: {
+      ignored: ['**/.preview/**', '**/test-results/**', '**/docs/**'],
+    },
     proxy: {
       '/api': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',
       '/run': process.env.BESH_API_URL ?? 'http://127.0.0.1:3000',

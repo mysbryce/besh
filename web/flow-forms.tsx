@@ -1,0 +1,758 @@
+import { useEffect, useState } from 'react'
+import { z } from 'zod'
+import { Plus, Trash2 } from 'lucide-react'
+import { Button } from './components/ui/button'
+import { Input } from './components/ui/input'
+import { Select } from './components/ui/select'
+import { Checkbox } from './components/ui/checkbox'
+import { api, type DataSource } from './lib/api'
+import type { DataReadConfig } from '../src/flows/model'
+
+type ValueType =
+  'text' | 'number' | 'boolean' | 'null' | 'body' | 'query' | 'nested'
+type FieldRow = {
+  id: string
+  name: string
+  type: ValueType
+  value: string
+  original?: unknown
+}
+
+function fieldRows(value: unknown, references = true): FieldRow[] | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+
+  return Object.entries(value).map(([name, original]) => {
+    const reference =
+      references && typeof original === 'string'
+        ? original.match(/^\$input\.(body|query)\.(.+)$/)
+        : null
+    const type: ValueType = reference
+      ? (reference[1] as 'body' | 'query')
+      : original === null
+        ? 'null'
+        : typeof original === 'number'
+          ? 'number'
+          : typeof original === 'boolean'
+            ? 'boolean'
+            : typeof original === 'string'
+              ? 'text'
+              : 'nested'
+
+    return {
+      id: crypto.randomUUID(),
+      name,
+      type,
+      original,
+      value: reference
+        ? reference[2]
+        : type === 'nested'
+          ? ''
+          : original === null
+            ? ''
+            : String(original),
+    }
+  })
+}
+
+function rowValue(row: FieldRow): unknown {
+  if (row.type === 'nested') return row.original
+  if (row.type === 'null') return null
+  if (row.type === 'boolean') return row.value === 'true'
+  if (row.type === 'number') {
+    if (!row.value.trim() || !Number.isFinite(Number(row.value)))
+      throw new Error(`Enter a valid number for ${row.name || 'this field'}.`)
+    return Number(row.value)
+  }
+  if (row.type === 'body' || row.type === 'query') {
+    if (!/^[a-zA-Z0-9_.-]+$/.test(row.value))
+      throw new Error(`Choose an input field for ${row.name || 'this value'}.`)
+    return `$input.${row.type}.${row.value}`
+  }
+  return row.value
+}
+
+function rowsObject(rows: FieldRow[]) {
+  const result: Record<string, unknown> = Object.create(null)
+
+  for (const row of rows) {
+    const name = row.name.trim()
+    if (!name) throw new Error('Give each field a name.')
+    if (Object.hasOwn(result, name))
+      throw new Error(`Field ${name} appears more than once.`)
+    result[name] = rowValue(row)
+  }
+
+  return result
+}
+
+function FieldRows({
+  rows,
+  onChange,
+  disabled,
+  prefix = 'Field',
+  addLabel = 'Add response field',
+  references = true,
+  textOnly = false,
+}: {
+  rows: FieldRow[]
+  onChange: (rows: FieldRow[]) => void
+  disabled: boolean
+  prefix?: string
+  addLabel?: string
+  references?: boolean
+  textOnly?: boolean
+}) {
+  function update(id: string, patch: Partial<FieldRow>) {
+    onChange(rows.map((row) => (row.id === id ? { ...row, ...patch } : row)))
+  }
+
+  return (
+    <div className="field-rows">
+      {rows.map((row, index) => (
+        <div className="field-row" key={row.id}>
+          <label>
+            {prefix} name {index + 1}
+            <Input
+              aria-label={`${prefix} name ${index + 1}`}
+              value={row.name}
+              disabled={disabled}
+              onChange={(event) => update(row.id, { name: event.target.value })}
+            />
+          </label>
+          {!textOnly ? (
+            <label>
+              {prefix} type {index + 1}
+              <Select
+                label={`${prefix} type ${index + 1}`}
+                value={row.type}
+                disabled={disabled || row.type === 'nested'}
+                onValueChange={(type) =>
+                  update(row.id, {
+                    type: type as ValueType,
+                    value:
+                      type === 'boolean'
+                        ? 'true'
+                        : type === 'number'
+                          ? '0'
+                          : '',
+                  })
+                }
+                options={[
+                  { value: 'text', label: 'Text' },
+                  { value: 'number', label: 'Number' },
+                  { value: 'boolean', label: 'True or false' },
+                  { value: 'null', label: 'Empty value' },
+                  ...(references
+                    ? [
+                        { value: 'body', label: 'From request body' },
+                        { value: 'query', label: 'From query parameter' },
+                      ]
+                    : []),
+                  ...(row.type === 'nested'
+                    ? [{ value: 'nested', label: 'Nested data (preserved)' }]
+                    : []),
+                ]}
+              />
+            </label>
+          ) : null}
+          {row.type === 'boolean' ? (
+            <label>
+              {prefix} value {index + 1}
+              <Select
+                label={`${prefix} value ${index + 1}`}
+                value={row.value}
+                disabled={disabled}
+                onValueChange={(value) => update(row.id, { value })}
+                options={[
+                  { value: 'true', label: 'True' },
+                  { value: 'false', label: 'False' },
+                ]}
+              />
+            </label>
+          ) : row.type === 'nested' ? (
+            <p>
+              Nested data stays unchanged. Use Advanced configuration to edit
+              it.
+            </p>
+          ) : row.type !== 'null' ? (
+            <label>
+              {row.type === 'body' || row.type === 'query'
+                ? 'Input field'
+                : `${prefix} value`}{' '}
+              {index + 1}
+              <Input
+                aria-label={`${prefix} value ${index + 1}`}
+                value={row.value}
+                disabled={disabled}
+                onChange={(event) =>
+                  update(row.id, { value: event.target.value })
+                }
+                placeholder={
+                  row.type === 'body' || row.type === 'query'
+                    ? 'name'
+                    : undefined
+                }
+              />
+            </label>
+          ) : null}
+          <Button
+            type="button"
+            variant="ghost"
+            aria-label={`Remove field ${index + 1}`}
+            disabled={disabled}
+            onClick={() => onChange(rows.filter((item) => item.id !== row.id))}
+          >
+            <Trash2 />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        disabled={disabled}
+        onClick={() =>
+          onChange([
+            ...rows,
+            { id: crypto.randomUUID(), name: '', type: 'text', value: '' },
+          ])
+        }
+      >
+        <Plus />
+        {addLabel}
+      </Button>
+    </div>
+  )
+}
+
+export function ResponseForm({
+  config,
+  disabled,
+  onApply,
+  onError,
+}: {
+  config: { status: number; body: unknown }
+  disabled: boolean
+  onApply: (config: { status: number; body: unknown }) => void
+  onError: (message: string) => void
+}) {
+  const [status, setStatus] = useState(String(config.status))
+  const [rows, setRows] = useState(() => fieldRows(config.body))
+  const statuses = [200, 201, 202, 204, 400, 401, 403, 404, 409, 422, 500, 503]
+  if (!statuses.includes(config.status)) statuses.push(config.status)
+
+  return (
+    <div className="simple-form">
+      <label>
+        Response status
+        <Select
+          label="Response status"
+          value={status}
+          onValueChange={setStatus}
+          disabled={disabled}
+          options={statuses
+            .sort((a, b) => a - b)
+            .map((code) => ({
+              value: String(code),
+              label: `${code}${code === 200 ? ' · OK' : code === 201 ? ' · Created' : code === 204 ? ' · No content' : ''}`,
+            }))}
+        />
+      </label>
+      {config.body === '$data' ? (
+        <p>Return spreadsheet rows selected by the data step.</p>
+      ) : rows ? (
+        <FieldRows rows={rows} onChange={setRows} disabled={disabled} />
+      ) : (
+        <p>
+          This response uses structured data or a direct reference. Its value is
+          preserved; use Advanced configuration to edit it.
+        </p>
+      )}
+      <Button
+        variant="outline"
+        disabled={disabled}
+        onClick={() => {
+          try {
+            onApply({
+              status: Number(status),
+              body: rows ? rowsObject(rows) : config.body,
+            })
+          } catch (error) {
+            onError(
+              error instanceof Error ? error.message : 'Check response fields.',
+            )
+          }
+        }}
+      >
+        Apply configuration
+      </Button>
+    </div>
+  )
+}
+
+export function ConditionForm({
+  config,
+  disabled,
+  onApply,
+  onError,
+}: {
+  config: { field: string; equals: string | number | boolean | null }
+  disabled: boolean
+  onApply: (config: { field: string; equals: unknown }) => void
+  onError: (message: string) => void
+}) {
+  const [source, setSource] = useState(
+    config.field.startsWith('query.') ? 'query' : 'body',
+  )
+  const [field, setField] = useState(
+    config.field.replace(/^(body|query)\./, ''),
+  )
+  const [type, setType] = useState<ValueType>(
+    config.equals === null
+      ? 'null'
+      : typeof config.equals === 'boolean'
+        ? 'boolean'
+        : typeof config.equals === 'number'
+          ? 'number'
+          : 'text',
+  )
+  const [value, setValue] = useState(
+    config.equals === null ? '' : String(config.equals),
+  )
+
+  return (
+    <div className="simple-form">
+      <label>
+        Input source
+        <Select
+          label="Input source"
+          value={source}
+          disabled={disabled}
+          onValueChange={setSource}
+          options={[
+            { value: 'body', label: 'Request body' },
+            { value: 'query', label: 'Query parameter' },
+          ]}
+        />
+      </label>
+      <label>
+        Input field
+        <Input
+          aria-label="Input field"
+          value={field}
+          disabled={disabled}
+          onChange={(event) => setField(event.target.value)}
+          placeholder="active"
+        />
+      </label>
+      <label>
+        Comparison
+        <Select
+          label="Comparison"
+          value="equals"
+          disabled={disabled}
+          onValueChange={() => {}}
+          options={[{ value: 'equals', label: 'Equals' }]}
+        />
+      </label>
+      <label>
+        Expected type
+        <Select
+          label="Expected type"
+          value={type}
+          disabled={disabled}
+          onValueChange={(next) => {
+            setType(next as ValueType)
+            setValue(next === 'boolean' ? 'true' : next === 'number' ? '0' : '')
+          }}
+          options={[
+            { value: 'text', label: 'Text' },
+            { value: 'number', label: 'Number' },
+            { value: 'boolean', label: 'True or false' },
+            { value: 'null', label: 'Empty value' },
+          ]}
+        />
+      </label>
+      {type === 'boolean' ? (
+        <label>
+          Expected value
+          <Select
+            label="Expected value"
+            value={value}
+            disabled={disabled}
+            onValueChange={setValue}
+            options={[
+              { value: 'true', label: 'True' },
+              { value: 'false', label: 'False' },
+            ]}
+          />
+        </label>
+      ) : type !== 'null' ? (
+        <label>
+          Expected value
+          <Input
+            aria-label="Expected value"
+            value={value}
+            disabled={disabled}
+            onChange={(event) => setValue(event.target.value)}
+          />
+        </label>
+      ) : null}
+      <Button
+        variant="outline"
+        disabled={disabled}
+        onClick={() => {
+          try {
+            const path = `${source}.${field.trim()}`
+            if (!field.trim() || path.length > 160)
+              throw new Error(
+                'Choose an input field of at most 155 characters.',
+              )
+            onApply({
+              field: path,
+              equals: rowValue({ id: '', name: 'expected value', type, value }),
+            })
+          } catch (error) {
+            onError(
+              error instanceof Error
+                ? error.message
+                : 'Check condition fields.',
+            )
+          }
+        }}
+      >
+        Apply configuration
+      </Button>
+    </div>
+  )
+}
+
+export function DataNodeForm({
+  config,
+  token,
+  disabled,
+  onApply,
+  onError,
+}: {
+  config: DataReadConfig
+  token: string
+  disabled: boolean
+  onApply: (config: DataReadConfig) => void
+  onError: (message: string) => void
+}) {
+  const [sources, setSources] = useState<DataSource[]>([])
+  const [error, setError] = useState('')
+  const [sourceId, setSourceId] = useState(config.sourceId)
+  const [columns, setColumns] = useState(config.columns)
+  const [limit, setLimit] = useState(String(config.limit))
+  const [filtered, setFiltered] = useState(!!config.filter)
+  const [column, setColumn] = useState(
+    config.filter?.column ?? config.columns[0] ?? '',
+  )
+  const initialFilter = fieldRows({ value: config.filter?.value ?? '' })![0]!
+  const [filterType, setFilterType] = useState(initialFilter.type)
+  const [filterValue, setFilterValue] = useState(initialFilter.value)
+
+  useEffect(() => {
+    let active = true
+    void api<DataSource[]>('/api/data-sources', token)
+      .then((result) => {
+        if (active) setSources(result)
+      })
+      .catch((reason: unknown) => {
+        if (active)
+          setError(
+            reason instanceof Error
+              ? reason.message
+              : 'Cannot load data sources.',
+          )
+      })
+    return () => {
+      active = false
+    }
+  }, [token])
+
+  const source = sources.find((item) => item.id === sourceId)
+  const limits = [...new Set([1, 10, 25, 50, 100, Number(limit)])].sort(
+    (left, right) => left - right,
+  )
+
+  return (
+    <div className="simple-form">
+      {error ? <p role="alert">{error}</p> : null}
+      <label>
+        Data source
+        <Select
+          label="Data source"
+          value={sourceId}
+          disabled={disabled || !sources.length}
+          options={sources.map((item) => ({
+            value: item.id,
+            label: item.name,
+          }))}
+          onValueChange={(value) => {
+            setSourceId(value)
+            const next = sources.find((item) => item.id === value)
+            setColumns(next?.columns.map((item) => item.key) ?? [])
+            setColumn(next?.columns[0]?.key ?? '')
+            setFiltered(false)
+          }}
+        />
+      </label>
+      <p>
+        {source
+          ? `${source.rowCount} saved rows. Published APIs read the latest saved snapshot.`
+          : 'Loading saved source details…'}
+      </p>
+      {source?.columns.map((item) => (
+        <label key={item.key} className="permission-option">
+          <Checkbox
+            aria-label={`Include ${item.label}`}
+            checked={columns.includes(item.key)}
+            disabled={disabled}
+            onCheckedChange={(checked) =>
+              setColumns(
+                checked
+                  ? [...columns, item.key]
+                  : columns.filter((key) => key !== item.key),
+              )
+            }
+          />
+          <span>
+            {item.label}
+            <small>
+              API field: {item.key} ·{' '}
+              {item.type === 'string'
+                ? 'Text'
+                : item.type === 'number'
+                  ? 'Number'
+                  : 'True or false'}
+            </small>
+          </span>
+        </label>
+      ))}
+      <label>
+        Maximum rows
+        <Select
+          label="Maximum rows"
+          value={limit}
+          disabled={disabled}
+          onValueChange={setLimit}
+          options={limits.map((value) => ({
+            value: String(value),
+            label: String(value),
+          }))}
+        />
+      </label>
+      <label className="permission-option">
+        <Checkbox
+          aria-label="Filter rows"
+          checked={filtered}
+          disabled={disabled}
+          onCheckedChange={(checked) => setFiltered(checked === true)}
+        />
+        Match one column
+      </label>
+      {filtered ? (
+        <>
+          <label>
+            Match column
+            <Select
+              label="Match column"
+              value={column}
+              disabled={disabled}
+              onValueChange={setColumn}
+              options={(source?.columns ?? []).map((item) => ({
+                value: item.key,
+                label: item.label,
+              }))}
+            />
+          </label>
+          <label>
+            Match value type
+            <Select
+              label="Match value type"
+              value={filterType}
+              disabled={disabled}
+              onValueChange={(value) => {
+                setFilterType(value as ValueType)
+                setFilterValue(
+                  value === 'boolean' ? 'true' : value === 'number' ? '0' : '',
+                )
+              }}
+              options={[
+                { value: 'text', label: 'Fixed text' },
+                { value: 'number', label: 'Fixed number' },
+                { value: 'boolean', label: 'True or false' },
+                { value: 'null', label: 'Empty value' },
+                { value: 'query', label: 'From query parameter' },
+                { value: 'body', label: 'From request body' },
+              ]}
+            />
+          </label>
+          {filterType === 'boolean' ? (
+            <label>
+              Match value
+              <Select
+                label="Match value"
+                value={filterValue}
+                disabled={disabled}
+                onValueChange={setFilterValue}
+                options={[
+                  { value: 'true', label: 'True' },
+                  { value: 'false', label: 'False' },
+                ]}
+              />
+            </label>
+          ) : filterType !== 'null' ? (
+            <label>
+              {filterType === 'query' || filterType === 'body'
+                ? 'Input field name'
+                : 'Match value'}
+              <Input
+                aria-label="Match value"
+                value={filterValue}
+                disabled={disabled}
+                onChange={(event) => setFilterValue(event.target.value)}
+              />
+            </label>
+          ) : null}
+        </>
+      ) : null}
+      <Button
+        variant="outline"
+        disabled={disabled || !source}
+        onClick={() => {
+          try {
+            if (!columns.length)
+              throw new Error('Choose at least one column to return.')
+            if (
+              columns.some(
+                (key) => !source?.columns.some((item) => item.key === key),
+              )
+            )
+              throw new Error(
+                'Some selected columns are no longer in this source. Review the columns before applying.',
+              )
+            onApply({
+              sourceId,
+              columns,
+              limit: Number(limit),
+              ...(filtered
+                ? {
+                    filter: {
+                      column,
+                      value: rowValue({
+                        id: '',
+                        name: 'match value',
+                        type: filterType,
+                        value: filterValue,
+                      }) as NonNullable<DataReadConfig['filter']>['value'],
+                    },
+                  }
+                : {}),
+            })
+          } catch (reason) {
+            onError(
+              reason instanceof Error
+                ? reason.message
+                : 'Review data settings.',
+            )
+          }
+        }}
+      >
+        Apply configuration
+      </Button>
+    </div>
+  )
+}
+
+export function RequestForm({
+  input,
+  disabled,
+  onChange,
+}: {
+  input: string
+  disabled: boolean
+  onChange: (input: string, error: string) => void
+}) {
+  const [initial] = useState(() => parseRequestInput(input))
+  const [body, setBody] = useState(() => fieldRows(initial.body, false))
+  const [query, setQuery] = useState(
+    () => fieldRows(initial.query, false) ?? [],
+  )
+
+  function update(nextBody: FieldRow[] | null, nextQuery: FieldRow[]) {
+    setBody(nextBody)
+    setQuery(nextQuery)
+    try {
+      onChange(
+        JSON.stringify({
+          body: nextBody ? rowsObject(nextBody) : initial.body,
+          query: rowsObject(nextQuery),
+        }),
+        '',
+      )
+    } catch (error) {
+      onChange(
+        input,
+        error instanceof Error ? error.message : 'Check request fields.',
+      )
+    }
+  }
+
+  return (
+    <div className="simple-form">
+      <h3>Query parameters</h3>
+      <p>
+        Values sent in the endpoint address, such as a name or product code.
+      </p>
+      <FieldRows
+        prefix="Query"
+        addLabel="Add query parameter"
+        rows={query}
+        onChange={(rows) => update(body, rows)}
+        disabled={disabled}
+        references={false}
+        textOnly
+      />
+      <h3>Request body fields</h3>
+      {body ? (
+        <FieldRows
+          prefix="Body"
+          addLabel="Add body field"
+          rows={body}
+          onChange={(rows) => update(rows, query)}
+          disabled={disabled}
+          references={false}
+        />
+      ) : (
+        <p>
+          Structured request data is preserved. Use Advanced test input to edit
+          it.
+        </p>
+      )}
+    </div>
+  )
+}
+
+const requestInputSchema = z.object({
+  body: z.json(),
+  query: z.record(z.string(), z.string()),
+})
+
+export function parseRequestInput(value: string) {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(value)
+  } catch {
+    throw new Error(
+      'Use a request with body and query fields. Query values must be text.',
+    )
+  }
+  const result = requestInputSchema.safeParse(parsed)
+  if (!result.success)
+    throw new Error(
+      'Use a request with body and query fields. Query values must be text.',
+    )
+  return result.data
+}

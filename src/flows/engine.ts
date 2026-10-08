@@ -4,6 +4,7 @@ import {
   type FlowInput,
   type FlowResult,
   type FlowNode,
+  type FlowContext,
 } from './model'
 
 export function validateFlow(value: unknown) {
@@ -36,6 +37,12 @@ export function validateFlow(value: unknown) {
       throw new Error('Each path must end with a response')
     if (node.type === 'response')
       resolveValue(node.config.body, { body: null, query: {} })
+    if (node.type === 'data') {
+      if (new Set(node.config.columns).size !== node.config.columns.length)
+        throw new Error('Choose each data column once')
+      if (node.config.filter)
+        resolveValue(node.config.filter.value, { body: null, query: {} })
+    }
   }
   const visiting = new Set<string>()
   const visited = new Set<string>()
@@ -91,35 +98,67 @@ function readPath(input: unknown, path: string): unknown {
   return result
 }
 
-function resolveValue(value: unknown, input: FlowInput, depth = 0): unknown {
+function resolveValue(
+  value: unknown,
+  input: FlowInput,
+  data: unknown = null,
+  depth = 0,
+): unknown {
   if (depth > 20) throw new Error('Response nesting limit exceeded')
   if (typeof value === 'string' && value.startsWith('$input.'))
     return readPath(input, value.slice(7))
+  if (value === '$data') return data
   if (Array.isArray(value))
-    return value.map((item) => resolveValue(item, input, depth + 1))
+    return value.map((item) => resolveValue(item, input, data, depth + 1))
   if (value && typeof value === 'object')
     return Object.fromEntries(
       Object.entries(value).map(([key, item]) => [
         key,
-        resolveValue(item, input, depth + 1),
+        resolveValue(item, input, data, depth + 1),
       ]),
     )
   return value
 }
 
-export function executeFlow(value: unknown, input: FlowInput): FlowResult {
+export function executeFlow(
+  value: unknown,
+  input: FlowInput,
+  context: FlowContext = {},
+): FlowResult {
   assertJsonLimit(input)
   const flow = validateFlow(value)
   let node: FlowNode | undefined = flow.nodes.find(
     (item) => item.type === 'request',
   )
   const visited: string[] = []
+  let data: unknown = null
   while (node && visited.length < 64) {
     visited.push(node.id)
     if (node.type === 'response') {
-      const body = resolveValue(node.config.body, input)
+      const body = resolveValue(node.config.body, input, data)
       assertJsonLimit(body)
       return { status: node.config.status, body, visited }
+    }
+    if (node.type === 'data') {
+      if (!context.readData) throw new Error('Data sources are unavailable')
+      const configured = node.config.filter
+      const resolved = configured
+        ? resolveValue(configured.value, input, data)
+        : null
+      const filter =
+        configured &&
+        !(
+          typeof configured.value === 'string' &&
+          configured.value.startsWith('$input.') &&
+          resolved === null
+        )
+          ? {
+              column: configured.column,
+              value: resolved as typeof configured.value,
+            }
+          : undefined
+      data = context.readData({ ...node.config, filter })
+      assertJsonLimit(data)
     }
     const branch: string | null =
       node.type === 'condition'

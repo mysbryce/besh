@@ -1,8 +1,9 @@
 import { ApiError } from '../errors'
-import type { Store } from '../store'
+import type { Store, RuntimeKey } from '../store'
 import { assertJsonLimit, executeFlow, validateFlow } from './engine'
 import { flowSchema, type Flow, type FlowInput } from './model'
 import { executeGraphql, graphqlSchema } from './graphql'
+import type { dataSourceService } from '../data-sources'
 
 type Row = {
   id: string
@@ -12,7 +13,10 @@ type Row = {
   published_revision: number | null
 }
 
-export function flowService(store: Store) {
+export function flowService(
+  store: Store,
+  sources: Pick<ReturnType<typeof dataSourceService>, 'validate' | 'read'>,
+) {
   const { db, query, audit } = store
 
   function get(id: string) {
@@ -40,6 +44,7 @@ export function flowService(store: Store) {
     try {
       const flow = validateFlow(value)
       if (flow.graphql) graphqlSchema(flow)
+      sources.validate(flow)
       return flow
     } catch (error) {
       throw new ApiError(
@@ -50,11 +55,19 @@ export function flowService(store: Store) {
   }
 
   function present(row: Row) {
+    const published = row.published ? (JSON.parse(row.published) as Flow) : null
     return {
       ...(JSON.parse(row.definition) as Flow),
       id: row.id,
       revision: row.revision,
       publishedRevision: row.published_revision,
+      publishedEndpoint: published
+        ? {
+            method: published.method,
+            path: published.path,
+            graphql: Boolean(published.graphql),
+          }
+        : null,
     }
   }
 
@@ -131,7 +144,7 @@ export function flowService(store: Store) {
       const definition = valid(JSON.parse(get(id).definition))
       if (definition.graphql)
         throw new ApiError(400, 'Use the GraphQL test endpoint')
-      const result = executeFlow(definition, input)
+      const result = executeFlow(definition, input, { readData: sources.read })
       audit(actor, 'flow.tested', id)
       return result
     },
@@ -139,28 +152,42 @@ export function flowService(store: Store) {
       const definition = valid(JSON.parse(get(id).definition))
       if (!definition.graphql)
         throw new ApiError(400, 'This API does not have a GraphQL schema')
-      const result = executeGraphql(definition, input)
+      const result = executeGraphql(definition, input, undefined, {
+        readData: sources.read,
+      })
       audit(actor, 'graphql.tested', id)
       return result
     },
-    run(actor: string, method: string, path: string, input: FlowInput) {
+    run(key: RuntimeKey, method: string, path: string, input: FlowInput) {
       const row = query<Row, [string, string]>(
         "SELECT * FROM flows WHERE json_extract(published, '$.method') = ? AND json_extract(published, '$.path') = ? AND json_extract(published, '$.graphql') IS NULL",
       ).get(method, path)
       if (!row?.published) throw new ApiError(404, 'Endpoint not found')
+      if (row.id !== key.flowId || !key.permissions.includes('rest'))
+        throw new ApiError(403, 'Runtime key does not allow this endpoint')
 
-      const result = executeFlow(JSON.parse(row.published), input)
-      audit(actor, 'flow.executed', row.id)
+      const result = executeFlow(JSON.parse(row.published), input, {
+        readData: sources.read,
+      })
+      audit(`runtime:${key.id}`, 'flow.executed', row.id)
       return result
     },
-    graphql(actor: string, path: string, input: unknown) {
+    graphql(key: RuntimeKey, path: string, input: unknown) {
       const row = query<Row, [string]>(
         "SELECT * FROM flows WHERE json_extract(published, '$.path') = ? AND json_extract(published, '$.graphql') IS NOT NULL",
       ).get(path)
       if (!row?.published) throw new ApiError(404, 'Endpoint not found')
+      if (row.id !== key.flowId || key.permissions.includes('rest'))
+        throw new ApiError(403, 'Runtime key does not allow this endpoint')
 
-      const result = executeGraphql(JSON.parse(row.published), input)
-      audit(actor, 'graphql.executed', row.id)
+      const result = executeGraphql(
+        JSON.parse(row.published),
+        input,
+        key.permissions,
+        { readData: sources.read },
+      )
+      if (result.visited.length)
+        audit(`runtime:${key.id}`, 'graphql.executed', row.id)
       return result
     },
   }

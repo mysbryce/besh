@@ -31,7 +31,7 @@ app
   .listen({
     hostname: process.env.BESH_HOST ?? '127.0.0.1',
     port: Number(process.env.PORT ?? 3000),
-    maxRequestBodySize: 262_144,
+    maxRequestBodySize: 3 * 1024 * 1024,
   })
 
 console.log(`Besh API ready at ${app.server?.url}`)

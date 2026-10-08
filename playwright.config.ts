@@ -13,7 +13,7 @@ export default defineConfig({
   use: {
     viewport: { width: 1440, height: 1000 },
     baseURL: 'http://127.0.0.1:5179',
-    trace: 'retain-on-failure',
+    trace: 'off',
     channel: process.env.PLAYWRIGHT_CHANNEL,
   },
   webServer: [

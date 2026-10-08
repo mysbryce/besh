@@ -12,6 +12,8 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Use custom styled, accessible controls for checkboxes, radio groups, and dropdowns. Do not expose browser-native widgets. Preserve keyboard interaction, labels, focus, and disabled states.
 - Support real GraphQL APIs alongside REST. Keep schema validation, execution limits, authentication, and draft/release separation at the server boundary.
 - Keep local setup easy. Provide a first-run wizard; do not require manual environment edits for the basic workflow.
+- Design common workflows for people who do not write code. Use labeled forms, selectors, examples, and data previews. Keep JSON and schema editors optional advanced tools.
+- Support light, dark, and system appearance. Keep text, controls, focus, and error states readable in both themes; respect reduced-motion settings. Persist appearance preferences only, never credentials.
 - Keep folders shallow: `src/` server, `web/` dashboard, `test/` backend tests, `e2e/` browser tests, `docs/` design notes.
 - Read applicable local skills when requested. Current requested skills: `tdd`, `wait-what`, `handoff`.
 - Test first through agreed public interfaces. See `docs/testing.md` for approved scope. Work one failing test and implementation at a time.
@@ -25,6 +27,8 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 ## Security rules
 
 - Check authentication and permissions on the server for every management operation.
+- Keep member credentials limited to management and draft tests. Published APIs require a separate, unexpired runtime key scoped to the published flow and operation type. Never add a member-key bypass.
+- Derive endpoint permissions and displayed URLs from the published release, not an edited draft. Query/mutation grants do not replace future field or record authorization.
 - Validate flows before execution and publication. Bound graph, request, and response sizes.
 - Never evaluate uploaded JavaScript inside the server process.
 - Keep secrets on the server; store credential hashes where possible. Do not log tokens or payloads by default.

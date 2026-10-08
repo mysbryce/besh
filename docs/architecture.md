@@ -21,13 +21,23 @@ Goal: help teams build secure, documented APIs with a visual editor.
 
 The executor must limit graph size, steps, input size, execution time, and output size. Validate node configuration and all edges. Reject cycles until bounded loops are designed. Errors must not reveal credentials or stack traces.
 
-Start with request, condition, response, and safe data transformation nodes. Later add validation schemas, database operations, outbound HTTP, plugins, retries, subflows, and explicit error paths. A finite graph cannot promise support for every possible API.
+Implemented nodes are request, condition, response, and bounded spreadsheet reads. Later add validation schemas, broader transformations, database operations, outbound HTTP, plugins, retries, subflows, and explicit error paths. A finite graph cannot promise support for every possible API.
 
 HTTP targets: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. CONNECT and TRACE need separate threat review. OpenAPI describes HTTP operations; WebSocket messages need their own schemas and lifecycle rules.
 
 GraphQL uses one POST endpoint per visual API at `/graphql/<path>`. Optional SDL lives inside the versioned flow definition; each root field runs the flow with arguments as input. GraphQL.js handles schema and operation validation and typed field selection. Runtime budgets include expanded fragments, depth, root calls, and output size. REST routes remain under `/run/<path>`. See [GraphQL guide](graphql.md) for supported behavior.
 
 Checkboxes and dropdowns use local styled components built on Radix primitives. Keep labels, keyboard navigation, disabled states, and focus return intact. Browser-native form controls may exist as hidden accessibility/form plumbing; no native checkbox, radio, or select is exposed as the visual control. New radio groups must follow the same rule.
+
+Basic response, condition, and REST request editing uses labeled field forms. Raw JSON is an optional advanced view; complex nested values are preserved. Returning from advanced request input validates the full body/query envelope before mounting the form, including text-only query values. Input strings resembling reference syntax stay literal request values. Light/dark appearance uses shared tokens, a same-origin initialization script compatible with the content security policy, and accessible custom controls; see [design system](design.md).
+
+## Spreadsheet data boundary
+
+Migration 7 stores CSV/Excel and public Google Sheets snapshots in the control database. Only owners/editors can access source metadata, previews, lifecycle actions, or generated drafts. Public Google exports use a restricted HTTPS URL/redirect policy and bounded requests. Upload formats, archive expansion, row counts, column counts, and normalized snapshot sizes are checked before persistence. Uploaded formulas and code are not executed.
+
+A data node reads one source, projects approved columns, optionally applies an equality filter, and returns at most 100 rows within normal response limits. `$data` resolves its result. Generated REST and GraphQL APIs are normal drafts and use the existing validation, publication, and scoped runtime-key boundaries. Generated GraphQL is query-only and includes typed selected columns.
+
+Published graph definitions remain immutable, while source data is mutable: manual replacement or Google refresh changes the saved snapshot read by existing APIs. Owners/editors can perform this data change; it does not grant publication rights. Sources referenced by a draft or release cannot be deleted. Snapshot data is included in workspace backups. Database adapters and private Google OAuth remain separate planned capabilities.
 
 ## Extensions
 
@@ -50,6 +60,12 @@ Initial single-workspace roles: owner, editor, viewer. Owner manages members, pu
 
 Social providers planned: GitHub, Discord, Facebook, Google, and generic OIDC where supported. Keep dashboard identity and generated API identity configurable independently.
 
+Published REST and GraphQL endpoints accept only runtime API keys. Owner and member tokens authenticate management routes and role-authorized draft tests. Only owners can issue, list, and revoke runtime keys. Migration 6 adds hash-only key storage, a single published flow scope, operation grants, required expiration within 366 days, and retained revocation metadata. Issuance and revocation are transactional with their audit records.
+
+REST keys grant `rest`; GraphQL keys grant `query`, `mutation`, or both. GraphQL authorization checks the selected operation before execution, including operation-name selection from documents containing several operations. Runtime keys cannot cross flow boundaries or access management. Expiration and revocation are checked on each request. Grants authorize whole operations; field-level and record-level authorization remain planned.
+
+Scope follows the flow ID across republishing rather than pinning a release. An owner must review keys before publishing broader behavior. Management responses expose the immutable published endpoint metadata separately from draft settings so key issuance displays the live route even when draft paths or protocols change. Restoring a backup also restores its key state; keys revoked after the snapshot may work again and need review, revocation, or rotation.
+
 ## Agent policy
 
 The future agent should inspect APIs, explain runs, propose flows, test drafts, and manage permitted data through typed tools. Destructive data changes, publication, plugin execution, migrations, and external transfers require scoped authorization. Persist proposals and decisions. Treat database values, plugin output, and model responses as untrusted input.
@@ -58,8 +74,7 @@ Provider targets: Anthropic, OpenAI API, OpenRouter, Ollama/OpenAI-compatible en
 
 ## Sources
 
-- [Elysia repository](https://github.com/elysiajs/elysia): simple source and test layout, MIT license.
-- [Elysia feature structure](https://elysiajs.com/essential/best-practice): group related routes, services, and models.
+- [Elysia documentation](https://elysiajs.com/essential/best-practice): server framework usage.
 - [React Flow](https://reactflow.dev/learn): node editor and graph interactions.
 - [shadcn/ui with Vite](https://ui.shadcn.com/docs/installation/vite): dashboard component setup.
 - [Bun SQLite](https://bun.sh/docs/runtime/sqlite): local control database.

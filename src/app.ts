@@ -3,6 +3,8 @@ import { openStore, hashToken } from './store'
 import { allow, ApiError } from './errors'
 import { flowService } from './flows/service'
 import { backupService } from './backups'
+import { dataSourceService } from './data-sources'
+import type { SheetFetch } from './google-sheets'
 import { timingSafeEqual } from 'node:crypto'
 
 function bearer(request: Request) {
@@ -11,16 +13,48 @@ function bearer(request: Request) {
   )
 }
 
+async function boundRequest(request: Request) {
+  if (!request.body) return
+  const path = new URL(request.url).pathname
+  const upload =
+    request.headers
+      .get('content-type')
+      ?.toLowerCase()
+      .startsWith('multipart/form-data') &&
+    ((request.method === 'POST' && path === '/api/data-sources/import') ||
+      (request.method === 'PUT' &&
+        /^\/api\/data-sources\/[^/]+\/import$/.test(path)))
+  const limit = upload ? 3 * 1024 * 1024 : 262_144
+  if (Number(request.headers.get('content-length')) > limit)
+    throw new ApiError(413, 'Request body size limit exceeded')
+  if (upload) return
+  const reader = request.clone().body!.getReader()
+  let size = 0
+  try {
+    while (true) {
+      const chunk = await reader.read()
+      if (chunk.done) break
+      size += chunk.value.byteLength
+      if (size > limit)
+        throw new ApiError(413, 'Request body size limit exceeded')
+    }
+  } finally {
+    void reader.cancel().catch(() => {})
+  }
+}
+
 export type AppOptions = {
   databasePath: string
   backupDir: string
   adminToken?: string
   setupKey?: string
+  sheetFetch?: SheetFetch
 }
 
 export function createApp(options: AppOptions) {
   const store = openStore(options.databasePath, options.adminToken)
-  const flows = flowService(store)
+  const sources = dataSourceService(store, options.sheetFetch)
+  const flows = flowService(store, sources)
   const backups = backupService(store, options.backupDir)
 
   const management = new Elysia({ prefix: '/api' })
@@ -29,13 +63,69 @@ export function createApp(options: AppOptions) {
       const member = store.authenticate(token)
 
       if (!member) {
-        store.audit('anonymous', 'access.denied', 'management')
+        store.audit(store.runtimeActor(token), 'access.denied', 'management')
         return status(401, { error: 'Authentication required' })
       }
 
       return { member }
     })
     .get('/me', ({ member }) => member)
+    .get('/data-sources', ({ member }) => {
+      allow(member, ['owner', 'editor'])
+      return sources.list()
+    })
+    .get('/data-sources/:id', ({ member, params }) => {
+      allow(member, ['owner', 'editor'])
+      return sources.get(params.id)
+    })
+    .post(
+      '/data-sources/import',
+      ({ member, body }) => {
+        allow(member, ['owner', 'editor'])
+        return sources.importFile(member.id, body.name, body.file)
+      },
+      {
+        body: t.Object({ name: t.String({ maxLength: 200 }), file: t.File() }),
+      },
+    )
+    .post('/data-sources/:id/api', ({ member, params, body }) => {
+      allow(member, ['owner', 'editor'])
+      return flows.create(member.id, sources.api(params.id, body))
+    })
+    .post(
+      '/data-sources/google-sheets',
+      ({ member, body }) => {
+        allow(member, ['owner', 'editor'])
+        return sources.importGoogle(member.id, body.name, body.url)
+      },
+      {
+        body: t.Object({
+          name: t.String({ maxLength: 200 }),
+          url: t.String({ maxLength: 1000 }),
+        }),
+      },
+    )
+    .put(
+      '/data-sources/:id/import',
+      ({ member, params, body }) => {
+        allow(member, ['owner', 'editor'])
+        return sources.importFile(member.id, body.name, body.file, params.id)
+      },
+      {
+        body: t.Object({
+          name: t.Optional(t.String({ maxLength: 200 })),
+          file: t.File(),
+        }),
+      },
+    )
+    .post('/data-sources/:id/refresh', ({ member, params }) => {
+      allow(member, ['owner', 'editor'])
+      return sources.refresh(member.id, params.id)
+    })
+    .delete('/data-sources/:id', ({ member, params }) => {
+      allow(member, ['owner', 'editor'])
+      return sources.delete(member.id, params.id)
+    })
     .get('/flows', () => flows.list())
     .get('/flows/:id', ({ params }) => flows.get(params.id))
     .post('/flows', ({ member, body }) => {
@@ -105,6 +195,36 @@ export function createApp(options: AppOptions) {
       allow(member, ['owner'])
       return store.listAudit()
     })
+    .get('/runtime-keys', ({ member }) => {
+      allow(member, ['owner'])
+      return store.listRuntimeKeys()
+    })
+    .post(
+      '/runtime-keys',
+      ({ member, body }) => {
+        allow(member, ['owner'])
+        return store.createRuntimeKey(member.id, body)
+      },
+      {
+        body: t.Object({
+          name: t.String({ maxLength: 500 }),
+          flowId: t.String({ minLength: 1, maxLength: 80 }),
+          permissions: t.Array(
+            t.Union([
+              t.Literal('rest'),
+              t.Literal('query'),
+              t.Literal('mutation'),
+            ]),
+            { minItems: 1, maxItems: 3 },
+          ),
+          expiresAt: t.String({ maxLength: 100 }),
+        }),
+      },
+    )
+    .delete('/runtime-keys/:id', ({ member, params }) => {
+      allow(member, ['owner'])
+      return store.revokeRuntimeKey(member.id, params.id)
+    })
     .get('/migrations', ({ member }) => {
       allow(member, ['owner'])
       return store.query('SELECT * FROM migrations ORDER BY version').all()
@@ -123,20 +243,21 @@ export function createApp(options: AppOptions) {
     })
 
   const app = new Elysia()
-    .onRequest(({ set }) => {
+    .onRequest(async ({ set, request }) => {
       set.headers['cache-control'] = 'no-store'
       set.headers['x-content-type-options'] = 'nosniff'
       set.headers['referrer-policy'] = 'no-referrer'
       set.headers['x-frame-options'] = 'DENY'
       set.headers['content-security-policy'] =
         "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'; form-action 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+      await boundRequest(request)
     })
     .onError(({ error, code, set, request }) => {
       if (error instanceof ApiError) {
         if (error.status === 401 || error.status === 403) {
           const token = bearer(request)
           store.audit(
-            store.authenticate(token)?.id ?? 'anonymous',
+            store.authenticate(token)?.id ?? store.runtimeActor(token),
             'access.denied',
             'api',
           )
@@ -192,8 +313,8 @@ export function createApp(options: AppOptions) {
     )
     .use(management)
     .all('/graphql/*', ({ request, params, body }) => {
-      const member = store.authenticate(bearer(request))
-      if (!member) throw new ApiError(401, 'Authentication required')
+      const key = store.authenticateRuntime(bearer(request))
+      if (!key) throw new ApiError(401, 'Authentication required')
       if (request.method !== 'POST')
         return new Response(
           JSON.stringify({
@@ -208,7 +329,7 @@ export function createApp(options: AppOptions) {
           },
         )
 
-      const result = flows.graphql(member.id, `/${params['*']}`, body)
+      const result = flows.graphql(key, `/${params['*']}`, body)
       return new Response(JSON.stringify(result.body), {
         status: result.status,
         headers: { 'content-type': 'application/graphql-response+json' },
@@ -216,10 +337,10 @@ export function createApp(options: AppOptions) {
     })
     .all('/run/*', ({ request, params, body, query }) => {
       const token = bearer(request)
-      const member = store.authenticate(token)
-      if (!member) throw new ApiError(401, 'Authentication required')
+      const key = store.authenticateRuntime(token)
+      if (!key) throw new ApiError(401, 'Authentication required')
 
-      const result = flows.run(member.id, request.method, `/${params['*']}`, {
+      const result = flows.run(key, request.method, `/${params['*']}`, {
         body: body ?? null,
         query,
       })

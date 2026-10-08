@@ -40,6 +40,7 @@ const initialEdges: Edge[] = [
 ]
 
 type Studio = {
+  editorSession: string
   token: string
   member: Member | null
   flows: SavedFlow[]
@@ -62,6 +63,7 @@ type Studio = {
   logout: () => void
   fresh: () => void
   load: (flow: SavedFlow) => void
+  openCreated: (flow: SavedFlow) => void
   edit: (
     fields: Partial<Pick<Studio, 'name' | 'path' | 'method' | 'graphql'>>,
   ) => void
@@ -81,6 +83,7 @@ type Studio = {
 
 function editState(flow?: SavedFlow) {
   return {
+    editorSession: crypto.randomUUID(),
     id: flow?.id ?? null,
     name: flow?.name ?? 'Untitled API',
     method: flow?.method ?? ('GET' as Flow['method']),
@@ -144,6 +147,15 @@ export const useStudio = create<Studio>((set, get) => ({
   },
   load(flow) {
     set({ ...editState(flow), notice: 'Draft loaded.', failed: false })
+  },
+  openCreated(flow) {
+    set((state) => ({
+      ...editState(flow),
+      flows: [flow, ...state.flows.filter((item) => item.id !== flow.id)],
+      notice:
+        'API draft created from your data. Test it, then publish when ready.',
+      failed: false,
+    }))
   },
   edit(fields) {
     set({ ...fields, dirty: true })

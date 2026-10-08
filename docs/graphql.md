@@ -2,6 +2,14 @@
 
 Each visual API can publish a real GraphQL endpoint. Besh uses GraphQL.js to parse, validate, coerce variables, execute fields, and serialize typed responses. Choose **GraphQL** in the studio's **API type** dropdown.
 
+The starter flow is ready to test without editing JSON. Schema text stays under **Advanced schema**; custom variables and an operation name stay under **Advanced GraphQL input**. Response field forms preserve values and types. Use the advanced editors when your custom contract needs them.
+
+## Spreadsheet APIs
+
+In **Data sources**, choose GraphQL, review the column-to-field mapping and row limit, and create an API. Besh generates a typed `Query.rows` contract and a request → spreadsheet rows → response draft. The studio seeds a matching query, so **Test flow** works immediately. The response step shows **Return spreadsheet rows** instead of requiring `$data` JSON configuration.
+
+Selected spreadsheet columns become fields on the row type; an optional filter becomes a named root argument. Generated APIs expose queries only. The published graph and schema change only on publication, while reads use the source's latest saved snapshot. Confirm replacements and manual Google refreshes carefully. Private-sheet OAuth, writeback, and scheduled synchronization remain planned. See [spreadsheet data](data-sources.md).
+
 ## Example
 
 Set path to `/greeting` and use this schema:
@@ -45,7 +53,7 @@ query Greeting($name: String!) {
 
 Set the optional operation name to `Greeting` when selecting this operation from a document containing several operations. The result contains `data.greet.name: "Ada"`; `message` is omitted because it was not selected.
 
-After publishing, send a JSON POST to `/graphql/greeting` with `Authorization: Bearer <workspace-token>`:
+After publishing, create a runtime API key for this API in **API keys** with **GraphQL queries**. Send a JSON POST to `/graphql/greeting` with `Authorization: Bearer <runtime-api-key>`:
 
 ```json
 {
@@ -72,11 +80,13 @@ The management flow definition includes optional `graphql: { schema: "..." }`, p
 
 `POST /api/flows/:id/graphql/test` accepts the same request envelope and returns `{ status, body, visited }` for the draft. The studio renders that diagnostic wrapper. Published endpoints return the GraphQL envelope directly, such as `{ "data": { ... } }`.
 
-Editors and owners can save and test. Only owners can publish. All workspace members can invoke published endpoints, including mutations, just as they can invoke published REST methods. Separate endpoint identities and per-operation grants are planned.
+Editors and owners can save and test drafts with their member tokens. Only owners can publish or manage runtime API keys. Published endpoints require a runtime key scoped to this flow. `query` permits queries and `mutation` permits mutations; a key may grant both. Query-only keys cannot run mutations. Owner and member tokens cannot call published endpoints, and runtime keys cannot access management routes or draft tests.
+
+Authorization applies to the selected operation, including its `operationName` when the document contains several operations. Grants cover the whole operation, not individual root fields or data records. Keys require expiration within 366 days and stop working immediately upon expiration or revocation. Scope follows the flow across republishing, so owners must review keys when broadening published behavior.
 
 Invalid schemas can be saved as drafts but cannot be tested or published. Draft edits do not alter live GraphQL behavior until publication. Duplicate GraphQL paths return `409`. REST `/run/greeting` and GraphQL `/graphql/greeting` may coexist. Migration 5 adds protocol-aware route uniqueness while preserving old REST routes.
 
-GraphQL tests and calls record `graphql.tested` and `graphql.executed` audit events. Queries, variables, tokens, and returned data are not stored in these audit records. Workspace backups include GraphQL drafts, schemas, and releases.
+GraphQL tests and calls record `graphql.tested` and `graphql.executed` audit events. Queries, variables, tokens, and returned data are not stored in these audit records. Workspace backups include GraphQL drafts, schemas, releases, and runtime-key hashes and metadata. Restoring a snapshot can restore key access revoked afterward; review and rotate or revoke restored keys.
 
 ## Transport and limits
 

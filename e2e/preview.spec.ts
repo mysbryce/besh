@@ -10,12 +10,18 @@ test('preview every current page and its actions', async ({
   const directory = process.env.BESH_PREVIEW_DIR!
   const setupKey = process.env.BESH_PREVIEW_SETUP_KEY!
   const records: PreviewRecord[] = []
+  test.setTimeout(300_000)
   const errors: string[] = []
   mkdirSync(join(directory, 'images'), { recursive: true })
   page.on('pageerror', (error) => errors.push(error.message))
 
   async function capture(group: string, title: string, detail: string) {
     const dropdownOpen = (await page.getByRole('listbox').count()) > 0
+    if (!dropdownOpen && (await page.locator('.theme-control').count())) {
+      await expect(
+        page.getByRole('combobox', { name: 'Appearance' }),
+      ).toBeVisible()
+    }
     if (!dropdownOpen) await page.evaluate(() => window.scrollTo(0, 0))
     const image = `images/${String(records.length + 1).padStart(2, '0')}-${title
       .toLowerCase()
@@ -30,8 +36,9 @@ test('preview every current page and its actions', async ({
         page.getByLabel('Workspace token', { exact: true }),
         page.getByLabel('Setup key', { exact: true }),
         page.getByLabel('New member token', { exact: true }),
+        page.getByLabel('New API key', { exact: true }),
       ],
-      maskColor: '#bac9ae',
+      maskColor: '#dfe4ec',
     })
     records.push({ page: group, title, detail, image })
     writeFileSync(
@@ -45,8 +52,22 @@ test('preview every current page and its actions', async ({
     await expect(page.getByRole('status')).toContainText(text)
   }
 
+  async function appearance(mode: 'Light' | 'Dark') {
+    await page.getByRole('combobox', { name: 'Appearance' }).click()
+    await page.getByRole('option', { name: mode, exact: true }).click()
+    await expect(page.locator('html')).toHaveAttribute(
+      'data-theme',
+      mode.toLowerCase(),
+    )
+  }
+
   async function navigate(name: string) {
-    await page.getByRole('button', { name, exact: true }).click()
+    await page
+      .getByRole('button', {
+        name: name === 'API Studio' ? /^API Studio/ : name,
+        exact: name !== 'API Studio',
+      })
+      .click()
     await expect(page.getByText('Loading workspace records…')).toHaveCount(0)
   }
 
@@ -61,6 +82,11 @@ test('preview every current page and its actions', async ({
   }
 
   async function configure(config: unknown) {
+    if (!(await page.getByLabel('Node configuration').isVisible())) {
+      await page
+        .getByRole('button', { name: 'Advanced configuration', exact: true })
+        .click()
+    }
     await page
       .getByLabel('Node configuration')
       .fill(JSON.stringify(config, null, 2))
@@ -68,6 +94,15 @@ test('preview every current page and its actions', async ({
       .getByRole('button', { name: 'Apply configuration', exact: true })
       .click()
     await notice('Configuration applied')
+  }
+
+  async function testInput(value: string) {
+    if (!(await page.getByLabel('Test input').isVisible())) {
+      await page
+        .getByRole('button', { name: 'Advanced test input', exact: true })
+        .click()
+    }
+    await page.getByLabel('Test input').fill(value)
   }
 
   async function connect(source: Locator, target: Locator) {
@@ -137,11 +172,35 @@ test('preview every current page and its actions', async ({
   await page.getByLabel('I saved my owner key').check()
   await page.getByRole('button', { name: 'Enter studio' }).click()
   await expect(page.getByRole('heading', { name: /API Studio/ })).toBeVisible()
+  await appearance('Dark')
+  await capture(
+    'Appearance',
+    'Dark workspace',
+    'Dark studio keeps cards, endpoint inputs, canvas controls, and text readable.',
+  )
+  await page.getByRole('combobox', { name: 'HTTP method' }).click()
+  await capture(
+    'Appearance',
+    'Dark custom dropdown',
+    'Keyboard-accessible custom dropdown uses dark surfaces and visible selection.',
+  )
+  await page.keyboard.press('Escape')
+  await appearance('Light')
   await capture(
     'API Studio',
     'Empty workspace',
     'The studio opens with a request-to-response starter graph and no saved APIs.',
   )
+  await navigate('API keys')
+  await expect(
+    page.getByRole('heading', { name: 'Publish an API first' }),
+  ).toBeVisible()
+  await capture(
+    'API keys',
+    'No published APIs',
+    'Caller credentials require a published flow. The empty page explains how to publish first.',
+  )
+  await navigate('API Studio')
 
   await page.getByRole('button', { name: 'New API', exact: true }).click()
   await page.getByLabel('API name').fill('Welcome endpoint')
@@ -174,6 +233,34 @@ test('preview every current page and its actions', async ({
     'Move and inspect a node',
     'Dragging changes node position. Selecting a node opens its configuration panel.',
   )
+  await page
+    .getByRole('combobox', { name: 'Field type 1', exact: true })
+    .click()
+  await capture(
+    'API Studio',
+    'Response value types',
+    'Response fields offer fixed text, numbers, booleans, empty values, and safe request references through custom controls.',
+  )
+  await page.keyboard.press('Escape')
+  await page
+    .getByRole('combobox', { name: 'Response status', exact: true })
+    .click()
+  await capture(
+    'API Studio',
+    'Choose response status',
+    'A custom dropdown sets the HTTP status without writing JSON.',
+  )
+  await page.keyboard.press('Escape')
+  await appearance('Dark')
+  await capture(
+    'Appearance',
+    'Dark response fields',
+    'Field inputs, type selectors, and response status use readable dark surfaces.',
+  )
+  await appearance('Light')
+  await page
+    .getByRole('button', { name: 'Advanced configuration', exact: true })
+    .click()
   await page.getByLabel('Node configuration').fill('{broken JSON')
   await page.getByRole('button', { name: 'Apply configuration' }).click()
   await expect(page.locator('.statusbar.error')).toBeVisible()
@@ -198,7 +285,17 @@ test('preview every current page and its actions', async ({
     'Save draft',
     'The draft is persisted. Test and publish actions become available.',
   )
-  await page.getByLabel('Test input').fill('{invalid')
+  await page
+    .getByRole('button', { name: 'Add body field', exact: true })
+    .click()
+  await page.getByLabel('Body name 1', { exact: true }).fill('name')
+  await page.getByLabel('Body value 1', { exact: true }).fill('Ada')
+  await capture(
+    'API Studio',
+    'Simple request fields',
+    'Query parameters and typed request-body values are entered through rows; Advanced JSON is optional.',
+  )
+  await testInput('{invalid')
   await page.getByRole('button', { name: 'Test flow', exact: true }).click()
   await expect(page.locator('.statusbar.error')).toBeVisible()
   await capture(
@@ -206,7 +303,7 @@ test('preview every current page and its actions', async ({
     'Invalid test input',
     'Invalid test JSON is rejected before a run is submitted.',
   )
-  await page.getByLabel('Test input').fill('{"body":{"name":"Ada"},"query":{}}')
+  await testInput('{"body":{"name":"Ada"},"query":{}}')
   await page.getByRole('button', { name: 'Test flow', exact: true }).click()
   await expect(page.getByTestId('test-result')).toContainText('Ada')
   await capture(
@@ -216,8 +313,80 @@ test('preview every current page and its actions', async ({
   )
   await page.getByRole('button', { name: 'Publish', exact: true }).click()
   await notice('Published')
+  await navigate('API keys')
+  await expect(page.getByText('No API keys yet.')).toBeVisible()
+  await capture(
+    'API keys',
+    'Empty key list',
+    'The owner can issue a caller key for one published API. No runtime credentials have been issued yet.',
+  )
+  await page.getByLabel('Key name').fill('Welcome caller')
+  await page.getByRole('combobox', { name: 'Published API' }).click()
+  await capture(
+    'API keys',
+    'Choose published API',
+    'The custom dropdown lists published APIs, separately from editable drafts.',
+  )
+  await page
+    .getByRole('option', { name: 'Welcome endpoint', exact: true })
+    .click()
+  await page.getByRole('combobox', { name: 'Expires in' }).click()
+  await capture(
+    'API keys',
+    'Choose key expiration',
+    'Every runtime key expires. The custom dropdown offers 1, 7, 30, or 90 days.',
+  )
+  await page.getByRole('option', { name: '7 days', exact: true }).click()
+  const restPermission = page.getByRole('checkbox', { name: 'REST requests' })
+  await restPermission.focus()
+  await page.keyboard.press('Space')
+  await expect(restPermission).not.toBeChecked()
+  await expect(
+    page.getByRole('button', { name: 'Create API key', exact: true }),
+  ).toBeDisabled()
+  await capture(
+    'API keys',
+    'Permission required',
+    'Keyboard toggling the custom REST checkbox disables issuance when no permission remains.',
+  )
+  await page.keyboard.press('Space')
+  await expect(restPermission).toBeChecked()
+  await capture(
+    'API keys',
+    'Scoped REST key form',
+    'The form identifies the live endpoint, permission, and expiration before issuing a key.',
+  )
+  await page
+    .getByRole('button', { name: 'Create API key', exact: true })
+    .click()
+  const restKey = await page.getByLabel('New API key').inputValue()
+  await capture(
+    'API keys',
+    'Runtime key shown once',
+    'The server returns the caller token once. Its value is masked; key metadata remains available afterward.',
+  )
+  await page.getByRole('button', { name: 'Copy API key', exact: true }).click()
+  await notice('API key copied')
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    restKey,
+  )
+  await capture(
+    'API keys',
+    'Copy runtime key',
+    'Copy writes the disposable caller key to the browser clipboard and confirms success. The token is masked.',
+  )
+  await page
+    .getByRole('button', { name: 'I saved this API key', exact: true })
+    .click()
+  await expect(page.getByLabel('New API key')).toHaveCount(0)
+  await capture(
+    'API keys',
+    'Acknowledge saved runtime key',
+    'Acknowledgement removes the one-time token display and leaves scoped metadata in the list.',
+  )
+  await navigate('API Studio')
   const live = await page.request.post('/run/welcome', {
-    headers: { authorization: `Bearer ${owner}` },
+    headers: { authorization: `Bearer ${restKey}` },
     data: { name: 'Ada' },
   })
   expect(live.status()).toBe(201)
@@ -231,7 +400,7 @@ test('preview every current page and its actions', async ({
   await page.getByRole('button', { name: 'Save draft', exact: true }).click()
   await notice('Draft saved')
   const unchanged = await page.request.post('/run/welcome', {
-    headers: { authorization: `Bearer ${owner}` },
+    headers: { authorization: `Bearer ${restKey}` },
     data: { name: 'Ada' },
   })
   expect(unchanged.status()).toBe(201)
@@ -268,7 +437,7 @@ test('preview every current page and its actions', async ({
   )
 
   await page.getByRole('button', { name: 'Condition', exact: true }).click()
-  await expect(page.getByLabel('Node configuration')).toBeVisible()
+  await expect(page.getByLabel('Input field', { exact: true })).toBeVisible()
   await capture(
     'API Studio',
     'Add condition',
@@ -400,9 +569,7 @@ test('preview every current page and its actions', async ({
   )
   await signIn(owner)
   await page.getByRole('button', { name: /Stock availability/ }).click()
-  await page
-    .getByLabel('Test input')
-    .fill('{"body":{"inStock":true},"query":{}}')
+  await testInput('{"body":{"inStock":true},"query":{}}')
   await page.getByRole('button', { name: 'Test flow', exact: true }).click()
   await expect(page.getByTestId('test-result')).toContainText(
     '"available": true',
@@ -412,9 +579,7 @@ test('preview every current page and its actions', async ({
     'Condition true branch',
     'This sample was created through the public management API. The dashboard run follows the true branch and returns 200.',
   )
-  await page
-    .getByLabel('Test input')
-    .fill('{"body":{"inStock":false},"query":{}}')
+  await testInput('{"body":{"inStock":false},"query":{}}')
   await page.getByRole('button', { name: 'Test flow', exact: true }).click()
   await expect(page.getByTestId('test-result')).toContainText('404')
   await capture(
@@ -436,6 +601,435 @@ test('preview every current page and its actions', async ({
     'Fit graph to canvas',
     'Fit view brings the full graph into the available canvas.',
   )
+
+  await navigate('Data sources')
+  await expect(page.getByText('No data sources yet')).toBeVisible()
+  await capture(
+    'Data sources',
+    'No imported data',
+    'Owners and editors can import spreadsheet snapshots. No external account is required for uploaded files.',
+  )
+  await page.getByLabel('Source name', { exact: true }).fill('Products')
+  await page.getByLabel('Spreadsheet file', { exact: true }).setInputFiles({
+    name: 'products.csv',
+    mimeType: 'text/csv',
+    buffer: Buffer.from('name,price,available\nTea,12,true\nCoffee,15,false\n'),
+  })
+  await capture(
+    'Data sources',
+    'Choose spreadsheet file',
+    'A CSV or Excel file is selected before import. The first row contains column names.',
+  )
+  await page
+    .getByRole('button', { name: 'Import spreadsheet', exact: true })
+    .click()
+  await expect(
+    page.getByRole('cell', { name: 'Tea', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Data sources',
+    'Imported typed preview',
+    'Real CSV import shows the saved rows, types, version, original headings, and API field mapping.',
+  )
+  await appearance('Dark')
+  await capture(
+    'Data sources',
+    'Dark spreadsheet preview',
+    'Saved data and mapped fields remain readable on dark surfaces.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile',
+    'Dark data import and mapping',
+    'Data import, preview table, and column choices fit phone width; the table scrolls within its card.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await appearance('Light')
+  await page
+    .getByRole('combobox', { name: 'Saved data source', exact: true })
+    .click()
+  await capture(
+    'Data sources',
+    'Choose saved source',
+    'A custom dropdown selects a saved source and retains keyboard support.',
+  )
+  await page.keyboard.press('Escape')
+  await page
+    .getByRole('combobox', { name: 'Rows per request', exact: true })
+    .click()
+  await capture(
+    'Data sources',
+    'Choose row limit',
+    'Bound each request to a reviewed row limit before generating a draft.',
+  )
+  await page.keyboard.press('Escape')
+  await page
+    .getByRole('checkbox', { name: 'Return available', exact: true })
+    .uncheck()
+  await capture(
+    'Data sources',
+    'Review returned columns',
+    'Only selected fields are included. The preview explains original heading, API field name, and data type.',
+  )
+  await page.getByLabel('API name', { exact: true }).fill('Products REST')
+  await page
+    .getByLabel('Endpoint path', { exact: true })
+    .fill('/products-preview')
+  await page
+    .getByRole('button', { name: 'Create API from data', exact: true })
+    .click()
+  await expect(page.getByLabel('API name', { exact: true })).toHaveValue(
+    'Products REST',
+  )
+  await capture(
+    'Data sources',
+    'Generated visual draft',
+    'Real public management API creates a saved request → spreadsheet rows → response graph; publication remains a separate step.',
+  )
+  await page
+    .locator('.react-flow__node')
+    .filter({ hasText: 'Spreadsheet rows' })
+    .click()
+  await expect(
+    page.getByRole('checkbox', { name: 'Include name', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'API Studio',
+    'Spreadsheet step settings',
+    'Choose source, returned columns, maximum rows, and optional typed equality filter without JSON.',
+  )
+  await page
+    .getByRole('combobox', { name: 'Maximum rows', exact: true })
+    .click()
+  await capture(
+    'API Studio',
+    'Spreadsheet row limit control',
+    'Custom row-limit dropdown supports values from one to one hundred.',
+  )
+  await page.keyboard.press('Escape')
+  await page.getByRole('checkbox', { name: 'Filter rows', exact: true }).check()
+  await capture(
+    'API Studio',
+    'Optional row match',
+    'A column match can use a fixed typed value or a request input. This capture has not applied the edit.',
+  )
+  await page
+    .getByRole('checkbox', { name: 'Filter rows', exact: true })
+    .uncheck()
+  await page
+    .locator('.react-flow__node')
+    .filter({ hasText: 'JSON response' })
+    .click()
+  await capture(
+    'API Studio',
+    'Return spreadsheet rows',
+    'The generated response shows a friendly rows mode; no $data JSON editing is required.',
+  )
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByTestId('test-result')).toContainText('Tea')
+  await capture(
+    'Data sources',
+    'Test generated REST API',
+    'The real draft test returns only name and price from the saved CSV snapshot.',
+  )
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await notice('Published')
+  const productFlows = await (
+    await page.request.get('/api/flows', {
+      headers: { authorization: `Bearer ${owner}` },
+    })
+  ).json()
+  const productFlow = productFlows.find(
+    (flow: { name: string }) => flow.name === 'Products REST',
+  )
+  const productGrant = await (
+    await page.request.post('/api/runtime-keys', {
+      headers: { authorization: `Bearer ${owner}` },
+      data: {
+        name: 'Preview spreadsheet caller',
+        flowId: productFlow.id,
+        permissions: ['rest'],
+        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+      },
+    })
+  ).json()
+  expect(
+    await (
+      await page.request.get('/run/products-preview', {
+        headers: { authorization: `Bearer ${productGrant.token}` },
+      })
+    ).json(),
+  ).toEqual([
+    { name: 'Tea', price: 12 },
+    { name: 'Coffee', price: 15 },
+  ])
+  await capture(
+    'Data sources',
+    'Published spreadsheet endpoint',
+    'A real scoped runtime key calls the published REST endpoint. Disposable key issued through the approved management HTTP seam and omitted from artifacts.',
+  )
+  await navigate('Data sources')
+  await page
+    .getByLabel('Replacement spreadsheet', { exact: true })
+    .setInputFiles({
+      name: 'products-new.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(
+        'name,price,available\nTea,18,true\nCoffee,15,false\n',
+      ),
+    })
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page
+    .getByRole('button', { name: 'Replace spreadsheet', exact: true })
+    .click()
+  await capture(
+    'Data sources',
+    'Cancel snapshot replacement',
+    'Cancel preserves the saved snapshot and live callers. A new file remains selected for review.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Replace spreadsheet', exact: true })
+    .click()
+  await notice('replaced')
+  expect(
+    await (
+      await page.request.get('/run/products-preview', {
+        headers: { authorization: `Bearer ${productGrant.token}` },
+      })
+    ).json(),
+  ).toEqual([
+    { name: 'Tea', price: 18 },
+    { name: 'Coffee', price: 15 },
+  ])
+  await capture(
+    'Data sources',
+    'Replaced saved snapshot',
+    'Real replacement updates the row preview and the already-published REST response immediately; its graph stays unchanged.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Delete data source', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText(
+    'used by a draft or published API',
+  )
+  await capture(
+    'Data sources',
+    'Referenced source cannot delete',
+    'The real server rejects deletion while a draft or published graph references this source.',
+  )
+  await page
+    .getByRole('checkbox', { name: 'Filter by input', exact: true })
+    .check()
+  await page
+    .getByRole('combobox', { name: 'Filter column', exact: true })
+    .click()
+  await capture(
+    'Data sources',
+    'Choose optional search column',
+    'Search filters help callers find rows. Omitting an optional input returns all eligible rows up to the limit; filters are not authorization.',
+  )
+  await page.getByRole('option', { name: 'price', exact: true }).click()
+  await page.getByLabel('Filter input name', { exact: true }).fill('price')
+  await capture(
+    'Data sources',
+    'Map optional caller input',
+    'The generated API accepts a typed equality filter. Safe parameter names and original column names remain visible before creation.',
+  )
+  await page.getByRole('combobox', { name: 'API type', exact: true }).click()
+  await capture(
+    'Data sources',
+    'Choose generated API type',
+    'Generate REST or typed query-only GraphQL from reviewed spreadsheet fields.',
+  )
+  await page.getByRole('option', { name: 'GraphQL', exact: true }).click()
+  await page.getByLabel('API name', { exact: true }).fill('Products GraphQL')
+  await page
+    .getByLabel('Endpoint path', { exact: true })
+    .fill('/products-graphql-preview')
+  await page
+    .getByRole('button', { name: 'Create API from data', exact: true })
+    .click()
+  await expect(page.getByLabel('API name', { exact: true })).toHaveValue(
+    'Products GraphQL',
+  )
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByTestId('test-result')).toContainText('"rows"')
+  await capture(
+    'GraphQL',
+    'Generated spreadsheet query',
+    'Typed Query.rows and a valid matching operation are generated. The real draft test runs without typing JSON, schema, or query text.',
+  )
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await notice('Published')
+  const generatedGraphs = await (
+    await page.request.get('/api/flows', {
+      headers: { authorization: `Bearer ${owner}` },
+    })
+  ).json()
+  const generatedGraph = generatedGraphs.find(
+    (flow: { name: string }) => flow.name === 'Products GraphQL',
+  )
+  const generatedGrant = await (
+    await page.request.post('/api/runtime-keys', {
+      headers: { authorization: `Bearer ${owner}` },
+      data: {
+        name: 'Preview spreadsheet query caller',
+        flowId: generatedGraph.id,
+        permissions: ['query'],
+        expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
+      },
+    })
+  ).json()
+  expect(
+    await (
+      await page.request.post('/graphql/products-graphql-preview', {
+        headers: { authorization: `Bearer ${generatedGrant.token}` },
+        data: { query: '{ rows(price:18) { name price } }' },
+      })
+    ).json(),
+  ).toEqual({ data: { rows: [{ name: 'Tea', price: 18 }] } })
+  await capture(
+    'GraphQL',
+    'Published typed spreadsheet filter',
+    'A real scoped query key invokes the generated published GraphQL endpoint with a numeric argument and field selection. The token is omitted from artifacts.',
+  )
+  await appearance('Dark')
+  await capture(
+    'GraphQL',
+    'Dark generated query result',
+    'Typed rows and optional advanced controls remain readable in dark mode.',
+  )
+  await appearance('Light')
+  await navigate('Data sources')
+  await page
+    .getByRole('combobox', { name: 'Import method', exact: true })
+    .click()
+  await capture(
+    'Data sources',
+    'Choose import method',
+    'Use a local spreadsheet file or a public Google Sheets link. Private OAuth is not implemented.',
+  )
+  await page
+    .getByRole('option', { name: 'Public Google Sheet', exact: true })
+    .click()
+  await page.getByLabel('Source name', { exact: true }).fill('Invalid sheet')
+  await page
+    .getByLabel('Google Sheets link', { exact: true })
+    .fill('https://example.com/private')
+  await capture(
+    'Data sources',
+    'Public Google Sheet form',
+    'A shared Google link imports a saved snapshot, with manual refresh rather than continuous synchronization.',
+  )
+  await page
+    .getByRole('button', { name: 'Import Google Sheet', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText('Google Sheets')
+  await capture(
+    'Data sources',
+    'Invalid Google URL rejected',
+    'The real backend rejects a non-Google URL without fetching it.',
+  )
+  const realSources = await (
+    await page.request.get('/api/data-sources', {
+      headers: { authorization: `Bearer ${owner}` },
+    })
+  ).json()
+  const simulatedGoogle = {
+    ...realSources[0],
+    id: 'preview-simulated-google',
+    name: 'Simulated public sheet',
+    kind: 'google-sheets',
+    sourceUrl:
+      'https://docs.google.com/spreadsheets/d/simulated-ui-preview/edit',
+    version: 1,
+    rowCount: 1,
+    rows: [{ name: 'Simulated original', price: 5, available: true }],
+  }
+  await page.route('**/api/data-sources/google-sheets', (route) =>
+    route.fulfill({ status: 200, json: simulatedGoogle }),
+  )
+  await page
+    .getByLabel('Source name', { exact: true })
+    .fill(simulatedGoogle.name)
+  await page
+    .getByLabel('Google Sheets link', { exact: true })
+    .fill(simulatedGoogle.sourceUrl)
+  await page
+    .getByRole('button', { name: 'Import Google Sheet', exact: true })
+    .click()
+  await expect(
+    page.getByRole('cell', { name: 'Simulated original', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Data sources',
+    'Simulated Google import success',
+    'Controlled management HTTP response demonstrates public-sheet success UI offline. Separate smoke verified real Google network import; this screenshot is simulated.',
+  )
+  await page.route(
+    '**/api/data-sources/preview-simulated-google/refresh',
+    (route) =>
+      route.fulfill({
+        status: 200,
+        json: {
+          ...simulatedGoogle,
+          version: 2,
+          rows: [{ name: 'Simulated refreshed', price: 6, available: true }],
+        },
+      }),
+  )
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await page
+    .getByRole('button', { name: 'Refresh saved data', exact: true })
+    .click()
+  await capture(
+    'Data sources',
+    'Cancel simulated Google refresh',
+    'Cancel sends no refresh request and preserves the saved rows. This source uses controlled management HTTP responses.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Refresh saved data', exact: true })
+    .click()
+  await expect(
+    page.getByRole('cell', { name: 'Simulated refreshed', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Data sources',
+    'Simulated Google refresh success',
+    'Controlled HTTP refresh updates row preview and version. This screenshot does not claim a live Google fetch.',
+  )
+  await page.unroute('**/api/data-sources/preview-simulated-google/refresh')
+  await page.route(
+    '**/api/data-sources/preview-simulated-google/refresh',
+    (route) =>
+      route.fulfill({
+        status: 502,
+        json: {
+          error:
+            'Simulated Google export temporarily unavailable. Try refresh again.',
+        },
+      }),
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await page
+    .getByRole('button', { name: 'Refresh saved data', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText('Simulated Google export')
+  await capture(
+    'Data sources',
+    'Simulated Google refresh error',
+    'Controlled HTTP error preserves the saved rows and gives a retry message; the server failure is simulated.',
+  )
+  await page.unroute('**/api/data-sources/google-sheets')
+  await page.unroute('**/api/data-sources/preview-simulated-google/refresh')
 
   await navigate('Members')
   await expect(
@@ -495,6 +1089,57 @@ test('preview every current page and its actions', async ({
     'Members',
     'Refresh members',
     'Refresh reads the current member list from the server.',
+  )
+
+  await navigate('API keys')
+  const restKeyRow = page.getByRole('row').filter({ hasText: 'Welcome caller' })
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await restKeyRow.getByRole('button', { name: 'Revoke', exact: true }).click()
+  await expect(restKeyRow).toContainText('Active')
+  await capture(
+    'API keys',
+    'Cancel key revocation',
+    'Canceling the confirmation preserves access for the scoped caller key.',
+  )
+  page.once('dialog', (dialog) => dialog.accept())
+  await restKeyRow.getByRole('button', { name: 'Revoke', exact: true }).click()
+  await notice('API key revoked')
+  await expect(restKeyRow).toContainText('Revoked')
+  expect(
+    (
+      await page.request.post('/run/welcome', {
+        headers: { authorization: `Bearer ${restKey}` },
+        data: { name: 'Ada' },
+      })
+    ).status(),
+  ).toBe(401)
+  await capture(
+    'API keys',
+    'Confirm key revocation',
+    'Revoked metadata remains in the list. A real HTTP request with the old token immediately returned 401.',
+  )
+  await page.route('**/api/runtime-keys', (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: '{"error":"Preview: API key records temporarily unavailable"}',
+    }),
+  )
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await expect(page.getByRole('alert')).toContainText('temporarily unavailable')
+  await capture(
+    'API keys',
+    'Key record loading error',
+    'A temporary HTTP-boundary failure displays a clear error while existing metadata stays visible. This failure is deliberately simulated.',
+  )
+  await page.unroute('**/api/runtime-keys')
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+  await notice('API keys refreshed')
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await capture(
+    'API keys',
+    'Refresh after key record error',
+    'Refresh recovers against the real server and clears the temporary error.',
   )
 
   await navigate('Data & backups')
@@ -574,7 +1219,16 @@ test('preview every current page and its actions', async ({
     'Viewer studio',
     'A viewer can read API definitions, but editing, testing, and publication controls are disabled.',
   )
-  for (const name of ['Members', 'Audit trail', 'Data & backups']) {
+  await navigate('Data sources')
+  await expect(
+    page.getByRole('heading', { name: 'Editor access required' }),
+  ).toBeVisible()
+  await capture(
+    'Permissions',
+    'Viewer denied spreadsheet data',
+    'Source metadata, rows, imports, and API generation require owner or editor access; the real server enforces the same boundary.',
+  )
+  for (const name of ['Members', 'API keys', 'Audit trail', 'Data & backups']) {
     await navigate(name)
     await expect(
       page.getByRole('heading', { name: 'Owner access required' }),
@@ -597,6 +1251,15 @@ test('preview every current page and its actions', async ({
     'Permissions',
     'Editor studio',
     'An editor can build and test drafts while publishing remains an owner action.',
+  )
+  await navigate('Data sources')
+  await expect(
+    page.getByRole('cell', { name: 'Tea', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'Permissions',
+    'Editor spreadsheet access',
+    'An editor can import and review saved data and generate drafts; publishing and runtime-key administration remain owner-only.',
   )
   await page.getByRole('button', { name: /Sign out/ }).click()
   await signIn(owner)
@@ -639,6 +1302,14 @@ test('preview every current page and its actions', async ({
   await page.getByRole('option', { name: 'GraphQL', exact: true }).click()
   await capture(
     'GraphQL',
+    'Simple typed contract',
+    'Starter GraphQL works with its generated query. Schema and variables are optional Advanced editors.',
+  )
+  await page
+    .getByRole('button', { name: 'Advanced schema', exact: true })
+    .click()
+  await capture(
+    'GraphQL',
     'Schema editor',
     'An editable GraphQL schema defines queries, mutations, arguments, and response types.',
   )
@@ -665,6 +1336,9 @@ test('preview every current page and its actions', async ({
   await page
     .getByLabel('GraphQL operation', { exact: true })
     .fill('query Greeting($name: String!) { greet(name: $name) { name } }')
+  await page
+    .getByRole('button', { name: 'Advanced GraphQL input', exact: true })
+    .click()
   await page.getByLabel('GraphQL operation name').fill('Greeting')
   await page.getByLabel('GraphQL variables').fill('{"name":"Ada"}')
   await page.getByRole('button', { name: 'Test flow', exact: true }).click()
@@ -700,8 +1374,77 @@ test('preview every current page and its actions', async ({
   )
   await page.getByRole('button', { name: 'Publish', exact: true }).click()
   await notice('/graphql/greeting')
+  await navigate('API keys')
+  await page.getByLabel('Key name').fill('GraphQL reader')
+  await page.getByRole('combobox', { name: 'Published API' }).click()
+  await page
+    .getByRole('option', { name: 'GraphQL greeting', exact: true })
+    .click()
+  await expect(
+    page.getByRole('checkbox', { name: 'GraphQL queries' }),
+  ).toBeChecked()
+  await expect(
+    page.getByRole('checkbox', { name: 'GraphQL mutations' }),
+  ).not.toBeChecked()
+  await capture(
+    'API keys',
+    'GraphQL query permission',
+    'A GraphQL key starts with queries allowed and mutations denied. Grants apply to a whole selected operation.',
+  )
+  await page
+    .getByRole('button', { name: 'Create API key', exact: true })
+    .click()
+  const graphKey = await page.getByLabel('New API key').inputValue()
+  await page
+    .getByRole('button', { name: 'I saved this API key', exact: true })
+    .click()
+  expect(
+    (
+      await page.request.post('/graphql/greeting', {
+        headers: { authorization: `Bearer ${graphKey}` },
+        data: { query: 'mutation { greet(name: "Grace") { name } }' },
+      })
+    ).status(),
+  ).toBe(403)
+  await capture(
+    'API keys',
+    'Query-only key rejects mutation',
+    'The real published GraphQL endpoint returned 403 to this query-only key for a mutation.',
+  )
+  await page.getByLabel('Key name').fill('GraphQL writer')
+  const mutationPermission = page.getByRole('checkbox', {
+    name: 'GraphQL mutations',
+  })
+  await mutationPermission.focus()
+  await page.keyboard.press('Space')
+  await expect(mutationPermission).toBeChecked()
+  await capture(
+    'API keys',
+    'Grant GraphQL mutations',
+    'The owner explicitly enables mutations with the keyboard-accessible custom checkbox; queries remain granted.',
+  )
+  await page
+    .getByRole('button', { name: 'Create API key', exact: true })
+    .click()
+  const writerKey = await page.getByLabel('New API key').inputValue()
+  await page
+    .getByRole('button', { name: 'I saved this API key', exact: true })
+    .click()
+  const writerResponse = await page.request.post('/graphql/greeting', {
+    headers: { authorization: `Bearer ${writerKey}` },
+    data: { query: 'mutation { greet(name: "Grace") { message name } }' },
+  })
+  expect(await writerResponse.json()).toEqual({
+    data: { greet: { message: 'Hello from GraphQL', name: 'Grace' } },
+  })
+  await capture(
+    'API keys',
+    'Scoped GraphQL keys',
+    'Separate caller keys list their query/mutation grants, expiration, published flow, and current status. A granted mutation returned the expected typed data.',
+  )
+  await navigate('API Studio')
   const graphResponse = await page.request.post('/graphql/greeting', {
-    headers: { authorization: `Bearer ${owner}` },
+    headers: { authorization: `Bearer ${graphKey}` },
     data: { query: '{ greet(name: "Ada") { message name } }' },
   })
   expect(await graphResponse.json()).toEqual({
@@ -712,6 +1455,9 @@ test('preview every current page and its actions', async ({
     'Publish GraphQL endpoint',
     'The live POST /graphql/greeting endpoint returned typed GraphQL data over HTTP.',
   )
+  await page
+    .getByRole('button', { name: 'Advanced schema', exact: true })
+    .click()
   await page
     .getByLabel('GraphQL schema')
     .fill('type Query { broken: MissingType }')
@@ -741,7 +1487,9 @@ test('preview every current page and its actions', async ({
   await page.setViewportSize({ width: 390, height: 844 })
   for (const name of [
     'API Studio',
+    'Data sources',
     'Members',
+    'API keys',
     'Data & backups',
     'Audit trail',
     'What’s next',
@@ -752,6 +1500,20 @@ test('preview every current page and its actions', async ({
       expect(
         (await page.getByTestId('flow-canvas').boundingBox())!.height,
       ).toBeGreaterThanOrEqual(300)
+      const savedApi = page.getByRole('combobox', { name: 'Saved API' })
+      await savedApi.click()
+      await capture(
+        'Mobile',
+        'Choose a saved API',
+        'The custom saved-API dropdown preserves API selection on phone layouts where the desktop list is hidden.',
+      )
+      await page.getByRole('option', { name: /Welcome endpoint/ }).click()
+      await expect(page.getByLabel('API name')).toHaveValue('Welcome endpoint')
+      await capture(
+        'Mobile',
+        'Selected saved API',
+        'Selecting a saved API opens its draft in the phone studio without losing access to the canvas.',
+      )
     }
     expect(
       await page.evaluate(
@@ -763,10 +1525,49 @@ test('preview every current page and its actions', async ({
       name,
       'The page is rendered at a 390px phone viewport. Main document has no horizontal overflow.',
     )
+    await appearance('Dark')
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth + 1,
+      ),
+    ).toBe(true)
+    await capture(
+      'Mobile dark',
+      name,
+      'The same phone page is readable in dark mode and has no horizontal document overflow.',
+    )
+    await appearance('Light')
   }
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await appearance('Dark')
+  for (const name of [
+    'API Studio',
+    'Data sources',
+    'Members',
+    'API keys',
+    'Data & backups',
+    'Audit trail',
+    'What’s next',
+  ]) {
+    await navigate(name)
+    await capture(
+      'Dark workspace pages',
+      name,
+      'Current desktop page in dark appearance with visible controls and readable content.',
+    )
+  }
+  await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole('button', { name: /Sign out/ }).click()
   await expect(page.getByLabel('Workspace token')).toBeVisible()
+  await appearance('Light')
   await capture('Mobile', 'Login', 'Login remains usable at phone width.')
+  await appearance('Dark')
+  await capture(
+    'Mobile dark',
+    'Login',
+    'Dark sign-in supports the same keyboard controls and masks the workspace token.',
+  )
+  await appearance('Light')
   await page.setViewportSize({ width: 1440, height: 1000 })
   await capture(
     'Authentication',

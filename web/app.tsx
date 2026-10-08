@@ -3,14 +3,15 @@ import {
   Activity,
   ArrowUpRight,
   Box,
-  ChevronDown,
   CircleHelp,
   Database,
   GitBranch,
   LayoutGrid,
+  KeyRound,
   LogOut,
   Plus,
   ShieldCheck,
+  Table2,
   Users,
   Workflow,
 } from 'lucide-react'
@@ -19,6 +20,7 @@ import { Button } from './components/ui/button'
 import { Badge } from './components/ui/badge'
 import { useStudio } from './store'
 import { api } from './lib/api'
+import { ThemeControl } from './theme'
 
 const Builder = lazy(() =>
   import('./builder').then((module) => ({ default: module.Builder })),
@@ -26,14 +28,26 @@ const Builder = lazy(() =>
 const Operations = lazy(() =>
   import('./operations').then((module) => ({ default: module.Operations })),
 )
+const RuntimeKeys = lazy(() =>
+  import('./runtime-keys').then((module) => ({ default: module.RuntimeKeys })),
+)
+const FlowPicker = lazy(() =>
+  import('./flow-picker').then((module) => ({ default: module.FlowPicker })),
+)
+const DataSources = lazy(() =>
+  import('./data-sources').then((module) => ({ default: module.DataSources })),
+)
 
 type Setup = { required: boolean; name: string }
-type Page = 'builder' | 'audit' | 'members' | 'backups' | 'roadmap'
+type Page =
+  'builder' | 'data' | 'audit' | 'members' | 'keys' | 'backups' | 'roadmap'
 
 const navigation = [
   { id: 'builder', name: 'API Studio', icon: Workflow },
+  { id: 'data', name: 'Data sources', icon: Table2 },
   { id: 'audit', name: 'Audit trail', icon: Activity },
   { id: 'members', name: 'Members', icon: Users },
+  { id: 'keys', name: 'API keys', icon: KeyRound },
   { id: 'backups', name: 'Data & backups', icon: Database },
   { id: 'roadmap', name: 'What’s next', icon: Box },
 ] as const
@@ -109,13 +123,13 @@ export function App() {
             <strong>{setup.name}</strong>
             <small>Local workspace</small>
           </div>
-          <ChevronDown size={15} />
         </div>
         <span className="nav-label">WORKSPACE</span>
         <nav aria-label="Workspace navigation">
           {navigation.map(({ id, name, icon: Icon }) => (
             <button
               key={id}
+              aria-label={name}
               className={page === id ? 'active' : ''}
               onClick={() => setPage(id)}
             >
@@ -190,26 +204,44 @@ export function App() {
             <strong>{navigation.find((item) => item.id === page)?.name}</strong>
           </div>
           <div>
+            <ThemeControl />
             <Badge variant="outline">
               <span className="live-dot" />
-              Local
+              Local workspace
             </Badge>
-            <a
-              href="https://github.com/elysiajs/elysia"
-              target="_blank"
-              rel="noreferrer"
-              aria-label="About Elysia"
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Help & roadmap"
+              onClick={() => setPage('roadmap')}
             >
               <CircleHelp size={18} />
-            </a>
+            </Button>
           </div>
         </header>
+        {state.flows.length ? (
+          <Suspense fallback={null}>
+            <FlowPicker
+              flows={state.flows}
+              selected={state.id}
+              disabled={state.busy}
+              onSelect={(id) => {
+                const flow = state.flows.find((item) => item.id === id)
+                if (flow) switchFlow(() => state.load(flow))
+              }}
+            />
+          </Suspense>
+        ) : null}
         <main className="main-content">
           <Suspense fallback={<p>Opening studio…</p>}>
             {page === 'builder' ? (
               <Builder />
+            ) : page === 'data' ? (
+              <DataSources onOpenApi={() => setPage('builder')} />
             ) : page === 'roadmap' ? (
               <Roadmap />
+            ) : page === 'keys' ? (
+              <RuntimeKeys />
             ) : (
               <Operations key={page} page={page} />
             )}
@@ -219,7 +251,7 @@ export function App() {
           <span role="status">{state.busy ? 'Working…' : state.notice}</span>
           <span>
             <ShieldCheck size={13} />
-            Besh 0.1 · Development preview
+            Drafts stay separate from published APIs
           </span>
         </footer>
       </div>
@@ -231,7 +263,7 @@ function Roadmap() {
   const items = [
     [
       'Identity & contracts',
-      'Social sign-in, custom permissions, OpenAPI, API keys, and WebSocket flows.',
+      'Social sign-in, custom permissions, OpenAPI, and WebSocket flows.',
     ],
     [
       'Connect your data',
@@ -271,7 +303,8 @@ function Roadmap() {
         ))}
       </div>
       <p className="roadmap-footer">
-        Full scope and completion gates live in <code>docs/roadmap.md</code>.
+        A working foundation, with room for your next idea. These capabilities
+        are planned and are not enabled yet.
       </p>
     </>
   )

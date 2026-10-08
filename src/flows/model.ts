@@ -25,6 +25,29 @@ export const flowSchema = z.object({
         }),
         z.object({
           ...base,
+          type: z.literal('data'),
+          config: z.object({
+            sourceId: z.string().min(1).max(80),
+            columns: z
+              .array(z.string().regex(/^[a-z][a-z0-9_]{0,63}$/))
+              .min(1)
+              .max(64),
+            filter: z
+              .object({
+                column: z.string().regex(/^[a-z][a-z0-9_]{0,63}$/),
+                value: z.union([
+                  z.string().max(4096),
+                  z.number().finite(),
+                  z.boolean(),
+                  z.null(),
+                ]),
+              })
+              .optional(),
+            limit: z.number().int().min(1).max(100),
+          }),
+        }),
+        z.object({
+          ...base,
           type: z.literal('response'),
           config: z.object({
             status: z.number().int().min(200).max(599),
@@ -48,5 +71,7 @@ export const flowSchema = z.object({
 
 export type Flow = z.infer<typeof flowSchema>
 export type FlowNode = Flow['nodes'][number]
+export type DataReadConfig = Extract<FlowNode, { type: 'data' }>['config']
+export type FlowContext = { readData?: (config: DataReadConfig) => unknown }
 export type FlowInput = { body: unknown; query: Record<string, string> }
 export type FlowResult = { status: number; body: unknown; visited: string[] }

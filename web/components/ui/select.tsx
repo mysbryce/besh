@@ -10,6 +10,7 @@ type Props = {
   disabled?: boolean
   id?: string
   className?: string
+  placeholder?: string
 }
 
 export function Select({
@@ -20,6 +21,7 @@ export function Select({
   disabled,
   id,
   className,
+  placeholder,
 }: Props) {
   return (
     <SelectPrimitive.Root
@@ -32,7 +34,7 @@ export function Select({
         aria-label={label}
         className={cn('select-trigger', className)}
       >
-        <SelectPrimitive.Value />
+        <SelectPrimitive.Value placeholder={placeholder} />
         <SelectPrimitive.Icon>
           <ChevronDown size={14} />
         </SelectPrimitive.Icon>

@@ -112,7 +112,7 @@ export function Operations({
             {page === 'audit'
               ? 'A record of changes, runs, and access decisions. Latest 200 events.'
               : page === 'members'
-                ? 'Give each person the access they need.'
+                ? 'Member keys manage the workspace. Use API keys for published endpoint callers.'
                 : 'Keep a consistent copy of your workspace. Restore offline.'}
           </p>
         </div>

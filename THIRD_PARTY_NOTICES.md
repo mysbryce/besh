@@ -2,7 +2,11 @@
 
 Besh uses open-source dependencies. Their licenses remain in their installed packages and apply to their respective code.
 
+The bundled Manrope Latin variable font is copyright 2018 The Manrope Project Authors and uses the SIL Open Font License 1.1. See [font license](web/assets/Manrope-OFL.txt). The font is served locally; no external font service is used at runtime.
+
 The button, badge, input, and textarea components in `web/components/ui/` were generated using [shadcn/ui](https://github.com/shadcn-ui/ui) and adapted for local utility imports and project formatting. The custom checkbox and select components use [Radix primitives](https://www.radix-ui.com/primitives). GraphQL execution uses [GraphQL.js](https://www.graphql-js.org/).
+
+Excel parsing uses MIT-licensed [read-excel-file](https://github.com/catamphetamine/read-excel-file), copyright 2018 gitlab.com/catamphetamine. XML preflight checks use MIT-licensed [saxen](https://github.com/nikku/saxen), copyright 2012 Vopilovskii Konstantin and 2017-present Nico Rehwaldt. Their complete notices and dependency licenses ship in the installed packages. Spreadsheet fixtures under `test/fixtures/` are synthetic project test data.
 
 shadcn/ui is MIT licensed:
 
@@ -25,5 +29,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-Elysia's repository inspired the shallow layout. Besh does not copy Elysia's implementation or use its copyright holder as Besh's author.

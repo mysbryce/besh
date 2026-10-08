@@ -12,6 +12,7 @@ import {
 import {
   ArrowDownToLine,
   Braces,
+  Database,
   GitBranch,
   MousePointer2,
   Plus,
@@ -28,6 +29,13 @@ import { Textarea } from './components/ui/textarea'
 import { Badge } from './components/ui/badge'
 import { flowSchema, type Flow, type FlowNode } from '../src/flows/model'
 import { useStudio, type CanvasNode } from './store'
+import {
+  ConditionForm,
+  DataNodeForm,
+  parseRequestInput,
+  RequestForm,
+  ResponseForm,
+} from './flow-forms'
 
 const nodeInfo = {
   request: {
@@ -44,6 +52,11 @@ const nodeInfo = {
     label: 'JSON response',
     description: 'Send something back',
     icon: Braces,
+  },
+  data: {
+    label: 'Spreadsheet rows',
+    description: 'Read selected columns',
+    icon: Database,
   },
 }
 
@@ -83,6 +96,14 @@ const FlowCard = memo(function FlowCard({
               {'field' in data.config ? data.config.field : 'body.active'}
             </code>
           </>
+        ) : data.kind === 'data' ? (
+          <>
+            <span>ROWS</span>
+            <code>
+              {'columns' in data.config ? data.config.columns.length : 0}{' '}
+              columns
+            </code>
+          </>
         ) : (
           <>
             <span>TRIGGER</span>
@@ -90,7 +111,7 @@ const FlowCard = memo(function FlowCard({
           </>
         )}
       </div>
-      {data.kind === 'request' ? (
+      {data.kind === 'request' || data.kind === 'data' ? (
         <Handle type="source" position={Position.Right} />
       ) : null}
       {data.kind === 'condition' ? (
@@ -118,11 +139,13 @@ const FlowCard = memo(function FlowCard({
 const nodeTypes = { besh: FlowCard }
 
 function Inspector({ node }: { node: CanvasNode }) {
+  const [advanced, setAdvanced] = useState(false)
   const [config, setConfig] = useState(
     JSON.stringify(node.data.config, null, 2),
   )
   const configure = useStudio((state) => state.configure)
   const message = useStudio((state) => state.message)
+  const token = useStudio((state) => state.token)
   const remove = useStudio((state) => state.onNodesChange)
   const readonly = useStudio(
     (state) => state.member?.role === 'viewer' || state.busy,
@@ -156,22 +179,86 @@ function Inspector({ node }: { node: CanvasNode }) {
         {node.data.kind === 'condition'
           ? 'Compare an input field with a value. Connect both true and false outputs.'
           : node.data.kind === 'response'
-            ? 'Set a status and JSON body. Use $input.body.name or $input.query.name to read input.'
-            : 'Connect this node to the first step in your API.'}
+            ? 'Choose a status and add response fields. Values can be fixed or read from the request.'
+            : node.data.kind === 'data'
+              ? 'Choose which spreadsheet rows and columns your API returns.'
+              : 'Connect this node to the first step in your API.'}
       </p>
-      <label htmlFor="node-config">Node configuration</label>
-      <Textarea
-        id="node-config"
-        value={config}
-        onChange={(event) => setConfig(event.target.value)}
-        className="code-input"
-        rows={10}
-        disabled={readonly}
-        spellCheck={false}
-      />
-      <Button variant="outline" onClick={apply} disabled={readonly}>
-        Apply configuration
+      {node.data.kind === 'response' &&
+      !advanced &&
+      'status' in node.data.config &&
+      'body' in node.data.config ? (
+        <ResponseForm
+          config={{
+            status: node.data.config.status,
+            body: node.data.config.body,
+          }}
+          disabled={readonly}
+          onError={(error) => message(error, true)}
+          onApply={(value) => {
+            configure(node.id, value as FlowNode['config'])
+            message('Configuration applied. Save draft to keep changes.')
+          }}
+        />
+      ) : null}
+      {node.data.kind === 'condition' &&
+      !advanced &&
+      'field' in node.data.config &&
+      'equals' in node.data.config ? (
+        <ConditionForm
+          config={{
+            field: node.data.config.field,
+            equals: node.data.config.equals,
+          }}
+          disabled={readonly}
+          onError={(error) => message(error, true)}
+          onApply={(value) => {
+            configure(node.id, value as FlowNode['config'])
+            message('Configuration applied. Save draft to keep changes.')
+          }}
+        />
+      ) : null}
+      {node.data.kind === 'data' &&
+      !advanced &&
+      'sourceId' in node.data.config ? (
+        <DataNodeForm
+          config={
+            node.data.config as Extract<FlowNode, { type: 'data' }>['config']
+          }
+          token={token}
+          disabled={readonly}
+          onError={(error) => message(error, true)}
+          onApply={(value) => {
+            configure(node.id, value)
+            message('Configuration applied. Save draft to keep changes.')
+          }}
+        />
+      ) : null}
+      <Button
+        className="advanced-toggle"
+        variant="ghost"
+        aria-expanded={advanced}
+        onClick={() => setAdvanced(!advanced)}
+      >
+        Advanced configuration
       </Button>
+      {advanced ? (
+        <>
+          <label htmlFor="node-config">Node configuration</label>
+          <Textarea
+            id="node-config"
+            value={config}
+            onChange={(event) => setConfig(event.target.value)}
+            className="code-input"
+            rows={10}
+            disabled={readonly}
+            spellCheck={false}
+          />
+          <Button variant="outline" onClick={apply} disabled={readonly}>
+            Apply configuration
+          </Button>
+        </>
+      ) : null}
       <Button
         variant="ghost"
         className="remove-node"
@@ -269,10 +356,10 @@ function Canvas() {
           maxZoom={1.5}
           defaultEdgeOptions={{
             type: 'smoothstep',
-            style: { stroke: '#7e9b88', strokeWidth: 2 },
+            style: { stroke: 'var(--graph-edge)', strokeWidth: 2 },
           }}
         >
-          <Background color="#d8ded8" gap={20} size={1} />
+          <Background color="var(--graph-dot)" gap={22} size={1} />
           <Controls showInteractive={false} />
         </ReactFlow>
         <div className="canvas-hint">
@@ -291,12 +378,35 @@ function Canvas() {
 }
 
 export function Builder() {
+  const session = useStudio((state) => state.editorSession)
+  return <BuilderSession key={session} />
+}
+
+function BuilderSession() {
   const state = useStudio()
   const [input, setInput] = useState('{\n  "body": {},\n  "query": {}\n}')
-  const [operation, setOperation] = useState('{ hello { message } }')
+  const [advancedInput, setAdvancedInput] = useState(false)
+  const [inputError, setInputError] = useState('')
+  const [advancedSchema, setAdvancedSchema] = useState(false)
+  const [advancedGraphql, setAdvancedGraphql] = useState(false)
+  const [operation, setOperation] = useState(() => {
+    const data = state.nodes.find((node) => node.data.kind === 'data')
+    if (
+      state.graphql &&
+      data &&
+      'columns' in data.data.config &&
+      /\brows\s*(?:\([^)]*\))?\s*:/.test(state.graphql.schema)
+    ) {
+      return `{ rows { ${data.data.config.columns.join(' ')} } }`
+    }
+    return '{ hello { message } }'
+  })
   const [variables, setVariables] = useState('{}')
   const [operationName, setOperationName] = useState('')
   const writable = state.member?.role !== 'viewer'
+  const publishedEndpoint = state.flows.find(
+    (flow) => flow.id === state.id,
+  )?.publishedEndpoint
 
   function testFlow() {
     void state.task(async () => {
@@ -310,19 +420,9 @@ export function Builder() {
         })
         return
       }
-      const parsed: unknown = JSON.parse(input)
-      if (
-        !parsed ||
-        typeof parsed !== 'object' ||
-        !('body' in parsed) ||
-        !('query' in parsed) ||
-        !parsed.query ||
-        typeof parsed.query !== 'object' ||
-        Array.isArray(parsed.query) ||
-        Object.values(parsed.query).some((item) => typeof item !== 'string')
-      )
-        throw new Error('Use { "body": ..., "query": { "key": "value" } }.')
-      await state.test(parsed.body, parsed.query as Record<string, string>)
+      if (inputError && !advancedInput) throw new Error(inputError)
+      const parsed = parseRequestInput(input)
+      await state.test(parsed.body, parsed.query)
     })
   }
 
@@ -373,6 +473,7 @@ export function Builder() {
           <label htmlFor="api-name">API NAME</label>
           <Input
             id="api-name"
+            aria-label="API name"
             value={state.name}
             disabled={!writable || state.busy}
             onChange={(event) => state.edit({ name: event.target.value })}
@@ -439,32 +540,73 @@ export function Builder() {
         </div>
         <div className="private-label">
           <ShieldCheck size={16} />
-          <span>Token protected</span>
+          <span>API key protected</span>
         </div>
       </div>
+      <p className="credential-note endpoint-credential-note">
+        Owner and member keys manage drafts. Create an API key in API keys to
+        call a published endpoint.
+      </p>
+      {publishedEndpoint ? (
+        <div className="runtime-endpoint studio-runtime-endpoint">
+          <label htmlFor="studio-endpoint-url">
+            {publishedEndpoint.method} · Published endpoint URL
+          </label>
+          <Input
+            id="studio-endpoint-url"
+            aria-label="Published endpoint URL"
+            readOnly
+            value={
+              new URL(
+                `${publishedEndpoint.graphql ? '/graphql' : '/run'}${publishedEndpoint.path}`,
+                location.origin,
+              ).href
+            }
+          />
+        </div>
+      ) : null}
       {state.graphql ? (
         <section className="graphql-schema">
           <div className="panel-heading">
-            <label htmlFor="graphql-schema">GraphQL schema</label>
+            <strong>Typed API contract</strong>
             <span>TYPED CONTRACT</span>
           </div>
-          <Textarea
-            id="graphql-schema"
-            aria-label="GraphQL schema"
-            className="code-input"
-            rows={7}
-            spellCheck={false}
-            value={state.graphql.schema}
-            disabled={!writable || state.busy}
-            onChange={(event) =>
-              state.edit({ graphql: { schema: event.target.value } })
-            }
-          />
           <p>
-            Each query or mutation field runs this flow. Read arguments with{' '}
-            <code>$input.body.name</code>. Branch on <code>query.field</code> or{' '}
-            <code>query.operation</code> for different operations.
+            {state.nodes.some((node) => node.data.kind === 'data')
+              ? 'Returns selected spreadsheet fields as typed rows. Test the generated query below before publishing.'
+              : 'Response fields must match your typed contract. Open Advanced schema to review or customize it.'}
           </p>
+          <Button
+            variant="ghost"
+            className="advanced-toggle"
+            aria-expanded={advancedSchema}
+            onClick={() => setAdvancedSchema(!advancedSchema)}
+          >
+            Advanced schema
+          </Button>
+          {advancedSchema ? (
+            <>
+              <label htmlFor="graphql-schema">GraphQL schema</label>
+              <Textarea
+                id="graphql-schema"
+                aria-label="GraphQL schema"
+                className="code-input"
+                rows={7}
+                spellCheck={false}
+                value={state.graphql.schema}
+                disabled={!writable || state.busy}
+                onChange={(event) =>
+                  state.edit({ graphql: { schema: event.target.value } })
+                }
+              />
+              <p>
+                Each query or mutation field runs this flow. Read arguments with{' '}
+                <code>$input.body.name</code>. Branch on{' '}
+                <code>query.field</code> or <code>query.operation</code> for
+                different operations.
+              </p>
+            </>
+          ) : null}
         </section>
       ) : null}
       <section className="editor-panel">
@@ -492,7 +634,9 @@ export function Builder() {
         <div className="test-request">
           <div className="panel-heading">
             <strong>Try it out</strong>
-            <span>{state.graphql ? 'GRAPHQL OPERATION' : 'JSON INPUT'}</span>
+            <span>
+              {state.graphql ? 'GRAPHQL OPERATION' : 'REQUEST DETAILS'}
+            </span>
           </div>
           {state.graphql ? (
             <div className="graphql-inputs">
@@ -506,35 +650,84 @@ export function Builder() {
                 value={operation}
                 onChange={(event) => setOperation(event.target.value)}
               />
-              <label htmlFor="graphql-variables">Variables (JSON)</label>
-              <Textarea
-                id="graphql-variables"
-                aria-label="GraphQL variables"
-                className="code-input"
-                spellCheck={false}
-                rows={3}
-                value={variables}
-                onChange={(event) => setVariables(event.target.value)}
-              />
-              <label htmlFor="graphql-operation-name">
-                Operation name (optional)
-              </label>
-              <Input
-                id="graphql-operation-name"
-                aria-label="GraphQL operation name"
-                value={operationName}
-                onChange={(event) => setOperationName(event.target.value)}
-              />
+              <Button
+                variant="ghost"
+                className="advanced-toggle"
+                aria-expanded={advancedGraphql}
+                onClick={() => setAdvancedGraphql(!advancedGraphql)}
+              >
+                Advanced GraphQL input
+              </Button>
+              {advancedGraphql ? (
+                <>
+                  <label htmlFor="graphql-variables">Variables (JSON)</label>
+                  <Textarea
+                    id="graphql-variables"
+                    aria-label="GraphQL variables"
+                    className="code-input"
+                    spellCheck={false}
+                    rows={3}
+                    value={variables}
+                    onChange={(event) => setVariables(event.target.value)}
+                  />
+                  <label htmlFor="graphql-operation-name">
+                    Operation name (optional)
+                  </label>
+                  <Input
+                    id="graphql-operation-name"
+                    aria-label="GraphQL operation name"
+                    value={operationName}
+                    onChange={(event) => setOperationName(event.target.value)}
+                  />
+                </>
+              ) : null}
             </div>
           ) : (
-            <Textarea
-              aria-label="Test input"
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              className="code-input"
-              spellCheck={false}
-              rows={4}
-            />
+            <>
+              {advancedInput ? (
+                <Textarea
+                  aria-label="Test input"
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  className="code-input"
+                  spellCheck={false}
+                  rows={4}
+                />
+              ) : (
+                <RequestForm
+                  input={input}
+                  disabled={!writable || state.busy}
+                  onChange={(value, error) => {
+                    setInput(value)
+                    setInputError(error)
+                  }}
+                />
+              )}
+              <Button
+                variant="ghost"
+                className="advanced-toggle"
+                aria-expanded={advancedInput}
+                onClick={() => {
+                  if (advancedInput) {
+                    try {
+                      parseRequestInput(input)
+                    } catch (error) {
+                      state.message(
+                        error instanceof Error
+                          ? error.message
+                          : 'Check body and query fields.',
+                        true,
+                      )
+                      return
+                    }
+                  }
+                  setAdvancedInput(!advancedInput)
+                  setInputError('')
+                }}
+              >
+                Advanced test input
+              </Button>
+            </>
           )}
           <Button
             variant="outline"

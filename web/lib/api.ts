@@ -4,12 +4,45 @@ export type SavedFlow = Flow & {
   id: string
   revision: number
   publishedRevision: number | null
+  publishedEndpoint: {
+    method: Flow['method']
+    path: string
+    graphql: boolean
+  } | null
+}
+export type RuntimePermission = 'rest' | 'query' | 'mutation'
+export type RuntimeKey = {
+  id: string
+  name: string
+  flowId: string
+  permissions: RuntimePermission[]
+  expiresAt: string
+  createdAt: string
+  revokedAt: string | null
 }
 export type Member = {
   id: string
   name: string
   role: 'owner' | 'editor' | 'viewer'
 }
+export type DataSource = {
+  id: string
+  name: string
+  kind: 'upload' | 'google-sheets'
+  columns: {
+    key: string
+    label: string
+    type: 'string' | 'number' | 'boolean'
+    nullable: boolean
+  }[]
+  rowCount: number
+  version: number
+  createdAt: string
+  updatedAt: string
+  sheetName?: string
+  sourceUrl?: string
+}
+export type DataSourceDetail = DataSource & { rows: Record<string, unknown>[] }
 export type AuditEvent = {
   id: number
   actor: string

@@ -16,7 +16,9 @@ import {
 } from 'graphql'
 import { z } from 'zod'
 import { assertJsonLimit, executeFlow } from './engine'
-import type { Flow, FlowResult } from './model'
+import type { Flow, FlowResult, FlowContext } from './model'
+import { ApiError } from '../errors'
+import type { RuntimePermission } from '../store'
 
 const requestSchema = z.object({
   query: z.string().min(1).max(16_384),
@@ -89,7 +91,12 @@ function failure(message: string): FlowResult {
   return { status: 400, body: { errors: [{ message }] }, visited: [] }
 }
 
-export function executeGraphql(flow: Flow, value: unknown): FlowResult {
+export function executeGraphql(
+  flow: Flow,
+  value: unknown,
+  permissions?: readonly RuntimePermission[],
+  context: FlowContext = {},
+): FlowResult {
   try {
     assertJsonLimit(value)
   } catch {
@@ -104,6 +111,7 @@ export function executeGraphql(flow: Flow, value: unknown): FlowResult {
   const schema = graphqlSchema(flow)
   let document: DocumentNode
   let fields: number
+  let operation: string
   try {
     document = parse(request.query, { maxTokens: 2_000 })
     const errors = validate(
@@ -119,6 +127,7 @@ export function executeGraphql(flow: Flow, value: unknown): FlowResult {
         visited: [],
       }
     fields = operationLimits(document, request.operationName)
+    operation = getOperationAST(document, request.operationName)!.operation
   } catch (error) {
     return failure(
       error instanceof Error
@@ -126,6 +135,12 @@ export function executeGraphql(flow: Flow, value: unknown): FlowResult {
         : 'Invalid GraphQL operation',
     )
   }
+
+  if (
+    permissions &&
+    !permissions.some((permission) => permission === operation)
+  )
+    throw new ApiError(403, 'Runtime key does not allow this GraphQL operation')
 
   const visited: string[] = []
   let resolutions = 0
@@ -145,10 +160,17 @@ export function executeGraphql(flow: Flow, value: unknown): FlowResult {
         (info.parentType === schema.getQueryType() ||
           info.parentType === schema.getMutationType())
       ) {
-        const run = executeFlow(flow, {
-          body: args,
-          query: { field: info.fieldName, operation: info.operation.operation },
-        })
+        const run = executeFlow(
+          flow,
+          {
+            body: args,
+            query: {
+              field: info.fieldName,
+              operation: info.operation.operation,
+            },
+          },
+          context,
+        )
         visited.push(...run.visited)
         if (run.status >= 400)
           throw new GraphQLError(`Flow returned HTTP ${run.status}`, {

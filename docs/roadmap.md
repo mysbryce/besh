@@ -13,16 +13,19 @@ This is the product plan. Planned features are not implementation claims.
 - Clear setup, contribution, security, AI, and community policies.
 - Reproducible gallery of current pages, actions, error states, permissions, and phone layouts.
 - Custom styled accessible controls and per-API GraphQL schemas, query/mutation execution, variables, and bounded field selection.
+- Owner-issued runtime API keys for one published flow, required expiration, REST/query/mutation grants, hash-only storage, and immediate revocation; member identity stays at the management boundary.
+- Beginner response/request/condition/data field forms with optional advanced JSON, generated GraphQL queries and optional schema editing, readable light/dark themes, and a mobile saved-API picker.
+- CSV/Excel imports and public Google Sheets snapshots, reviewed column mapping, generated REST/typed GraphQL drafts, bounded data reads, manual snapshot replacement/refresh, and referenced-source deletion protection.
 
-Current limits: one local workspace, exact HTTP paths, three node types, fixed roles, manual SQLite backups. No external providers are enabled. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
+Current limits: one local workspace, exact HTTP paths, four node types, fixed roles, manual SQLite backups, and read-only spreadsheet snapshots. Google Sheets supports public exports; private OAuth, spreadsheet write-back, and database adapters remain planned. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
 
 ## Milestone 2: identity and API contracts
 
+- Input/output schemas, generated OpenAPI, public endpoint policy, field-level and record-level authorization, key rotation workflows, and release-pinned grants where needed.
 - Social sign-in: GitHub, Discord, Facebook, Google, generic OIDC.
 - Invites, account recovery, session expiry and revocation.
 - Per-workspace roles and custom permission grants.
-- Input/output schemas, generated OpenAPI, API keys and scoped tokens.
-- Extend GraphQL with scoped per-operation grants, reviewed introspection policy, custom scalar contracts, and subscriptions alongside WebSocket work.
+- Extend GraphQL with reviewed introspection policy, custom scalar contracts, and subscriptions alongside WebSocket work. Whole-query/mutation runtime grants are implemented; field-level grants remain planned.
 - WebSocket flows, lifecycle events, subscriptions, quotas and revocation.
 - Path parameters, versioned routes, rollback, pagination, retry and error nodes.
 
@@ -30,6 +33,7 @@ Current limits: one local workspace, exact HTTP paths, three node types, fixed r
 
 - SQLite, PostgreSQL, MySQL/MariaDB, MongoDB, Supabase, Firebase adapters.
 - Connection testing and encrypted secret references.
+- Private Google Sheets OAuth, spreadsheet write-back, and scheduled synchronization beyond current manual public-sheet snapshots.
 - Parameterized query builder and explicit transaction capabilities.
 - Migration plans with dry runs, backup gates and restore verification.
 - Backup scheduling, retention, encryption and off-site storage.
@@ -61,6 +65,6 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 1. Start with `bun install --frozen-lockfile` and `bun run setup`; complete the local wizard.
 2. Run `bun run preview:all` and gather feedback on pages, node configuration, and route design before expanding the graph format.
-3. Implement Milestone 2: separate endpoint credentials from member identity, then session-based social sign-in and per-endpoint schemas.
+3. Continue Milestone 2: input/output schemas and generated OpenAPI, then session-based social sign-in. Review public endpoint policy and finer data permissions before exposing endpoints publicly.
 4. Add integration tests against each real provider as its adapter is built. Do not mark provider support complete from mocks.
 5. Choose a GitHub repository and private reporting contact before public release, then configure CI and update notices.
