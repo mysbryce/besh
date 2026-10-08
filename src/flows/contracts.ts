@@ -16,6 +16,7 @@ export type ApiSchema = SchemaDetails &
     | { type: 'boolean' }
   )
 export type ApiContract = {
+  params?: ApiSchema
   query?: ApiSchema
   body?: ApiSchema
   response?: ApiSchema
@@ -97,6 +98,7 @@ export const apiSchema: z.ZodType<ApiSchema> = z.lazy(() =>
 
 export const contractSchema = z
   .object({
+    params: apiSchema.optional(),
     query: apiSchema.optional(),
     body: apiSchema.optional(),
     response: apiSchema.optional(),
@@ -154,19 +156,20 @@ export const contractSchema = z
     }
 
     for (const schema of Object.values(contract)) if (schema) visit(schema, 1)
-    const query = contract.query
-    if (
-      query &&
-      (query.type !== 'object' ||
-        query.nullable ||
-        Object.values(query.properties ?? {}).some(
-          (schema) =>
-            schema.type === 'object' ||
-            schema.type === 'array' ||
-            schema.nullable,
-        ))
-    )
-      invalid = true
+    for (const query of [contract.query, contract.params]) {
+      if (
+        query &&
+        (query.type !== 'object' ||
+          query.nullable ||
+          Object.values(query.properties ?? {}).some(
+            (schema) =>
+              schema.type === 'object' ||
+              schema.type === 'array' ||
+              schema.nullable,
+          ))
+      )
+        invalid = true
+    }
     if (invalid)
       context.addIssue({
         code: 'custom',
@@ -244,14 +247,21 @@ export function checkValue(
 
 export function prepareInput(
   contract: ApiContract | undefined,
-  input: { body: unknown; query: Record<string, string> },
+  input: {
+    body: unknown
+    query: Record<string, string>
+    params?: Record<string, string>
+  },
 ) {
   if (!contract) return input
-  const query: Record<string, string | number | boolean> = { ...input.query }
-  if (contract.query?.type === 'object') {
-    for (const [name, schema] of Object.entries(
-      contract.query.properties ?? {},
-    )) {
+  function coerce(
+    rules: ApiSchema | undefined,
+    values: Record<string, string>,
+    location: string,
+  ) {
+    const query: Record<string, string | number | boolean> = { ...values }
+    if (rules?.type !== 'object') return query
+    for (const [name, schema] of Object.entries(rules.properties ?? {})) {
       if (!Object.hasOwn(query, name)) continue
       const value = query[name]
       if (schema.type === 'number' || schema.type === 'integer') {
@@ -259,16 +269,23 @@ export function prepareInput(
           typeof value !== 'string' ||
           !/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(value)
         )
-          mismatch(`query.${name}`, schema.type)
+          mismatch(`${location}.${name}`, schema.type)
         query[name] = Number(value)
       } else if (schema.type === 'boolean') {
         if (value !== 'true' && value !== 'false')
-          mismatch(`query.${name}`, 'boolean')
+          mismatch(`${location}.${name}`, 'boolean')
         query[name] = value === 'true'
       }
     }
-    checkValue(contract.query, query, 'query')
+    checkValue(rules, query, location)
+    return query
   }
+  const query = coerce(contract.query, input.query, 'query')
+  const params = coerce(contract.params, input.params ?? {}, 'params')
   if (contract.body) checkValue(contract.body, input.body, 'body')
-  return { body: input.body, query }
+  return {
+    body: input.body,
+    query,
+    params,
+  }
 }

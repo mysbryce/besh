@@ -38,31 +38,38 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 
 ## Workspace
 
-| Method | Path                           | Permission / body                                                                     |
-| ------ | ------------------------------ | ------------------------------------------------------------------------------------- |
-| GET    | `/api/me`                      | Any member                                                                            |
-| GET    | `/api/flows`                   | Any member; full drafts and revision metadata                                         |
-| GET    | `/api/flows/:id`               | Any member                                                                            |
-| GET    | `/api/flows/:id/openapi`       | Any member; `source=draft` or `source=published` (default); saved REST snapshot only  |
-| POST   | `/api/flows`                   | Owner/editor; flow definition                                                         |
-| PUT    | `/api/flows/:id`               | Owner/editor; flow definition plus current `revision`                                 |
-| POST   | `/api/flows/:id/test`          | Owner/editor; `{ "body": {}, "query": {} }`                                           |
-| POST   | `/api/flows/:id/graphql/test`  | Owner/editor; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`   |
-| POST   | `/api/flows/:id/publish`       | Owner; `{ "revision": 1 }`                                                            |
-| GET    | `/api/members`                 | Owner; no credential hashes or tokens                                                 |
-| POST   | `/api/members`                 | Owner; `{ "name": "Reader", "role": "viewer" }`; role may be `editor`                 |
-| DELETE | `/api/members/:id`             | Owner; cannot remove bootstrap owner                                                  |
-| GET    | `/api/runtime-keys`            | Owner; key metadata, including revoked keys; no tokens or hashes                      |
-| POST   | `/api/runtime-keys`            | Owner; name, published flow ID, grants, expiration; returns the token once            |
-| POST   | `/api/runtime-keys/:id/rotate` | Owner; replaces an active key with identical scope and expiration; returns token once |
-| DELETE | `/api/runtime-keys/:id`        | Owner; immediate revocation; retains metadata                                         |
-| GET    | `/api/audit`                   | Owner; latest 200 events, newest first                                                |
-| GET    | `/api/migrations`              | Owner; schema versions in applied order                                               |
-| GET    | `/api/backups`                 | Owner; local backup metadata                                                          |
-| POST   | `/api/backups`                 | Owner; creates snapshot                                                               |
-| GET    | `/api/backups/:id`             | Owner; SQLite download                                                                |
+| Method | Path                                | Permission / body                                                                     |
+| ------ | ----------------------------------- | ------------------------------------------------------------------------------------- |
+| GET    | `/api/me`                           | Any member                                                                            |
+| GET    | `/api/flows`                        | Any member; full drafts and revision metadata                                         |
+| GET    | `/api/flows/:id`                    | Any member                                                                            |
+| GET    | `/api/flows/:id/releases`           | Any member; immutable published revisions and current selection                       |
+| GET    | `/api/flows/:id/releases/:revision` | Any member; selected release definition and current flag                              |
+| GET    | `/api/flows/:id/openapi`            | Any member; `source=draft` or `source=published` (default); saved REST snapshot only  |
+| POST   | `/api/flows`                        | Owner/editor; flow definition                                                         |
+| PUT    | `/api/flows/:id`                    | Owner/editor; flow definition plus current `revision`                                 |
+| POST   | `/api/flows/:id/test`               | Owner/editor; `{ "body": {}, "query": {}, "params": {} }`                             |
+| POST   | `/api/flows/:id/graphql/test`       | Owner/editor; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`   |
+| POST   | `/api/flows/:id/publish`            | Owner; `{ "revision": 1 }`                                                            |
+| POST   | `/api/flows/:id/rollback`           | Owner; `{ "revision": 1, "publishedRevision": 3 }`; selects release 1 if 3 is current |
+| GET    | `/api/members`                      | Owner; no credential hashes or tokens                                                 |
+| POST   | `/api/members`                      | Owner; `{ "name": "Reader", "role": "viewer" }`; role may be `editor`                 |
+| DELETE | `/api/members/:id`                  | Owner; cannot remove bootstrap owner                                                  |
+| GET    | `/api/runtime-keys`                 | Owner; key metadata, including revoked keys; no tokens or hashes                      |
+| POST   | `/api/runtime-keys`                 | Owner; name, published flow ID, grants, expiration; returns the token once            |
+| POST   | `/api/runtime-keys/:id/rotate`      | Owner; replaces an active key with identical scope and expiration; returns token once |
+| DELETE | `/api/runtime-keys/:id`             | Owner; immediate revocation; retains metadata                                         |
+| GET    | `/api/audit`                        | Owner; latest 200 events, newest first                                                |
+| GET    | `/api/migrations`                   | Owner; schema versions in applied order                                               |
+| GET    | `/api/backups`                      | Owner; local backup metadata                                                          |
+| POST   | `/api/backups`                      | Owner; creates snapshot                                                               |
+| GET    | `/api/backups/:id`                  | Owner; SQLite download                                                                |
 
 Drafts may be incomplete. Publishing and testing require one request node, reachable nodes, valid edges, and a response at every terminal path. Conditions require exactly one `true` and one `false` edge. Cycles are rejected.
+
+Release-list entries contain `revision`, `createdAt`, `endpoint: { method, path, graphql }`, and `current`. Release detail contains `revision`, `createdAt`, the saved `definition`, and `current`. Unknown flows or releases return `404`. Releases are created by publication, not every draft save.
+
+Rollback accepts exactly the two positive integer fields shown above. It changes only the published selection and returns the updated flow metadata; the draft revision and definition stay intact. The server validates the target graph, current dependencies, route availability, and expected current publication before committing with `flow.rolled-back`. Selecting the already current release, a stale publication, or a conflicting route returns `409`. Publication and rollback also return `409` while this flow has an active load test. Runtime keys keep their flow scope and grants; referenced spreadsheet/OAuth data is not rolled back. See [routes and release history](api-routes.md).
 
 Member creation also accepts optional `email` and `password` together, using the same account rules as setup. It still returns a member key once. Member listing exposes only member ID, name, and role; members read their own email through `/api/account`. No invitation email is sent. Removing a member cascades to its account and sessions.
 
@@ -78,7 +85,7 @@ Every load-test management route requires the workspace owner. Editors and viewe
 | POST   | `/api/load-tests`            | Starts a run; returns its record with `202`                   |
 | POST   | `/api/load-tests/:id/cancel` | Cancels a running run; returns its updated record             |
 
-A default REST start needs only `{ "flowId": "<published-flow-id>" }` when its contract needs no input. Optional settings and request fields:
+A default REST start needs only `{ "flowId": "<published-flow-id>" }` when its route and contract require no input. A `/v1/items/:id` target needs `request.params.id`. Optional settings and request fields for that target:
 
 ```json
 {
@@ -91,6 +98,7 @@ A default REST start needs only `{ "flowId": "<published-flow-id>" }` when its c
     "expectedStatus": null
   },
   "request": {
+    "params": { "id": "42" },
     "query": { "name": "Ada" },
     "body": null
   }
@@ -116,7 +124,9 @@ For GraphQL, use `request.graphql` with the published schema:
 
 The operation document is limited to 16,384 characters, and an optional operation name to 100. Normal published-schema validation and GraphQL execution budgets apply. The server derives the temporary key's query/mutation grant from the selected operation. REST input cannot substitute for a GraphQL operation.
 
-Target records contain `id`, `name`, published `revision`, `method`, `path`, `graphql` schema metadata or `null`, and `unavailableReason`. Targets derive from the release, even after editing a different draft route. Run metadata captures the starting release, while requests invoke its live route; avoid republishing during a test because execution is not release-pinned. Product-login/social flows are unavailable for automatic tests. The server accepts no arbitrary target URL, scripts, shell command, or custom headers.
+For parameterized REST targets, `request.params` supplies decoded text values for every route parameter, such as `{ "id": "42" }` for `/v1/items/:id`. Omit `params` or use `{}` for a literal route. Missing, extra, malformed, and unsafe values are rejected; declared path rules also apply. The server encodes the concrete path before launching k6. GraphQL does not accept path parameters.
+
+Target records contain `id`, `name`, published `revision`, `method`, `path`, `graphql` schema metadata or `null`, and `unavailableReason`. Targets derive from the release, even after editing a different draft route. Run metadata captures the starting release and requests invoke its live route. Publication and rollback for the target flow return `409` while its run is active. Mutable source data and credentials remain outside this route lock. Product-login/social flows are unavailable for automatic tests. The server accepts no arbitrary target URL, scripts, shell command, or custom headers.
 
 Run records contain `id`, `flowId`, `flowName`, published `revision`, `method`, `path`, boolean `graphql`, resolved `config`, `status`, `createdAt`, nullable `finishedAt`, nullable `summary`, and nullable safe `error`. Summary fields are `requests`, `requestsPerSecond`, `failedRequests`, `checkRate`, `avgMs`, `p95Ms`, `maxMs`, and `thresholdsPassed`; rates use fractions or requests per second, and latency uses milliseconds. Status is `running`, `completed`, `failed`, `canceled`, or `interrupted`. Missing a goal still produces `completed` with `thresholdsPassed: false`; `failed` means provisioning/runner failure.
 
@@ -153,7 +163,11 @@ SQLite history and backups contain endpoint/settings/result metadata, excluding 
 
 Condition config: `{ "field": "body.active", "equals": true }`. Edges from that condition use `sourceHandle: "true"` and `sourceHandle: "false"`.
 
-Create/update responses add `id`, `revision`, `publishedRevision`, and `publishedEndpoint`. The last field is `null` before publication; otherwise it contains the live release's `method`, `path`, and GraphQL flag separately from editable draft settings. Save increments revision. Publish retains an immutable copy and atomically selects it for the live route. Route conflicts and stale revisions return `409`.
+REST paths support whole-segment parameters such as `/v1/items/:id`. Parameter names match `[A-Za-z_][A-Za-z0-9_]{0,63}`, must be unique, and cannot be `__proto__`, `prototype`, or `constructor`. Optional segments, wildcards, and regex are unsupported. GraphQL uses exact literal paths. Different version prefixes are separate flows, without automatic compatibility guarantees.
+
+Draft test `params` and `query` values are text. For parameterized routes, supply exactly the path's parameter names; the server validates values before execution. Runtime path values are decoded once; malformed encoding, decoded slash/backslash/control characters, empty values, and the exact `.` or `..` segments are rejected. Response references can use `$input.params.id`, and conditions can use `params.id`. Optional scalar path rules under `contract.params` convert declared numeric/boolean values like query rules. See [API contracts](api-contracts.md).
+
+Create/update responses add `id`, `revision`, `publishedRevision`, and `publishedEndpoint`. The last field is `null` before publication; otherwise it contains the live release's `method`, `path`, and GraphQL flag separately from editable draft settings. Save increments revision. Publish retains an immutable copy and atomically selects it for the live route. Route conflicts and stale revisions return `409`. Same-method REST routes cannot overlap: `/items/:id` conflicts with `/items/new` and `/items/:slug`. This keeps scoped-key routing unambiguous; Besh does not resolve conflicts by preferring literal paths.
 
 ## Spreadsheet data sources
 
@@ -270,7 +284,7 @@ Replacement uses the existing key and audit tables without a schema migration. R
 
 ## Runtime
 
-Published routes live at `/run` plus their configured path. All seven supported methods require a runtime API key with the `rest` grant for that flow. Paths are exact; route parameters are not implemented. Query values start as strings; optional REST rules convert declared numeric and boolean fields before execution. HEAD and status codes 204, 205 and 304 return no body.
+Published routes live at `/run` plus their configured path. All seven supported methods require a runtime API key with the `rest` grant for that flow. Paths are literal or use safe whole-segment parameters such as `/v1/items/:id`. Path and query values start as strings; optional REST rules convert declared numeric and boolean fields before execution. HEAD and status codes 204, 205 and 304 return no body.
 
 ```sh
 curl 'http://127.0.0.1:3000/run/hello?name=Ada' \
@@ -279,6 +293,6 @@ curl 'http://127.0.0.1:3000/run/hello?name=Ada' \
 
 The test endpoint returns `{ "status": 200, "body": {}, "visited": ["start", "done"] }`. The runtime endpoint returns the configured body and HTTP status directly.
 
-Flows may include optional `contract.query`, `contract.body`, and `contract.response` schemas. REST draft tests and live calls enforce these rules; GraphQL uses its SDL contract. OpenAPI export describes the selected saved REST draft or immutable published release. See [API rules and OpenAPI](api-contracts.md) for the schema subset, validation behavior, and export boundary.
+Flows may include optional `contract.params`, `contract.query`, `contract.body`, and `contract.response` schemas. REST draft tests and live calls enforce these rules; GraphQL uses its SDL contract. OpenAPI export describes the selected saved REST draft or immutable published release. See [API rules and OpenAPI](api-contracts.md) for the schema subset, validation behavior, and export boundary.
 
 The GitHub social node performs only its bounded provider exchange and profile read. Arbitrary code, database access, general external HTTP request nodes, other social providers, WebSocket endpoints, and AI execution remain unimplemented. Workspace email/password and key sessions never replace runtime API keys.

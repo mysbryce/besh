@@ -7,6 +7,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [Getting started](getting-started.md): installation, first API, runtime keys, roles, configuration, recovery, project layout, and development commands.
 - [Workspace accounts and sessions](workspace-auth.md): key or email/password sign-in, account changes, session metadata, revocation, and recovery boundaries.
 - [Runtime API keys](api-keys.md): create, use, replace, revoke, expire, save one-time tokens, and review restored access.
+- [REST routes and release history](api-routes.md): path parameters, explicit version prefixes, overlapping routes, release inspection, and rollback boundaries.
 - [Built-in k6 load testing](load-testing.md): published API targets, automatic local k6 setup, optional goals, live write confirmation, results, and history.
 - [GitHub product login](product-auth.md): OAuth app setup, generated REST/GraphQL drafts, server-held proof, product callbacks, identity results, and encryption-key backups.
 - [Core API reference](api.md): setup and management HTTP routes, flow format, runtime-key lifecycle, and published REST authentication.

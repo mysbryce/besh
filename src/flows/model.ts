@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { contractSchema } from './contracts'
+import { validRoute, routeParameters } from './routes'
 export type { ApiSchema, ApiContract } from './contracts'
 
 const position = z.object({ x: z.number().finite(), y: z.number().finite() })
@@ -17,10 +18,7 @@ export const flowSchema = z
       'HEAD',
       'OPTIONS',
     ]),
-    path: z
-      .string()
-      .max(160)
-      .regex(/^\/[a-zA-Z0-9/_-]+$/),
+    path: z.string().max(160).refine(validRoute),
     graphql: z.object({ schema: z.string().min(1).max(16_384) }).optional(),
     contract: contractSchema.optional(),
     nodes: z
@@ -90,6 +88,28 @@ export const flowSchema = z
       .max(128),
   })
   .superRefine((flow, context) => {
+    if (flow.graphql && routeParameters(flow.path).length)
+      context.addIssue({
+        code: 'custom',
+        message: 'GraphQL paths must be exact',
+      })
+    const params = flow.contract?.params
+    const names = routeParameters(flow.path)
+    if (
+      params &&
+      (params.type !== 'object' ||
+        Object.keys(params.properties ?? {}).length !== names.length ||
+        names.some(
+          (name) =>
+            !Object.hasOwn(params.properties ?? {}, name) ||
+            !params.required?.includes(name),
+        ))
+    )
+      context.addIssue({
+        code: 'custom',
+        message:
+          'Path rules must declare and require exactly the route parameters',
+      })
     if (
       flow.contract &&
       (flow.graphql ||
@@ -110,5 +130,9 @@ export type FlowContext = {
   readData?: (config: DataReadConfig) => unknown
   social?: (config: SocialConfig, input: { body: unknown }) => Promise<unknown>
 }
-export type FlowInput = { body: unknown; query: Record<string, string> }
+export type FlowInput = {
+  body: unknown
+  query: Record<string, string>
+  params?: Record<string, string>
+}
 export type FlowResult = { status: number; body: unknown; visited: string[] }

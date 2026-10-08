@@ -1,4 +1,5 @@
 import type { ApiSchema, Flow } from './model'
+import { routeParameters } from './routes'
 
 function jsonSchema(schema: ApiSchema): Record<string, unknown> {
   const { nullable, ...result } = schema
@@ -88,13 +89,27 @@ export function flowOpenapi(
         }))
       : []
   const body = flow.contract?.body
+  const pathRules = flow.contract?.params
+  parameters.unshift(
+    ...routeParameters(flow.path).map((name) => {
+      const schema =
+        pathRules?.type === 'object' ? pathRules.properties?.[name] : undefined
+      return {
+        name,
+        in: 'path',
+        required: true,
+        ...(schema?.description ? { description: schema.description } : {}),
+        schema: schema ? jsonSchema(schema) : { type: 'string' },
+      }
+    }),
+  )
   return {
     openapi: '3.1.1',
     info: { title: flow.name, version: String(revision) },
     'x-besh-source': source,
     'x-besh-revision': revision,
     paths: {
-      [`/run${flow.path}`]: {
+      [`/run${flow.path.replace(/:([a-zA-Z_][a-zA-Z0-9_]*)/g, '{$1}')}`]: {
         [flow.method.toLowerCase()]: {
           operationId: `flow_${id}`,
           security: [{ RuntimeKey: [] }],

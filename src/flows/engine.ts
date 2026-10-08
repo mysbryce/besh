@@ -8,6 +8,7 @@ import {
 } from './model'
 import { checkValue, prepareInput } from './contracts'
 import { ApiError } from '../errors'
+import { concreteRoute } from './routes'
 
 export function validateFlow(value: unknown) {
   assertJsonLimit(value)
@@ -86,7 +87,7 @@ export function assertJsonLimit(value: unknown) {
 function readPath(input: unknown, path: string): unknown {
   const parts = path.split('.')
   if (
-    !['body', 'query'].includes(parts[0]) ||
+    !['body', 'query', 'params'].includes(parts[0]) ||
     parts.some(
       (part) =>
         !/^[a-zA-Z0-9_-]+$/.test(part) ||
@@ -138,6 +139,7 @@ export async function executeFlow(
 ): Promise<FlowResult> {
   assertJsonLimit(input)
   const flow = validateFlow(value)
+  concreteRoute(flow.path, input.params)
   const prepared = prepareInput(flow.contract, input)
   let node: FlowNode | undefined = flow.nodes.find(
     (item) => item.type === 'request',

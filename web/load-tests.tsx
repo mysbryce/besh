@@ -12,7 +12,7 @@ import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import { Textarea } from './components/ui/textarea'
-import { parseRequestInput, RequestForm } from './flow-forms'
+import { parseRequestInput, RequestForm, routeParameters } from './flow-forms'
 import { api } from './lib/api'
 import { useStudio } from './store'
 
@@ -318,7 +318,7 @@ function StartForm({
 }) {
   const [config, setConfig] = useState(defaults)
   const [settings, setSettings] = useState(false)
-  const [inputs, setInputs] = useState(false)
+  const [inputs, setInputs] = useState(routeParameters(target.path).length > 0)
   const [advanced, setAdvanced] = useState(false)
   const [request, setRequest] = useState(
     JSON.stringify({
@@ -394,11 +394,20 @@ function StartForm({
                 : {}),
             },
           }
-        : requestTouched || advanced
+        : requestTouched || advanced || routeParameters(target.path).length > 0
           ? parseRequestInput(request)
           : { body: null, query: {} }
       if (target.graphql && !operation.trim())
         throw new Error('Enter a GraphQL query or mutation.')
+      if (
+        !target.graphql &&
+        routeParameters(target.path).some(
+          (name) => !('params' in input) || !input.params?.[name]?.trim(),
+        )
+      )
+        throw new Error(
+          'Enter a value for every path parameter in Request inputs.',
+        )
       onRun(input, config)
     } catch (reason) {
       setError(
@@ -574,6 +583,7 @@ function StartForm({
       {inputs && !target.graphql && !advanced ? (
         <RequestForm
           input={request}
+          path={target.path}
           disabled={disabled}
           onChange={(value, issue) => {
             setRequest(value)

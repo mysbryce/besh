@@ -14,7 +14,7 @@ The default test uses one virtual user for five seconds, a p95 latency goal of 1
 
 The first run downloads pinned k6 2.3.0 from its [official release](https://github.com/grafana/k6/releases/tag/v2.3.0), verifies the archive SHA-256 against the release checksum, and caches the executable under `.cache/k6`. Internet access is required for that first download. Later runs can use the cached binary offline. A failed download leaves a failed run with a safe error; retry after correcting network or cache access.
 
-Required input remains required: Besh validates REST request values against the published contract and GraphQL operations and variables against the published schema before starting. Draft edits do not change the selected live route or its rules. REST request values and GraphQL variables use labeled field forms; advanced JSON remains optional. The GraphQL operation is visible and editable, with an example generated from its published schema.
+Required input remains required: Besh validates REST path values and request rules, and GraphQL operations and variables against the published schema before starting. For `/v1/items/:id`, fill `id` with decoded text such as `42`; Besh encodes the concrete `/run/v1/items/42` target. Missing, extra, and unsafe path values fail before launch. Draft edits do not change the selected live route or its rules. REST request values and GraphQL variables use labeled field forms; advanced JSON remains optional. The GraphQL operation is visible and editable, with an example generated from its published schema.
 
 ## Optional settings
 
@@ -48,7 +48,7 @@ Only owners can list targets, start runs, view history, inspect a run, or cancel
 
 Targets are this Besh instance's published APIs. Arbitrary URLs, uploaded scripts, custom shell commands, and arbitrary request headers are not accepted. The server derives the method, route, validation rules, and temporary key grants from the published release at start. REST methods and GraphQL queries/mutations use the same live runtime authentication and execution boundary as normal callers. Existing caller keys and grants are unchanged.
 
-Avoid republishing an API during its test. History records the starting revision, but requests call the live route and temporary keys follow their flow like other runtime keys. Republishing can change the behavior or route while a run is active; the test does not pin runtime execution to a release.
+Publication and rollback for the tested flow are blocked until its active run finishes or is canceled. History records the starting revision, requests call the live route, and temporary keys follow their flow like other runtime keys. This lock prevents changing that route during the run; it does not freeze spreadsheet snapshots, OAuth credentials, or other mutable dependencies. See [release history](api-routes.md).
 
 Write methods and GraphQL mutations repeatedly invoke the live API. The dashboard asks for confirmation after showing this risk. Direct owner API clients authorize the run by sending the start request; there is no extra confirmation property in its body. There is no transaction rollback or synthetic test database. Published product OAuth/social-login flows are unavailable for automatic load testing: generating manufactured authorization attempts would exercise a different workflow and provider boundary.
 

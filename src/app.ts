@@ -1,4 +1,6 @@
 import { Elysia, t } from 'elysia'
+import { version } from '../package.json'
+import { z } from 'zod'
 import { openStore, hashToken } from './store'
 import { allow, ApiError } from './errors'
 import { flowService } from './flows/service'
@@ -235,6 +237,36 @@ export function createApp(options: AppOptions) {
     })
     .get('/flows', () => flows.list())
     .get('/flows/:id', ({ params }) => flows.get(params.id))
+    .get('/flows/:id/releases', ({ params }) => flows.releases(params.id))
+    .get('/flows/:id/releases/:revision', ({ params }) => {
+      if (
+        !/^[1-9]\d*$/.test(params.revision) ||
+        !Number.isSafeInteger(Number(params.revision))
+      )
+        throw new ApiError(400, 'Choose a positive release revision')
+      return flows.release(params.id, Number(params.revision))
+    })
+    .post('/flows/:id/rollback', ({ member, params, body }) => {
+      allow(member, ['owner'])
+      const result = z
+        .object({
+          revision: z.number().int().positive().safe(),
+          publishedRevision: z.number().int().positive().safe(),
+        })
+        .strict()
+        .safeParse(body)
+      if (!result.success)
+        throw new ApiError(
+          400,
+          'Provide target and expected published revisions',
+        )
+      return flows.rollback(
+        member.id,
+        params.id,
+        result.data.revision,
+        result.data.publishedRevision,
+      )
+    })
     .get('/flows/:id/openapi', ({ params, request }) => {
       const selections = new URL(request.url).searchParams.getAll('source')
       if (selections.length > 1)
@@ -283,6 +315,7 @@ export function createApp(options: AppOptions) {
         body: t.Object({
           body: t.Any(),
           query: t.Record(t.String(), t.String()),
+          params: t.Optional(t.Record(t.String(), t.String())),
         }),
       },
     )
@@ -425,7 +458,7 @@ export function createApp(options: AppOptions) {
         ? { errors: [{ message }] }
         : { error: message }
     })
-    .get('/health', () => ({ status: 'ok', version: '0.1.0' }))
+    .get('/health', () => ({ status: 'ok', version }))
     .post(
       '/auth/login',
       async ({ body, set, request }) => {
@@ -507,15 +540,20 @@ export function createApp(options: AppOptions) {
         headers: { 'content-type': 'application/graphql-response+json' },
       })
     })
-    .all('/run/*', async ({ request, params, body, query }) => {
+    .all('/run/*', async ({ request, body, query }) => {
       const token = bearer(request)
       const key = store.authenticateRuntime(token)
       if (!key) throw new ApiError(401, 'Authentication required')
 
-      const result = await flows.run(key, request.method, `/${params['*']}`, {
-        body: body ?? null,
-        query,
-      })
+      const result = await flows.run(
+        key,
+        request.method,
+        new URL(request.url).pathname.slice(4),
+        {
+          body: body ?? null,
+          query,
+        },
+      )
       const empty =
         request.method === 'HEAD' ||
         result.status === 204 ||

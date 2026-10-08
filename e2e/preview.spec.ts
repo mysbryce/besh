@@ -3111,6 +3111,272 @@ test('preview every current page and its actions', async ({
     'Load test audit events',
     'Job start, completion, cancellation, and temporary key lifecycle use metadata-only audit records.',
   )
+  await navigate('API Studio')
+  await page.getByRole('button', { name: 'New API', exact: true }).click()
+  await page
+    .getByLabel('API name', { exact: true })
+    .fill('Versioned customer API')
+  await page
+    .getByLabel('Endpoint path', { exact: true })
+    .fill('/v1/preview-customers/:id')
+  await page.getByLabel('Path parameter id', { exact: true }).fill('42')
+  await capture(
+    'API Studio',
+    'Versioned route input forms',
+    'A named whole route segment supplies a labeled path parameter input. Versions such as /v1 are ordinary route prefixes.',
+  )
+  await page.getByRole('button', { name: 'API rules', exact: true }).click()
+  await page
+    .getByRole('checkbox', { name: 'Validate path parameters', exact: true })
+    .check()
+  await page
+    .getByRole('combobox', { name: 'Path id type', exact: true })
+    .click()
+  await capture(
+    'API Studio',
+    'Scalar path rule choices',
+    'Route names are fixed and required. Scalar path types use the same custom controls as other API rules.',
+  )
+  await page.getByRole('option', { name: 'Whole number', exact: true }).click()
+  await page
+    .locator('.react-flow__node')
+    .filter({ hasText: 'JSON response' })
+    .click()
+  await page.getByLabel('Field name 1', { exact: true }).fill('id')
+  await page
+    .getByRole('combobox', { name: 'Field type 1', exact: true })
+    .click()
+  await page
+    .getByRole('option', { name: 'From path parameter', exact: true })
+    .click()
+  await page.getByLabel('Field value 1', { exact: true }).fill('id')
+  await capture(
+    'API Studio',
+    'Path parameter response reference',
+    'Response fields can read a path parameter without writing reference syntax or JSON.',
+  )
+  await page
+    .getByRole('button', { name: 'Apply configuration', exact: true })
+    .click()
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await notice('Draft saved')
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByTestId('test-result')).toContainText('"id": 42')
+  await capture(
+    'API Studio',
+    'Typed route draft test',
+    'Actual server validation converts the declared path integer and returns 42 in the draft response.',
+  )
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await notice('Published')
+  const routePreviewFlow = (
+    await (
+      await page.request.get('/api/flows', { headers: rotationHeaders })
+    ).json()
+  ).find((flow: { name: string }) => flow.name === 'Versioned customer API')
+  await page
+    .getByLabel('Endpoint path', { exact: true })
+    .fill('/v2/preview-customers/:id')
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await notice('Draft saved')
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await notice('Published')
+  await page
+    .getByRole('button', { name: 'Release history', exact: true })
+    .click()
+  await expect(
+    page.getByRole('button', { name: 'Review release 1', exact: true }),
+  ).toBeVisible()
+  await capture(
+    'API Studio',
+    'Versioned release history',
+    'Immutable releases show their actual method and route, creation time, and current live status.',
+  )
+  await page
+    .getByRole('button', { name: 'Review release 2', exact: true })
+    .click()
+  await expect(
+    page.getByRole('button', { name: 'Roll back to release 2', exact: true }),
+  ).toBeDisabled()
+  await capture(
+    'API Studio',
+    'Current release review',
+    'The current release is read only and cannot be rolled back to itself.',
+  )
+  await page
+    .getByLabel('API name', { exact: true })
+    .fill('Unsaved customer idea')
+  await page
+    .getByRole('button', { name: 'Review release 1', exact: true })
+    .click()
+  await capture(
+    'API Studio',
+    'Review historical route with unsaved draft',
+    'The selected immutable release uses /v1 while the editable /v2 draft and unsaved name remain intact.',
+  )
+  await page
+    .getByRole('button', { name: 'Roll back to release 1', exact: true })
+    .click()
+  await capture(
+    'API Studio',
+    'Confirm historical rollback',
+    'Confirmation identifies the target revision and route. Existing caller keys follow the selected release; draft changes are preserved.',
+  )
+  // The modal makes background theme controls inert; close it before changing appearance.
+  await page
+    .getByRole('button', { name: 'Cancel rollback', exact: true })
+    .click()
+  await appearance('Dark')
+  await capture(
+    'Appearance',
+    'Dark route and release forms',
+    'Path inputs, scalar validation rules, and release review remain readable in dark appearance.',
+  )
+  await page
+    .getByRole('button', { name: 'Roll back to release 1', exact: true })
+    .click()
+  await capture(
+    'Appearance',
+    'Dark rollback confirmation',
+    'Target route and action buttons remain readable in the custom styled confirmation.',
+  )
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  ).toBe(true)
+  await capture(
+    'Mobile dark',
+    'Route rollback confirmation',
+    'The focus-contained confirmation fits the phone viewport in dark appearance.',
+  )
+  await page
+    .getByRole('button', { name: 'Cancel rollback', exact: true })
+    .click()
+  await appearance('Light')
+  await capture(
+    'Mobile',
+    'Route inputs and release history',
+    'Versioned endpoint settings, path forms, and stacked release cards stay contained on phones.',
+  )
+  await page
+    .getByRole('button', { name: 'Roll back to release 1', exact: true })
+    .click()
+  await capture(
+    'Mobile',
+    'Route rollback confirmation',
+    'Light phone confirmation keeps revision, route, and draft-preservation information visible.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.request.post(`/api/flows/${routePreviewFlow.id}/rollback`, {
+    headers: rotationHeaders,
+    data: { revision: 1, publishedRevision: 2 },
+  })
+  await page
+    .getByRole('button', { name: 'Confirm rollback', exact: true })
+    .click()
+  await expect(
+    page.getByRole('dialog', { name: 'Confirm rollback' }).getByRole('alert'),
+  ).toBeVisible()
+  await capture(
+    'API Studio',
+    'Stale live release rollback error',
+    'A real competing rollback changes the live release. The server rejects the stale confirmation and the dialog explains refresh recovery.',
+  )
+  await page
+    .getByRole('button', { name: 'Cancel rollback', exact: true })
+    .click()
+  await page
+    .getByRole('button', { name: 'Refresh releases', exact: true })
+    .click()
+  await expect(
+    page.getByLabel('Published endpoint URL', { exact: true }),
+  ).toHaveValue(/\/run\/v1\/preview-customers\/:id$/)
+  await expect(page.getByLabel('API name', { exact: true })).toHaveValue(
+    'Unsaved customer idea',
+  )
+  await capture(
+    'API Studio',
+    'Rollback refresh preserves draft',
+    'Refreshing history recovers the actual /v1 endpoint while the /v2 saved draft and unsaved name stay unchanged.',
+  )
+  await page.route(`**/api/flows/${routePreviewFlow.id}/releases`, (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        error: 'Preview release history connection interrupted',
+      }),
+    }),
+  )
+  await page
+    .getByRole('button', { name: 'Refresh releases', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toContainText(
+    'Preview release history connection interrupted',
+  )
+  await capture(
+    'API Studio',
+    'Release history read error',
+    'This labeled transport failure offers refresh recovery and changes no draft or live release.',
+  )
+  await page.unroute(`**/api/flows/${routePreviewFlow.id}/releases`)
+  await page
+    .getByRole('button', { name: 'Refresh releases', exact: true })
+    .click()
+  await expect(page.getByRole('alert')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await notice('Draft saved')
+  await navigate('Load testing')
+  await page
+    .getByRole('combobox', { name: 'Published API', exact: true })
+    .click()
+  await page.getByRole('option', { name: /Versioned customer API/ }).click()
+  await expect(
+    page.getByLabel('Path parameter id', { exact: true }),
+  ).toBeVisible()
+  await page.getByLabel('Path parameter id', { exact: true }).fill('42')
+  await capture(
+    'Load testing',
+    'Concrete route parameter inputs',
+    'The actual published /v1 route supplies labeled path inputs. A concrete id is required; no URL or JSON editor is needed.',
+  )
+  await page.getByRole('button', { name: 'Load settings', exact: true }).click()
+  await page.getByLabel('Duration in seconds', { exact: true }).fill('1')
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('button', { name: 'Run load test', exact: true }).click()
+  await expect(
+    page.getByRole('region', { name: 'Load test results' }),
+  ).toContainText('All limits passed', { timeout: 20_000 })
+  await capture(
+    'Load testing',
+    'Actual parameterized route k6 report',
+    'Native k6 calls the published route with the concrete path value and validates its response. History retains the route template, never submitted values.',
+  )
+  await navigate('API Studio')
+  const routePreviewViewer = await (
+    await page.request.post('/api/members', {
+      headers: rotationHeaders,
+      data: { name: 'Release reviewer', role: 'viewer' },
+    })
+  ).json()
+  await page.getByRole('button', { name: 'Sign out', exact: true }).click()
+  await signIn(routePreviewViewer.token)
+  await page
+    .getByRole('button', { name: 'Release history', exact: true })
+    .click()
+  await page
+    .getByRole('button', { name: 'Review release 2', exact: true })
+    .click()
+  await expect(
+    page.getByRole('region', { name: 'Release review' }),
+  ).toContainText('Only workspace owners')
+  await capture(
+    'Permissions',
+    'Viewer reads release history',
+    'Viewers can inspect release metadata and routes. Rollback and publication remain owner-only actions.',
+  )
   expect(errors).toEqual([])
 
   await context.clearPermissions()

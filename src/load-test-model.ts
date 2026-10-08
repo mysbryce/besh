@@ -9,6 +9,7 @@ export type LoadTestConfig = {
 export type LoadTestRequest = {
   body: unknown
   query: Record<string, string>
+  params?: Record<string, string>
   graphql?: {
     query: string
     variables?: Record<string, unknown>

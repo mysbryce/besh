@@ -93,7 +93,11 @@ type Studio = {
   configure: (id: string, config: FlowNode['config']) => void
   select: (id: string | null) => void
   save: () => Promise<SavedFlow>
-  test: (body: unknown, query: Record<string, string>) => Promise<void>
+  test: (
+    body: unknown,
+    query: Record<string, string>,
+    params?: Record<string, string>,
+  ) => Promise<void>
   testGraphql: (input: unknown) => Promise<void>
   publish: () => Promise<void>
   task: (work: () => Promise<void>) => Promise<void>
@@ -358,14 +362,14 @@ export const useStudio = create<Studio>((set, get) => ({
     return flow
   },
 
-  async test(body, query) {
+  async test(body, query, params) {
     const state = get()
     if (!state.id || state.dirty) throw new Error('Save draft before testing.')
     const result = await api<FlowResult>(
       `/api/flows/${state.id}/test`,
       state.token,
       'POST',
-      { body, query },
+      { body, query, ...(params ? { params } : {}) },
     )
     set({
       result,

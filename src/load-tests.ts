@@ -15,6 +15,7 @@ import {
 } from 'graphql'
 import { graphqlSchema } from './flows/graphql'
 import { prepareInput } from './flows/contracts'
+import { concreteRoute } from './flows/routes'
 import type {
   K6Runner,
   LoadTestRun,
@@ -53,6 +54,10 @@ const startSchema = z
       .optional(),
     request: z
       .object({
+        params: z
+          .record(z.string(), z.string().max(4096))
+          .refine((params) => Object.keys(params).length <= 64)
+          .optional(),
         body: z.unknown().optional(),
         query: z
           .record(z.string().min(1).max(256), z.string().max(4096))
@@ -79,7 +84,11 @@ function graphqlPermission(
   const input = request?.graphql
   if (!input)
     throw new ApiError(400, 'Provide a GraphQL operation for this API')
-  if (request?.body != null || Object.keys(request?.query ?? {}).length)
+  if (
+    request?.body != null ||
+    Object.keys(request?.query ?? {}).length ||
+    Object.keys(request?.params ?? {}).length
+  )
     throw new ApiError(400, 'Choose GraphQL input for this API')
   try {
     const schema = graphqlSchema(flow)
@@ -288,12 +297,16 @@ export function loadTestService(
             prepareInput(flow.contract, {
               body: value.request?.body ?? null,
               query: value.request?.query ?? {},
+              params: value.request?.params ?? {},
             })
           const permission: RuntimePermission = flow.graphql
             ? graphqlPermission(flow, value.request)
             : 'rest'
           const query = new URLSearchParams(value.request?.query).toString()
-          const url = `${origin}/${flow.graphql ? 'graphql' : 'run'}${flow.path}${query ? `?${query}` : ''}`
+          const path = flow.graphql
+            ? flow.path
+            : concreteRoute(flow.path, value.request?.params)
+          const url = `${origin}/${flow.graphql ? 'graphql' : 'run'}${path}${query ? `?${query}` : ''}`
           if (Buffer.byteLength(url) > 8192)
             throw new ApiError(400, 'Load test URL exceeds 8 KiB')
           const config = {

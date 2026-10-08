@@ -7,6 +7,7 @@ import type { ApiSchema } from '../src/flows/model'
 import { useStudio } from './store'
 import { api } from './lib/api'
 import { Download } from 'lucide-react'
+import { routeParameters } from './flow-forms'
 
 const types = [
   { value: 'string', label: 'Text' },
@@ -293,6 +294,7 @@ export function ApiRules() {
   const [expanded, setExpanded] = useState(false)
   const state = useStudio()
   const disabled = state.member?.role === 'viewer' || state.busy
+  const pathNames = routeParameters(state.path)
   const sections = [
     { key: 'query', prefix: 'Query', label: 'Validate query parameters' },
     { key: 'body', prefix: 'Body', label: 'Validate request body' },
@@ -320,6 +322,100 @@ export function ApiRules() {
             draft; publish to update callers.
           </p>
           <div className="api-rule-groups">
+            <div className="api-rule-group">
+              <label className="rule-check">
+                <Checkbox
+                  checked={!!state.contract?.params}
+                  disabled={
+                    disabled || (!pathNames.length && !state.contract?.params)
+                  }
+                  onCheckedChange={(checked) => {
+                    if (
+                      !checked &&
+                      !confirm('Remove path parameter rules from this draft?')
+                    )
+                      return
+                    state.edit({
+                      contract: {
+                        ...state.contract,
+                        params: checked
+                          ? {
+                              type: 'object',
+                              properties: Object.fromEntries(
+                                pathNames.map((name) => [
+                                  name,
+                                  { type: 'string' },
+                                ]),
+                              ),
+                              required: pathNames,
+                              additionalProperties: false,
+                            }
+                          : undefined,
+                      },
+                    })
+                  }}
+                />
+                Validate path parameters
+              </label>
+              <p>
+                Names come from the endpoint path. Every path parameter is
+                required and accepts a scalar value.
+              </p>
+              {!pathNames.length ? (
+                <p>Add a route segment such as :id to configure path rules.</p>
+              ) : null}
+              {state.contract?.params?.type === 'object'
+                ? Object.entries(state.contract.params.properties ?? {}).map(
+                    ([name, schema]) => (
+                      <fieldset className="rule-field" key={name}>
+                        <legend>Path parameter {name} · required</legend>
+                        <SchemaEditor
+                          schema={schema}
+                          prefix={`Path ${name}`}
+                          query
+                          disabled={disabled}
+                          onChange={(value) =>
+                            state.edit({
+                              contract: {
+                                ...state.contract,
+                                params: {
+                                  ...state.contract!.params!,
+                                  type: 'object',
+                                  properties: {
+                                    ...(state.contract!.params!.type ===
+                                    'object'
+                                      ? state.contract!.params!.properties
+                                      : {}),
+                                    [name]: value,
+                                  },
+                                },
+                              },
+                            })
+                          }
+                          onError={(message) => state.message(message, true)}
+                        />
+                      </fieldset>
+                    ),
+                  )
+                : null}
+              {state.contract?.params?.type === 'object' &&
+              (pathNames.length !==
+                Object.keys(state.contract.params.properties ?? {}).length ||
+                pathNames.some(
+                  (name) =>
+                    !Object.hasOwn(
+                      state.contract!.params!.type === 'object'
+                        ? (state.contract!.params!.properties ?? {})
+                        : {},
+                      name,
+                    ),
+                )) ? (
+                <p role="alert">
+                  Path rules no longer match this route. Remove and enable path
+                  rules again to use its current names.
+                </p>
+              ) : null}
+            </div>
             {sections.map(({ key, prefix, label }) => {
               const schema = state.contract?.[key]
               const bodyUnavailable =

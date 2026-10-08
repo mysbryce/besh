@@ -6,7 +6,11 @@
 - **Edge**: a connection that chooses which node runs next.
 - **Draft**: an editable flow. Saving a draft does not change a published endpoint.
 - **Release**: a validated, immutable copy of a flow used by callers.
-- **API rules**: optional REST query, body, and response constraints checked by the server; GraphQL uses its schema instead.
+- **Release history**: immutable published flow revisions, with the currently selected revision identified separately from the draft.
+- **Rollback**: an owner action that selects an earlier validated release for live callers without changing the draft or restoring mutable dependencies.
+- **Path parameter**: a named whole REST path segment, such as `:id` in `/v1/items/:id`, provided by the caller and available as `$input.params.id`.
+- **Versioned route**: an explicit path prefix, such as `/v1` or `/v2`, on separate flows; it does not promise automatic compatibility or caller migration.
+- **API rules**: optional REST path, query, body, and response constraints checked by the server; GraphQL uses its schema instead.
 - **Contract**: the versioned definition of an API's accepted inputs and returned data.
 - **OpenAPI document**: a downloadable description of one saved REST draft or published release, including its route, rules, and runtime-key authentication.
 - **GraphQL schema**: a typed contract describing query/mutation fields, their arguments, and returned data.

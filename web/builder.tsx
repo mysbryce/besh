@@ -38,12 +38,14 @@ import {
 import { flowSchema, type Flow, type FlowNode } from '../src/flows/model'
 import { socialLoginSchema } from '../src/flows/social-schema'
 import { useStudio, type CanvasNode } from './store'
+import { ReleaseHistory } from './release-history'
 import { ApiRules, OpenApiDownload } from './api-rules'
 import {
   ConditionForm,
   DataNodeForm,
   parseRequestInput,
   RequestForm,
+  routeParameters,
   ResponseForm,
   SocialNodeForm,
 } from './flow-forms'
@@ -481,7 +483,7 @@ function BuilderSession() {
       }
       if (inputError && !advancedInput) throw new Error(inputError)
       const parsed = parseRequestInput(input)
-      await state.test(parsed.body, parsed.query)
+      await state.test(parsed.body, parsed.query, parsed.params)
     })
   }
 
@@ -546,6 +548,13 @@ function BuilderSession() {
             value={state.graphql ? 'graphql' : 'rest'}
             disabled={!writable || state.busy}
             onValueChange={(value) => {
+              if (value === 'graphql' && routeParameters(state.path).length) {
+                state.message(
+                  'GraphQL needs an exact endpoint path. Remove named segments such as :id before switching; GraphQL arguments carry those values.',
+                  true,
+                )
+                return
+              }
               if (
                 value === 'graphql' &&
                 state.contract &&
@@ -615,6 +624,9 @@ function BuilderSession() {
             <Input
               id="api-path"
               aria-label="Endpoint path"
+              placeholder={
+                state.graphql ? '/v1/customers' : '/v1/customers/:id'
+              }
               value={state.path}
               disabled={!writable || state.busy}
               onChange={(event) => state.edit({ path: event.target.value })}
@@ -626,6 +638,11 @@ function BuilderSession() {
           <span>API key protected</span>
         </div>
       </div>
+      <p className="field-help">
+        {state.graphql
+          ? 'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.'
+          : 'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.'}
+      </p>
       <p className="credential-note endpoint-credential-note">
         Owner and member keys manage drafts. Create an API key in API keys to
         call a published endpoint.
@@ -697,6 +714,7 @@ function BuilderSession() {
         <ApiRules />
       )}
       <OpenApiDownload />
+      <ReleaseHistory />
       <section className="editor-panel">
         <div className="editor-toolbar">
           <div>
@@ -790,6 +808,7 @@ function BuilderSession() {
               ) : (
                 <RequestForm
                   input={input}
+                  path={state.path}
                   disabled={!writable || state.busy}
                   onChange={(value, error) => {
                     setInput(value)

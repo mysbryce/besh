@@ -9,7 +9,14 @@ import { api, type DataSource, type AuthConnection } from './lib/api'
 import type { DataReadConfig } from '../src/flows/model'
 
 type ValueType =
-  'text' | 'number' | 'boolean' | 'null' | 'body' | 'query' | 'nested'
+  | 'text'
+  | 'number'
+  | 'boolean'
+  | 'null'
+  | 'body'
+  | 'query'
+  | 'params'
+  | 'nested'
 type FieldRow = {
   id: string
   name: string
@@ -24,10 +31,10 @@ function fieldRows(value: unknown, references = true): FieldRow[] | null {
   return Object.entries(value).map(([name, original]) => {
     const reference =
       references && typeof original === 'string'
-        ? original.match(/^\$input\.(body|query)\.(.+)$/)
+        ? original.match(/^\$input\.(body|query|params)\.(.+)$/)
         : null
     const type: ValueType = reference
-      ? (reference[1] as 'body' | 'query')
+      ? (reference[1] as 'body' | 'query' | 'params')
       : original === null
         ? 'null'
         : typeof original === 'number'
@@ -63,7 +70,7 @@ function rowValue(row: FieldRow): unknown {
       throw new Error(`Enter a valid number for ${row.name || 'this field'}.`)
     return Number(row.value)
   }
-  if (row.type === 'body' || row.type === 'query') {
+  if (row.type === 'body' || row.type === 'query' || row.type === 'params') {
     if (!/^[a-zA-Z0-9_.-]+$/.test(row.value))
       throw new Error(`Choose an input field for ${row.name || 'this value'}.`)
     return `$input.${row.type}.${row.value}`
@@ -146,6 +153,7 @@ function FieldRows({
                     ? [
                         { value: 'body', label: 'From request body' },
                         { value: 'query', label: 'From query parameter' },
+                        { value: 'params', label: 'From path parameter' },
                       ]
                     : []),
                   ...(row.type === 'nested'
@@ -176,7 +184,9 @@ function FieldRows({
             </p>
           ) : row.type !== 'null' ? (
             <label>
-              {row.type === 'body' || row.type === 'query'
+              {row.type === 'body' ||
+              row.type === 'query' ||
+              row.type === 'params'
                 ? 'Input field'
                 : `${prefix} value`}{' '}
               {index + 1}
@@ -188,7 +198,9 @@ function FieldRows({
                   update(row.id, { value: event.target.value })
                 }
                 placeholder={
-                  row.type === 'body' || row.type === 'query'
+                  row.type === 'body' ||
+                  row.type === 'query' ||
+                  row.type === 'params'
                     ? 'name'
                     : undefined
                 }
@@ -368,10 +380,14 @@ export function ConditionForm({
   onError: (message: string) => void
 }) {
   const [source, setSource] = useState(
-    config.field.startsWith('query.') ? 'query' : 'body',
+    config.field.startsWith('params.')
+      ? 'params'
+      : config.field.startsWith('query.')
+        ? 'query'
+        : 'body',
   )
   const [field, setField] = useState(
-    config.field.replace(/^(body|query)\./, ''),
+    config.field.replace(/^(body|query|params)\./, ''),
   )
   const [type, setType] = useState<ValueType>(
     config.equals === null
@@ -398,6 +414,7 @@ export function ConditionForm({
           options={[
             { value: 'body', label: 'Request body' },
             { value: 'query', label: 'Query parameter' },
+            { value: 'params', label: 'Path parameter' },
           ]}
         />
       </label>
@@ -652,6 +669,7 @@ export function DataNodeForm({
                 { value: 'boolean', label: 'True or false' },
                 { value: 'null', label: 'Empty value' },
                 { value: 'query', label: 'From query parameter' },
+                { value: 'params', label: 'From path parameter' },
                 { value: 'body', label: 'From request body' },
               ]}
             />
@@ -672,7 +690,9 @@ export function DataNodeForm({
             </label>
           ) : filterType !== 'null' ? (
             <label>
-              {filterType === 'query' || filterType === 'body'
+              {filterType === 'query' ||
+              filterType === 'body' ||
+              filterType === 'params'
                 ? 'Input field name'
                 : 'Match value'}
               <Input
@@ -733,12 +753,21 @@ export function DataNodeForm({
   )
 }
 
+export function routeParameters(path: string) {
+  return path
+    .split('/')
+    .filter((segment) => /^:[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(segment))
+    .map((segment) => segment.slice(1))
+}
+
 export function RequestForm({
   input,
+  path = '',
   disabled,
   onChange,
 }: {
   input: string
+  path?: string
   disabled: boolean
   onChange: (input: string, error: string) => void
 }) {
@@ -748,7 +777,17 @@ export function RequestForm({
     () => fieldRows(initial.query, false) ?? [],
   )
 
-  function update(nextBody: FieldRow[] | null, nextQuery: FieldRow[]) {
+  const names = routeParameters(path)
+  const [params, setParams] = useState<Record<string, string>>(
+    initial.params ?? {},
+  )
+
+  function update(
+    nextBody: FieldRow[] | null,
+    nextQuery: FieldRow[],
+    nextParams = params,
+  ) {
+    setParams(nextParams)
     setBody(nextBody)
     setQuery(nextQuery)
     try {
@@ -756,6 +795,13 @@ export function RequestForm({
         JSON.stringify({
           body: nextBody ? rowsObject(nextBody) : initial.body,
           query: rowsObject(nextQuery),
+          ...(names.length
+            ? {
+                params: Object.fromEntries(
+                  names.map((name) => [name, nextParams[name] ?? '']),
+                ),
+              }
+            : {}),
         }),
         '',
       )
@@ -769,6 +815,26 @@ export function RequestForm({
 
   return (
     <div className="simple-form">
+      {names.length ? (
+        <fieldset className="path-inputs">
+          <legend>Path parameters</legend>
+          <p>Replace each named part of the route with a concrete value.</p>
+          {names.map((name) => (
+            <label key={name}>
+              Path parameter {name}
+              <Input
+                aria-label={`Path parameter ${name}`}
+                value={params[name] ?? ''}
+                disabled={disabled}
+                onChange={(event) =>
+                  update(body, query, { ...params, [name]: event.target.value })
+                }
+                placeholder={`Value for :${name}`}
+              />
+            </label>
+          ))}
+        </fieldset>
+      ) : null}
       <h3>Query parameters</h3>
       <p>
         Values sent in the endpoint address, such as a name or product code.
@@ -805,6 +871,7 @@ export function RequestForm({
 const requestInputSchema = z.object({
   body: z.json(),
   query: z.record(z.string(), z.string()),
+  params: z.record(z.string(), z.string()).optional(),
 })
 
 export function parseRequestInput(value: string) {
@@ -813,13 +880,13 @@ export function parseRequestInput(value: string) {
     parsed = JSON.parse(value)
   } catch {
     throw new Error(
-      'Use a request with body and query fields. Query values must be text.',
+      'Use a request with body and query fields. Query and path parameter values must be text.',
     )
   }
   const result = requestInputSchema.safeParse(parsed)
   if (!result.success)
     throw new Error(
-      'Use a request with body and query fields. Query values must be text.',
+      'Use a request with body and query fields. Query and path parameter values must be text.',
     )
   return result.data
 }

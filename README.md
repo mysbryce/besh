@@ -28,8 +28,8 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 ## What works
 
 - Visual editor with response fields, input references, conditions, and spreadsheet reads; advanced JSON remains optional.
-- Saved drafts, validated publication, and immutable releases.
-- REST methods and typed GraphQL queries/mutations.
+- Saved drafts, validated publication, immutable release history, and rollback.
+- REST methods and path parameters, plus typed GraphQL queries/mutations.
 - Built-in k6 load testing for published REST/GraphQL APIs, with automatic local setup and optional goals.
 - Optional REST input/response rules and separate draft/published OpenAPI downloads.
 - Owner, editor, and viewer roles; expiring runtime API keys with replacement and revocation.

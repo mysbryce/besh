@@ -115,6 +115,69 @@ async function terminal(
   throw new Error('Load test did not finish')
 }
 
+test('parameterized load tests encode concrete URLs and block live publication changes', async () => {
+  let runUrl = ''
+  let complete!: (value: LoadTestSummary) => void
+  const { request, server } = workspace(async (input) => {
+    runUrl = input.url
+    return new Promise((resolve) => {
+      complete = resolve
+    })
+  })
+  server.app.listen({ hostname: '127.0.0.1', port: 0 })
+  const flow = await published(request, { ...helloFlow, path: '/v1/users/:id' })
+  expect(
+    (
+      await request(`/api/flows/${flow.id}`, 'PUT', {
+        ...helloFlow,
+        path: '/v2/users/:id',
+        revision: 1,
+      })
+    ).status,
+  ).toBe(200)
+  expect(
+    (await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 2 }))
+      .status,
+  ).toBe(200)
+  expect(
+    (await request('/api/load-tests', 'POST', { flowId: flow.id })).status,
+  ).toBe(400)
+  expect((await request('/api/load-tests')).status).toBe(200)
+  const started = await request('/api/load-tests', 'POST', {
+    flowId: flow.id,
+    request: { params: { id: 'private value%2F' } },
+  })
+  expect(started.status).toBe(202)
+  const run = await started.json()
+  await Bun.sleep(10)
+  expect(runUrl).toEndWith('/run/v2/users/private%20value%252F')
+  expect(
+    (await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 2 }))
+      .status,
+  ).toBe(409)
+  expect(
+    (
+      await request(`/api/flows/${flow.id}/rollback`, 'POST', {
+        revision: 1,
+        publishedRevision: 2,
+      })
+    ).status,
+  ).toBe(409)
+  complete(summary)
+  await terminal(request, run.id)
+  const history = await (await request('/api/load-tests')).text()
+  expect(history).not.toContain('private value')
+  expect(history).not.toContain('private%20value')
+  expect(
+    (
+      await request(`/api/flows/${flow.id}/rollback`, 'POST', {
+        revision: 1,
+        publishedRevision: 2,
+      })
+    ).status,
+  ).toBe(200)
+})
+
 test('default runs call the local published API with a temporary scoped key and retain only summary', async () => {
   let token = ''
   let complete!: (value: LoadTestSummary) => void

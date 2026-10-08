@@ -22,7 +22,7 @@ curl 'http://127.0.0.1:3000/run/hello?name=Ada' \
 
 GraphQL uses the same header on `/graphql/<published-path>` with a POST JSON operation. See the [GraphQL guide](graphql.md) for query and mutation examples.
 
-Use the endpoint shown for the published API. Editing a draft's path or API type does not change its live endpoint. Keys follow the flow ID across published revisions, so review grants before publishing broader behavior.
+Use the endpoint shown for the published API. For `/v1/items/:id`, substitute an encoded value for `:id`, such as `/run/v1/items/42`. Editing a draft's path or API type does not change its live endpoint. Keys follow the flow ID across publication and rollback, so review grants before changing live behavior. Separate `/v1` and `/v2` flows need separate keys; see [routes and release history](api-routes.md).
 
 ## Replace an active key
 

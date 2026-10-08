@@ -6,6 +6,7 @@ import { executeGraphql, graphqlSchema } from './graphql'
 import type { dataSourceService } from '../data-sources'
 import { flowOpenapi } from './openapi'
 import type { productAuthService } from '../product-auth'
+import { decodedRoute, matchRoute, overlappingRoutes } from './routes'
 
 type Row = {
   id: string
@@ -14,6 +15,8 @@ type Row = {
   published: string | null
   published_revision: number | null
 }
+
+type ReleaseRow = { revision: number; definition: string; created_at: string }
 
 export function flowService(
   store: Store,
@@ -78,6 +81,47 @@ export function flowService(
     }
   }
 
+  function routeAvailable(id: string, definition: Flow) {
+    const candidates = query<Row, [string, string]>(
+      "SELECT * FROM flows WHERE id != ? AND json_extract(published, '$.method') = ?",
+    ).all(id, definition.method)
+    if (
+      candidates.some((row) => {
+        const published = JSON.parse(row.published!) as Flow
+        return (
+          Boolean(published.graphql) === Boolean(definition.graphql) &&
+          (definition.graphql
+            ? definition.path === published.path
+            : overlappingRoutes(definition.path, published.path))
+        )
+      })
+    )
+      throw new ApiError(
+        409,
+        'This method and path overlap an already published endpoint',
+      )
+  }
+
+  function release(id: string, revision: number) {
+    const row = query<ReleaseRow, [string, number]>(
+      'SELECT * FROM releases WHERE flow_id = ? AND revision = ?',
+    ).get(id, revision)
+    if (!row) throw new ApiError(404, 'Release not found')
+    return row
+  }
+
+  function publicationUnlocked(id: string) {
+    if (
+      query(
+        "SELECT id FROM load_tests WHERE status = 'running' AND json_extract(metadata, '$.flowId') = ?",
+      ).get(id)
+    )
+      throw new ApiError(
+        409,
+        'Wait for this API load test to finish before changing its published release',
+      )
+  }
+
   async function execute(
     actor: string,
     id: string,
@@ -112,6 +156,62 @@ export function flowService(
         .map(present)
     },
     get(id: string) {
+      return present(get(id))
+    },
+    releases(id: string) {
+      const flow = get(id)
+      return query<ReleaseRow, [string]>(
+        'SELECT * FROM releases WHERE flow_id = ? ORDER BY revision DESC',
+      )
+        .all(id)
+        .map((row) => {
+          const definition = JSON.parse(row.definition) as Flow
+          return {
+            revision: row.revision,
+            createdAt: row.created_at,
+            endpoint: {
+              method: definition.method,
+              path: definition.path,
+              graphql: Boolean(definition.graphql),
+            },
+            current: row.revision === flow.published_revision,
+          }
+        })
+    },
+    release(id: string, revision: number) {
+      const flow = get(id)
+      const row = release(id, revision)
+      return {
+        revision: row.revision,
+        createdAt: row.created_at,
+        definition: JSON.parse(row.definition) as Flow,
+        current: row.revision === flow.published_revision,
+      }
+    },
+    rollback(
+      actor: string,
+      id: string,
+      revision: number,
+      publishedRevision: number,
+    ) {
+      db.transaction(() => {
+        const row = get(id)
+        if (row.published_revision !== publishedRevision)
+          throw new ApiError(
+            409,
+            'Published release changed. Reload before rolling back.',
+          )
+        if (revision === publishedRevision)
+          throw new ApiError(409, 'This release is already published')
+        publicationUnlocked(id)
+        const target = release(id, revision)
+        const definition = valid(JSON.parse(target.definition))
+        routeAvailable(id, definition)
+        query(
+          'UPDATE flows SET published = ?, published_revision = ? WHERE id = ?',
+        ).run(target.definition, revision, id)
+        audit(actor, 'flow.rolled-back', id)
+      }).immediate()
       return present(get(id))
     },
     openapi(id: string, source: unknown) {
@@ -163,20 +263,12 @@ export function flowService(
     publish(actor: string, id: string, revision: number) {
       db.transaction(() => {
         const row = get(id)
+        publicationUnlocked(id)
         if (row.revision !== revision)
           throw new ApiError(409, 'Draft changed. Reload before publishing.')
 
         const definition = valid(JSON.parse(row.definition))
-        const conflict = query(
-          "SELECT id FROM flows WHERE id != ? AND json_extract(published, '$.method') = ? AND json_extract(published, '$.path') = ? AND (json_extract(published, '$.graphql') IS NOT NULL) = ?",
-        ).get(
-          id,
-          definition.method,
-          definition.path,
-          definition.graphql ? 1 : 0,
-        )
-        if (conflict)
-          throw new ApiError(409, 'This method and path are already published')
+        routeAvailable(id, definition)
 
         query('INSERT OR IGNORE INTO releases VALUES (?, ?, ?, ?)').run(
           id,
@@ -188,7 +280,7 @@ export function flowService(
           'UPDATE flows SET published = definition, published_revision = revision WHERE id = ?',
         ).run(id)
         audit(actor, 'flow.published', id)
-      })()
+      }).immediate()
 
       return present(get(id))
     },
@@ -219,9 +311,16 @@ export function flowService(
       return result
     },
     async run(key: RuntimeKey, method: string, path: string, input: FlowInput) {
-      const row = query<Row, [string, string]>(
-        "SELECT * FROM flows WHERE json_extract(published, '$.method') = ? AND json_extract(published, '$.path') = ? AND json_extract(published, '$.graphql') IS NULL",
-      ).get(method, path)
+      const segments = decodedRoute(path)
+      const row = query<Row, [string]>(
+        "SELECT * FROM flows WHERE json_extract(published, '$.method') = ? AND json_extract(published, '$.graphql') IS NULL",
+      )
+        .all(method)
+        .find(
+          (candidate) =>
+            matchRoute(JSON.parse(candidate.published!).path, segments) !==
+            null,
+        )
       if (!row?.published) throw new ApiError(404, 'Endpoint not found')
       if (row.id !== key.flowId || !key.permissions.includes('rest'))
         throw new ApiError(403, 'Runtime key does not allow this endpoint')
@@ -230,7 +329,10 @@ export function flowService(
         `runtime:${key.id}`,
         row.id,
         JSON.parse(row.published),
-        input,
+        {
+          ...input,
+          params: matchRoute(JSON.parse(row.published).path, segments)!,
+        },
         row.published_revision!,
       )
       audit(`runtime:${key.id}`, 'flow.executed', row.id)

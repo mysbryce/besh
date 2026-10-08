@@ -82,9 +82,11 @@ Invoke-RestMethod 'http://127.0.0.1:3000/run/hello?name=Ada' `
   -Headers @{ Authorization = "Bearer $beshToken" }
 ```
 
-Use **Condition** to choose an input source and field, then compare it with a typed value. Connect both `true` and `false` handles to a response path. **Try it out** has query and body field rows; raw input stays available under **Advanced test input**. Drag nodes from the palette or use its buttons. Select nodes or edges and press Delete to remove them.
+Use **Condition** to choose an input source and field, then compare it with a typed value. Connect both `true` and `false` handles to a response path. **Try it out** has path, query, and body field rows; raw input stays available under **Advanced test input**. Drag nodes from the palette or use its buttons. Select nodes or edges and press Delete to remove them.
 
-Input references replace a whole value and preserve JSON types. Supported roots are `$input.body` and `$input.query`; missing values become `null`. Arbitrary expressions and JavaScript are not executed.
+Input references replace a whole value and preserve JSON types. Supported roots are `$input.params`, `$input.body`, and `$input.query`; missing references become `null`, while route parameters must be supplied before execution. Arbitrary expressions and JavaScript are not executed.
+
+For a record endpoint, use `/v1/items/:id` and read the path field `id` in your response or condition. Test with `id=42`; the live URL is `/run/v1/items/42`. Path fields are always required. Optional API rules can convert them to numbers or booleans. Separate `/v1` and `/v2` flows keep distinct endpoints and keys. See [routes and release history](api-routes.md) for supported names and overlap rules.
 
 ## What works
 
@@ -96,21 +98,21 @@ Input references replace a whole value and preserve JSON types. Supported roots 
 | Data          | CSV/Excel uploads and public Google Sheets, saved previews, typed column mapping                        |
 | Product login | GitHub OAuth connection, generated REST/GraphQL identity draft; product server handles callback/session |
 | Appearance    | Light, dark, or system theme; keyboard-accessible custom controls                                       |
-| HTTP          | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; exact paths                                               |
+| HTTP          | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; literal paths and whole-segment parameters                |
 | GraphQL       | Per-API typed schemas, queries/mutations, variables, field selection and bounded execution              |
-| API rules     | Optional REST query/body/response types, required fields, nullability, and server checks                |
+| API rules     | Optional REST path/query/body/response types, required fields, nullability, and server checks           |
 | OpenAPI       | JSON downloads for a saved REST draft or published release, kept separate                               |
 | Drafts        | SQLite persistence; incomplete graphs may be saved                                                      |
-| Publishing    | Graph validation, route conflict checks, immutable release history                                      |
+| Publishing    | Graph validation, overlapping-route checks, immutable release history, owner rollback                   |
 | Load testing  | Owner-started local k6 tests of published REST/GraphQL APIs, optional goals, saved summaries            |
-| Concurrency   | Stale save/publish requests return `409`                                                                |
+| Concurrency   | Stale save/publish/rollback requests return `409`; active load tests block live route changes           |
 | Access        | Server-enforced roles; workspace keys or email/password; expiring browser sessions                      |
 | API keys      | Owner-issued keys for one published API, expiring grants, atomic replacement, immediate revocation      |
 | Audit         | Changes, tests, runs, backups, and access denials; latest 200 visible                                   |
 | Migrations    | Versioned control-database schema history                                                               |
 | Backups       | Consistent SQLite snapshots and authenticated downloads; restore tested                                 |
 
-Draft edits do not change a live endpoint. Save and publish a new revision to update it. Published endpoints require a runtime API key; owner and member tokens only access workspace management and permitted draft tests. Public endpoints remain planned.
+Draft edits do not change a live endpoint. Save and publish a new revision to update it. Members can inspect published revision history; owners can restore an earlier release without changing the draft. Rollback does not restore spreadsheet rows or provider credentials. Published endpoints require a runtime API key; owner and member tokens only access workspace management and permitted draft tests. Public endpoints remain planned.
 
 Runtime keys grant REST requests, GraphQL queries, or GraphQL mutations for one published API. Expiration is required and must be within 366 days; the dashboard offers 1, 7, 30, or 90 days. Tokens appear once; save the token before leaving the page. Raw values are not persisted in browser storage, and the server stores their hashes. Revoked or expired keys stop working immediately. Grants cover the whole operation, not individual fields or records. A key follows its API across published revisions, so review grants when republishing broader behavior.
 
@@ -140,7 +142,7 @@ Your product server retains the runtime key and separate proof, sends the author
 
 ## Add REST API rules
 
-Open **API rules** in the REST studio. Add query, body, or response fields using names, type selectors, and required choices. Body and response fields can also allow null. Nested objects, lists, item rules, and optional limits all use forms. Save and test valid input, then try a missing required field. The server returns 400 for invalid input and a generic 500 for a response that violates its rules. GraphQL uses its own schema.
+Open **API rules** in the REST studio. Add path, query, body, or response fields using names and type selectors. Path fields follow the route and are always required and non-nullable; other fields have required choices. Body and response fields can also allow null. Nested objects, lists, item rules, and optional limits all use forms. Save and test valid input, then try a missing required field. The server returns 400 for invalid input and a generic 500 for a response that violates its rules. GraphQL uses its own schema.
 
 Choose a saved draft or published release to download its OpenAPI document. Save browser edits before exporting a draft. Published documentation and live rules stay at the last published revision until the owner republishes. Downloads require a workspace member token; calling the documented route requires its runtime API key. See [REST API rules and OpenAPI](api-contracts.md) for a quick example, supported types, and limits.
 
@@ -167,6 +169,8 @@ REST and GraphQL keep separate routes and published releases. GraphQL currently 
 | Read product login connections/generate drafts | Yes   | Yes    | No     |
 | Create/edit/delete product login connections   | Yes   | No     | No     |
 | Publish                                        | Yes   | No     | No     |
+| Inspect release history                        | Yes   | Yes    | Yes    |
+| Roll back a published release                  | Yes   | No     | No     |
 | Members, audit, migrations, backups            | Yes   | No     | No     |
 | Change own email/password with proof           | Yes   | Yes    | Yes    |
 | Inspect/revoke own browser sessions            | Yes   | Yes    | Yes    |
@@ -263,6 +267,7 @@ These are roadmap items. Public Google Sheets imports and the GitHub product ide
 - [REST API rules and OpenAPI downloads](api-contracts.md)
 - [Workspace accounts and sessions](workspace-auth.md)
 - [Runtime API keys](api-keys.md)
+- [REST routes and release history](api-routes.md)
 - [Built-in k6 load testing](load-testing.md)
 - [GitHub product login](product-auth.md)
 - [AI policy](../AI_POLICY.md) · [Code of conduct](../CODE_OF_CONDUCT.md) · [Security](../SECURITY.md)

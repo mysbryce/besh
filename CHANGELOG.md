@@ -4,6 +4,24 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.3.0-alpha.0 — 2026-10-08
+
+### Added
+
+- REST path parameters with beginner input forms, typed rules, OpenAPI path documentation, and built-in k6 support.
+- Immutable release history and owner rollback that preserves saved drafts and unsaved edits.
+- Read-only CI checks, version/changelog guards, and a manual release-candidate bundle with a SHA-256 inventory.
+
+### Fixed
+
+- Health responses now report the installed package version after each bump.
+
+### Security
+
+- Reject overlapping published routes, stale rollback, and publication changes during an active load test.
+- Require owner authorization and CSRF protection for rollback; revalidate archived dependencies before restoring.
+- Exclude private files and external directory links from release candidates; keep publication separately authorized.
+
 ## 0.2.0-alpha.0 — 2026-10-08
 
 ### Added
