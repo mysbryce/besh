@@ -123,6 +123,10 @@ To replace an active token, open **API keys**, select **Replace key**, and confi
 
 Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/input/output limits. Spreadsheet and SQLite uploads use separate bounded multipart routes. SQLite reads have additional [database limits](databases.md#limits). General network requests, live external database connections, and SQL writes remain planned.
 
+## Inspect published backend code
+
+**Publish** prepares the backend module and current runtime routes automatically; no manual backend coding or code-directory setting is needed. With API-read permission, open **Generated backend** to inspect/copy/download the current publication, review its requirements, and refresh after a revision conflict. The downloaded module uses Besh runtime services and contains configured flow values; it is not a standalone server. See [published backend code](runtime-code.md) for recovery and security boundaries.
+
 ## Copy client code
 
 In API Studio, open **Use this API** with flow-read permission. Keep **Published release** as the example source, choose a client target, fill its request inputs, and select **Generate example**. Copy or download the source and follow its dependency instructions. Examples use a separately issued runtime key through `BESH_RUNTIME_API_KEY` in your caller's server environment; no token is entered into the panel. Generation does not call the API. Explicit **Saved draft** examples require publication before runtime use. See [client code examples](client-code.md) for the eight targets, source/revision rules, and setup.
@@ -221,19 +225,20 @@ If you lose the owner key, stop Besh and generate a new long random value. Set `
 
 Configuration is optional. Copy `.env.example` to `.env` only when needed.
 
-| Variable               | Default / purpose                                                                    |
-| ---------------------- | ------------------------------------------------------------------------------------ |
-| `PORT`                 | API port, `3000`                                                                     |
-| `BESH_HOST`            | API host, `127.0.0.1`                                                                |
-| `BESH_DATABASE_PATH`   | `data/besh.sqlite`                                                                   |
-| `BESH_BACKUP_DIR`      | `data/backups`                                                                       |
-| `BESH_SECRET_KEY_PATH` | `besh-secrets.key` beside the control database; optional private encryption-key path |
-| `BESH_ADMIN_TOKEN`     | Optional recovery/automation key, at least 32 random characters                      |
-| `BESH_SETUP_KEY`       | Optional setup challenge; generated automatically otherwise                          |
-| `BESH_WEB_URL`         | Exact browser origin for authentication and setup link; dev command sets it          |
-| `BESH_API_URL`         | Vite proxy target; defaults to `http://127.0.0.1:3000`                               |
-| `BESH_K6_PATH`         | Optional trusted existing k6 executable; otherwise provision automatically           |
-| `BESH_K6_CACHE_DIR`    | Optional k6 cache directory; defaults to `.cache/k6`                                 |
+| Variable                | Default / purpose                                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------------------- |
+| `PORT`                  | API port, `3000`                                                                                     |
+| `BESH_HOST`             | API host, `127.0.0.1`                                                                                |
+| `BESH_DATABASE_PATH`    | `data/besh.sqlite`                                                                                   |
+| `BESH_BACKUP_DIR`       | `data/backups`                                                                                       |
+| `BESH_SECRET_KEY_PATH`  | `besh-secrets.key` beside the control database; optional private encryption-key path                 |
+| `BESH_ADMIN_TOKEN`      | Optional recovery/automation key, at least 32 random characters                                      |
+| `BESH_SETUP_KEY`        | Optional setup challenge; generated automatically otherwise                                          |
+| `BESH_WEB_URL`          | Exact browser origin for authentication and setup link; dev command sets it                          |
+| `BESH_API_URL`          | Vite proxy target; defaults to `http://127.0.0.1:3000`                                               |
+| `BESH_K6_PATH`          | Optional trusted existing k6 executable; otherwise provision automatically                           |
+| `BESH_K6_CACHE_DIR`     | Optional k6 cache directory; defaults to `.cache/k6`                                                 |
+| `BESH_RUNTIME_CODE_DIR` | Optional administrator-trusted private loader directory; defaults to a unique OS temporary directory |
 
 If you change `PORT` during development, also set `BESH_API_URL` to that port. The dashboard uses port `5173`. It fails clearly if the port is already occupied.
 
@@ -246,7 +251,7 @@ src/              app.ts wiring, index.ts startup, errors.ts shared errors
   auth/           Workspace sessions and product OAuth
   data/           Spreadsheet snapshots, Google Sheets, Excel parsing
   databases/      Uploaded SQLite copies and bounded native readers
-  flows/          Flow model, contracts, validation, executor, releases
+  flows/          Flow model, contracts, executor, releases, generated routing
   load-tests/     Local k6 jobs and provisioning
   updates/        Manual GitHub release notices
   workspace/      Control store, permissions, backups
@@ -284,6 +289,7 @@ These are roadmap items. Public Google Sheets imports, uploaded read-only SQLite
 - [Testing](testing.md) · [Glossary](../GLOSSARY.md) · [Agent instructions](../AGENTS.md)
 - [Page/action previews and Git ignore rules](preview.md)
 - [GraphQL schemas and execution](graphql.md)
+- [Published backend code](runtime-code.md)
 - [Client code examples](client-code.md)
 - [Spreadsheet data sources](data-sources.md)
 - [Uploaded SQLite database copies](databases.md)

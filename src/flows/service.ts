@@ -10,6 +10,7 @@ import { decodedRoute, matchRoute, overlappingRoutes } from './routes'
 import type { databaseConnectionService } from '../databases/service'
 import { clientCodeTargets } from './client-code-model'
 import { clientCodeSchema, flowClientCode } from './client-code'
+import type { RuntimeRelease, RuntimeService } from './runtime'
 
 type Row = {
   id: string
@@ -32,6 +33,7 @@ export function flowService(
     ReturnType<typeof databaseConnectionService>,
     'validate' | 'read'
   >,
+  runtime: RuntimeService,
 ) {
   const { db, query, audit } = store
   let closed = false
@@ -260,24 +262,35 @@ export function flowService(
       revision: number,
       publishedRevision: number,
     ) {
-      db.transaction(() => {
-        const row = get(id)
-        if (row.published_revision !== publishedRevision)
-          throw new ApiError(
-            409,
-            'Published release changed. Reload before rolling back.',
-          )
-        if (revision === publishedRevision)
-          throw new ApiError(409, 'This release is already published')
-        publicationUnlocked(id)
-        const target = release(id, revision)
-        const definition = valid(JSON.parse(target.definition))
-        routeAvailable(id, definition)
-        query(
-          'UPDATE flows SET published = ?, published_revision = ? WHERE id = ?',
-        ).run(target.definition, revision, id)
-        audit(actor, 'flow.rolled-back', id)
-      }).immediate()
+      active()
+      let stage: ReturnType<RuntimeService['stage']> | undefined
+      try {
+        db.transaction(() => {
+          const row = get(id)
+          if (row.published_revision !== publishedRevision)
+            throw new ApiError(
+              409,
+              'Published release changed. Reload before rolling back.',
+            )
+          if (revision === publishedRevision)
+            throw new ApiError(409, 'This release is already published')
+          publicationUnlocked(id)
+          const target = release(id, revision)
+          const definition = valid(JSON.parse(target.definition))
+          routeAvailable(id, definition)
+          stage = runtime.stage({ flowId: id, revision, definition })
+          query(
+            'UPDATE flows SET published = ?, published_revision = ? WHERE id = ?',
+          ).run(target.definition, revision, id)
+          audit(actor, 'flow.rolled-back', id)
+          stage.persist()
+          stage.activate()
+        }).immediate()
+        stage!.commit()
+      } catch (error) {
+        stage?.rollback()
+        throw error
+      }
       return present(get(id))
     },
     openapi(id: string, source: unknown) {
@@ -327,26 +340,37 @@ export function flowService(
       return present(get(id))
     },
     publish(actor: string, id: string, revision: number) {
-      db.transaction(() => {
-        const row = get(id)
-        publicationUnlocked(id)
-        if (row.revision !== revision)
-          throw new ApiError(409, 'Draft changed. Reload before publishing.')
+      active()
+      let stage: ReturnType<RuntimeService['stage']> | undefined
+      try {
+        db.transaction(() => {
+          const row = get(id)
+          publicationUnlocked(id)
+          if (row.revision !== revision)
+            throw new ApiError(409, 'Draft changed. Reload before publishing.')
 
-        const definition = valid(JSON.parse(row.definition))
-        routeAvailable(id, definition)
+          const definition = valid(JSON.parse(row.definition))
+          routeAvailable(id, definition)
+          stage = runtime.stage({ flowId: id, revision, definition })
 
-        query('INSERT OR IGNORE INTO releases VALUES (?, ?, ?, ?)').run(
-          id,
-          revision,
-          row.definition,
-          new Date().toISOString(),
-        )
-        query(
-          'UPDATE flows SET published = definition, published_revision = revision WHERE id = ?',
-        ).run(id)
-        audit(actor, 'flow.published', id)
-      }).immediate()
+          query('INSERT OR IGNORE INTO releases VALUES (?, ?, ?, ?)').run(
+            id,
+            revision,
+            row.definition,
+            new Date().toISOString(),
+          )
+          query(
+            'UPDATE flows SET published = definition, published_revision = revision WHERE id = ?',
+          ).run(id)
+          audit(actor, 'flow.published', id)
+          stage.persist()
+          stage.activate()
+        }).immediate()
+        stage!.commit()
+      } catch (error) {
+        stage?.rollback()
+        throw error
+      }
 
       return present(get(id))
     },
@@ -398,27 +422,17 @@ export function flowService(
     },
     async run(
       key: RuntimeKey,
-      method: string,
+      release: RuntimeRelease,
       path: string,
       input: FlowInput,
       signal?: AbortSignal,
     ) {
       const segments = decodedRoute(path)
-      const row = query<Row, [string]>(
-        "SELECT * FROM flows WHERE json_extract(published, '$.method') = ? AND json_extract(published, '$.graphql') IS NULL",
-      )
-        .all(method)
-        .find(
-          (candidate) =>
-            matchRoute(JSON.parse(candidate.published!).path, segments) !==
-            null,
-        )
-      if (!row?.published) throw new ApiError(404, 'Endpoint not found')
-      if (row.id !== key.flowId || !key.permissions.includes('rest'))
+      if (release.flowId !== key.flowId || !key.permissions.includes('rest'))
         throw new ApiError(403, 'Runtime key does not allow this endpoint')
       if (
         key.releaseRevision !== null &&
-        key.releaseRevision !== row.published_revision
+        key.releaseRevision !== release.revision
       )
         throw new ApiError(
           403,
@@ -427,34 +441,30 @@ export function flowService(
 
       const result = await execute(
         `runtime:${key.id}`,
-        row.id,
-        JSON.parse(row.published),
+        release.flowId,
+        release.definition,
         {
           ...input,
-          params: matchRoute(JSON.parse(row.published).path, segments)!,
+          params: matchRoute(release.definition.path, segments)!,
         },
-        row.published_revision!,
+        release.revision,
         signal,
       )
       active()
-      audit(`runtime:${key.id}`, 'flow.executed', row.id)
+      audit(`runtime:${key.id}`, 'flow.executed', release.flowId)
       return result
     },
     async graphql(
       key: RuntimeKey,
-      path: string,
+      release: RuntimeRelease,
       input: unknown,
       signal?: AbortSignal,
     ) {
-      const row = query<Row, [string]>(
-        "SELECT * FROM flows WHERE json_extract(published, '$.path') = ? AND json_extract(published, '$.graphql') IS NOT NULL",
-      ).get(path)
-      if (!row?.published) throw new ApiError(404, 'Endpoint not found')
-      if (row.id !== key.flowId || key.permissions.includes('rest'))
+      if (release.flowId !== key.flowId || key.permissions.includes('rest'))
         throw new ApiError(403, 'Runtime key does not allow this endpoint')
       if (
         key.releaseRevision !== null &&
-        key.releaseRevision !== row.published_revision
+        key.releaseRevision !== release.revision
       )
         throw new ApiError(
           403,
@@ -462,7 +472,7 @@ export function flowService(
         )
 
       const result = await executeGraphql(
-        JSON.parse(row.published),
+        release.definition,
         input,
         key.permissions,
         {
@@ -470,15 +480,15 @@ export function flowService(
           readDatabase: (config) => databases.read(config, signal),
           social: (config, input) =>
             productAuth.social(config, input, {
-              flowId: row.id,
-              revision: row.published_revision!,
+              flowId: release.flowId,
+              revision: release.revision,
               scope: `runtime:${key.id}`,
             }),
         },
       )
       active()
       if (result.visited.length)
-        audit(`runtime:${key.id}`, 'graphql.executed', row.id)
+        audit(`runtime:${key.id}`, 'graphql.executed', release.flowId)
       return result
     },
     close() {

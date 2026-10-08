@@ -355,6 +355,28 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 14').get()) {
+      db.exec(`CREATE TABLE runtime_publication (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        generation INTEGER NOT NULL CHECK (generation >= 0 AND generation <= 9007199254740991)
+      );
+      INSERT INTO runtime_publication VALUES (1, 0);
+      CREATE TABLE backend_artifacts (
+        flow_id TEXT NOT NULL,
+        revision INTEGER NOT NULL,
+        compiler_version INTEGER NOT NULL,
+        source TEXT NOT NULL,
+        sha256 TEXT NOT NULL,
+        definition_sha256 TEXT NOT NULL,
+        PRIMARY KEY (flow_id, revision, compiler_version),
+        FOREIGN KEY (flow_id, revision) REFERENCES releases(flow_id, revision)
+      );`)
+      query('INSERT INTO migrations VALUES (14, ?, ?)').run(
+        'generated published backend artifacts and runtime generations',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,

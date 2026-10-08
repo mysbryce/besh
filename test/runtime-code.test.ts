@@ -1,0 +1,573 @@
+import { afterEach, expect, test } from 'bun:test'
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  rmdirSync,
+  writeFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { createHash } from 'node:crypto'
+import { createApp, type AppOptions } from '../src/app'
+import { helloFlow, graphqlFlow } from './fixtures'
+
+const owner = 'runtime-code-disposable-owner-key-at-least32'
+const cleanup: (() => Promise<void>)[] = []
+afterEach(async () => {
+  for (const dispose of cleanup.splice(0).reverse()) await dispose()
+})
+
+test('generated code reads enforce current grants and strict expected-revision queries without executing caller literals', async () => {
+  const { request } = workspace()
+  const literal = "'); throw new Error('EXECUTED'); // 東京\n\u2028"
+  const definition = {
+    ...helloFlow,
+    nodes: [
+      helloFlow.nodes[0],
+      { ...helloFlow.nodes[1], config: { status: 200, body: { literal } } },
+    ],
+  }
+  const flow = await (await request('/api/flows', 'POST', definition)).json()
+  expect(
+    (await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 1 }))
+      .status,
+  ).toBe(200)
+  const before = await (await request('/api/audit')).json()
+  for (const query of [
+    'revision=0',
+    'revision=-1',
+    'revision=01',
+    'revision=1.1',
+    'revision=9007199254740992',
+    'revision=1&revision=1',
+    'source=draft',
+  ])
+    expect(
+      (await request(`/api/flows/${flow.id}/backend-code?${query}`)).status,
+    ).toBe(400)
+  expect((await request('/api/flows/missing/backend-code')).status).toBe(404)
+  const artifact = await (
+    await request(`/api/flows/${flow.id}/backend-code`)
+  ).json()
+  expect(artifact.code).toContain('JSON.parse(')
+  expect(artifact.code).not.toContain(owner)
+  expect(await (await request('/api/audit')).json()).toEqual(before)
+  const viewer = await (
+    await request('/api/members', 'POST', { name: 'Reader', role: 'viewer' })
+  ).json()
+  expect(
+    (
+      await request(
+        `/api/flows/${flow.id}/backend-code`,
+        'GET',
+        undefined,
+        viewer.token,
+      )
+    ).status,
+  ).toBe(200)
+  const role = await (
+    await request('/api/roles', 'POST', {
+      name: 'Account only',
+      permissions: [],
+    })
+  ).json()
+  const member = await (
+    await request('/api/members', 'POST', {
+      name: 'No reader',
+      role: 'custom',
+      roleId: role.id,
+    })
+  ).json()
+  expect(
+    (
+      await request(
+        `/api/flows/${flow.id}/backend-code`,
+        'GET',
+        undefined,
+        member.token,
+      )
+    ).status,
+  ).toBe(403)
+  const key = await (
+    await request('/api/runtime-keys', 'POST', {
+      name: 'Caller',
+      flowId: flow.id,
+      permissions: ['rest'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    })
+  ).json()
+  expect(
+    await (await request('/run/hello', 'GET', undefined, key.token)).json(),
+  ).toEqual({ literal })
+  expect(
+    (
+      await request(
+        `/api/flows/${flow.id}/backend-code`,
+        'GET',
+        undefined,
+        key.token,
+      )
+    ).status,
+  ).toBe(401)
+})
+
+test('independent app handles refresh the first runtime request and preserve concrete GraphQL methods and rollback', async () => {
+  const first = workspace()
+  const second = createApp({
+    ...first.options,
+    runtimeCodeDir: join(first.directory, 'peer-code'),
+  })
+  cleanup.push(async () => {
+    if (second.app.server) await second.app.stop()
+    await second.close()
+  })
+  const flow = await (
+    await first.request('/api/flows', 'POST', helloFlow)
+  ).json()
+  await first.request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 1 })
+  const key = await (
+    await first.request('/api/runtime-keys', 'POST', {
+      name: 'Caller',
+      flowId: flow.id,
+      permissions: ['rest'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    })
+  ).json()
+  const stale = second.app
+  second.app.listen({ hostname: '127.0.0.1', port: 0 })
+  const origin = second.app.server!.url.origin
+  const runtime = (
+    path: string,
+    method = 'GET',
+    token = key.token,
+    body?: unknown,
+  ) =>
+    fetch(origin + path, {
+      method,
+      headers: {
+        authorization: `Bearer ${token}`,
+        ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+      },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+  expect((await runtime('/run/hello')).status).toBe(200)
+  await first.request(`/api/flows/${flow.id}`, 'PUT', {
+    ...helloFlow,
+    revision: 1,
+    method: 'PUT',
+    path: '/v2/:id',
+  })
+  await first.request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 2 })
+  expect((await runtime('/run/v2/%252F', 'PUT')).status).toBe(200)
+  expect((await runtime('/run/hello')).status).toBe(404)
+  expect(
+    (
+      await stale.handle(
+        new Request(origin + '/run/hello', {
+          headers: { authorization: `Bearer ${key.token}` },
+        }),
+      )
+    ).status,
+  ).toBe(404)
+  await first.request(`/api/flows/${flow.id}`, 'PUT', {
+    ...graphqlFlow,
+    revision: 2,
+  })
+  await first.request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 3 })
+  const graphqlKey = await (
+    await first.request('/api/runtime-keys', 'POST', {
+      name: 'GraphQL',
+      flowId: flow.id,
+      permissions: ['query'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    })
+  ).json()
+  expect(
+    await (
+      await runtime('/graphql/hello', 'POST', graphqlKey.token, {
+        query: '{ greet(name:"Ada") { name } }',
+      })
+    ).json(),
+  ).toEqual({ data: { greet: { name: 'Ada' } } })
+  const method = await runtime('/graphql/hello', 'GET', graphqlKey.token)
+  expect(method.status).toBe(405)
+  expect(method.headers.get('allow')).toBe('POST')
+  expect((await runtime('/run/v2/Ada', 'PUT')).status).toBe(404)
+  await first.request(`/api/flows/${flow.id}/rollback`, 'POST', {
+    revision: 1,
+    publishedRevision: 3,
+  })
+  expect((await runtime('/run/hello')).status).toBe(200)
+  expect(
+    (
+      await runtime('/graphql/hello', 'POST', graphqlKey.token, {
+        query: '{ greet(name:"Ada") { name } }',
+      })
+    ).status,
+  ).toBe(404)
+})
+
+test('a stopped native listener fails publication closed without changing its release or audit', async () => {
+  const { request, server } = workspace()
+  const flow = await (await request('/api/flows', 'POST', helloFlow)).json()
+  await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 1 })
+  const key = await (
+    await request('/api/runtime-keys', 'POST', {
+      name: 'Caller',
+      flowId: flow.id,
+      permissions: ['rest'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    })
+  ).json()
+  server.app.listen({ hostname: '127.0.0.1', port: 0 })
+  await server.app.server!.stop(true)
+  await request(`/api/flows/${flow.id}`, 'PUT', {
+    ...helloFlow,
+    revision: 1,
+    path: '/new',
+  })
+  const audit = await (await request('/api/audit')).json()
+  expect(
+    (await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 2 }))
+      .status,
+  ).toBe(503)
+  expect(await (await request('/api/audit')).json()).toEqual(audit)
+  expect(
+    (await (await request(`/api/flows/${flow.id}`)).json()).publishedRevision,
+  ).toBe(1)
+  expect(
+    (await request('/run/hello', 'GET', undefined, key.token)).status,
+  ).toBe(503)
+})
+
+test('generated REST routes execute only their explicitly published method without a framework HEAD alias', async () => {
+  const { request } = workspace()
+  const flow = await (await request('/api/flows', 'POST', helloFlow)).json()
+  await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 1 })
+  const key = await (
+    await request('/api/runtime-keys', 'POST', {
+      name: 'Caller',
+      flowId: flow.id,
+      permissions: ['rest'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    })
+  ).json()
+  const audit = await (await request('/api/audit')).json()
+  expect(
+    (await request('/run/hello', 'HEAD', undefined, key.token)).status,
+  ).toBe(404)
+  expect(await (await request('/api/audit')).json()).toEqual(audit)
+})
+
+test('publication during trusted asynchronous request parsing fails admission before flow effects', async () => {
+  let entered!: () => void
+  let release!: () => void
+  const parsing = new Promise<void>((resolve) => {
+    entered = resolve
+  })
+  const resume = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const { request, server } = workspace({
+    configureApp: (app) => {
+      app.onParse(async ({ request }) => {
+        if (request.headers.get('x-hold-parser') === 'yes') {
+          entered()
+          await resume
+        }
+      })
+    },
+  })
+  const definition = { ...helloFlow, method: 'POST' }
+  const flow = await (await request('/api/flows', 'POST', definition)).json()
+  await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 1 })
+  const key = await (
+    await request('/api/runtime-keys', 'POST', {
+      name: 'Caller',
+      flowId: flow.id,
+      permissions: ['rest'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    })
+  ).json()
+  const pending = server.app.handle(
+    new Request('http://localhost/run/hello', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${key.token}`,
+        'content-type': 'application/json',
+        'x-hold-parser': 'yes',
+      },
+      body: '{}',
+    }),
+  )
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    await Promise.race([
+      parsing,
+      new Promise((_, reject) => {
+        timeout = setTimeout(
+          () =>
+            reject(new Error('Public request parser did not become pending')),
+          2000,
+        )
+      }),
+    ])
+    await request(`/api/flows/${flow.id}`, 'PUT', {
+      ...definition,
+      revision: 1,
+    })
+    expect(
+      (await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 2 }))
+        .status,
+    ).toBe(200)
+    const audit = await (await request('/api/audit')).json()
+    release()
+    expect((await pending).status).toBe(503)
+    expect(await (await request('/api/audit')).json()).toEqual(audit)
+    expect((await request('/run/hello', 'POST', {}, key.token)).status).toBe(
+      200,
+    )
+  } finally {
+    clearTimeout(timeout)
+    release()
+    await pending
+  }
+})
+
+test('restart and downloaded backup restoration reconstruct private generated routes with identical immutable artifact hashes', async () => {
+  const first = workspace()
+  const flow = await (
+    await first.request('/api/flows', 'POST', helloFlow)
+  ).json()
+  await first.request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 1 })
+  const original = await (
+    await first.request(`/api/flows/${flow.id}/backend-code`)
+  ).json()
+  const key = await (
+    await first.request('/api/runtime-keys', 'POST', {
+      name: 'Pinned',
+      flowId: flow.id,
+      releaseRevision: 1,
+      permissions: ['rest'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    })
+  ).json()
+  await first.request(`/api/flows/${flow.id}`, 'PUT', {
+    ...helloFlow,
+    revision: 1,
+    path: '/version2',
+  })
+  await first.request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 2 })
+  const current = await (
+    await first.request(`/api/flows/${flow.id}/backend-code`)
+  ).json()
+  const backup = await (await first.request('/api/backups', 'POST', {})).json()
+  const bytes = new Uint8Array(
+    await (await first.request(`/api/backups/${backup.id}`)).arrayBuffer(),
+  )
+  const restoredPath = join(first.directory, 'restored.sqlite')
+  writeFileSync(restoredPath, bytes)
+  await first.server.close()
+  const restarted = createApp(first.options)
+  const restored = createApp({
+    ...first.options,
+    databasePath: restoredPath,
+    runtimeCodeDir: join(first.directory, 'restore-code'),
+  })
+  cleanup.push(async () => {
+    await restarted.close()
+    await restored.close()
+  })
+  const call = (
+    server: typeof restored,
+    path: string,
+    method = 'GET',
+    body?: unknown,
+    token = owner,
+  ) =>
+    server.app.handle(
+      new Request(`http://localhost${path}`, {
+        method,
+        headers: {
+          authorization: `Bearer ${token}`,
+          ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      }),
+    )
+  for (const server of [restarted, restored]) {
+    expect(
+      await (await call(server, `/api/flows/${flow.id}/backend-code`)).json(),
+    ).toEqual(current)
+    expect(
+      (await call(server, '/run/version2', 'GET', undefined, key.token)).status,
+    ).toBe(403)
+  }
+  expect(
+    (
+      await call(restored, `/api/flows/${flow.id}/rollback`, 'POST', {
+        revision: 1,
+        publishedRevision: 2,
+      })
+    ).status,
+  ).toBe(200)
+  expect(
+    await (await call(restored, `/api/flows/${flow.id}/backend-code`)).json(),
+  ).toEqual(original)
+  expect(
+    await (
+      await call(restored, '/run/hello', 'GET', undefined, key.token)
+    ).json(),
+  ).toEqual({ message: 'Hello, Besh!' })
+  expect(
+    (await call(restored, '/run/version2', 'GET', undefined, key.token)).status,
+  ).toBe(404)
+  expect(
+    await (await call(restarted, `/api/flows/${flow.id}/backend-code`)).json(),
+  ).toEqual(current)
+  expect(readdirSync(first.options.runtimeCodeDir)).toEqual([])
+  expect(readdirSync(join(first.directory, 'restore-code'))).toEqual([])
+})
+
+function workspace(extra: Partial<AppOptions> = {}) {
+  const directory = mkdtempSync(join(tmpdir(), 'besh-runtime-code-'))
+  const options = {
+    databasePath: join(directory, 'control.sqlite'),
+    backupDir: join(directory, 'backups'),
+    adminToken: owner,
+    runtimeCodeDir: join(directory, 'runtime-code'),
+    ...extra,
+  }
+  const server = createApp(options)
+  cleanup.push(async () => {
+    if (server.app.server) await server.app.stop()
+    await server.close()
+    rmSync(directory, { recursive: true, force: true, maxRetries: 5 })
+  })
+  const request = (
+    path: string,
+    method = 'GET',
+    body?: unknown,
+    token = owner,
+  ) =>
+    server.app.handle(
+      new Request(`http://localhost${path}`, {
+        method,
+        headers: {
+          authorization: `Bearer ${token}`,
+          ...(body === undefined ? {} : { 'content-type': 'application/json' }),
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      }),
+    )
+  return { directory, options, server, request }
+}
+
+test('publication creates a private current-revision backend artifact while draft edits leave its code unchanged', async () => {
+  const { request } = workspace()
+  const saved = await (await request('/api/flows', 'POST', helloFlow)).json()
+  expect((await request(`/api/flows/${saved.id}/backend-code`)).status).toBe(
+    404,
+  )
+  expect(
+    (await request(`/api/flows/${saved.id}/publish`, 'POST', { revision: 1 }))
+      .status,
+  ).toBe(200)
+  const response = await request(
+    `/api/flows/${saved.id}/backend-code?revision=1`,
+  )
+  expect(response.status).toBe(200)
+  const artifact = await response.json()
+  expect(artifact).toMatchObject({
+    flowId: saved.id,
+    revision: 1,
+    compilerVersion: 1,
+    filename: `besh-${saved.id}-r1.cjs`,
+    endpoint: { method: 'GET', path: '/run/hello', graphql: false },
+  })
+  expect(artifact.sha256).toBe(
+    createHash('sha256').update(artifact.code).digest('hex'),
+  )
+  expect(artifact.definitionSha256).toMatch(/^[a-f0-9]{64}$/)
+  expect(artifact.requirements.join(' ')).toContain('Besh runtime helpers')
+  expect(artifact.code).not.toContain(owner)
+  expect(
+    (
+      await request(`/api/flows/${saved.id}`, 'PUT', {
+        ...helloFlow,
+        revision: 1,
+        path: '/edited',
+      })
+    ).status,
+  ).toBe(200)
+  expect(
+    await (await request(`/api/flows/${saved.id}/backend-code`)).json(),
+  ).toEqual(artifact)
+  expect(
+    (await request(`/api/flows/${saved.id}/backend-code?revision=2`)).status,
+  ).toBe(409)
+})
+
+test('native publication loads concrete generated routes and a real staging filesystem failure preserves the old release', async () => {
+  const { request, server, options } = workspace()
+  const flow = await (await request('/api/flows', 'POST', helloFlow)).json()
+  expect(
+    (await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 1 }))
+      .status,
+  ).toBe(200)
+  const key = await (
+    await request('/api/runtime-keys', 'POST', {
+      name: 'Caller',
+      flowId: flow.id,
+      permissions: ['rest'],
+      expiresAt: new Date(Date.now() + 3600000).toISOString(),
+    })
+  ).json()
+  const staleApp = server.app
+  server.app.listen({ hostname: '127.0.0.1', port: 0 })
+  const origin = server.app.server!.url.origin
+  const native = (path: string) =>
+    fetch(origin + path, { headers: { authorization: `Bearer ${key.token}` } })
+  expect((await native('/run/%68ello')).status).toBe(200)
+  await request(`/api/flows/${flow.id}`, 'PUT', {
+    ...helloFlow,
+    revision: 1,
+    path: '/v2/items/:slug',
+  })
+  mkdirSync(options.runtimeCodeDir, { recursive: true })
+  rmdirSync(options.runtimeCodeDir)
+  writeFileSync(
+    options.runtimeCodeDir,
+    'Generation directory deliberately replaced by a file',
+  )
+  const before = await (await request('/api/audit')).json()
+  expect(
+    (await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 2 }))
+      .status,
+  ).toBe(503)
+  expect(await (await request('/api/audit')).json()).toEqual(before)
+  expect(
+    (await (await request(`/api/flows/${flow.id}`)).json()).publishedRevision,
+  ).toBe(1)
+  expect(await (await native('/run/hello')).json()).toEqual({
+    message: 'Hello, Besh!',
+  })
+  rmSync(options.runtimeCodeDir)
+  expect(
+    (await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 2 }))
+      .status,
+  ).toBe(200)
+  expect((await native('/run/hello')).status).toBe(404)
+  expect((await native('/run/v2/items/%E6%9D%B1%E4%BA%AC')).status).toBe(200)
+  expect(
+    (
+      await staleApp.handle(
+        new Request(origin + '/run/hello', {
+          headers: { authorization: `Bearer ${key.token}` },
+        }),
+      )
+    ).status,
+  ).toBe(404)
+})

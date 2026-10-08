@@ -48,6 +48,7 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 | GET    | `/api/flows/:id/releases`           | `flows.read`; immutable revisions and current selection                                 |
 | GET    | `/api/flows/:id/releases/:revision` | `flows.read`; selected definition and current flag                                      |
 | GET    | `/api/flows/:id/openapi`            | `flows.read`; `source=draft` or `source=published` (default)                            |
+| GET    | `/api/flows/:id/backend-code`       | `flows.read`; current module, optional expected `revision`                              |
 | POST   | `/api/flows`                        | `flows.write`; flow definition                                                          |
 | PUT    | `/api/flows/:id`                    | `flows.write`; flow definition plus current `revision`                                  |
 | POST   | `/api/flows/:id/test`               | `flows.test`; `{ "body": {}, "query": {}, "params": {} }`                               |
@@ -89,6 +90,14 @@ Member creation also accepts optional `email` and `password` together, using the
 Custom role metadata contains `id`, `name`, `permissions`, `version`, `createdAt`, and `updatedAt`. Creation starts at version 1. Names are trimmed, 1 to 80 characters, control-free, unique under SQLite NOCASE (ASCII case-insensitive), and cannot use a built-in role name. Permissions contain zero to 15 unique supported IDs, with no implied dependencies. Updates/deletion require the positive safe-integer version reviewed by the caller; stale versions return `409`. Unknown roles return `404`.
 
 Member role assignment accepts exactly `{ "role": "editor" }`, `{ "role": "viewer" }`, or `{ "role": "custom", "roleId": "..." }`. Permission changes and assignments commit with `role.updated` or `member.role.updated` and affected `session.revoked` events. Role creation/deletion record `role.created`/`role.deleted`. Changing grants revokes sessions for members assigned to that role; assignment changes revoke the member's sessions. Member keys remain valid but resolve current grants on their next request. Renaming a role does not add privileges. Migration 11 adds `workspace_roles` and `member_roles` without changing existing built-in assignments. See [permission catalog and boundaries](roles.md).
+
+## Published backend code
+
+`GET /api/flows/:id/backend-code?revision=N` requires `flows.read`; `revision` optionally guards the expected current publication, and omission returns the latest publication; runtime keys cannot access management. Unknown/unpublished flows return `404`, an invalid/duplicate revision or an unknown query field returns `400`, and a changed or historical noncurrent revision returns `409`. Artifact integrity failure returns `503`. This read does not publish or execute an API and does not export a draft.
+
+The artifact contains `flowId`, `revision`, numeric `compilerVersion`, `filename` (`besh-<flowId>-r<revision>.cjs`), `code`, `sha256`, `definitionSha256`, `endpoint: { method, path, graphql: boolean }`, and `requirements: string[]`. Generated code is bounded to 1 MiB (`400` on generation overflow). Endpoint paths include the actual `/run` or `/graphql` prefix. Code is canonical CommonJS generated from the validated release and depends on Besh runtime services; it is not a standalone deployment. Configured literals/resource references can appear in downloads; server-held secrets and caller tokens are not automatically inserted. Hashes describe generated content and are not signatures. See [published backend code](runtime-code.md).
+
+Publication/rollback stages the module and compiled registered routes with migration-14 artifact/generation state and audit. Runtime keeps credentials, pins, contracts, GraphQL/data/execution limits, and audit SQL. A generation change during parsed-request admission rejects with `503` before effects; an already admitted immutable-release request may finish. Failed peer reconstruction or local restoration blocks runtime with `503` until restart or a successful local publication stage. Exact failure/recovery and native behavior belong in [testing](testing.md).
 
 ## Client code examples
 

@@ -173,6 +173,11 @@ const nodeTypes = { besh: FlowCard }
 const ClientCode = lazy(() =>
   import('./client-code').then((module) => ({ default: module.ClientCode })),
 )
+const GeneratedBackend = lazy(() =>
+  import('./generated-backend').then((module) => ({
+    default: module.GeneratedBackend,
+  })),
+)
 
 function Inspector({ node }: { node: CanvasNode }) {
   const [advanced, setAdvanced] = useState(false)
@@ -486,6 +491,7 @@ export function Builder() {
 function BuilderSession() {
   const state = useStudio()
   const [clientCode, setClientCode] = useState(false)
+  const [generatedBackend, setGeneratedBackend] = useState(false)
   const socialFlow = state.nodes.some((node) => node.data.kind === 'social')
   const [loginInput, setLoginInput] = useState<LoginInput>({
     action: 'BEGIN',
@@ -791,6 +797,19 @@ function BuilderSession() {
       {clientCode && can(state.member, 'flows.read') ? (
         <Suspense fallback={<p>Loading client examples…</p>}>
           <ClientCode />
+        </Suspense>
+      ) : null}
+      <Button
+        variant="outline"
+        aria-expanded={generatedBackend}
+        disabled={state.busy || !state.id || !can(state.member, 'flows.read')}
+        onClick={() => setGeneratedBackend(!generatedBackend)}
+      >
+        Generated backend
+      </Button>
+      {generatedBackend && can(state.member, 'flows.read') ? (
+        <Suspense fallback={<p>Loading generated backend panel…</p>}>
+          <GeneratedBackend />
         </Suspense>
       ) : null}
       <ReleaseHistory />

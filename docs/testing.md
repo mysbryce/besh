@@ -25,6 +25,30 @@ Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_
 
 Windows, Bun 1.3.14, Node 22.22.1, TypeScript 7.0.2, Playwright 1.64.0 with installed Chrome.
 
+### Generated backend and registered routes
+
+- Backend validation: 194 tests with 3,356 assertions across 15 files passed. Eight new public HTTP tests cover canonical generated artifacts, exact methods and path parameters, publication and rollback, current revision reads, malformed queries, permission checks, failed generation, native activation, stale listeners, and startup reconstruction. Type checks and the production build passed.
+- Actual publication writes a trusted canonical registration module and loads it to register Elysia REST and GraphQL routes. The request path no longer searches stored flow definitions. Authentication, generation checks, mutable data, and audit still use SQLite; the bounded graph engine still executes the saved graph.
+- Two separate Bun processes shared a real control database. Native HTTP checks exercised the first peer request after publication, changed methods and paths, removed routes, REST-to-GraphQL changes, Unicode and encoded parameters, pinned-key replacement and rollback, and immediate revocation. A real generated-code directory failure returned HTTP 503 without a publication audit; the previous route kept serving from both processes. Repair followed by publication recovered normally.
+- A packaged 0.7 workspace and downloaded migration-13 backup upgraded to migration 14. Existing REST/GraphQL keys worked, generated source hashes matched, follow/pinned behavior survived publication and rollback, and a current backup restored the same routes and artifacts into a fresh code directory. The original legacy backup remained byte-identical.
+- Native checks through the actual `src/index.ts` entry point preserved built dashboard HTML/assets, CSP, and management authentication through four method/path swaps. The shutdown event harness exited cleanly; this does not test delivery of an operating-system signal.
+- All 40 exact generated client programs passed again against registered routes. Actual small k6 REST and GraphQL runs made five requests each, passed their goals, and revoked their managed pinned keys. These checks verify integration rather than production capacity.
+- All 16 browser stories passed in about 5.5 minutes. The generated-backend journey covers normal Publish, immutable source, copy/download bytes, unsaved and saved draft exclusion, stale export rejection, explicit refresh, rollback, pending and retry states, late responses, GraphQL, viewer access, and denied private reads.
+- The full walkthrough passed in about 5.1 minutes and captured 474 masked screenshots across 12 pages. All 23 new generated-backend captures were visually inspected, including light/dark phone containment, wrapped hashes, stale/error clearing, pending actions, and permission boundaries. Gallery filters, every image URL, private-file denial, and light/dark/system persistence passed. The initial production chunk is 449.22 kB before gzip; the generated-backend panel loads separately.
+
+The local routing comparison used sequential runs after browser/preview checks finished: actual native Besh HTTP, the previous packaged 0.7 release and current 0.8 source, one k6 user for three seconds, and a known response from the last published literal GET route. Every response check passed and request errors were zero. Creation/publication time below is the total for creating and publishing all fixtures one at a time, not the latency of one publication.
+
+| Routes | Release | Requests/second | Average request ms | p95 request ms | Total create/publish ms |
+| ------ | ------- | --------------- | ------------------ | -------------- | ----------------------- |
+| 1      | 0.7     | 825             | 1.19               | 2.72           | 31                      |
+| 1      | 0.8     | 930             | 1.04               | 2.67           | 50                      |
+| 50     | 0.7     | 717             | 1.35               | 3.09           | 170                     |
+| 50     | 0.8     | 703             | 1.37               | 3.14           | 3,460                   |
+| 150    | 0.7     | 469             | 2.09               | 3.67           | 481                     |
+| 150    | 0.8     | 956             | 1.02               | 3.01           | 25,167                  |
+
+These short Windows samples show a tradeoff: the registered router removed the route-count-related request slowdown in the 150-route fixture, while rebuilding the complete router made successive publications substantially more expensive. The 50-route request results were similar. This is not a sustained capacity, concurrency, or production speed guarantee; compilation/rebuild optimization remains future work.
+
 ### Release-pinned runtime keys
 
 - Backend validation: 186 tests with 3,288 assertions across 14 files passed. Twelve public HTTP tests cover strict optional pins, atomic stale issuance, early REST/GraphQL denials, rollback reactivation, dormant replacement, exact expiry/grants, OAuth attempt binding, managed load-test pins, mutable source boundaries, and backup restoration. Existing keys keep their follow-publication behavior.

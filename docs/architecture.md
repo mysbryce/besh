@@ -17,7 +17,7 @@ Goal: help teams build secure, documented APIs with a visual editor.
 
 ## Runtime boundary
 
-`Dashboard -> management API -> validate draft -> publish release -> runtime API -> flow executor`
+`Dashboard -> management API -> validate draft -> publish release/generated module -> registered runtime route -> bounded flow executor`
 
 The executor must limit graph size, steps, input size, execution time, and output size. Validate node configuration and all edges. Reject cycles until bounded loops are designed. Errors must not reveal credentials or stack traces.
 
@@ -39,9 +39,13 @@ Checkboxes and dropdowns use local styled components built on Radix primitives. 
 
 Basic response, condition, and REST request editing uses labeled field forms. Raw JSON is an optional advanced view; complex nested values are preserved. Returning from advanced request input validates the full params/body/query envelope before mounting the form, including text-only parameter/query values. Input strings resembling reference syntax stay literal request values. Light/dark appearance uses shared tokens, a same-origin initialization script compatible with the content security policy, and accessible custom controls; see [design system](design.md).
 
-## Planned generated runtime
+## Generated runtime
 
-The next architecture slice after release pins generates trusted backend code during publication and registers actual REST/GraphQL routes. It replaces wildcard dispatch and runtime path-to-flow database searches; it does not remove the need for current credential checks, revocation, typed validation, or mutable dependency reads. Startup reconstruction, safe publication/rollback transitions, route availability, in-flight requests, and failed-generation recovery need an explicit lifecycle using the installed Elysia version. This design is planned, with no measured performance claim or permission to execute uploaded JavaScript. See [next steps](roadmap.md#next-steps).
+Publication generates canonical trusted CommonJS code and hashes from the validated graph, then stages a fresh compiled Elysia router with actual REST method/path registrations and GraphQL POST/method-rejection routes. It replaces `/run/*` and `/graphql/*` dispatchers and per-execution path/definition lookup. The generated module captures an immutable release while the bounded graph engine, typed validation, runtime-key/pin checks, mutable data reads, and audit remain. Elysia documents [method/path route registration](https://elysiajs.com/essential/route), and Bun exposes [server handler reload](https://bun.sh/docs/runtime/http/server#serverreload); Besh's implementation/evidence is tracked separately.
+
+Migration 14 persists artifacts and a runtime generation counter in consistent control backups. Publication/rollback stages generation, module loading, and router compilation under an immediate transaction, committing source/release selection, artifacts, generation, audit, and synchronous local activation together. Caught failures roll back state and restore the old router. Failed peer reconstruction or unrecoverable local restoration leaves runtime blocked with `503` until restart or a successful local publication stage; ordinary request retries do not repair it. Startup validates/regenerates canonical code from trusted graphs rather than executing arbitrary stored code. Temporary exclusive-create CommonJS files use `createRequire`, with file/cache cleanup.
+
+Ordinary requests use two fixed-size generation reads to protect admission across processes; canonical URL redispatch/router refresh may add fixed-size reads. Preflight detects a changed generation and reconstructs/redispatches before parsing; a final generation/credential transaction after parsing returns `503` on change before effects. An admitted immutable-release request may finish after later publication. This is not coordinated distributed activation, uninterrupted availability, or a measured performance claim. Dashboard code exports require flow-read permission and guard the expected current publication (raw management GET may omit the revision guard) and contain configured literals/references plus runtime requirements, not automatically inserted server secrets. See [published backend code](runtime-code.md) and [testing](testing.md).
 
 ## Client-code boundary
 

@@ -26,6 +26,10 @@ Create separate flows for `/v1/items/:id` and `/v2/items/:id`. Both can be publi
 
 For the same REST method, two published routes cannot match the same URL. For example, `GET /items/:id` conflicts with `GET /items/new`, even if one seems more specific. `/items/:id` and `/items/:slug` also overlap. Choose a different route, or change and republish the conflicting flow's route first. Different methods can share a path. GraphQL uses its separate `/graphql` route namespace.
 
+## Generated route activation
+
+Publication/rollback prepares canonical backend code and registers the selected actual REST method/path or GraphQL POST endpoint. Request routing no longer searches flow definitions by path; current credentials, pins, validation, mutable dependency reads, and audit still apply. Startup and generation changes reconstruct current routes. An admitted immutable-release request may finish after a later activation; a generation change during parsing is rejected before effects. Caught activation failure restores the previous router where possible. Failed peer reconstruction or local restoration leaves runtime blocked with `503` until restart or a successful local publication stage. See [published backend code](runtime-code.md).
+
 ## Review and restore a release
 
 Release history lists immutable published revisions and identifies the current one. Owners, editors, viewers, and custom members with flow-read permission can inspect history and a release definition. Owners and custom members with publication permission can restore an earlier published revision.

@@ -6,6 +6,9 @@
 - **Edge**: a connection that chooses which node runs next.
 - **Draft**: an editable flow. Saving a draft does not change a published endpoint.
 - **Release**: a validated, immutable copy of a flow used by callers.
+- **Backend artifact**: generated CommonJS source and hashes for a validated published graph; it requires Besh runtime services rather than running as a standalone server.
+- **Runtime generation**: a persisted publication-change counter used to reconstruct current registered handlers and reject requests crossing an activation change.
+- **Registered runtime route**: a published method/path handled by its generated module instead of a wildcard path-to-flow dispatcher.
 - **Release history**: immutable published flow revisions, with the currently selected revision identified separately from the draft.
 - **Rollback**: a publication-authorized action that selects an earlier validated release for live callers without changing the draft or restoring mutable dependencies.
 - **Path parameter**: a named whole REST path segment, such as `:id` in `/v1/items/:id`, provided by the caller and available as `$input.params.id`.

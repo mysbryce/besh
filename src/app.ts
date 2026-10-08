@@ -1,4 +1,4 @@
-import { Elysia, t } from 'elysia'
+import { Elysia, t, type AnyElysia } from 'elysia'
 import { version } from '../package.json'
 import { z } from 'zod'
 import { permissionCatalog, type Permission } from './workspace/permissions'
@@ -7,6 +7,8 @@ import { openStore, hashToken } from './workspace/store'
 import { allow, ApiError, requirePermission } from './errors'
 import { flowService } from './flows/service'
 import { clientCodeTargets } from './flows/client-code-model'
+import { currentBackendCode } from './flows/backend-code'
+import { runtimeService } from './flows/runtime'
 import { backupService } from './workspace/backups'
 import { dataSourceService } from './data/sources'
 import { databaseConnectionService } from './databases/service'
@@ -83,6 +85,8 @@ async function boundRequest(request: Request) {
 }
 
 export type AppOptions = {
+  runtimeCodeDir?: string
+  configureApp?: (app: AnyElysia) => void
   databasePath: string
   backupDir: string
   adminToken?: string
@@ -111,7 +115,20 @@ export function createApp(options: AppOptions) {
     store.close()
     throw error
   }
-  const flows = flowService(store, sources, productAuth, databases)
+  let runtime: ReturnType<typeof runtimeService>
+  try {
+    runtime = runtimeService(store, options.runtimeCodeDir, {
+      rest: (key, release, path, input, signal) =>
+        flows.run(key, release, path, input, signal),
+      graphql: (key, release, input, signal) =>
+        flows.graphql(key, release, input, signal),
+    })
+  } catch (error) {
+    void databases.close()
+    store.close()
+    throw error
+  }
+  const flows = flowService(store, sources, productAuth, databases, runtime)
   const backups = backupService(store, options.backupDir)
   const updates = updateService(store, {
     fetch: options.updateFetch,
@@ -124,7 +141,8 @@ export function createApp(options: AppOptions) {
         binaryPath: options.k6BinaryPath,
         cacheDir: options.k6CacheDir,
       }),
-    () => (app.server ? `http://127.0.0.1:${app.server.port}` : null),
+    () =>
+      runtime.app.server ? `http://127.0.0.1:${runtime.app.server.port}` : null,
   )
 
   const managementActors = new WeakMap<Request, string>()
@@ -169,6 +187,27 @@ export function createApp(options: AppOptions) {
       if (sources.length > 1)
         throw new ApiError(400, 'Choose one example source')
       return flows.clientCodeMetadata(params.id, sources[0])
+    })
+    .get('/flows/:id/backend-code', ({ member, params, request }) => {
+      requirePermission(member, 'flows.read')
+      const query = new URL(request.url).searchParams
+      const revisions = query.getAll('revision')
+      if (
+        [...query.keys()].some((key) => key !== 'revision') ||
+        revisions.length > 1 ||
+        (revisions.length &&
+          (!/^[1-9][0-9]*$/.test(revisions[0]) ||
+            !Number.isSafeInteger(Number(revisions[0]))))
+      )
+        throw new ApiError(
+          400,
+          'Choose an optional positive safe expected published revision',
+        )
+      return currentBackendCode(
+        store,
+        params.id,
+        revisions.length ? Number(revisions[0]) : undefined,
+      )
     })
     .post('/flows/:id/client-code', ({ member, params, body }) => {
       requirePermission(member, 'flows.read')
@@ -567,175 +606,149 @@ export function createApp(options: AppOptions) {
       return backups.download(member.id, params.id)
     })
 
-  const app = new Elysia()
-    .onStop(() => {
-      loadTests.close()
-      updates.close()
-      flows.close()
-      return databases.close()
+  const buildApp = () => {
+    let app: AnyElysia
+    app = new Elysia({
+      systemRouter: false,
+      strictPath: true,
+      precompile: true,
     })
-    .onRequest(async ({ set, request }) => {
-      set.headers['cache-control'] = 'no-store'
-      set.headers['x-content-type-options'] = 'nosniff'
-      set.headers['referrer-policy'] = 'no-referrer'
-      set.headers['x-frame-options'] = 'DENY'
-      set.headers['content-security-policy'] =
-        "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'; form-action 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-      await boundRequest(request)
-    })
-    .onError(({ error, code, set, request }) => {
-      if (error instanceof ApiError) {
-        if (error.status === 401 || error.status === 403) {
-          const token = bearer(request)
-          store.audit(
-            managementActors.get(request) ??
-              store.authenticate(token)?.id ??
-              store.runtimeActor(token),
-            'access.denied',
-            'api',
-          )
+      .onStop(() => {
+        runtime.close()
+        loadTests.close()
+        updates.close()
+        flows.close()
+        return databases.close()
+      })
+      .onRequest(async ({ set, request }) => {
+        if (storeClosed) throw new ApiError(503, 'Workspace is shutting down')
+        set.headers['cache-control'] = 'no-store'
+        set.headers['x-content-type-options'] = 'nosniff'
+        set.headers['referrer-policy'] = 'no-referrer'
+        set.headers['x-frame-options'] = 'DENY'
+        set.headers['content-security-policy'] =
+          "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'; form-action 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+        await boundRequest(request)
+        return runtime.preflight(request, app)
+      })
+      .onError(({ error, code, set, request }) => {
+        if (error instanceof ApiError) {
+          if (error.status === 401 || error.status === 403) {
+            const token = bearer(request)
+            store.audit(
+              managementActors.get(request) ??
+                store.authenticate(token)?.id ??
+                store.runtimeActor(token),
+              'access.denied',
+              'api',
+            )
+          }
+          set.status = error.status
+          return new URL(request.url).pathname.startsWith('/graphql/')
+            ? { errors: [{ message: error.message }] }
+            : { error: error.message }
         }
-        set.status = error.status
+
+        set.status =
+          code === 'NOT_FOUND'
+            ? 404
+            : code === 'VALIDATION' || code === 'PARSE'
+              ? 400
+              : 500
+        const message =
+          code === 'NOT_FOUND'
+            ? 'Not found'
+            : code === 'VALIDATION' || code === 'PARSE'
+              ? 'Invalid request'
+              : 'Internal server error'
         return new URL(request.url).pathname.startsWith('/graphql/')
-          ? { errors: [{ message: error.message }] }
-          : { error: error.message }
-      }
-
-      set.status =
-        code === 'NOT_FOUND'
-          ? 404
-          : code === 'VALIDATION' || code === 'PARSE'
-            ? 400
-            : 500
-      const message =
-        code === 'NOT_FOUND'
-          ? 'Not found'
-          : code === 'VALIDATION' || code === 'PARSE'
-            ? 'Invalid request'
-            : 'Internal server error'
-      return new URL(request.url).pathname.startsWith('/graphql/')
-        ? { errors: [{ message }] }
-        : { error: message }
-    })
-    .get('/health', () => ({ status: 'ok', version }))
-    .post(
-      '/auth/login',
-      async ({ body, set, request }) => {
-        browser.checkOrigin(request)
-        const result = await sessions.login(body)
-        set.headers['set-cookie'] = browser.cookie(request, result.secret)
-        return result.session
-      },
-      {
-        body: t.Object({
-          token: t.Optional(t.String({ maxLength: 200 })),
-          email: t.Optional(t.String({ maxLength: 254 })),
-          password: t.Optional(t.String({ maxLength: 128 })),
-        }),
-      },
-    )
-    .get('/auth/session', ({ request }) => {
-      const session = sessions.restore(sessionCookie(request))
-      if (!session) throw new ApiError(401, 'Authentication required')
-      return session
-    })
-    .post('/auth/logout', ({ request, set }) => {
-      const session = sessions.restore(sessionCookie(request))
-      if (!session) throw new ApiError(401, 'Authentication required')
-      browser.checkWrite(request, session.csrfToken)
-      const result = sessions.revoke(session.member, session.sessionId)
-      set.headers['set-cookie'] = browser.cookie(request)
-      return result
-    })
-    .get('/setup/status', () => store.setupStatus())
-    .post(
-      '/setup',
-      async ({ body }) => {
-        if (!store.setupStatus().required)
-          throw new ApiError(409, 'Workspace already configured')
-        if (
-          !options.setupKey ||
-          !timingSafeEqual(
-            Buffer.from(hashToken(body.key)),
-            Buffer.from(hashToken(options.setupKey)),
-          )
-        )
-          throw new ApiError(
-            403,
-            'Open the setup link from your server terminal',
-          )
-        return store.setup(body.name.trim(), await optionalAccount(body))
-      },
-      {
-        body: t.Object({
-          key: t.String({ maxLength: 200 }),
-          name: t.String({ minLength: 1, maxLength: 80, pattern: '\\S' }),
-          email: t.Optional(t.String({ maxLength: 254 })),
-          password: t.Optional(t.String({ maxLength: 128 })),
-        }),
-      },
-    )
-    .use(management)
-    .all('/graphql/*', async ({ request, params, body }) => {
-      const key = store.authenticateRuntime(bearer(request))
-      if (!key) throw new ApiError(401, 'Authentication required')
-      if (request.method !== 'POST')
-        return new Response(
-          JSON.stringify({
-            errors: [{ message: 'GraphQL endpoints accept POST requests' }],
-          }),
-          {
-            status: 405,
-            headers: {
-              allow: 'POST',
-              'content-type': 'application/graphql-response+json',
-            },
-          },
-        )
-
-      const result = await flows.graphql(
-        key,
-        `/${params['*']}`,
-        body,
-        request.signal,
-      )
-      return new Response(JSON.stringify(result.body), {
-        status: result.status,
-        headers: { 'content-type': 'application/graphql-response+json' },
+          ? { errors: [{ message }] }
+          : { error: message }
       })
-    })
-    .all('/run/*', async ({ request, body, query }) => {
-      const token = bearer(request)
-      const key = store.authenticateRuntime(token)
-      if (!key) throw new ApiError(401, 'Authentication required')
-
-      const result = await flows.run(
-        key,
-        request.method,
-        new URL(request.url).pathname.slice(4),
-        {
-          body: body ?? null,
-          query,
+      .get('/health', () => ({ status: 'ok', version }))
+      .post(
+        '/auth/login',
+        async ({ body, set, request }) => {
+          browser.checkOrigin(request)
+          const result = await sessions.login(body)
+          set.headers['set-cookie'] = browser.cookie(request, result.secret)
+          return result.session
         },
-        request.signal,
+        {
+          body: t.Object({
+            token: t.Optional(t.String({ maxLength: 200 })),
+            email: t.Optional(t.String({ maxLength: 254 })),
+            password: t.Optional(t.String({ maxLength: 128 })),
+          }),
+        },
       )
-      const empty =
-        request.method === 'HEAD' ||
-        result.status === 204 ||
-        result.status === 205 ||
-        result.status === 304
-      return new Response(empty ? null : JSON.stringify(result.body), {
-        status: result.status,
-        headers: { 'content-type': 'application/json' },
+      .get('/auth/session', ({ request }) => {
+        const session = sessions.restore(sessionCookie(request))
+        if (!session) throw new ApiError(401, 'Authentication required')
+        return session
       })
-    })
+      .post('/auth/logout', ({ request, set }) => {
+        const session = sessions.restore(sessionCookie(request))
+        if (!session) throw new ApiError(401, 'Authentication required')
+        browser.checkWrite(request, session.csrfToken)
+        const result = sessions.revoke(session.member, session.sessionId)
+        set.headers['set-cookie'] = browser.cookie(request)
+        return result
+      })
+      .get('/setup/status', () => store.setupStatus())
+      .post(
+        '/setup',
+        async ({ body }) => {
+          if (!store.setupStatus().required)
+            throw new ApiError(409, 'Workspace already configured')
+          if (
+            !options.setupKey ||
+            !timingSafeEqual(
+              Buffer.from(hashToken(body.key)),
+              Buffer.from(hashToken(options.setupKey)),
+            )
+          )
+            throw new ApiError(
+              403,
+              'Open the setup link from your server terminal',
+            )
+          return store.setup(body.name.trim(), await optionalAccount(body))
+        },
+        {
+          body: t.Object({
+            key: t.String({ maxLength: 200 }),
+            name: t.String({ minLength: 1, maxLength: 80, pattern: '\\S' }),
+            email: t.Optional(t.String({ maxLength: 254 })),
+            password: t.Optional(t.String({ maxLength: 128 })),
+          }),
+        },
+      )
+      .use(management)
+
+    options.configureApp?.(app)
+    return app
+  }
+  try {
+    runtime.attach(buildApp)
+  } catch (error) {
+    runtime.close()
+    loadTests.close()
+    updates.close()
+    flows.close()
+    void databases.close()
+    store.close()
+    throw error
+  }
 
   let storeClosed = false
   let shutdown: Promise<void> | undefined
   return {
-    app,
+    get app() {
+      return runtime.app
+    },
     close() {
       if (storeClosed) return shutdown!
+      runtime.close()
       loadTests.close()
       updates.close()
       flows.close()

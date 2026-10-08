@@ -4,6 +4,25 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.8.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Generate trusted backend modules on publication and register actual REST methods/paths and GraphQL endpoints.
+- Private generated-backend previews, source hashes, copy/download, and explicit stale-release recovery in API Studio.
+- Migration 14 storing compiler artifacts and a publication counter, with startup and backup reconstruction.
+
+### Changed
+
+- Replace wildcard runtime dispatch and per-request path-to-flow database searches with immutable registered handlers.
+- Rebuild routers for publication/rollback while preserving dashboard assets, current load-test targets, and shutdown.
+
+### Security
+
+- Stage code and compiled routes with transactional publication/audit updates; caught failures restore previous routes or block execution safely.
+- Check publication generations and current credentials before effects, preserving release pins, contracts, GraphQL limits, and revocation across processes.
+- Validate canonical generated source before loading, clean temporary modules, and enforce explicitly published REST methods.
+
 ## 0.7.0-alpha.0 — 2026-10-09
 
 ### Added

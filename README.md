@@ -28,7 +28,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 ## What works
 
 - Visual editor with response fields, input references, conditions, and data reads; advanced JSON remains optional.
-- Saved drafts, validated publication, immutable release history, and rollback.
+- Saved drafts, [generated backend routes](docs/runtime-code.md), immutable release history, and rollback.
 - REST methods and path parameters, plus typed GraphQL queries/mutations.
 - [Server-side client examples](docs/client-code.md) for JavaScript Axios/Fetch, PHP/shell cURL, Rust, Go, Java, and C++.
 - Built-in k6 load testing for published REST/GraphQL APIs, with automatic local setup and optional goals.

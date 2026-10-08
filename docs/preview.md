@@ -18,6 +18,8 @@ Playwright needs Node.js 22.22.1 or newer. Installed Chrome is detected at its s
 
 ## Inventory
 
+Generated-backend states show unpublished guidance, automatic generation on Publish, source/hash/route details, draft exclusion, copy/download, stale export rejection, explicit refresh, rollback, failed and pending reads, late responses, GraphQL, and read permission boundaries. Light/dark desktop and phone captures include the code panel. See [published backend code](runtime-code.md).
+
 Release-pin states show default following keys, optional current-release selection, confirmation, one-time receipts, dormant replacement, rollback reactivation, stale-selection review, expiration/revocation, managed k6 pins, operators without API-read access, and metadata-error recovery. Light/dark desktop and phone captures include the custom release selector and confirmation. See [runtime keys](api-keys.md).
 
 Client-code states add all eight REST/GraphQL language choices, source revisions, request/variable forms, copied/downloaded contents, unsaved-draft guidance, stale revision recovery, invalid inputs, pending actions, metadata errors and late responses, viewer access, and account-only denial. Light/dark phone captures use Fit View and check both graph nodes inside the canvas. See [client examples](client-code.md).
@@ -44,7 +46,7 @@ Client-code states add all eight REST/GraphQL language choices, source revisions
 | Permissions          | Viewer studio, denied administration pages, editor controls, revoked token rejected                                                                                                                                                                       |
 | Phone layout         | Dashboard pages and login at 390px width, saved-API dropdown and selection, visible canvas, no document overflow, accessible sign-out                                                                                                                     |
 
-The verified walkthrough captured 451 screenshots on 2026-10-09, including all 12 dashboard pages at desktop and phone widths in light and dark appearance, plus REST rules, OpenAPI downloads, client examples, workspace accounts/sessions, GitHub product login, API key replacement/release pins, k6 load tests, path parameters, release review/rollback, custom roles, update notices, and uploaded SQLite copies.
+The verified walkthrough captured 474 screenshots on 2026-10-09, including all 12 dashboard pages at desktop and phone widths in light and dark appearance, plus generated backend code, REST rules, OpenAPI downloads, client examples, workspace accounts/sessions, GitHub product login, API key replacement/release pins, k6 load tests, path parameters, release review/rollback, custom roles, update notices, and uploaded SQLite copies.
 
 Gallery checks passed mouse/keyboard filtering, search, empty results, every image URL, phone overflow, and denial of private database/test-output paths. Light/dark/system appearance, reload, and OS preference behavior were verified separately. Desktop and phone screenshots were inspected, including the corrected input boundaries and settled theme controls.
 
