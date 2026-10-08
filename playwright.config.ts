@@ -7,6 +7,7 @@ const directory = mkdtempSync(join(tmpdir(), 'besh-browser-'))
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: '**/preview.spec.ts',
   fullyParallel: false,
   workers: 1,
   use: {

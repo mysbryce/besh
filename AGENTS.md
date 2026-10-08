@@ -14,6 +14,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Read applicable local skills when requested. Current requested skills: `tdd`, `wait-what`, `handoff`.
 - Test first through agreed public interfaces. See `docs/testing.md` for approved scope. Work one failing test and implementation at a time.
 - Run relevant tests, type checks, build, and formatting before committing. Run browser tests for editor behavior changes.
+- Keep page and action previews current when changing dashboard behavior. Run `bun run preview:all --no-serve` and inspect affected screenshots; keep generated previews out of Git.
 - Commit completed work with Conventional Commits, for example `feat(flows): publish validated API flows` or `fix(auth): reject expired credentials`.
 - Never commit secrets, generated data, dependencies, or build output. Never hide tests or this file in `.gitignore`.
 - Preserve unrelated user edits. Do not force push, reset history, or publish without authorization.

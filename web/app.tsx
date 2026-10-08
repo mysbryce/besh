@@ -167,6 +167,7 @@ export function App() {
           </div>
           <button
             className="user-profile"
+            aria-label="Sign out"
             onClick={() => switchFlow(state.logout)}
             disabled={state.busy}
           >

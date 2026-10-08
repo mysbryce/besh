@@ -11,6 +11,7 @@ This is the product plan. Planned features are not implementation claims.
 - SQLite persistence, role checks, audit history, migration history, and local backups.
 - Tests through user-approved public HTTP, executor, and browser interfaces.
 - Clear setup, contribution, security, AI, and community policies.
+- Reproducible gallery of current pages, actions, error states, permissions, and phone layouts.
 
 Current limits: one local workspace, exact HTTP paths, three node types, fixed roles, manual SQLite backups. No external providers are enabled. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
 
@@ -57,7 +58,7 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 ## Next Steps
 
 1. Start with `bun install --frozen-lockfile` and `bun run setup`; complete the local wizard.
-2. Gather feedback on node configuration and route design before expanding the graph format.
+2. Run `bun run preview:all` and gather feedback on pages, node configuration, and route design before expanding the graph format.
 3. Implement Milestone 2: separate endpoint credentials from member identity, then session-based social sign-in and per-endpoint schemas.
 4. Add integration tests against each real provider as its adapter is built. Do not mark provider support complete from mocks.
 5. Choose a GitHub repository and private reporting contact before public release, then configure CI and update notices.

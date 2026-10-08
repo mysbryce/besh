@@ -7,6 +7,7 @@
 - User approved HTTP API, flow executor, and browser workflow as test interfaces. Use the local TDD skill for further changes.
 - User prefers no semicolons, single quotes, readable spacing, blank lines, and comments only for important intent. Captured in Prettier and `AGENTS.md`.
 - User requested simple installation with a setup wizard. Basic startup now creates the workspace through a one-time local setup link. Environment overrides remain optional for deployment/recovery.
+- User requested broader Git ignore rules and previews of every page and action. Preview output is reproducible, isolated, masked, and ignored; the gallery covers the implemented core rather than inventing integration screens.
 - No vault state was supplied; user stated vault unavailable. Repository docs hold current decisions. No direct vault access occurred.
 
 ## Choices and reasons
@@ -27,5 +28,6 @@
 - Installed Chrome was used for browser verification. CI/other machines can install Playwright Chromium.
 - Final shutdown checks exposed retained SQLite statements on Bun 1.3. File-deletion retries did not solve the cause. The store now owns and reuses prepared statements, finalizes them explicitly, and closes strictly. The full suite passes with this fix.
 - Browser regression caught unsaved new drafts being discarded when switching APIs. Dirty-state checks now protect new and existing drafts.
+- The complete preview walkthrough caught a collapsed phone canvas and an unnamed mobile sign-out control. Browser assertions reproduced both issues before CSS sizing and an explicit accessible label fixed them.
 
 See [testing](testing.md), [architecture](architecture.md), and [roadmap](roadmap.md) for durable detail.

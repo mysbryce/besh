@@ -33,6 +33,18 @@ bun start
 
 Open `http://127.0.0.1:3000`, or its first-run setup link. The server binds to loopback by default.
 
+## Preview pages and actions
+
+```sh
+bun run preview:all
+```
+
+This runs the browser walkthrough in a separate demo workspace, captures every current page and its actions, and serves a searchable screenshot gallery at `http://127.0.0.1:4174`. Click a screenshot to see it full size. Setup, editor actions, error states, roles, members, audit, backups, and phone layouts are included. Keys are masked.
+
+Installed Chrome is detected automatically on Windows. Otherwise, first run `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome`.
+
+Use `bun run preview:all --no-serve` to capture without starting the gallery. Use `bun run preview:all --open` to serve the latest successful capture again. Press Ctrl+C to stop. Output stays in ignored `.preview/`; your normal workspace is untouched. See the [preview inventory](docs/preview.md) for details and limits.
+
 ## Build your first API
 
 1. Select **+** beside **Your APIs**.
@@ -146,7 +158,7 @@ web/              React dashboard and Zustand editor state
   components/ui/  shadcn/ui components
 test/             Bun tests through HTTP and executor interfaces
 e2e/              Playwright browser story
-scripts/          Local dev startup
+scripts/          Local dev startup and preview gallery
 docs/             Architecture, roadmap, testing, API reference
 ```
 
@@ -174,6 +186,7 @@ These are roadmap items, not enabled providers. No credentials or external accou
 
 - [Architecture](docs/architecture.md) · [Roadmap](docs/roadmap.md) · [API reference](docs/api.md)
 - [Testing](docs/testing.md) · [Glossary](GLOSSARY.md) · [Agent instructions](AGENTS.md)
+- [Page/action previews and Git ignore rules](docs/preview.md)
 - [AI policy](AI_POLICY.md) · [Code of conduct](CODE_OF_CONDUCT.md) · [Security](SECURITY.md)
 
 MIT licensed, like [Elysia](https://github.com/elysiajs/elysia). See [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).
