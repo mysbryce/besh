@@ -1,22 +1,95 @@
 import { useEffect, useRef, useState } from 'react'
-import type { FlowAccessInput } from '../src/workspace/flow-access'
+import type {
+  DependencyUse,
+  MemberAccessInput,
+} from '../src/workspace/flow-access'
+import type {
+  DependencyAuth,
+  DependencyDatabase,
+  DependencySource,
+} from '../src/workspace/dependency-model'
 import { Button } from './components/ui/button'
 import { Select } from './components/ui/select'
 import { Checkbox } from './components/ui/checkbox'
 import { api, ApiError, type Member, type SavedFlow } from './lib/api'
 import { useStudio } from './store'
 
+export type DependencyCatalog = {
+  sources: DependencySource[]
+  databaseConnections: DependencyDatabase[]
+  authConnections: DependencyAuth[]
+}
+
+export const emptyDependencyCatalog: DependencyCatalog = {
+  sources: [],
+  databaseConnections: [],
+  authConnections: [],
+}
+
+const dependencyGroups = [
+  { key: 'sources', label: 'Use spreadsheet sources', item: 'spreadsheet' },
+  {
+    key: 'databaseConnections',
+    label: 'Use SQLite copies',
+    item: 'SQLite copy',
+  },
+  {
+    key: 'authConnections',
+    label: 'Use product login connections',
+    item: 'product login',
+  },
+] as const
+
+export function emptyDependencyUse(): DependencyUse {
+  return { sources: [], databaseConnections: [], authConnections: [] }
+}
+
+function memberAccessInput(member: Member): MemberAccessInput {
+  return member.access.mode === 'all'
+    ? { mode: 'all' }
+    : {
+        mode: 'selected',
+        flowIds: [...member.access.flowIds],
+        dependencyUse: {
+          sources: [...member.access.dependencyUse.sources],
+          databaseConnections: [
+            ...member.access.dependencyUse.databaseConnections,
+          ],
+          authConnections: [...member.access.dependencyUse.authConnections],
+        },
+      }
+}
+
+export function selectedRoleCompatible(role: string, permissions: string[]) {
+  return (
+    role === 'viewer' ||
+    (role === 'custom' &&
+      permissions.every((permission) =>
+        [
+          'flows.read',
+          'flows.write',
+          'flows.test',
+          'flows.publish',
+          'runtime-keys.manage',
+          'load-tests.run',
+        ].includes(permission),
+      ))
+  )
+}
+
 export function FlowAccessFields({
   value,
   onChange,
   flows,
+  dependencies,
   disabled,
   compatible,
   label,
 }: {
-  value: FlowAccessInput
-  onChange: (value: FlowAccessInput) => void
+  value: MemberAccessInput
+  onChange: (value: MemberAccessInput) => void
   flows: SavedFlow[]
+  dependencies: DependencyCatalog
   disabled: boolean
   compatible: boolean
   label: string
@@ -32,7 +105,11 @@ export function FlowAccessFields({
           onChange(
             mode === 'all'
               ? { mode: 'all' }
-              : { mode: 'selected', flowIds: [] },
+              : {
+                  mode: 'selected',
+                  flowIds: [],
+                  dependencyUse: emptyDependencyUse(),
+                },
           )
         }
         options={[
@@ -41,15 +118,16 @@ export function FlowAccessFields({
         ]}
       />
       <p>
-        Selected sharing is read-only: use Viewer or a custom role with only
-        Read APIs, or no action grants. It grants no editing, testing,
-        publication, runtime keys or access to related resources.
+        Selected sharing limits API scope. Use Viewer or a custom role with only
+        API, runtime-key and load-test actions. Actions still require separate
+        role grants. It grants no API creation or global resource management.
       </p>
       {value.mode === 'selected' ? (
         <>
           {!compatible ? (
             <p className="form-error" role="alert">
-              This role has actions beyond Read APIs. Choose a read-only role or
+              This role has actions beyond Read APIs and selected API
+              operations. Choose an eligible custom role or Viewer, or
               explicitly select All APIs before continuing.
             </p>
           ) : null}
@@ -68,6 +146,7 @@ export function FlowAccessFields({
                   }
                   onCheckedChange={(checked) =>
                     onChange({
+                      ...value,
                       mode: 'selected',
                       flowIds: checked
                         ? [...value.flowIds, flow.id]
@@ -88,6 +167,71 @@ export function FlowAccessFields({
             {value.flowIds.length
               ? `${value.flowIds.length} APIs selected.`
               : 'No APIs selected. This member can sign in, but sees no APIs.'}
+          </p>
+          <h3>Dependencies these APIs may use</h3>
+          <p>
+            USE permits these selected APIs to read chosen dependency data or
+            trigger product login when the role allows testing, publishing or
+            callers. It can expose stored data through the API. It grants no
+            dependency preview or management. Row, column and tenant
+            authorization remain separate; selecting APIs or dependencies does
+            not provide them.
+          </p>
+          {dependencyGroups.map((group) => (
+            <fieldset className="role-grant-groups" key={group.key}>
+              <legend>{group.label}</legend>
+              {dependencies[group.key].length ? (
+                dependencies[group.key].map((dependency) => (
+                  <label key={dependency.id} className="permission-option">
+                    <Checkbox
+                      aria-label={`Use ${group.item} ${dependency.name}`}
+                      checked={value.dependencyUse[group.key].includes(
+                        dependency.id,
+                      )}
+                      disabled={
+                        disabled ||
+                        !compatible ||
+                        (value.dependencyUse[group.key].length >= 256 &&
+                          !value.dependencyUse[group.key].includes(
+                            dependency.id,
+                          ))
+                      }
+                      onCheckedChange={(checked) =>
+                        onChange({
+                          ...value,
+                          dependencyUse: {
+                            ...value.dependencyUse,
+                            [group.key]: checked
+                              ? [
+                                  ...value.dependencyUse[group.key],
+                                  dependency.id,
+                                ]
+                              : value.dependencyUse[group.key].filter(
+                                  (id) => id !== dependency.id,
+                                ),
+                          },
+                        })
+                      }
+                    />
+                    <span>
+                      {dependency.name}
+                      <small>
+                        Structure only · version {dependency.version}
+                      </small>
+                    </span>
+                  </label>
+                ))
+              ) : (
+                <p>No saved dependencies in this group.</p>
+              )}
+            </fieldset>
+          ))}
+          <p>
+            {Object.values(value.dependencyUse).reduce(
+              (count, ids) => count + ids.length,
+              0,
+            )}{' '}
+            dependencies allowed for USE.
           </p>
         </>
       ) : (
@@ -112,16 +256,18 @@ export function FlowAccessEditor({
 }) {
   const state = useStudio()
   const [person, setPerson] = useState(member)
-  const [value, setValue] = useState<FlowAccessInput>(
-    member.flowAccess.mode === 'all'
-      ? { mode: 'all' }
-      : { mode: 'selected', flowIds: [...member.flowAccess.flowIds] },
+  const [value, setValue] = useState<MemberAccessInput>(() =>
+    memberAccessInput(member),
   )
   const [flows, setFlows] = useState<SavedFlow[]>([])
+  const [dependencies, setDependencies] = useState<DependencyCatalog>(
+    emptyDependencyCatalog,
+  )
   const [loading, setLoading] = useState(true)
   const [known, setKnown] = useState(false)
   const [error, setError] = useState('')
   const [review, setReview] = useState(false)
+  const heading = useRef<HTMLHeadingElement>(null)
   const active = useRef(false)
   const pending = useRef(false)
   const request = useRef(0)
@@ -141,10 +287,20 @@ export function FlowAccessEditor({
     setLoading(true)
     setKnown(false)
     try {
-      const [people, available] = await Promise.all([
-        api<Member[]>('/api/members', state.token),
-        api<SavedFlow[]>('/api/flows', state.token),
-      ])
+      const [people, available, sources, databaseConnections, authConnections] =
+        await Promise.all([
+          api<Member[]>('/api/members', state.token),
+          api<SavedFlow[]>('/api/flows', state.token),
+          api<DependencySource[]>('/api/dependencies/sources', state.token),
+          api<DependencyDatabase[]>(
+            '/api/dependencies/database-connections',
+            state.token,
+          ),
+          api<DependencyAuth[]>(
+            '/api/dependencies/auth-connections',
+            state.token,
+          ),
+        ])
       if (!current() || seq !== request.current) return
       const latest = people.find((item) => item.id === member.id)
       if (!latest)
@@ -153,12 +309,9 @@ export function FlowAccessEditor({
         )
       setPerson(latest)
       onRefreshed(latest)
-      setValue(
-        latest.flowAccess.mode === 'all'
-          ? { mode: 'all' }
-          : { mode: 'selected', flowIds: [...latest.flowAccess.flowIds] },
-      )
+      setValue(memberAccessInput(latest))
       setFlows(available)
+      setDependencies({ sources, databaseConnections, authConnections })
       setReview(false)
       setKnown(true)
       setError('')
@@ -180,6 +333,10 @@ export function FlowAccessEditor({
   useEffect(() => {
     if (state.member?.role !== 'owner') return
     active.current = true
+    if (current()) {
+      heading.current?.focus({ preventScroll: true })
+      heading.current?.scrollIntoView({ block: 'start', behavior: 'auto' })
+    }
     void read()
     return () => {
       active.current = false
@@ -193,10 +350,7 @@ export function FlowAccessEditor({
     state.member?.role,
   ])
 
-  const compatible =
-    person.role === 'viewer' ||
-    (person.role === 'custom' &&
-      person.permissions.every((permission) => permission === 'flows.read'))
+  const compatible = selectedRoleCompatible(person.role, person.permissions)
   const disabled = state.busy || loading
   const valid = known && (value.mode === 'all' || compatible)
   if (state.member?.role !== 'owner') return null
@@ -206,7 +360,9 @@ export function FlowAccessEditor({
       aria-label={`API sharing for ${member.name}`}
     >
       <div className="panel-heading">
-        <h2>API sharing for {member.name}</h2>
+        <h2 ref={heading} tabIndex={-1}>
+          API sharing for {member.name}
+        </h2>
         <Button
           variant="outline"
           disabled={disabled}
@@ -216,7 +372,7 @@ export function FlowAccessEditor({
         </Button>
       </div>
       <p>
-        Access version {person.flowAccess.version}. Refresh replaces unsaved
+        Access version {person.access.version}. Refresh replaces unsaved
         selections with the owner's current policy.
       </p>
       {loading ? <p>Loading API sharing…</p> : null}
@@ -230,6 +386,7 @@ export function FlowAccessEditor({
         value={value}
         onChange={setValue}
         flows={flows}
+        dependencies={dependencies}
         compatible={compatible}
         disabled={disabled || !known || review}
       />
@@ -246,10 +403,22 @@ export function FlowAccessEditor({
                     .join(' · ')
                 : 'No APIs selected'}
           </p>
+          {value.mode === 'selected' ? (
+            <p>
+              Dependency USE:{' '}
+              {dependencyGroups
+                .map(
+                  (group) =>
+                    `${group.label}: ${value.dependencyUse[group.key].length ? value.dependencyUse[group.key].map((id) => dependencies[group.key].find((dependency) => dependency.id === id)?.name ?? `Unavailable (${id})`).join(', ') : 'none'}`,
+                )
+                .join(' · ')}
+            </p>
+          ) : null}
           <p>
             Confirm this policy for {member.name}? Their browser sessions will
             end. Their member key immediately uses this policy. This does not
-            grant runtime calls or related resources.
+            grant role actions or runtime calls. Dependency USE may expose data
+            through the chosen APIs; it grants no global resource management.
           </p>
           <div className="title-actions">
             <Button
@@ -268,10 +437,10 @@ export function FlowAccessEditor({
                     let saved = false
                     try {
                       const updated = await api<Member>(
-                        `/api/members/${member.id}/flow-access`,
+                        `/api/members/${member.id}/access`,
                         state.token,
                         'PUT',
-                        { ...value, version: person.flowAccess.version },
+                        { ...value, version: person.access.version },
                       )
                       if (!current()) return
                       saved = true

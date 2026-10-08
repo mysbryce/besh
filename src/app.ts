@@ -2,7 +2,9 @@ import { Elysia, t, type AnyElysia } from 'elysia'
 import { version } from '../package.json'
 import { z } from 'zod'
 import { permissionCatalog, type Permission } from './workspace/permissions'
-import { flowAccessSchema } from './workspace/flow-access'
+import { flowAccessSchema, memberAccessSchema } from './workspace/access-input'
+import { dependencyService } from './workspace/dependencies'
+import { authorizeFlow } from './workspace/authorization'
 import { updateService, type ReleaseFetch } from './updates/service'
 import { openStore, hashToken, type Member } from './workspace/store'
 import { allow, ApiError, requirePermission } from './errors'
@@ -36,12 +38,17 @@ const memberFields = {
   email: z.string().max(254).optional(),
   password: z.string().max(128).optional(),
   flowAccess: flowAccessSchema.optional(),
+  access: memberAccessSchema.optional(),
 }
-const createMemberSchema = z.discriminatedUnion('role', [
-  z.object({ ...memberFields, ...assignmentFields.editor }).strict(),
-  z.object({ ...memberFields, ...assignmentFields.viewer }).strict(),
-  z.object({ ...memberFields, ...assignmentFields.custom }).strict(),
-])
+const createMemberSchema = z
+  .discriminatedUnion('role', [
+    z.object({ ...memberFields, ...assignmentFields.editor }).strict(),
+    z.object({ ...memberFields, ...assignmentFields.viewer }).strict(),
+    z.object({ ...memberFields, ...assignmentFields.custom }).strict(),
+  ])
+  .refine(
+    (value) => value.access === undefined || value.flowAccess === undefined,
+  )
 const assignmentSchema = z.discriminatedUnion('role', [
   z.object(assignmentFields.editor).strict(),
   z.object(assignmentFields.viewer).strict(),
@@ -108,6 +115,7 @@ export function createApp(options: AppOptions) {
   const browser = browserSecurity(options.authOrigin)
   const store = openStore(options.databasePath, options.adminToken)
   const sessions = sessionService(store, options.now)
+  const dependencies = dependencyService(store)
   const sources = dataSourceService(store, options.sheetFetch)
   const databases = databaseConnectionService(store)
   let productAuth: ReturnType<typeof productAuthService>
@@ -149,17 +157,52 @@ export function createApp(options: AppOptions) {
 
   const managementActors = new WeakMap<Request, string>()
   function requireFlowRead(member: Member, id: string) {
-    requirePermission(member, 'flows.read')
-    if (
-      member.flowAccess.mode === 'selected' &&
-      !member.flowAccess.flowIds.includes(id)
-    )
-      throw new ApiError(404, 'Flow not found')
+    authorizeFlow(member, id, 'flows.read')
   }
   function enforceSelectedAccess(member: Member, request: Request) {
     if (member.flowAccess.mode !== 'selected') return
     const path = new URL(request.url).pathname
     const read = request.method === 'GET' || request.method === 'HEAD'
+    if (
+      read &&
+      /^\/api\/dependencies\/(sources|database-connections|auth-connections)(\/[^/]+)?$/.test(
+        path,
+      )
+    )
+      return
+    if (
+      (path === '/api/load-tests' && (read || request.method === 'POST')) ||
+      (path === '/api/load-tests/targets' && read)
+    ) {
+      requirePermission(member, 'load-tests.run')
+      return
+    }
+    const run = /^\/api\/load-tests\/([^/]+)(\/cancel)?$/.exec(path)
+    if (run && ((read && !run[2]) || (request.method === 'POST' && run[2]))) {
+      let id = ''
+      try {
+        id = decodeURIComponent(run[1])
+      } catch {}
+      loadTests.assertAccess(member, id)
+      return
+    }
+    if (path === '/api/runtime-keys' && (read || request.method === 'POST')) {
+      requirePermission(member, 'runtime-keys.manage')
+      return
+    }
+    const key = /^\/api\/runtime-keys\/([^/]+)(\/rotate)?$/.exec(path)
+    if (
+      key &&
+      ((request.method === 'DELETE' && !key[2]) ||
+        (request.method === 'POST' && key[2]))
+    ) {
+      let id = ''
+      try {
+        id = decodeURIComponent(key[1])
+      } catch {}
+      store.assertKeyAccess(member, id)
+      return
+    }
     if (
       (read &&
         [
@@ -174,6 +217,28 @@ export function createApp(options: AppOptions) {
       return
     if (read && ['/api/flows', '/api/client-code/targets'].includes(path)) {
       requirePermission(member, 'flows.read')
+      return
+    }
+    const operation =
+      /^\/api\/flows\/([^/]+)(\/publish|\/rollback|\/test|\/graphql\/test)?$/.exec(
+        path,
+      )
+    if (
+      operation &&
+      ((request.method === 'PUT' && !operation[2]) ||
+        (request.method === 'POST' && operation[2]))
+    ) {
+      const permission =
+        request.method === 'PUT'
+          ? 'flows.write'
+          : ['/publish', '/rollback'].includes(operation[2])
+            ? 'flows.publish'
+            : 'flows.test'
+      let id = ''
+      try {
+        id = decodeURIComponent(operation[1])
+      } catch {}
+      authorizeFlow(member, id, permission)
       return
     }
     const flow =
@@ -194,11 +259,15 @@ export function createApp(options: AppOptions) {
     throw new ApiError(403, 'Permission denied')
   }
   function currentPermission(request: Request, permission: Permission) {
+    const current = currentMember(request)
+    requirePermission(current, permission)
+  }
+  function currentMember(request: Request) {
     const current = request.headers.has('authorization')
       ? store.authenticate(bearer(request))
       : sessions.restore(sessionCookie(request))?.member
     if (!current) throw new ApiError(401, 'Authentication required')
-    requirePermission(current, permission)
+    return current
   }
   const management = new Elysia({ prefix: '/api' })
     .resolve(({ request, status }) => {
@@ -225,6 +294,24 @@ export function createApp(options: AppOptions) {
     })
     .get('/me', ({ member }) => member)
     .get('/permissions', () => permissionCatalog)
+    .get('/dependencies/sources', ({ member }) =>
+      dependencies.catalog(member, 'sources'),
+    )
+    .get('/dependencies/sources/:id', ({ member, params }) =>
+      dependencies.catalog(member, 'sources', params.id),
+    )
+    .get('/dependencies/database-connections', ({ member }) =>
+      dependencies.catalog(member, 'database-connections'),
+    )
+    .get('/dependencies/database-connections/:id', ({ member, params }) =>
+      dependencies.catalog(member, 'database-connections', params.id),
+    )
+    .get('/dependencies/auth-connections', ({ member }) =>
+      dependencies.catalog(member, 'auth-connections'),
+    )
+    .get('/dependencies/auth-connections/:id', ({ member, params }) =>
+      dependencies.catalog(member, 'auth-connections', params.id),
+    )
     .get('/client-code/targets', ({ member }) => {
       requirePermission(member, 'flows.read')
       return clientCodeTargets
@@ -291,25 +378,27 @@ export function createApp(options: AppOptions) {
     })
     .get('/load-tests/targets', ({ member }) => {
       requirePermission(member, 'load-tests.run')
-      return loadTests.targets()
+      return loadTests.targets(member)
     })
     .get('/load-tests', ({ member }) => {
       requirePermission(member, 'load-tests.run')
-      return loadTests.list()
+      return loadTests.list(member)
     })
     .get('/load-tests/:id', ({ member, params }) => {
       requirePermission(member, 'load-tests.run')
-      return loadTests.get(params.id)
+      return loadTests.get(params.id, member)
     })
-    .post('/load-tests', ({ member, body, set }) => {
+    .post('/load-tests', ({ member, body, set, request }) => {
       requirePermission(member, 'load-tests.run')
-      const run = loadTests.start(member.id, body)
+      const run = loadTests.start(member.id, body, () => currentMember(request))
       set.status = 202
       return run
     })
-    .post('/load-tests/:id/cancel', ({ member, params }) => {
+    .post('/load-tests/:id/cancel', ({ member, params, request }) => {
       requirePermission(member, 'load-tests.run')
-      return loadTests.cancel(params.id)
+      return loadTests.cancel(params.id, member.id, () =>
+        currentMember(request),
+      )
     })
     .get('/auth-connections', ({ member }) => {
       requirePermission(member, 'auth-connections.read')
@@ -505,7 +594,7 @@ export function createApp(options: AppOptions) {
         throw new ApiError(400, 'Choose a positive release revision')
       return flows.release(params.id, Number(params.revision))
     })
-    .post('/flows/:id/rollback', ({ member, params, body }) => {
+    .post('/flows/:id/rollback', ({ member, params, body, request }) => {
       requirePermission(member, 'flows.publish')
       const result = z
         .object({
@@ -524,6 +613,7 @@ export function createApp(options: AppOptions) {
         params.id,
         result.data.revision,
         result.data.publishedRevision,
+        () => currentMember(request),
       )
     })
     .get('/flows/:id/openapi', ({ member, params, request }) => {
@@ -546,9 +636,11 @@ export function createApp(options: AppOptions) {
     })
     .put(
       '/flows/:id',
-      ({ member, body, params }) => {
+      ({ member, body, params, request }) => {
         requirePermission(member, 'flows.write')
-        return flows.update(member.id, params.id, body.revision, body)
+        return flows.update(member.id, params.id, body.revision, body, () =>
+          currentMember(request),
+        )
       },
       {
         body: t.Object(
@@ -559,9 +651,11 @@ export function createApp(options: AppOptions) {
     )
     .post(
       '/flows/:id/publish',
-      ({ member, params, body }) => {
+      ({ member, params, body, request }) => {
         requirePermission(member, 'flows.publish')
-        return flows.publish(member.id, params.id, body.revision)
+        return flows.publish(member.id, params.id, body.revision, () =>
+          currentMember(request),
+        )
       },
       { body: t.Object({ revision: t.Integer({ minimum: 1 }) }) },
     )
@@ -569,7 +663,9 @@ export function createApp(options: AppOptions) {
       '/flows/:id/test',
       ({ member, params, body, request }) => {
         requirePermission(member, 'flows.test')
-        return flows.test(member.id, params.id, body, request.signal)
+        return flows.test(member.id, params.id, body, request.signal, () =>
+          currentMember(request),
+        )
       },
       {
         body: t.Object({
@@ -587,6 +683,10 @@ export function createApp(options: AppOptions) {
       allow(member, ['owner'])
       return store.updateFlowAccess(member.id, params.id, body)
     })
+    .put('/members/:id/access', ({ member, params, body }) => {
+      allow(member, ['owner'])
+      return store.updateAccess(member.id, params.id, body)
+    })
     .put('/members/:id/role', ({ member, params, body }) => {
       allow(member, ['owner'])
       const parsed = assignmentSchema.safeParse(body)
@@ -596,7 +696,9 @@ export function createApp(options: AppOptions) {
     })
     .post('/flows/:id/graphql/test', ({ member, params, body, request }) => {
       requirePermission(member, 'flows.test')
-      return flows.testGraphql(member.id, params.id, body, request.signal)
+      return flows.testGraphql(member.id, params.id, body, request.signal, () =>
+        currentMember(request),
+      )
     })
     .post('/members', async ({ member, body }) => {
       allow(member, ['owner'])
@@ -614,6 +716,7 @@ export function createApp(options: AppOptions) {
         await optionalAccount(input),
         input.role === 'custom' ? input.roleId : undefined,
         input.flowAccess,
+        input.access,
       )
     })
     .delete('/members/:id', ({ member, params }) => {
@@ -626,17 +729,21 @@ export function createApp(options: AppOptions) {
     })
     .get('/runtime-keys', ({ member }) => {
       requirePermission(member, 'runtime-keys.manage')
-      return store.listRuntimeKeys()
+      return store.listRuntimeKeys(member)
     })
-    .post('/runtime-keys', ({ member, body }) => {
+    .post('/runtime-keys', ({ member, body, request }) => {
       requirePermission(member, 'runtime-keys.manage')
-      return store.createRuntimeKey(member.id, body)
+      return store.createRuntimeKey(member.id, body, () =>
+        currentMember(request),
+      )
     })
-    .delete('/runtime-keys/:id', ({ member, params }) => {
+    .delete('/runtime-keys/:id', ({ member, params, request }) => {
       requirePermission(member, 'runtime-keys.manage')
-      return store.revokeRuntimeKey(member.id, params.id)
+      return store.revokeRuntimeKey(member.id, params.id, () =>
+        currentMember(request),
+      )
     })
-    .post('/runtime-keys/:id/rotate', ({ member, params, body }) => {
+    .post('/runtime-keys/:id/rotate', ({ member, params, body, request }) => {
       requirePermission(member, 'runtime-keys.manage')
       if (
         body !== undefined &&
@@ -647,7 +754,9 @@ export function createApp(options: AppOptions) {
       )
         throw new ApiError(400, 'Replacement does not accept settings')
 
-      return store.rotateRuntimeKey(member.id, params.id)
+      return store.rotateRuntimeKey(member.id, params.id, () =>
+        currentMember(request),
+      )
     })
     .get('/migrations', ({ member }) => {
       requirePermission(member, 'migrations.read')

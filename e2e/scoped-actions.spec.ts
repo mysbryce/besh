@@ -3,20 +3,22 @@ import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { flowAccessPreviews } from './flow-access-preview'
+import { scopedActionsPreviews } from './scoped-actions-preview'
 
-test('owner shares selected read-only APIs with a viewer', async ({ page }) => {
-  test.setTimeout(180_000)
+test('selected API operator uses explicit dependencies and bound callers', async ({
+  page,
+}) => {
+  test.setTimeout(240_000)
   page.setDefaultTimeout(10_000)
   const browserErrors: string[] = []
   page.on('pageerror', (error) => browserErrors.push(error.message))
-  const directory = mkdtempSync(join(tmpdir(), 'besh-flow-access-'))
+  const directory = mkdtempSync(join(tmpdir(), 'besh-scoped-actions-'))
   const owner = crypto.randomUUID() + crypto.randomUUID()
-  const backend = 'http://127.0.0.1:4326'
+  const backend = 'http://127.0.0.1:4327'
   const server = spawn('bun', ['src/index.ts'], {
     env: {
       ...process.env,
-      PORT: '4326',
+      PORT: '4327',
       BESH_HOST: '127.0.0.1',
       BESH_ADMIN_TOKEN: owner,
       BESH_WEB_URL: 'http://127.0.0.1:5179',
@@ -39,20 +41,6 @@ test('owner shares selected read-only APIs with a viewer', async ({ page }) => {
         }
       })
       .toBe(200)
-    for (let index = 1; index <= 8; index++) {
-      const role = await page.request.post(`${backend}/api/roles`, {
-        headers: { authorization: `Bearer ${owner}` },
-        data: { name: `Cumulative gallery role ${index}`, permissions: [] },
-      })
-      expect(role.status()).toBe(200)
-    }
-    for (let index = 1; index <= 12; index++) {
-      const member = await page.request.post(`${backend}/api/members`, {
-        headers: { authorization: `Bearer ${owner}` },
-        data: { name: `Cumulative gallery member ${index}`, role: 'viewer' },
-      })
-      expect(member.status()).toBe(200)
-    }
     await page.route('**/*', async (route) => {
       const url = new URL(route.request().url())
       if (
@@ -62,7 +50,7 @@ test('owner shares selected read-only APIs with a viewer', async ({ page }) => {
       await route.continue({ url: `${backend}${url.pathname}${url.search}` })
     })
     await page.goto('/')
-    await flowAccessPreviews({
+    await scopedActionsPreviews({
       page,
       owner,
       apiOrigin: backend,

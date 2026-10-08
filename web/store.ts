@@ -235,6 +235,10 @@ export const useStudio = create<Studio>((set, get) => ({
     })
   },
   fresh() {
+    if (get().member?.access.mode === 'selected') {
+      get().message('Selected API access permits existing APIs only.', true)
+      return
+    }
     set({
       ...editState(),
       notice: 'New draft. Give your API a name.',
@@ -334,6 +338,8 @@ export const useStudio = create<Studio>((set, get) => ({
 
   async save() {
     const state = get()
+    if (!state.id && state.member?.access.mode === 'selected')
+      throw new Error('Selected API access permits existing APIs only.')
     const ruleError = await apiRulesError(state.contract)
     if (ruleError) throw new Error(ruleError)
     const definition = {

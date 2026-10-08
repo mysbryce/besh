@@ -116,6 +116,7 @@ export function runtimeService(
           403,
           'Runtime key is pinned to a release that is not currently published',
         )
+      store.checkRuntimeAuthority(key, release.definition)
       return key
     })()
   }

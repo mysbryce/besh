@@ -176,7 +176,7 @@ REST and GraphQL keep separate routes and published releases. GraphQL currently 
 
 ## Roles
 
-The table shows unchanged built-in roles. Owners can also create custom roles with selected action grants and assign them to members. Custom grants are independent and workspace-wide; they do not filter product fields or records. See [workspace roles and permissions](roles.md) for the catalog, examples, and session effects.
+The table shows unchanged built-in roles. Owners can also create custom roles with selected action grants and assign them to members. Custom grants are independent. Eligible members can narrow existing-API actions to selected APIs and typed dependency USE; global resource/audit/backup grants remain workspace-wide. Neither form filters product fields or records. See [workspace roles and permissions](roles.md) for the catalog, examples, and session effects.
 
 | Action                                         | Owner | Editor | Viewer |
 | ---------------------------------------------- | ----- | ------ | ------ |

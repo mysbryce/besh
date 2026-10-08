@@ -126,6 +126,8 @@ test('owner replaces a caller key once, saves its secret, and sees revoked histo
     page.once('dialog', async (dialog) => {
       expect(dialog.message()).toContain('stops working immediately')
       expect(dialog.message()).toContain('same API, permissions, and expiry')
+      expect(dialog.message()).not.toContain('original member')
+      expect(dialog.message()).not.toContain('No member link')
       await dialog.dismiss()
     })
     await replace.click()

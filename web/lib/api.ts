@@ -1,6 +1,6 @@
 import type { Flow } from '../../src/flows/model'
 import type { Permission } from '../../src/workspace/permissions'
-import type { FlowAccess } from '../../src/workspace/flow-access'
+import type { FlowAccess, MemberAccess } from '../../src/workspace/flow-access'
 
 export async function apiRulesError(
   contract: Flow['contract'],
@@ -74,6 +74,10 @@ export type RuntimeKey = {
   name: string
   flowId: string
   releaseRevision: number | null
+  issuerBinding: {
+    memberId: string
+    action: 'runtime-keys.manage' | 'load-tests.run'
+  } | null
   permissions: RuntimePermission[]
   expiresAt: string
   createdAt: string
@@ -86,6 +90,7 @@ export type Member = {
   role: 'owner' | 'editor' | 'viewer' | 'custom'
   permissions: Permission[]
   flowAccess: FlowAccess
+  access: MemberAccess
   roleId?: string
   roleName?: string
 }

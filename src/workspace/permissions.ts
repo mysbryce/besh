@@ -1,4 +1,4 @@
-import type { FlowAccess } from './flow-access'
+import { selectedPermissions, type FlowAccess } from './flow-access'
 
 export const permissionCatalog = [
   {
@@ -12,14 +12,15 @@ export const permissionCatalog = [
     id: 'flows.write',
     label: 'Edit APIs',
     group: 'APIs',
-    description: 'Create and save API drafts.',
+    description:
+      'Create and save API drafts. Selected access permits editing existing shared APIs with explicit dependency use, but cannot create APIs.',
   },
   {
     id: 'flows.test',
     label: 'Test drafts',
     group: 'APIs',
     description:
-      'Execute saved REST and GraphQL drafts, including their configured data and product-login steps.',
+      'Execute saved REST and GraphQL drafts, including their configured data and product-login steps. Selected access also requires explicit dependency use.',
   },
   {
     id: 'flows.publish',
@@ -74,7 +75,7 @@ export const permissionCatalog = [
     label: 'Manage runtime API keys',
     group: 'Security',
     description:
-      'Issue, list, replace, and revoke runtime keys for any published API. Newly issued credentials can call their scoped API.',
+      'Issue, list, replace, and revoke runtime keys. Selected access manages issuer-bound keys for shared APIs; issuance and replacement require dependency use and preserve release pins.',
   },
   {
     id: 'audit.read',
@@ -130,7 +131,10 @@ export function can(
   permission: Permission,
 ) {
   if (!member) return false
-  if (member.flowAccess?.mode === 'selected' && permission !== 'flows.read')
+  if (
+    member.flowAccess?.mode === 'selected' &&
+    !(selectedPermissions as readonly string[]).includes(permission)
+  )
     return false
   return (
     member.permissions ??

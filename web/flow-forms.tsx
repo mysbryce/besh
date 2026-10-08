@@ -7,6 +7,12 @@ import { Select } from './components/ui/select'
 import { Checkbox } from './components/ui/checkbox'
 import { api, type DataSource, type AuthConnection } from './lib/api'
 import type { DataReadConfig } from '../src/flows/model'
+import type {
+  DependencyAuth,
+  DependencySource,
+} from '../src/workspace/dependency-model'
+import { useStudio } from './store'
+import { canReadDependencyStructure } from './dependency-access'
 
 type ValueType =
   | 'text'
@@ -356,22 +362,45 @@ export function SocialNodeForm({
   onApply: (config: { connectionId: string }) => void
   onError: (message: string) => void
 }) {
-  const [connections, setConnections] = useState<AuthConnection[]>([])
+  const state = useStudio()
+  const selectedAccess = state.member?.access.mode === 'selected'
+  const [connections, setConnections] = useState<
+    (AuthConnection | DependencyAuth)[]
+  >([])
   const [selected, setSelected] = useState(config.connectionId)
 
   useEffect(() => {
+    if (!canReadDependencyStructure(state.member, 'auth-connections.read'))
+      return
     let active = true
-    api<AuthConnection[]>('/api/auth-connections', token)
+    const sessionId = state.sessionId
+    const memberId = state.member?.id
+    function current() {
+      const live = useStudio.getState()
+      return (
+        active &&
+        live.sessionId === sessionId &&
+        live.member?.id === memberId &&
+        live.token === token &&
+        canReadDependencyStructure(live.member, 'auth-connections.read')
+      )
+    }
+    api<(AuthConnection | DependencyAuth)[]>(
+      selectedAccess
+        ? '/api/dependencies/auth-connections'
+        : '/api/auth-connections',
+      token,
+    )
       .then((value) => {
-        if (active) setConnections(value)
+        if (current()) setConnections(value)
       })
       .catch((error: Error) => {
-        if (active) onError(error.message)
+        if (current()) onError(error.message)
       })
     return () => {
       active = false
     }
-  }, [token])
+  }, [token, state.sessionId, state.member?.id, selectedAccess])
 
   return (
     <div className="simple-form">
@@ -385,17 +414,21 @@ export function SocialNodeForm({
             value: connection.id,
             label: connection.name,
           }))}
-          disabled={disabled}
+          disabled={disabled || !connections.length}
           placeholder="Choose a connection"
         />
       </label>
       <p className="field-help">
-        Credentials stay on the server. Configure provider apps in Product
-        login.
+        {selectedAccess
+          ? 'Structure only. Explicit USE permits this API to trigger the chosen product login. Credentials stay on the server; ask the owner for additional connections.'
+          : 'Credentials stay on the server. Configure provider apps in Product login.'}
       </p>
       <Button
         variant="outline"
-        disabled={disabled || !selected}
+        disabled={
+          disabled ||
+          !connections.some((connection) => connection.id === selected)
+        }
         onClick={() => onApply({ connectionId: selected })}
       >
         Apply configuration
@@ -559,7 +592,9 @@ export function DataNodeForm({
   onApply: (config: DataReadConfig) => void
   onError: (message: string) => void
 }) {
-  const [sources, setSources] = useState<DataSource[]>([])
+  const state = useStudio()
+  const selectedAccess = state.member?.access.mode === 'selected'
+  const [sources, setSources] = useState<(DataSource | DependencySource)[]>([])
   const [error, setError] = useState('')
   const [sourceId, setSourceId] = useState(config.sourceId)
   const [columns, setColumns] = useState(config.columns)
@@ -573,13 +608,30 @@ export function DataNodeForm({
   const [filterValue, setFilterValue] = useState(initialFilter.value)
 
   useEffect(() => {
+    if (!canReadDependencyStructure(state.member, 'sources.read')) return
     let active = true
-    void api<DataSource[]>('/api/data-sources', token)
+    const sessionId = state.sessionId
+    const memberId = state.member?.id
+    function current() {
+      const live = useStudio.getState()
+      return (
+        active &&
+        live.sessionId === sessionId &&
+        live.member?.id === memberId &&
+        live.token === token &&
+        canReadDependencyStructure(live.member, 'sources.read')
+      )
+    }
+    setError('')
+    void api<(DataSource | DependencySource)[]>(
+      selectedAccess ? '/api/dependencies/sources' : '/api/data-sources',
+      token,
+    )
       .then((result) => {
-        if (active) setSources(result)
+        if (current()) setSources(result)
       })
       .catch((reason: unknown) => {
-        if (active)
+        if (current())
           setError(
             reason instanceof Error
               ? reason.message
@@ -589,7 +641,7 @@ export function DataNodeForm({
     return () => {
       active = false
     }
-  }, [token])
+  }, [token, state.sessionId, state.member?.id, selectedAccess])
 
   const source = sources.find((item) => item.id === sourceId)
   const limits = [...new Set([1, 10, 25, 50, 100, Number(limit)])].sort(
@@ -620,8 +672,12 @@ export function DataNodeForm({
       </label>
       <p>
         {source
-          ? `${source.rowCount} saved rows. Published APIs read the latest saved snapshot.`
-          : 'Loading saved source details…'}
+          ? 'rowCount' in source
+            ? `${source.rowCount} saved rows. Published APIs read the latest saved snapshot.`
+            : 'Structure only. Explicit USE allows this API to read the latest saved snapshot; it does not grant source previews.'
+          : selectedAccess
+            ? 'No allowed source selected. Ask the owner to review source USE for your selected APIs.'
+            : 'Loading saved source details…'}
       </p>
       {source?.columns.map((item) => (
         <label key={item.key} className="permission-option">

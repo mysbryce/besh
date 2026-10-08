@@ -205,7 +205,9 @@ export function productAuthService(
     url: string,
     init: RequestInit,
     signal: AbortSignal,
+    authorize: () => void = () => {},
   ) {
+    authorize()
     const response = await transport(url, {
       ...init,
       redirect: 'error',
@@ -233,6 +235,7 @@ export function productAuthService(
           throw new Error('Provider response limit exceeded')
         chunks.push(chunk.value)
       }
+      authorize()
       return JSON.parse(Buffer.concat(chunks).toString('utf8')) as unknown
     } finally {
       void reader.cancel().catch(() => {})
@@ -243,6 +246,7 @@ export function productAuthService(
     connection: ConnectionRow,
     code: string,
     verifier: string,
+    authorize: () => void = () => {},
   ) {
     const controller = new AbortController()
     let timer: ReturnType<typeof setTimeout> | undefined
@@ -266,6 +270,7 @@ export function productAuthService(
               }).toString(),
             },
             controller.signal,
+            authorize,
           )
           const token = z
             .object({
@@ -291,6 +296,7 @@ export function productAuthService(
               },
             },
             controller.signal,
+            authorize,
           )
           const user = z
             .object({
@@ -342,7 +348,9 @@ export function productAuthService(
           }, 5000)
         }),
       ])
-    } catch {
+    } catch (error) {
+      if (error instanceof ApiError && [401, 403, 404].includes(error.status))
+        throw error
       throw new ApiError(502, 'GitHub login could not be completed')
     } finally {
       clearTimeout(timer)
@@ -353,7 +361,12 @@ export function productAuthService(
   async function social(
     config: SocialConfig,
     input: { body: unknown },
-    binding: { flowId: string; revision: number; scope: string },
+    binding: {
+      flowId: string
+      revision: number
+      scope: string
+      authorize?: () => void
+    },
   ) {
     const action = z
       .discriminatedUnion('action', [
@@ -378,34 +391,39 @@ export function productAuthService(
       if (exchanges >= 4)
         throw new ApiError(429, 'Product login exchange limit exceeded')
       const completion = action.data
-      const attempt = db.transaction(() => {
-        const stored = query<AttemptRow, [string]>(
-          'SELECT * FROM oauth_attempts WHERE state_hash = ?',
-        ).get(hashToken(completion.state))
-        if (
-          !stored ||
-          stored.proof_hash !== hashToken(completion.proof) ||
-          stored.flow_id !== binding.flowId ||
-          stored.revision !== binding.revision ||
-          stored.scope !== binding.scope ||
-          stored.connection_id !== connection.id ||
-          stored.connection_version !== connection.version ||
-          stored.expires_at <= now()
-        )
-          throw new ApiError(400, 'Invalid or expired product login attempt')
-        query('DELETE FROM oauth_attempts WHERE state_hash = ?').run(
-          stored.state_hash,
-        )
-        audit(binding.scope, 'product-login.consumed', binding.flowId)
-        return stored
-      })()
+      const attempt = db
+        .transaction(() => {
+          binding.authorize?.()
+          const stored = query<AttemptRow, [string]>(
+            'SELECT * FROM oauth_attempts WHERE state_hash = ?',
+          ).get(hashToken(completion.state))
+          if (
+            !stored ||
+            stored.proof_hash !== hashToken(completion.proof) ||
+            stored.flow_id !== binding.flowId ||
+            stored.revision !== binding.revision ||
+            stored.scope !== binding.scope ||
+            stored.connection_id !== connection.id ||
+            stored.connection_version !== connection.version ||
+            stored.expires_at <= now()
+          )
+            throw new ApiError(400, 'Invalid or expired product login attempt')
+          query('DELETE FROM oauth_attempts WHERE state_hash = ?').run(
+            stored.state_hash,
+          )
+          audit(binding.scope, 'product-login.consumed', binding.flowId)
+          return stored
+        })
+        .immediate()
       exchanges++
       try {
         const result = await exchange(
           connection,
           completion.code,
           decrypt(attempt.verifier),
+          binding.authorize,
         )
+        binding.authorize?.()
         audit(binding.scope, 'product-login.completed', binding.flowId)
         return result
       } catch (error) {
@@ -421,6 +439,7 @@ export function productAuthService(
     const expiration = now() + 600_000
     const encryptedVerifier = encrypt(verifier)
     db.transaction(() => {
+      binding.authorize?.()
       query('DELETE FROM oauth_attempts WHERE expires_at <= ?').run(now())
       const total = query<{ count: number }, []>(
         'SELECT count(*) AS count FROM oauth_attempts',
@@ -444,7 +463,7 @@ export function productAuthService(
         expiration,
       )
       audit(binding.scope, 'product-login.started', binding.flowId)
-    })()
+    }).immediate()
     const url = new URL('https://github.com/login/oauth/authorize')
     url.search = new URLSearchParams({
       client_id: connection.client_id,
@@ -605,9 +624,10 @@ export function productAuthService(
             'Auth connection is referenced by a draft or release',
           )
         query('DELETE FROM oauth_attempts WHERE connection_id = ?').run(id)
+        store.protectDependencyUse('auth-connections', id)
         query('DELETE FROM auth_connections WHERE id = ?').run(id)
         audit(actor, 'auth-connection.deleted', id)
-      })()
+      }).immediate()
       return { ok: true }
     },
   }

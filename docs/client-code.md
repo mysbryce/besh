@@ -22,6 +22,8 @@ The base URL affects copied code only. It does not configure Besh, test a server
 
 ## Install and run
 
+Issuer-bound key authority is separate from example generation: rendering still executes nothing and embeds no credential. A caller may use a bound runtime key whose issuer/action/API/dependency policy is checked live. A generated source revision guard does not establish that authority or pin the key. See [selected actions and USE](roles.md#selected-api-actions-and-dependency-use).
+
 Set `BESH_RUNTIME_API_KEY` in your application's server environment using a separately issued, unexpired key for this published flow and REST/query/mutation operation. Keep it out of browser code, source control, URLs, and logs. See [runtime keys](api-keys.md). The code examples read this variable; Besh does not read or store the caller's environment value.
 
 | Target               | Requirements                                                                                                                    | Save and run                                                                                                                             |

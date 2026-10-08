@@ -2839,6 +2839,16 @@ input[type='file']::file-selector-button {
   .role-editor {
     padding: 12px;
   }
+  .role-card {
+    min-width: 0;
+  }
+  .role-card .title-actions > button {
+    max-width: 100%;
+    height: auto;
+    min-height: 36px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 .client-code-panel {
   margin: 16px 0;

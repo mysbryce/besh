@@ -1,5 +1,11 @@
 import { ApiError } from '../errors'
-import type { Store, RuntimePermission } from '../workspace/store'
+import type { Store, RuntimePermission, Member } from '../workspace/store'
+import {
+  authorizeFlow,
+  authorizeGraph,
+  type CurrentMember,
+} from '../workspace/authorization'
+import { requirePermission } from '../errors'
 import type { Flow } from '../flows/model'
 import { assertJsonLimit } from '../flows/engine'
 import { z } from 'zod'
@@ -163,11 +169,37 @@ export function loadTestService(
     return row
   }
 
+  function assertAccess(member: Member, id: string) {
+    requirePermission(member, 'load-tests.run')
+    const row = get(id)
+    if (member.access.mode === 'selected') {
+      const key = store
+        .query<
+          {
+            flow_id: string
+            issuer_member_id: string | null
+            issuer_action: string | null
+          },
+          [string]
+        >(
+          'SELECT flow_id, issuer_member_id, issuer_action FROM runtime_keys WHERE id = ?',
+        )
+        .get(row.runtime_key_id)
+      if (
+        !key?.issuer_member_id ||
+        key.issuer_action !== 'load-tests.run' ||
+        !member.access.flowIds.includes(key.flow_id)
+      )
+        throw new ApiError(404, 'Load test not found')
+    }
+  }
+
   function finish(
     id: string,
     status: LoadTestRun['status'],
     summary: LoadTestSummary | null = null,
     error: string | null = null,
+    actor?: string,
   ) {
     if (closed) return
     store.db
@@ -181,13 +213,13 @@ export function loadTestService(
           error,
           finishedAt: new Date().toISOString(),
         }
-        store.revokeRuntimeKey(row.actor, row.runtime_key_id)
+        store.revokeRuntimeKey(actor ?? row.actor, row.runtime_key_id)
         store
           .query(
             'UPDATE load_tests SET metadata = ?, status = ? WHERE id = ? AND status = ?',
           )
           .run(JSON.stringify(run), status, id, 'running')
-        store.audit(row.actor, `load-test.${status}`, id)
+        store.audit(actor ?? row.actor, `load-test.${status}`, id)
       })
       .immediate()
     active.delete(id)
@@ -209,12 +241,29 @@ export function loadTestService(
     .immediate()
 
   return {
-    targets(): LoadTestTarget[] {
+    assertAccess,
+    targets(member?: Member): LoadTestTarget[] {
+      const selected = member?.access.mode === 'selected'
       return store
-        .query<ReleaseRow, []>(
-          'SELECT id, published, published_revision FROM flows WHERE published IS NOT NULL ORDER BY rowid DESC',
+        .query<ReleaseRow>(
+          `SELECT id, published, published_revision FROM flows WHERE published IS NOT NULL ${selected ? 'AND id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)' : ''} ORDER BY rowid DESC`,
         )
-        .all()
+        .all(...(selected ? [member!.id] : []))
+        .filter((row) => {
+          if (!selected) return true
+          try {
+            authorizeGraph(
+              member!,
+              row.id,
+              'load-tests.run',
+              JSON.parse(row.published),
+            )
+            return true
+          } catch (error) {
+            if (error instanceof ApiError && error.status === 404) return false
+            throw error
+          }
+        })
         .map((row) => {
           const flow = JSON.parse(row.published) as Flow
           return {
@@ -230,18 +279,32 @@ export function loadTestService(
           }
         })
     },
-    list(): LoadTestRun[] {
+    list(member?: Member): LoadTestRun[] {
+      const selected = member?.access.mode === 'selected'
       return store
-        .query<{ metadata: string }, []>(
-          'SELECT metadata FROM load_tests ORDER BY rowid DESC LIMIT 100',
+        .query<{ metadata: string }>(
+          `SELECT load_tests.metadata FROM load_tests ${selected ? "JOIN runtime_keys ON runtime_keys.id = load_tests.runtime_key_id WHERE issuer_member_id IS NOT NULL AND issuer_action = 'load-tests.run' AND runtime_keys.flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)" : ''} ORDER BY load_tests.rowid DESC LIMIT 100`,
         )
-        .all()
+        .all(...(selected ? [member!.id] : []))
         .map((row) => JSON.parse(row.metadata))
     },
-    get(id: string): LoadTestRun {
+    get(id: string, member?: Member): LoadTestRun {
+      if (member) assertAccess(member, id)
       return JSON.parse(get(id).metadata)
     },
-    start(actor: string, input: unknown): LoadTestRun {
+    start(
+      actor: string,
+      input: unknown,
+      currentMember?: CurrentMember,
+    ): LoadTestRun {
+      if (
+        currentMember &&
+        input &&
+        typeof input === 'object' &&
+        'flowId' in input &&
+        typeof input.flowId === 'string'
+      )
+        authorizeFlow(currentMember(), input.flowId, 'load-tests.run')
       const parsed = startSchema.safeParse(input)
       if (!parsed.success)
         throw new ApiError(400, 'Invalid load test configuration or request')
@@ -264,6 +327,8 @@ export function loadTestService(
         )
       const { run, token, body, url } = store.db
         .transaction(() => {
+          if (currentMember)
+            authorizeFlow(currentMember(), value.flowId, 'load-tests.run')
           if (
             store
               .query("SELECT id FROM load_tests WHERE status = 'running'")
@@ -277,6 +342,8 @@ export function loadTestService(
             .get(value.flowId)
           if (!row) throw new ApiError(400, 'Choose a published API')
           const flow = JSON.parse(row.published) as Flow
+          if (currentMember)
+            authorizeGraph(currentMember(), row.id, 'load-tests.run', flow)
           if (flow.nodes.some((node) => node.type === 'social'))
             throw new ApiError(
               400,
@@ -332,13 +399,18 @@ export function loadTestService(
             summary: null,
             error: null,
           }
-          const key = store.createRuntimeKey(actor, {
-            name: `Load test ${run.id}`,
-            flowId: row.id,
-            permissions: [permission],
-            releaseRevision: row.published_revision,
-            expiresAt: new Date(Date.now() + 300_000).toISOString(),
-          })
+          const key = store.createRuntimeKey(
+            actor,
+            {
+              name: `Load test ${run.id}`,
+              flowId: row.id,
+              permissions: [permission],
+              releaseRevision: row.published_revision,
+              expiresAt: new Date(Date.now() + 300_000).toISOString(),
+            },
+            currentMember,
+            'load-tests.run',
+          )
           store
             .query('INSERT INTO load_tests VALUES (?, ?, ?, ?, ?)')
             .run(run.id, JSON.stringify(run), 'running', key.id, actor)
@@ -380,12 +452,21 @@ export function loadTestService(
         )
       return run
     },
-    cancel(id: string): LoadTestRun {
-      const row = get(id)
-      if (row.status !== 'running' && row.status !== 'canceled')
-        throw new ApiError(409, 'This load test has already finished')
+    cancel(
+      id: string,
+      actor?: string,
+      currentMember?: CurrentMember,
+    ): LoadTestRun {
       const controller = active.get(id)
-      finish(id, 'canceled')
+      store.db
+        .transaction(() => {
+          if (currentMember) assertAccess(currentMember(), id)
+          const row = get(id)
+          if (row.status !== 'running' && row.status !== 'canceled')
+            throw new ApiError(409, 'This load test has already finished')
+          finish(id, 'canceled', null, null, actor)
+        })
+        .immediate()
       controller?.abort()
       return JSON.parse(get(id).metadata)
     },

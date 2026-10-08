@@ -52,6 +52,10 @@ Publication and rollback for the tested flow are blocked until its active run fi
 
 Write methods and GraphQL mutations repeatedly invoke the live API. The dashboard asks for confirmation after showing this risk. Direct permission-authorized API clients authorize the run by sending the start request; there is no extra confirmation property in its body. There is no transaction rollback or synthetic test database. Published product OAuth/social-login flows are unavailable for automatic load testing: generating manufactured authorization attempts would exercise a different workflow and provider boundary.
 
+## Selected issuers
+
+Implemented in 0.10, selected access restricts targets/starts to authorized published APIs and all dependency USE, with temporary caller keys bound to the member's `load-tests.run` action and starting revision. All-mode managers keep complete authorized history. Scoped cancellation/key cleanup requires the action/API scope but not retained USE. Calls recheck current issuer policy around asynchronous work and before results; cancellation records the acting member. Selected history covers issuer-bound load-test jobs for shared APIs, including another original issuer; unbound legacy jobs stay hidden. The at-most-thirty-second run remains bounded native work, not a promise of instant cross-process termination or cancellation of admitted requests. See [selected actions and USE](roles.md#selected-api-actions-and-dependency-use) and exact evidence in [testing](testing.md).
+
 ## Verification boundary
 
 Native automatic download and execution were observed on Windows amd64: a default REST run, a report that missed its expected-status goal, and typed GraphQL query/mutation runs. Temporary runtime keys were revoked afterward. See [testing](testing.md) for exact checks and results. Automatic provisioning also targets Linux amd64/arm64 and macOS amd64/arm64; those operating systems have not been executed in this verification. UI and controlled-runner tests alone do not verify the native k6 process or its download path.

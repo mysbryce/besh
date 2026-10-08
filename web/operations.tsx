@@ -25,8 +25,19 @@ import {
 import { useStudio } from './store'
 import { can } from '../src/workspace/permissions'
 import { Roles, MemberAssignment, roleChoice, roleOptions } from './roles'
-import { FlowAccessFields, FlowAccessEditor } from './flow-access'
-import type { FlowAccessInput } from '../src/workspace/flow-access'
+import {
+  FlowAccessFields,
+  FlowAccessEditor,
+  selectedRoleCompatible,
+  emptyDependencyCatalog,
+  type DependencyCatalog,
+} from './flow-access'
+import type { MemberAccessInput } from '../src/workspace/flow-access'
+import type {
+  DependencyAuth,
+  DependencyDatabase,
+  DependencySource,
+} from '../src/workspace/dependency-model'
 
 export function Operations({
   page,
@@ -42,7 +53,12 @@ export function Operations({
   const [role, setRole] = useState('viewer')
   const [roles, setRoles] = useState<Role[]>([])
   const [flows, setFlows] = useState<SavedFlow[]>([])
-  const [flowAccess, setFlowAccess] = useState<FlowAccessInput>({ mode: 'all' })
+  const [flowAccess, setFlowAccess] = useState<MemberAccessInput>({
+    mode: 'all',
+  })
+  const [dependencies, setDependencies] = useState<DependencyCatalog>(
+    emptyDependencyCatalog,
+  )
   const [sharingMember, setSharingMember] = useState<Member | null>(null)
   const [issued, setIssued] = useState('')
   const [email, setEmail] = useState('')
@@ -58,11 +74,10 @@ export function Operations({
       : page === 'audit'
         ? can(member, 'audit.read')
         : backupAllowed || migrationsAllowed
-  const sharingCompatible =
-    role === 'viewer' ||
-    (
-      roles.find((item) => item.id === role)?.permissions ?? ['flows.write']
-    ).every((permission) => permission === 'flows.read')
+  const sharingCompatible = selectedRoleCompatible(
+    role === 'viewer' || role === 'editor' ? role : 'custom',
+    roles.find((item) => item.id === role)?.permissions ?? ['sources.write'],
+  )
 
   useEffect(() => {
     if (
@@ -76,14 +91,28 @@ export function Operations({
   async function refresh() {
     if (page === 'audit') setAudit(await api<AuditEvent[]>('/api/audit', token))
     if (page === 'members') {
-      const [people, custom, available] = await Promise.all([
+      const [
+        people,
+        custom,
+        available,
+        sources,
+        databaseConnections,
+        authConnections,
+      ] = await Promise.all([
         api<Member[]>('/api/members', token),
         api<Role[]>('/api/roles', token),
         api<SavedFlow[]>('/api/flows', token),
+        api<DependencySource[]>('/api/dependencies/sources', token),
+        api<DependencyDatabase[]>(
+          '/api/dependencies/database-connections',
+          token,
+        ),
+        api<DependencyAuth[]>('/api/dependencies/auth-connections', token),
       ])
       setMembers(people)
       setRoles(custom)
       setFlows(available)
+      setDependencies({ sources, databaseConnections, authConnections })
     }
     if (page === 'backups') {
       const [copies, history] = await Promise.all([
@@ -110,7 +139,14 @@ export function Operations({
       page === 'audit'
         ? ['/api/audit']
         : page === 'members'
-          ? ['/api/members', '/api/roles', '/api/flows']
+          ? [
+              '/api/members',
+              '/api/roles',
+              '/api/flows',
+              '/api/dependencies/sources',
+              '/api/dependencies/database-connections',
+              '/api/dependencies/auth-connections',
+            ]
           : [
               ...(backupAllowed ? ['/api/backups'] : []),
               ...(migrationsAllowed ? ['/api/migrations'] : []),
@@ -123,6 +159,11 @@ export function Operations({
           setMembers(data[0] as Member[])
           setRoles(data[1] as Role[])
           setFlows(data[2] as SavedFlow[])
+          setDependencies({
+            sources: data[3] as DependencySource[],
+            databaseConnections: data[4] as DependencyDatabase[],
+            authConnections: data[5] as DependencyAuth[],
+          })
         }
         if (page === 'backups') {
           setBackups(backupAllowed ? (data[0] as Backup[]) : [])
@@ -221,7 +262,7 @@ export function Operations({
                   {
                     name,
                     ...roleChoice(role),
-                    flowAccess,
+                    access: flowAccess,
                     ...(email.trim() ? { email: email.trim(), password } : {}),
                   },
                 )
@@ -293,6 +334,7 @@ export function Operations({
               value={flowAccess}
               onChange={setFlowAccess}
               flows={flows}
+              dependencies={dependencies}
               compatible={sharingCompatible}
               disabled={busy || loading || !!issued}
             />

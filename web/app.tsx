@@ -174,10 +174,15 @@ export function App() {
     backups: ['backups.manage', 'migrations.read'],
   }
   const grants = pageGrants[page]
+  const selectedAccess = state.member.access.mode === 'selected'
+  const selectedPages = ['builder', 'keys', 'load-tests', 'account', 'roadmap']
   const forbidden =
-    page === 'members' || page === 'updates'
-      ? state.member.role !== 'owner'
-      : !!grants && !grants.some((permission) => can(state.member, permission))
+    selectedAccess && !selectedPages.includes(page)
+      ? true
+      : page === 'members' || page === 'updates'
+        ? state.member.role !== 'owner'
+        : !!grants &&
+          !grants.some((permission) => can(state.member, permission))
   const deniedTitle =
     page === 'members' || page === 'updates'
       ? 'Owner access required'
@@ -225,27 +230,30 @@ export function App() {
         <div className="sidebar-scroll">
           <span className="nav-label">WORKSPACE</span>
           <nav aria-label="Workspace navigation">
-            {navigation.map(({ id, name, icon: Icon }) => (
-              <button
-                key={id}
-                aria-label={name}
-                className={page === id ? 'active' : ''}
-                disabled={state.busy}
-                onClick={() => setPage(id)}
-              >
-                <Icon size={18} />
-                {name}
-                {id === 'builder' ? (
-                  <span className="nav-count">{state.flows.length}</span>
-                ) : null}
-              </button>
-            ))}
+            {navigation
+              .filter(({ id }) => !selectedAccess || selectedPages.includes(id))
+              .map(({ id, name, icon: Icon }) => (
+                <button
+                  key={id}
+                  aria-label={name}
+                  className={page === id ? 'active' : ''}
+                  disabled={state.busy}
+                  onClick={() => setPage(id)}
+                >
+                  <Icon size={18} />
+                  {name}
+                  {id === 'builder' ? (
+                    <span className="nav-count">{state.flows.length}</span>
+                  ) : null}
+                </button>
+              ))}
           </nav>
           <div className="sidebar-api-heading">
             <span className="nav-label">YOUR APIS</span>
             <button
               aria-label="New API"
               disabled={
+                selectedAccess ||
                 !can(state.member, 'flows.read') ||
                 !can(state.member, 'flows.write') ||
                 state.busy
@@ -271,8 +279,13 @@ export function App() {
               ))
             ) : (
               <p>
-                {state.member.flowAccess.mode === 'selected' ? (
-                  'No APIs shared. Ask the owner to review your API access.'
+                {selectedAccess ? (
+                  state.member.access.flowIds.length &&
+                  !can(state.member, 'flows.read') ? (
+                    'API reading is not granted. Use your permitted API actions, or ask the owner to review your role.'
+                  ) : (
+                    'No APIs shared. Ask the owner to review your API access.'
+                  )
                 ) : (
                   <>
                     Your next idea starts here.

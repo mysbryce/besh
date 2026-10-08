@@ -2,6 +2,7 @@ import { Checkbox } from './components/ui/checkbox'
 import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import type { DatabaseConnection, DatabaseTable } from '../src/databases/model'
+import type { DependencyDatabase } from '../src/workspace/dependency-model'
 
 export type DatabaseSelection = {
   table: string
@@ -14,7 +15,9 @@ export type DatabaseSelection = {
   filterValue: string
 }
 
-export function databaseSelection(table?: DatabaseTable): DatabaseSelection {
+export function databaseSelection(
+  table?: DatabaseTable | DependencyDatabase['tables'][number],
+): DatabaseSelection {
   return {
     table: table?.name ?? '',
     columns: table?.columns.map((column) => column.key) ?? [],
@@ -61,7 +64,7 @@ export function DatabaseReadFields({
   references = false,
   onChange,
 }: {
-  connection: DatabaseConnection
+  connection: DatabaseConnection | DependencyDatabase
   selection: DatabaseSelection
   disabled: boolean
   references?: boolean
@@ -92,8 +95,9 @@ export function DatabaseReadFields({
         />
       </label>
       <p className="field-help">
-        {table?.rowCount ?? 0} rows in this saved table. Choose the columns your
-        API may return.
+        {table && 'rowCount' in table
+          ? `${table.rowCount} rows in this saved table. Choose the columns your API may return.`
+          : 'Structure only. Choose the columns your API may return under explicit SQLite USE.'}
       </p>
       <fieldset className="source-fieldset">
         <legend>Returned columns</legend>

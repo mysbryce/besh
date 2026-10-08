@@ -3,7 +3,8 @@ import { Button } from './components/ui/button'
 import { Select } from './components/ui/select'
 import { api } from './lib/api'
 import { useStudio } from './store'
-import { can } from '../src/workspace/permissions'
+import { canReadDependencyStructure } from './dependency-access'
+import type { DependencyDatabase } from '../src/workspace/dependency-model'
 import type {
   DatabaseConnection,
   DatabaseReadConfig,
@@ -29,7 +30,10 @@ export function DatabaseNodeForm({
   onError: (message: string) => void
 }) {
   const state = useStudio()
-  const [connections, setConnections] = useState<DatabaseConnection[]>([])
+  const selectedAccess = state.member?.access.mode === 'selected'
+  const [connections, setConnections] = useState<
+    (DatabaseConnection | DependencyDatabase)[]
+  >([])
   const [connectionId, setConnectionId] = useState(config.connectionId)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -56,7 +60,8 @@ export function DatabaseNodeForm({
     filterValue: reference ? reference[2]! : String(config.filter?.value ?? ''),
   }))
   useEffect(() => {
-    if (!can(state.member, 'database-connections.read')) return
+    if (!canReadDependencyStructure(state.member, 'database-connections.read'))
+      return
     let active = true
     const session = state.sessionId
     const memberId = state.member?.id
@@ -66,12 +71,17 @@ export function DatabaseNodeForm({
         active &&
         live.sessionId === session &&
         live.member?.id === memberId &&
-        can(live.member, 'database-connections.read')
+        canReadDependencyStructure(live.member, 'database-connections.read')
       )
     }
     setLoading(true)
     setError('')
-    void api<DatabaseConnection[]>('/api/database-connections', token)
+    void api<(DatabaseConnection | DependencyDatabase)[]>(
+      selectedAccess
+        ? '/api/dependencies/database-connections'
+        : '/api/database-connections',
+      token,
+    )
       .then((value) => {
         if (!current()) return
         setConnections(value)
@@ -89,14 +99,15 @@ export function DatabaseNodeForm({
     return () => {
       active = false
     }
-  }, [token, state.sessionId, state.member?.id, retry])
+  }, [token, state.sessionId, state.member?.id, retry, selectedAccess])
   const connection = connections.find((item) => item.id === connectionId)
   return (
     <div className="simple-form">
       <p className="field-help">
         Changing read settings does not rewrite API rules or the GraphQL schema.
-        Recreate a draft from Database connections with the intended fields, or
-        review its matching contract before testing and publishing.
+        {selectedAccess
+          ? 'Review the matching API rules or schema before testing and publishing. Ask the owner for additional dependency USE; selected access cannot generate new APIs.'
+          : 'Recreate a draft from Database connections with the intended fields, or review its matching contract before testing and publishing.'}
       </p>
       <p className="field-help">
         Read only from a saved SQLite copy. Changes to the original file are not
@@ -137,8 +148,9 @@ export function DatabaseNodeForm({
       </label>
       {!loading && !connection ? (
         <p>
-          No readable copy selected. Upload a SQLite copy in Database
-          connections, then return here.
+          {selectedAccess
+            ? 'No allowed copy selected. Ask the owner to review SQLite USE for your selected APIs.'
+            : 'No readable copy selected. Upload a SQLite copy in Database connections, then return here.'}
         </p>
       ) : null}
       {connection ? (

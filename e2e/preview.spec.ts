@@ -8,6 +8,7 @@ import { clientCodePreviews } from './client-code-preview'
 import { releasePinPreviews } from './release-pins-preview'
 import { generatedBackendPreviews } from './generated-backend-preview'
 import { flowAccessPreviews } from './flow-access-preview'
+import { scopedActionsPreviews } from './scoped-actions-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -4075,6 +4076,7 @@ test('preview every current page and its actions', async ({
   await releasePinPreviews({ page, owner, capture })
   await generatedBackendPreviews({ page, owner, capture })
   await flowAccessPreviews({ page, owner, capture })
+  await scopedActionsPreviews({ page, owner, capture })
   expect(errors).toEqual([])
 
   await context.clearPermissions()

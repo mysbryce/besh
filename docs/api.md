@@ -4,7 +4,7 @@ Management routes accept a workspace session cookie or `Authorization: Bearer <w
 
 GraphQL runtime endpoints use the GraphQL `data`/`errors` envelope. See [GraphQL guide](graphql.md).
 
-Management action permissions and API access are resolved from current server state on every request. Built-in action permissions are preserved; custom roles grant explicit actions. Eligible read-only members can also have a selected-API scope, enforced on every API read/export route. Only owners administer members, roles, sharing, and other members' sessions. Runtime API keys remain separate. See [roles and permissions](roles.md).
+Management action permissions and API/dependency access are resolved from current server state on every request. Built-in action permissions are preserved; custom roles grant explicit actions. Eligible members can narrow existing-API actions with selected access and typed dependency USE. Only owners administer members, roles, sharing, and other members' sessions. Runtime API keys remain separate; issuer-bound keys additionally depend on current member authority. See [roles and permissions](roles.md).
 
 ## Setup
 
@@ -30,7 +30,7 @@ The setup API also accepts optional `email` and `password` together to create th
 | GET    | `/api/sessions`     | Member's active sessions; owners receive all workspace sessions, with metadata only                                                                                |
 | DELETE | `/api/sessions/:id` | Own session or any session for an owner; returns `{ "ok": true }`                                                                                                  |
 
-Login and restoration return `{ "member": { "id": "...", "name": "...", "role": "viewer", "permissions": ["flows.read"], "flowAccess": { "mode": "all", "flowIds": [], "version": 1 } }, "csrfToken": "...", "sessionId": "...", "expiresAt": "..." }`. Every public member response includes current `permissions` and `flowAccess`; custom members also include `roleId` and `roleName`. The secret appears only in the `besh_session` HttpOnly, SameSite=Strict cookie, with Secure on HTTPS. Session expiration is fixed at 12 hours. Each member has at most 20 active sessions; the next successful login evicts the oldest transactionally and records an audit event.
+Login and restoration return `{ "member": { "id": "...", "name": "...", "role": "viewer", "permissions": ["flows.read"], "flowAccess": { "mode": "all", "flowIds": [], "version": 1 }, "access": { "mode": "all", "flowIds": [], "dependencyUse": { "sources": [], "databaseConnections": [], "authConnections": [] }, "version": 1 } }, "csrfToken": "...", "sessionId": "...", "expiresAt": "..." }`. Every public member includes current `permissions`, `access`, and the compatible `flowAccess` projection; custom members also include `roleId` and `roleName`. The secret appears only in the `besh_session` HttpOnly, SameSite=Strict cookie, with Secure on HTTPS. Session expiration is fixed at 12 hours. Each member has at most 20 active sessions; the next successful login evicts the oldest transactionally and records an audit event.
 
 Session metadata contains `id`, `memberId`, `memberName`, `createdAt`, `expiresAt`, `lastSeenAt`, and `current`. It excludes secrets, hashes, and payloads. Expired sessions are omitted. An unknown session ID returns `404`; revoking another member's session without owner permission returns `403`, with the selected-mode policy below hiding foreign session IDs as `404`. Revoking the current session ends subsequent management access through that cookie.
 
@@ -49,7 +49,7 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 | GET    | `/api/flows/:id/releases/:revision` | `flows.read`; selected definition and current flag                                      |
 | GET    | `/api/flows/:id/openapi`            | `flows.read`; `source=draft` or `source=published` (default)                            |
 | GET    | `/api/flows/:id/backend-code`       | `flows.read`; current module, optional expected `revision`                              |
-| POST   | `/api/flows`                        | `flows.write`; flow definition                                                          |
+| POST   | `/api/flows`                        | `flows.write`; all-mode only; flow definition                                           |
 | PUT    | `/api/flows/:id`                    | `flows.write`; flow definition plus current `revision`                                  |
 | POST   | `/api/flows/:id/test`               | `flows.test`; `{ "body": {}, "query": {}, "params": {} }`                               |
 | POST   | `/api/flows/:id/graphql/test`       | `flows.test`; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`     |
@@ -59,6 +59,7 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 | POST   | `/api/members`                      | Owner; name and `viewer`, `editor`, or `custom` role; custom requires `roleId`          |
 | PUT    | `/api/members/:id/role`             | Owner; `{ "role": "viewer" }` or `{ "role": "custom", "roleId": "..." }`                |
 | PUT    | `/api/members/:id/flow-access`      | Owner; exact scope and expected version; see selected-API reading                       |
+| PUT    | `/api/members/:id/access`           | Owner; exact API/dependency access and expected shared version                          |
 | DELETE | `/api/members/:id`                  | Owner; cannot remove bootstrap owner                                                    |
 | GET    | `/api/runtime-keys`                 | `runtime-keys.manage`; metadata including revoked keys                                  |
 | POST   | `/api/runtime-keys`                 | `runtime-keys.manage`; name, flow ID, grants, expiration; token once                    |
@@ -98,11 +99,35 @@ Required member metadata includes `flowAccess: { mode: "all" | "selected", flowI
 
 Owner-only `PUT /api/members/:id/flow-access` accepts exactly `{ "mode": "all", "version": 1 }` or `{ "mode": "selected", "flowIds": ["<flow-id>"], "version": 1 }`. The expected version must be a positive safe-integer JSON number. Selected IDs must be unique existing strings of 1 to 80 characters, at most 256; an empty array shares no APIs. Malformed bodies return `400`; missing members or selected APIs return `404`; stale versions and owner-scope edits return `409`. `POST /api/members` can also include initial `flowAccess: { "mode": "all" }` or `{ "mode": "selected", "flowIds": [...] }`, without a version, assigning the scope atomically with member creation.
 
-Selected scope is valid only for viewers or custom roles whose permissions are a subset of `flows.read`, including an empty custom role. It never grants a missing action. Editors or custom roles with any other action are incompatible. Incompatible creation returns `400`; incompatible role assignment or an assigned custom-role expansion returns `409` before changes.
+Selected scope is valid for viewers or custom roles using only the six API actions listed below, including an empty custom role. It never grants a missing action. Editors and roles with global resource/audit/backup/migration grants are incompatible. Incompatible creation returns `400`; incompatible role assignment or an assigned custom-role expansion returns `409` before changes.
 
 Every accepted scope PUT, including an identical scope, increments its version and commits `member.flow-access.updated` with affected `session.revoked` events. Role assignment retains a compatible scope and increments its version; compatible custom-role permission edits do not increment scope version but apply existing grant-change cookie revocation. Bearer keys remain unchanged and resolve current policy on the next request. Already authorized in-flight reads may finish.
 
-API lists are filtered. Every API-ID read/export route requires both `flows.read` and scope: missing action returns `403`; an inaccessible or unknown ID returns `404` before malformed request/query validation. This covers saved drafts, release history/detail, OpenAPI, client metadata/generation, and generated backend code. Selected members retain their own account/session actions; foreign/missing session IDs both return `404`. Other workspace action routes remain denied. Published runtime keys, rows/fields, source/database previews, and tenant authorization are unaffected. Migration 15 adds `member_flow_access`/`member_flow_grants` to complete backups. See [roles and sharing](roles.md#selected-api-reading) and exact verification in [testing](testing.md).
+API lists are filtered. Every API-ID read/export route requires both `flows.read` and scope: missing action returns `403`; an inaccessible or unknown ID returns `404` before malformed request/query validation. This covers saved drafts, release history/detail, OpenAPI, client metadata/generation, and generated backend code. Selected members retain their own account/session actions; foreign/missing session IDs both return `404`. Global workspace action routes remain denied. Migration 15 adds `member_flow_access`/`member_flow_grants`; migration 16 extends this with USE and issuer bindings. Rows/fields and tenant authorization remain separate. See [roles and sharing](roles.md#selected-api-reading) and exact verification in [testing](testing.md).
+
+## Selected API actions and dependency USE
+
+Implemented in 0.10, required member metadata is `access: { mode, flowIds, dependencyUse: { sources: string[], databaseConnections: string[], authConnections: string[] }, version }`. `flowAccess` remains its compatible API-scope projection with the same version. Returned ID lists are sorted; all mode has no selected USE entries. Existing members retain their API scope and start with empty USE lists.
+
+Owner-only `PUT /api/members/:id/access` accepts exactly `{ "mode": "all", "version": 1 }` or `{ "mode": "selected", "flowIds": [], "dependencyUse": { "sources": [], "databaseConnections": [], "authConnections": [] }, "version": 1 }`. Version is a positive safe-integer JSON number. Each ID array has at most 256 unique existing IDs of 1 to 80 characters. Creation can provide `access` without `version`; it cannot provide both `access` and `flowAccess`. Legacy selected-to-selected `/flow-access` updates preserve existing USE grants; switching to all clears them. Access updates share the version/audit/session boundary; the new endpoint records `member.access.updated`.
+
+Selected eligibility permits role permissions contained in `flows.read`, `flows.write`, `flows.test`, `flows.publish`, `runtime-keys.manage`, and `load-tests.run`. It does not permit creating APIs, generating new APIs from resources, or global resource administration. Existing-API save/test/publish/rollback checks the action, selected API, and every referenced dependency, including untaken branches. Current checks run at transaction boundaries and before/after asynchronous data/provider work and final results. Management USE denials hide the dependency as `404`; bound runtime issuer denials return `403`. A failed final check returns no private result, but cannot undo effects already performed.
+
+Selected publication/rollback without `flows.read` returns only `{ id, revision, publishedRevision, publishedEndpoint: { method, path, graphql } }`, excluding draft names, nodes, literals, contracts, and schema. Selected members with API reading and all-mode members keep the existing full response. Rollback requires USE for its immutable target graph, not the current edited draft. A stale expected pin returns `409` before inspecting a newer publication's dependencies.
+
+The structural dependency catalog has list arrays and single-ID detail objects:
+
+| GET family                                     | Detail fields                                          |
+| ---------------------------------------------- | ------------------------------------------------------ |
+| `/api/dependencies/sources[/:id]`              | `id`, `name`, `version`, `columns`                     |
+| `/api/dependencies/database-connections[/:id]` | `id`, `name`, `version`, `tables: [{ name, columns }]` |
+| `/api/dependencies/auth-connections[/:id]`     | `id`, `name`, `version`, `provider`                    |
+
+Selected members need a relevant operational action (write/test/publish/key management/load testing) and the matching typed USE grant; API reading alone does not grant catalog access. All-mode members need the corresponding existing source/database/auth read permission. Inaccessible/missing detail IDs return `404`. Catalogs exclude rows, row counts, original bytes, remote URLs, provider settings/secrets, and credentials. Referenced resources cannot be deleted while USE is granted (`409`). USE can expose data through authored APIs; it is not row/column/tenant isolation.
+
+Migration 16 adds typed USE state and paired issuer columns. Runtime key metadata adds nullable `issuerBinding: { memberId, action: "runtime-keys.manage" | "load-tests.run" } | null`. Selected caller issuance requires an explicit current `releaseRevision` (`400` if omitted) and derives the binding on the server. Unauthorized/deleted issuers deny calls with `403`; replacement requires current issuer authority (`409` when blocked) and preserves issuer/action/pin/exact expiry even for an owner. Legacy null bindings stay independent; deletion does not erase a binding or turn it into legacy access.
+
+Selected key inventory/exact operations cover bound keys for currently shared APIs only, including another issuer's key; unbound keys return `404`. Selected load-test history/detail/cancellation similarly covers `load-tests.run`-bound jobs for shared APIs, while targets/start additionally require every dependency USE. A selected run derives `load-tests.run` binding and its managed starting-revision pin; managed keys remain nonreplaceable. Revocation/cancellation require the action and API scope, but not retained USE. All-mode managers keep complete authorized inventory/history. Malformed stored issuer pairs fail closed with `503`; deleting an issuer retains the key's identity rather than clearing it. See [selected actions and USE](roles.md#selected-api-actions-and-dependency-use).
 
 ## Published backend code
 
@@ -349,11 +374,11 @@ Content-Type: application/json
 }
 ```
 
-Issuance accepts exactly `name`, `flowId`, `permissions`, `expiresAt`, and optional `releaseRevision`; unknown fields return `400`. To pin the key, add `releaseRevision` as a JSON number that is a positive safe integer equal to the flow's current published revision. Numeric strings are not converted. Omitting it keeps following behavior; explicit `null`, strings, booleans, fractions, and unsafe integers return `400`. The current-publication check and insertion/audit are atomic. A stale/noncurrent pin, including a known flow with no publication, returns `409` before grant/protocol checks and without issuing a key or creation audit. An unpublished following target returns `400`; an unknown flow returns `404`.
+Issuance accepts exactly `name`, `flowId`, `permissions`, `expiresAt`, and optional `releaseRevision`; unknown fields return `400`. To pin the key, add `releaseRevision` as a JSON number that is a positive safe integer equal to the flow's current published revision. Numeric strings are not converted. Selected issuers must provide the current pin (`400` if omitted) and satisfy API/USE authority; the server derives their binding. All-mode issuers can omit it for following behavior and ordinary unbound issuance; explicit `null`, strings, booleans, fractions, and unsafe integers return `400`. The current-publication check and insertion/audit are atomic. A stale/noncurrent pin, including a known flow with no publication, returns `409` before newer dependency or grant/protocol checks and without issuing a key or creation audit. An unpublished following target returns `400`; an unknown flow returns `404`.
 
 Name must contain 1 to 80 characters after trimming. Expiration must be a future ISO date with timezone within 366 days. A REST flow accepts `rest`; a GraphQL flow accepts `query`, `mutation`, or both. Empty, duplicate, or protocol-incompatible grants are rejected. One key scopes to one published flow ID.
 
-The response contains `id`, `name`, `flowId`, `permissions`, `expiresAt`, `createdAt`, `revokedAt: null`, required nullable `releaseRevision`, and a one-time `token`. `GET /api/runtime-keys` returns the same metadata without tokens or hashes. Keys owned by load-test jobs additionally contain `managedBy: "load-test"`; ordinary caller keys omit it. These temporary keys are revoked automatically and cannot be replaced (`409`). Manual revocation is allowed and interrupts their caller access. Revocation returns `{ "ok": true }` and retains `revokedAt`. Repeating revocation succeeds; an unknown key returns `404`.
+The response contains `id`, `name`, `flowId`, `permissions`, `expiresAt`, `createdAt`, `revokedAt: null`, required nullable `releaseRevision` and `issuerBinding`, and a one-time `token`. `GET /api/runtime-keys` returns the same metadata without tokens or hashes. Keys owned by load-test jobs additionally contain `managedBy: "load-test"`; ordinary caller keys omit it. These temporary keys are revoked automatically and cannot be replaced (`409`). Manual revocation is allowed and interrupts their caller access. Revocation returns `{ "ok": true }` and retains `revokedAt`. Repeating revocation succeeds; an unknown key returns `404`.
 
 ### Replace an active or dormant key
 
@@ -364,18 +389,18 @@ Authorization: Bearer <key-manager-member-token>
 
 Send no body or an empty JSON object `{}`. Any other body, including name, scope, grants, or expiration settings, returns `400`. Cookie-authenticated callers require the usual exact `Origin` and `X-Besh-CSRF` headers.
 
-A successful `200` response uses the issuance response format above, with a new `id`, `createdAt`, and one-time `token`. It preserves the original `name`, `flowId`, `permissions`, required nullable `releaseRevision`, and exact `expiresAt`. Replacement does not renew expiration or change grants. The old revocation, new hash-only key insertion, and `runtime-key.revoked` / `runtime-key.created` audit events commit in one transaction. Their resource IDs identify the old and new keys respectively; audit records contain no token or credential hash.
+A successful `200` response uses the issuance response format above, with a new `id`, `createdAt`, and one-time `token`. It preserves the original `name`, `flowId`, `permissions`, required nullable `releaseRevision`, original `issuerBinding`, and exact `expiresAt`. Replacement does not renew expiration or change grants. The old revocation, new hash-only key insertion, and `runtime-key.revoked` / `runtime-key.created` audit events commit in one transaction. Their resource IDs identify the old and new keys respectively; audit records contain no token or credential hash.
 
-| Status | Meaning                                                                                                              |
-| ------ | -------------------------------------------------------------------------------------------------------------------- |
-| `200`  | Replacement committed; save the returned token once                                                                  |
-| `400`  | Body is neither omitted nor an empty object                                                                          |
-| `401`  | Missing or invalid workspace management credentials                                                                  |
-| `403`  | Caller lacks `runtime-keys.manage`                                                                                   |
-| `404`  | Original key does not exist                                                                                          |
-| `409`  | Key is revoked or expired, another replacement won, or its grants no longer match the selected compatibility release |
+| Status | Meaning                                                                                                                                       |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `200`  | Replacement committed; save the returned token once                                                                                           |
+| `400`  | Body is neither omitted nor an empty object                                                                                                   |
+| `401`  | Missing or invalid workspace management credentials                                                                                           |
+| `403`  | Caller lacks `runtime-keys.manage`                                                                                                            |
+| `404`  | Original key does not exist                                                                                                                   |
+| `409`  | Key is revoked or expired, another replacement won, issuer authority is blocked, or grants no longer match the selected compatibility release |
 
-Following-key compatibility uses the current published release. Pinned-key compatibility uses the immutable pinned release, including when it is dormant; a missing pinned release returns `409` without replacement. Neither uses an edited draft. A failed replacement leaves the old key unchanged. Concurrent replacements allow only one winner. New requests using the old token return `401` immediately after the commit; requests already authenticated may finish.
+Replacement also requires current actor authority and, for a bound key, original issuer authority. Following-key compatibility uses the current published release. Pinned-key compatibility uses the immutable pinned release, including when it is dormant; a missing pinned release returns `409` without replacement. Neither uses an edited draft. A failed replacement leaves the old key unchanged. Concurrent replacements allow only one winner. New requests using the old token return `401` immediately after the commit; requests already authenticated may finish.
 
 Do not automatically retry after a lost response: the replacement may already have committed and its token cannot be fetched again. List key metadata to inspect the state, then revoke/create or replace an active replacement if its token was lost. For uninterrupted handover, manually create another key, update callers, and revoke the original; this route has no grace period. See [runtime API keys](api-keys.md) for the dashboard workflow.
 

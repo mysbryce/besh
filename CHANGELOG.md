@@ -4,6 +4,28 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.10.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Selected-member editing, draft tests, publication, and rollback for existing APIs, with explicit permission to use each spreadsheet, SQLite copy, or product-login connection.
+- Beginner dependency controls and filtered structural catalogs without direct data previews or global resource access.
+- Runtime keys linked to the original member's current authority, mandatory release pins for selected issuance, and scoped k6 jobs with cleanup after data-use permissions are removed.
+- Migration 16 preserving existing access defaults, legacy independent caller keys, and backup restoration.
+
+### Fixed
+
+- Require an explicit metadata refresh after an unconfirmed runtime-key issuance response, preserving form inputs without permitting an accidental second issuance.
+- Keep member action buttons contained on narrow screens and distinguish independent replacement receipts from member-linked replacements.
+- Bring the sharing editor into view after managing a member near the bottom of a long team list.
+
+### Security
+
+- Check every graph dependency before validation and execution, including unused branches, with current policy inside state changes and asynchronous effect checkpoints.
+- Preserve original member, action, release pin, and exact expiration through key replacement; deleted members leave a binding that denies access.
+- Hide unrelated and independent credentials/jobs from selected members, retain authorized cleanup, and record the actual manager when canceling a load test.
+- Capture a saved API response inside its state transaction so a peer's later draft cannot replace the accepted response.
+
 ## 0.9.0-alpha.0 — 2026-10-09
 
 ### Added

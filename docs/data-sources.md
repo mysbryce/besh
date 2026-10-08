@@ -14,6 +14,8 @@ Column names become safe, unique API field names. Text, numbers, true/false valu
 
 ## Snapshots and access
 
+Selected access separates **USE** from source reads/management. It permits choosing granted source structure and executing it through an existing authorized API, without direct row previews, uploads, refresh, or API generation. USE can expose stored rows through that API and is not record/column/tenant isolation. See [selected actions and USE](roles.md#selected-api-actions-and-dependency-use).
+
 Uploads save a local snapshot. Replacement imports a new snapshot for the same source. Public Google Sheets are fetched by the server and saved locally; **Refresh saved data** fetches the sheet again. These are manual actions, not background synchronization or write-back to the spreadsheet. Private-sheet OAuth and account connections are not implemented.
 
 Published APIs read the latest saved source snapshot. Refreshing or replacing a source can change live response values without republishing the graph; review the confirmation before proceeding. Owners, editors, and custom members granted source-write permission can make these changes. Release history preserves graph definitions, while source snapshots are mutable data.

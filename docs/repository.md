@@ -2,7 +2,7 @@
 
 Suggested description:
 
-> Build REST and GraphQL APIs visually, from spreadsheets and SQLite copies to published endpoints.
+> Build REST and GraphQL APIs visually. Connect spreadsheets and SQLite, publish registered routes, and test with k6.
 
 Suggested topics:
 
@@ -20,6 +20,8 @@ tailwindcss
 google-sheets
 excel
 sqlite
+k6
+load-testing
 ```
 
 These are repository metadata suggestions. They do not claim a public repository was configured or published. Public Google Sheets imports, uploaded read-only SQLite copies, and the GitHub product identity template are implemented; live external database adapters, SQL writes, other social providers, and the AI operator remain planned. Controlled GitHub tests do not verify a live OAuth app. Workspace sign-in uses email/password or member/owner keys.

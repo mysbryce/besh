@@ -28,6 +28,8 @@ Ordinary runtime requests use two fixed-size generation checks to handle publica
 
 ## Publication, recovery, and backups
 
+Issuer-bound callers check current issuer/API/dependency USE against the immutable compiled release while preserving current registered routing. A module or hash is not an authorization grant; it cannot bypass removed issuer access or establish row/field/tenant isolation. See [selected actions and USE](roles.md#selected-api-actions-and-dependency-use).
+
 Migration 14 stores compiler artifacts and the runtime generation counter in the control database, so normal consistent backups include them. Startup reconstructs routes from saved publications. Canonical generated code is validated or regenerated from the trusted graph; stored or uploaded arbitrary JavaScript is never trusted as a handler.
 
 Publication and rollback stage generated modules and a compiled router under an immediate transaction. Release selection, artifacts, generation, and audit state commit with synchronous local activation. A caught staging/activation failure rolls back state and restores the previous router. If restoring the local router fails, or any peer-publication reconstruction fails, runtime requests stay blocked with `503`. Restart Besh to reconstruct from committed state, or complete a successful publication stage in that process. Retrying a runtime request does not automatically repair it. This does not promise coordinated activation or uninterrupted availability across several processes.
@@ -35,3 +37,5 @@ Publication and rollback stage generated modules and a compiled router under an 
 By default the loader uses a unique OS temporary directory, exclusively creates each module file, loads it through `createRequire`, then removes the file/cache entry. `BESH_RUNTIME_CODE_DIR` (or programmatic `AppOptions.runtimeCodeDir`) can select an administrator-trusted private loader base; basic use needs neither. Keep that directory and server filesystem access privileged. Code generation does not freeze spreadsheet data or provider credentials: releases and pins retain references to current mutable dependencies. See [release history](api-routes.md), [runtime keys](api-keys.md), and [backups](getting-started.md#data-and-recovery).
 
 Generated code is bounded to 1 MiB; exceeding that limit rejects generation with `400`. Artifacts include source and definition SHA-256 values for checking their exact generated content. A hash is not a signature or proof of publisher authenticity. Performance comparisons belong in [testing](testing.md); route registration alone establishes no latency, throughput, or production-capacity guarantee.
+
+Each publication currently rebuilds the complete router. Local measurements show higher total create/publish cost as successive publications rebuild larger route sets. Compilation/rebuild optimization remains future work; these samples establish no production-scale claim.

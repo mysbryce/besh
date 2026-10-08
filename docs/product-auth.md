@@ -37,6 +37,8 @@ Built-in editors can generate and test a draft but cannot change provider creden
 
 ## Connect your product server
 
+Selected access requires connection **USE** for existing authorized APIs. Structural choices expose only connection identity/provider, not OAuth settings or secrets. USE permits the API's product-login step; it does not grant connection management, new draft generation, a product session, or tenant authorization. Issuer-bound runtime keys retain their original issuer/action during rotation and recheck authority before/after provider work and final results. See [selected actions and USE](roles.md#selected-api-actions-and-dependency-use); this does not add provider verification.
+
 The two actions use the same generated endpoint and the same runtime key:
 
 1. When the user selects GitHub login, your product server sends `BEGIN` to Besh.

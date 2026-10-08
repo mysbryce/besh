@@ -37,9 +37,11 @@
 - **Permission**: a named action a member may perform. Roles group permissions.
 - **Custom role**: an owner-defined set of workspace action permissions, assigned to members without changing the built-in owner, editor, or viewer roles.
 - **Role version**: a concurrency value required when editing or deleting a custom role; stale values are rejected.
-- **API access scope**: a member's separate all-API or selected-API reading choice; it cannot grant a role action or change published runtime-key access.
+- **API access scope**: a member's separate all-API or selected-API choice; it narrows eligible role actions without granting a missing action.
 - **API access version**: the concurrency value advanced by accepted sharing updates or role assignments; stale sharing forms must refresh before saving.
-- **Selected API access**: a read-only sharing mode that lets an eligible member read chosen workspace APIs, without source previews or field/record/tenant authorization.
+- **Dependency USE grant**: a typed grant to execute a selected data/product-login dependency through an API; it may expose data without granting direct previews, management, or field/record/tenant isolation.
+- **Issuer-bound runtime key**: a caller credential whose authority also depends on its issuing member's current action, API selection, and release dependencies; replacement must preserve that binding.
+- **Selected API access**: a sharing mode that narrows eligible existing-API actions and separately grants typed dependency USE, without direct previews or field/record/tenant authorization.
 - **Update notice**: a manually checked public GitHub release version and link; it does not install an update or establish compatibility or authenticity.
 - **Update settings revision**: the expected version of saved repository/prerelease settings, checked before saving or requesting a release notice.
 - **Member token**: a member credential for workspace management under that member's current role; it cannot invoke published endpoints.
@@ -56,7 +58,7 @@
 - **Following key**: a runtime key with no release pin; it accepts the flow's current published revision.
 - **Release-pinned key**: a runtime key bound to one graph revision; it accepts that revision only while it is the current publication, without executing an archived release.
 - **Dormant key**: an unexpired, unrevoked pinned key whose revision is not currently published; selecting its exact revision again can restore caller access.
-- **Key replacement**: a key-management-authorized action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, release pin or following mode, and exact expiration; the new token appears once and there is no grace period.
+- **Key replacement**: a key-management-authorized action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, release pin or following mode, issuer binding, and exact expiration; the new token appears once and there is no grace period.
 - **Runtime grant**: permission to invoke an entire REST request, GraphQL query, or GraphQL mutation; it does not filter fields or records.
 - **Audit event**: a record of who performed an action, when, and on which resource.
 - **Migration**: a versioned change to a database schema.

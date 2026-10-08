@@ -193,7 +193,7 @@ export async function flowAccessPreviews({
   await expect(creation.getByRole('alert')).toContainText('beyond Read APIs')
   await capture(
     'Members',
-    'Selected sharing rejects action roles',
+    'Selected sharing rejects global action roles',
     'The selected IDs remain intact. Creation is disabled until the owner chooses a read-only role or explicitly restores all API access.',
   )
   await page.getByRole('combobox', { name: 'Member role', exact: true }).click()
@@ -238,7 +238,7 @@ export async function flowAccessPreviews({
   page.once('dialog', (dialog) => void dialog.accept())
   await row.getByRole('button', { name: 'Change role', exact: true }).click()
   await expect(row.getByRole('alert')).toContainText(
-    'requires a read-only role',
+    'requires scoped API actions only',
   )
   expect(
     (await management<Member[]>('/api/members', undefined, 'GET')).find(
@@ -289,7 +289,9 @@ export async function flowAccessPreviews({
   await page
     .getByRole('button', { name: `Edit ${readerRole.name}`, exact: true })
     .click()
-  await page.getByRole('checkbox', { name: 'Edit APIs', exact: true }).check()
+  await page
+    .getByRole('checkbox', { name: 'Manage data sources', exact: true })
+    .check()
   page.once('dialog', (dialog) => void dialog.accept())
   await page.getByRole('button', { name: 'Save role', exact: true }).click()
   await expect(
@@ -298,7 +300,7 @@ export async function flowAccessPreviews({
   await capture(
     'Members',
     'Custom selected reader role expansion rejected',
-    'Adding Edit APIs to an assigned selected-reader role returns a real conflict. Existing grants and sharing remain read-only.',
+    'Adding global Manage data sources to an assigned selected-reader role returns a real conflict. Existing grants and sharing remain read-only.',
   )
   await page
     .getByRole('button', { name: 'Cancel role changes', exact: true })
@@ -497,15 +499,10 @@ export async function flowAccessPreviews({
       ).status(),
     ).toBe(404)
   }
-  await page.getByRole('button', { name: 'Data sources', exact: true }).click()
   await expect(
-    page.getByRole('heading', { name: /access required|Permission required/ }),
-  ).toBeVisible()
+    page.getByRole('button', { name: 'Data sources', exact: true }),
+  ).toHaveCount(0)
   expect(privateReads).toEqual([])
-  await page.getByRole('button', { name: /^API Studio/ }).click()
-  await page
-    .getByRole('button', { name: 'Generated backend', exact: true })
-    .click()
   await expect(
     page
       .getByRole('region', { name: 'Generated backend', exact: true })
@@ -595,7 +592,7 @@ export async function flowAccessPreviews({
   const delivery = new Promise<void>((resolve) => {
     release = resolve
   })
-  await page.route('**/api/members/*/flow-access', async (route) => {
+  await page.route('**/api/members/*/access', async (route) => {
     const url = new URL(route.request().url())
     const response = await route.fetch({
       url: `${apiOrigin || url.origin}${url.pathname}`,
@@ -633,7 +630,7 @@ export async function flowAccessPreviews({
   )
   release()
   await expect(page.getByRole('status')).toContainText('API sharing updated')
-  await page.unroute('**/api/members/*/flow-access')
+  await page.unroute('**/api/members/*/access')
   await capture(
     'Members',
     'Selected sharing save completed',
@@ -643,7 +640,7 @@ export async function flowAccessPreviews({
   await sharing
     .getByRole('checkbox', { name: `Share ${graphql.name}`, exact: true })
     .uncheck()
-  await page.route('**/api/members/*/flow-access', async (route) => {
+  await page.route('**/api/members/*/access', async (route) => {
     const url = new URL(route.request().url())
     const response = await route.fetch({
       url: `${apiOrigin || url.origin}${url.pathname}`,
@@ -666,7 +663,7 @@ export async function flowAccessPreviews({
     'Lost sharing save outcome unconfirmed',
     'A real committed PUT loses its response. The UI preserves choices, avoids claiming failure and blocks another save until current policy is read.',
   )
-  await page.unroute('**/api/members/*/flow-access')
+  await page.unroute('**/api/members/*/access')
   await refreshSharing()
   await expect(sharing).toContainText('Access version 5')
   await expect(row).toContainText('Selected APIs · 1')

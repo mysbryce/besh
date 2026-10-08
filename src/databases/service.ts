@@ -256,6 +256,7 @@ export function databaseConnectionService(store: Store) {
               409,
               'This database copy is referenced by a draft or historical release',
             )
+          store.protectDependencyUse('database-connections', id)
           store.query('DELETE FROM database_connections WHERE id = ?').run(id)
           store.audit(actor, 'database-connection.deleted', id)
         })

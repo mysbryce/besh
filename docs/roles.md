@@ -18,7 +18,7 @@ Built-in roles cannot be edited. Custom roles have no implied permissions: grant
 | Permission ID                 | Dashboard label                  | Allows                                                                                            |
 | ----------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `flows.read`                  | Read APIs                        | Read saved drafts, release history, OpenAPI, and generated client/backend code                    |
-| `flows.write`                 | Edit APIs                        | Create and save drafts                                                                            |
+| `flows.write`                 | Edit APIs                        | Save authorized drafts; creating APIs requires all-mode access                                    |
 | `flows.test`                  | Test drafts                      | Execute saved REST/GraphQL drafts, including configured data reads and product-login steps        |
 | `flows.publish`               | Publish and roll back            | Change live behavior by publishing or restoring a release                                         |
 | `sources.read`                | Read data sources                | Read source metadata and saved row previews                                                       |
@@ -27,17 +27,17 @@ Built-in roles cannot be edited. Custom roles have no implied permissions: grant
 | `database-connections.manage` | Manage database copies           | Upload, check, and delete immutable SQLite copies; backups include their entire original data     |
 | `auth-connections.read`       | Read product login connections   | Read connection metadata without provider secrets                                                 |
 | `auth-connections.manage`     | Manage product login connections | Create, change, and delete server-held credentials; changes affect live login                     |
-| `runtime-keys.manage`         | Manage runtime API keys          | Issue, list, replace, and revoke keys for any published API; new tokens can call their scoped API |
+| `runtime-keys.manage`         | Manage runtime API keys          | Issue, list, replace, and revoke authorized caller keys, subject to scope and issuer authority    |
 | `audit.read`                  | Read audit history               | Read workspace activity and security events                                                       |
 | `backups.manage`              | Manage workspace backups         | List, create, and download complete backups with saved data and sensitive credential records      |
 | `migrations.read`             | Read migration history           | Read control-database migration history                                                           |
 | `load-tests.run`              | Run load tests                   | Read published targets/history, start bounded local runs, and cancel them; runs can repeat writes |
 
-These are workspace action grants. Existing/default members can read every API when they have **Read APIs**; eligible members can instead use selected-API reading below. Source and database-copy grants remain workspace-wide. **Test drafts** can reveal data returned by the configured flow without separate source-read or database-read grants. **Manage runtime API keys** can issue caller access without a separate publication grant. **Run load tests** prepares its own managed temporary runtime key and can repeat live mutations. Review these capabilities when choosing grants.
+These are workspace action grants. Existing/default members can read every API when they have **Read APIs**; eligible members can instead use selected access below. Source and database-copy management grants remain workspace-wide. **Test drafts** can reveal configured data without direct preview grants; selected members additionally need dependency USE. **Manage runtime API keys** can issue caller access without publication permission. **Run load tests** prepares its own managed temporary runtime key and can repeat live mutations. Review these capabilities when choosing grants.
 
 Creating a draft from a spreadsheet needs both `sources.read` and `flows.write`. Creating one from an uploaded SQLite copy needs both `database-connections.read` and `flows.write`. Creating a product-login draft needs both `auth-connections.read` and `flows.write`. Testing, publication, and key issuance remain separate actions. For example, a data reviewer can receive `sources.read`; a source-based draft author also needs `flows.read`, `flows.write`, and `flows.test` for the normal Studio workflow. Built-in editors and viewers have no database-copy grants; owners can assign them through a custom role.
 
-A key manager can list, replace, and revoke existing runtime keys without **Read APIs**. Selecting an API for a new key in the dashboard additionally needs **Read APIs**; a management client can issue one for a known published flow ID with key-management permission alone.
+A key manager can list, replace, and revoke authorized runtime keys without **Read APIs**. API reading supplies the normal target picker; a selected key-only manager can instead enter a **Shared API ID** and owner-provided **Known published release** without fetching private API details. See [runtime keys](api-keys.md).
 
 ## Create and assign a custom role
 
@@ -65,14 +65,14 @@ Custom roles do not add public endpoints, field/record authorization, product ac
 
 ## Selected-API reading
 
-Implemented in 0.9, this lets an owner share only chosen APIs with a read-only member. Exact verification belongs in [testing](testing.md).
+Introduced for reading in 0.9 and extended to existing-API actions in 0.10, this lets an owner share only chosen APIs. Exact verification belongs in [testing](testing.md).
 
 The member keeps a role and also has an API-access choice:
 
 - **All APIs** preserves existing/default behavior, subject to the role's permissions. The owner always has all access.
-- **Selected APIs only** permits reading only the chosen APIs. An empty selection shares no APIs.
+- **Selected APIs only** narrows eligible role actions to the chosen APIs. An empty selection shares no APIs.
 
-Selected access is limited to viewers and custom roles whose only possible action is **Read APIs**. An empty custom role is allowed, but selection does not grant it API reading. Editors and custom roles with any other action cannot use selected access. To add an editing, data, key-management, audit, backup, migration, or load-test grant, first change the member to all access and review the wider exposure. Incompatible member creation is rejected; incompatible role assignment or assigned-role expansion is rejected before changing state.
+Selected access allows viewers and custom roles using only **Read APIs**, **Edit APIs**, **Test drafts**, **Publish and roll back**, **Manage runtime API keys**, and **Run load tests**. An empty custom role is allowed, but selection never grants a missing action. Editors and roles with global source/database/product-connection, audit, backup, or migration grants are incompatible. Incompatible creation, role assignment, or assigned-role expansion is rejected before changes. Selected members cannot create APIs or generate new drafts from resources.
 
 For an eligible member with **Read APIs**, the selection covers API lists, saved drafts, release history, OpenAPI, client examples, and generated backend code. Direct requests for an unshared or unknown API return the same `404`, including malformed read/export requests rejected before input validation. A member without **Read APIs** still receives the normal `403`; selecting IDs never adds the action. A visible graph can contain configured literals and dependency references; sharing it does not grant source/database previews or provider credentials.
 
@@ -85,6 +85,20 @@ If current metadata cannot be loaded, saving stays blocked. If a save response i
 
 The member list shows **All APIs** or **Selected APIs · N**. An API-reading member with an empty selection sees **No APIs shared** in Studio and can ask the owner for access. Own account/session actions remain available; selected members cannot inspect another member's session, and unknown/foreign session IDs both return `404`.
 
-The owner updates access with the version they reviewed. Every accepted scope update, even an identical selection, increments the version and commits with audit and affected browser-session revocation. Role assignment also increments that version while retaining a compatible scope. Compatible custom-role permission edits keep the scope version but apply normal grant-change session revocation. Existing member keys use current policy on their next request; already authorized requests may finish. Migration 15 adds scope and selected-API state to complete workspace backups; restoring an old snapshot can restore old sharing and session state.
+The owner updates access with the version they reviewed. Every accepted access update, even an identical choice, increments the version and commits with audit and affected browser-session revocation. Role assignment also increments that version while retaining compatible access. Compatible custom-role permission edits keep the version but apply normal grant-change session revocation. Existing member keys use current policy on their next request; already authorized requests may finish. Migrations 15 and 16 include selected APIs, dependency USE, and issuer bindings in complete backups; restoring an old snapshot can restore old sharing and session state.
 
-This restricts workspace reading only. It does not change issued runtime API keys, published caller access, rows, fields, product identities, or tenant isolation. Broader editing/testing and resource policies remain planned. See [API reference](api.md#selected-api-reading).
+API reading includes graph literals and dependency references, so share exports deliberately. Selected access adds no row, field, product-identity, or tenant isolation. Existing unbound runtime keys remain independent; keys issued by selected members carry live issuer authority as described below. See [API reference](api.md#selected-api-reading).
+
+## Selected API actions and dependency USE
+
+Implemented in 0.10, selected existing-API actions require both the role action and API selection. The owner separately grants typed **USE** of spreadsheet sources, uploaded SQLite copies, or product-login connections. A USE grant lets the member expose that dependency's data through an authored API or execute its product-login step. It is not row, column, record, field, or tenant isolation.
+
+Dependency pickers show authorized structure, never row previews, original files, provider settings/secrets, or credentials. API reading alone does not grant these catalogs: selected members need an operational API action and matching USE. Every graph branch is checked, including branches not executed by a test. State changes check current policy transactionally; asynchronous reads/provider work and final results recheck authority. A caller-controlled query filter or projection cannot substitute for authorization. A denied result reveals no rows, but a permission change cannot undo effects already performed.
+
+The owner form uses **Dependencies these APIs may use**, with **Use spreadsheet sources**, **Use SQLite copies**, and **Use product login connections** groups. Checkboxes identify each granted dependency, and entries show **Structure only · version N**. **Review API sharing** names dependencies before **Confirm API sharing**; **Refresh API access** remains explicit stale/lost-save recovery. Role action choices remain separate.
+
+Member `access` carries separate API and typed USE lists; `flowAccess` remains its compatibility projection with the same version. Old selected-to-selected API-only updates preserve USE; switching to all clears it. Resources cannot be deleted while USE is assigned. Exact requests are in the [API contract](api.md#selected-api-actions-and-dependency-use).
+
+Selected runtime-key issuance pins the current publication and links the key to the original member's key-management action. Calls recheck that issuer's current action, API selection, and immutable release dependencies. Deleted or unauthorized issuers remain denied; unbound credentials keep their independent behavior. Replacement retains issuer/action/pin/grants/expiry, even for an owner. Selected managers administer bound keys for shared APIs, including another issuer's key; this is shared-API administration. Unbound keys stay hidden. Revocation requires action/API scope but remains available after USE removal. See [runtime keys](api-keys.md#issuer-bound-keys).
+
+Managed load-test keys carry the issuer's load-test action and starting pin. Selected history/cancellation covers bound jobs for shared APIs; cancellation remains available after USE removal with current action/API scope. Runs stay bounded to thirty seconds, without an instant cross-process kill of admitted requests or native work. See [load testing](load-testing.md#selected-issuers), [roadmap](roadmap.md), and exact evidence in [testing](testing.md).

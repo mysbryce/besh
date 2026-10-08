@@ -1,5 +1,3 @@
-import { z } from 'zod'
-
 export type FlowAccess = {
   mode: 'all' | 'selected'
   flowIds: string[]
@@ -9,38 +7,27 @@ export type FlowAccess = {
 export type FlowAccessInput =
   { mode: 'all' } | { mode: 'selected'; flowIds: string[] }
 
-export const flowAccessSchema = z.discriminatedUnion('mode', [
-  z.object({ mode: z.literal('all') }).strict(),
-  z
-    .object({
-      mode: z.literal('selected'),
-      flowIds: z
-        .array(z.string().min(1).max(80))
-        .max(256)
-        .refine((ids) => new Set(ids).size === ids.length),
-    })
-    .strict(),
-])
+export type DependencyUse = {
+  sources: string[]
+  databaseConnections: string[]
+  authConnections: string[]
+}
+export type MemberAccess = FlowAccess & { dependencyUse: DependencyUse }
+export type MemberAccessInput =
+  | { mode: 'all' }
+  | { mode: 'selected'; flowIds: string[]; dependencyUse: DependencyUse }
 
-export const flowAccessUpdateSchema = z.discriminatedUnion('mode', [
-  z
-    .object({
-      mode: z.literal('all'),
-      version: z.number().int().positive().safe(),
-    })
-    .strict(),
-  z
-    .object({
-      mode: z.literal('selected'),
-      flowIds: z
-        .array(z.string().min(1).max(80))
-        .max(256)
-        .refine((ids) => new Set(ids).size === ids.length),
-      version: z.number().int().positive().safe(),
-    })
-    .strict(),
-])
+export const selectedPermissions = [
+  'flows.read',
+  'flows.write',
+  'flows.test',
+  'flows.publish',
+  'runtime-keys.manage',
+  'load-tests.run',
+] as const
 
 export function supportsSelectedFlows(permissions: readonly string[]) {
-  return permissions.every((permission) => permission === 'flows.read')
+  return permissions.every((permission) =>
+    (selectedPermissions as readonly string[]).includes(permission),
+  )
 }

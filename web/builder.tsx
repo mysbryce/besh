@@ -39,6 +39,7 @@ import { flowSchema, type Flow, type FlowNode } from '../src/flows/model'
 import { socialLoginSchema } from '../src/auth/social-schema'
 import { useStudio, type CanvasNode } from './store'
 import { can } from '../src/workspace/permissions'
+import { canReadDependencyStructure } from './dependency-access'
 import { ReleaseHistory } from './release-history'
 import { DatabaseNodeForm } from './database-node'
 import { ApiRules, OpenApiDownload } from './api-rules'
@@ -265,7 +266,7 @@ function Inspector({ node }: { node: CanvasNode }) {
         />
       ) : null}
       {node.data.kind === 'data' &&
-      can(member, 'sources.read') &&
+      canReadDependencyStructure(member, 'sources.read') &&
       !advanced &&
       'sourceId' in node.data.config ? (
         <DataNodeForm
@@ -282,7 +283,7 @@ function Inspector({ node }: { node: CanvasNode }) {
         />
       ) : null}
       {node.data.kind === 'social' &&
-      can(member, 'auth-connections.read') &&
+      canReadDependencyStructure(member, 'auth-connections.read') &&
       !advanced &&
       'connectionId' in node.data.config ? (
         <SocialNodeForm
@@ -299,7 +300,7 @@ function Inspector({ node }: { node: CanvasNode }) {
         />
       ) : null}
       {node.data.kind === 'database' &&
-      can(member, 'database-connections.read') &&
+      canReadDependencyStructure(member, 'database-connections.read') &&
       !advanced &&
       'table' in node.data.config ? (
         <DatabaseNodeForm
@@ -319,19 +320,24 @@ function Inspector({ node }: { node: CanvasNode }) {
         />
       ) : null}
       {node.data.kind === 'database' &&
-      !can(member, 'database-connections.read') ? (
+      !canReadDependencyStructure(member, 'database-connections.read') ? (
         <p>
-          Read database connections access is needed to choose saved SQLite
-          tables and columns.
+          Read database connections access, or selected API actions with
+          explicit SQLite USE, is needed to choose saved tables and columns.
         </p>
       ) : null}
-      {node.data.kind === 'data' && !can(member, 'sources.read') ? (
-        <p>Read data sources access is needed to choose saved source fields.</p>
-      ) : null}
-      {node.data.kind === 'social' && !can(member, 'auth-connections.read') ? (
+      {node.data.kind === 'data' &&
+      !canReadDependencyStructure(member, 'sources.read') ? (
         <p>
-          Read product login connections access is needed to choose a provider
-          connection.
+          Read data sources access, or selected API actions with explicit source
+          USE, is needed to choose saved source fields.
+        </p>
+      ) : null}
+      {node.data.kind === 'social' &&
+      !canReadDependencyStructure(member, 'auth-connections.read') ? (
+        <p>
+          Read product login connections access, or selected API actions with
+          explicit product login USE, is needed to choose a provider connection.
         </p>
       ) : null}
       <Button

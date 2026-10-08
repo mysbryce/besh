@@ -447,7 +447,7 @@ test('owners upload a read-only SQLite copy and preview real table rows', async 
       .filter({ hasText: 'SQLite rows' })
       .click()
     await expect(page.locator('.inspector')).toContainText(
-      'Read database connections access is needed',
+      'Read database connections access, or selected API actions with explicit SQLite USE, is needed to choose saved tables and columns.',
     )
     await page
       .getByRole('button', { name: 'Add query parameter', exact: true })

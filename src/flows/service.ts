@@ -1,5 +1,6 @@
 import { ApiError } from '../errors'
 import type { Store, RuntimeKey } from '../workspace/store'
+import { can } from '../workspace/permissions'
 import { assertJsonLimit, executeFlow, validateFlow } from './engine'
 import { flowSchema, type Flow, type FlowInput } from './model'
 import { executeGraphql, graphqlSchema } from './graphql'
@@ -11,6 +12,11 @@ import type { databaseConnectionService } from '../databases/service'
 import { clientCodeTargets } from './client-code-model'
 import { clientCodeSchema, flowClientCode } from './client-code'
 import type { RuntimeRelease, RuntimeService } from './runtime'
+import {
+  authorizeFlow,
+  authorizeGraph,
+  type CurrentMember,
+} from '../workspace/authorization'
 
 type Row = {
   id: string
@@ -95,6 +101,28 @@ export function flowService(
     }
   }
 
+  function publicationResult(id: string, currentMember?: CurrentMember) {
+    const row = get(id)
+    const member = currentMember?.()
+    if (
+      member?.access.mode === 'selected' &&
+      (!can(member, 'flows.read') || !member.access.flowIds.includes(id))
+    ) {
+      const published = JSON.parse(row.published!) as Flow
+      return {
+        id: row.id,
+        revision: row.revision,
+        publishedRevision: row.published_revision,
+        publishedEndpoint: {
+          method: published.method,
+          path: published.path,
+          graphql: Boolean(published.graphql),
+        },
+      }
+    }
+    return present(row)
+  }
+
   function routeAvailable(id: string, definition: Flow) {
     const candidates = query<Row, [string, string]>(
       "SELECT * FROM flows WHERE id != ? AND json_extract(published, '$.method') = ?",
@@ -159,18 +187,14 @@ export function flowService(
     input: FlowInput,
     revision: number,
     signal?: AbortSignal,
+    checkpoint: () => void = () => {},
   ) {
     try {
-      return await executeFlow(definition, input, {
-        readData: sources.read,
-        readDatabase: (config) => databases.read(config, signal),
-        social: (config, input) =>
-          productAuth.social(config, input, {
-            flowId: id,
-            revision,
-            scope: actor,
-          }),
-      })
+      return await executeFlow(
+        definition,
+        input,
+        executionContext(actor, id, revision, signal, checkpoint),
+      )
     } catch (error) {
       if (
         !closed &&
@@ -179,6 +203,44 @@ export function flowService(
       )
         audit(actor, 'flow.validation-failed', id)
       throw error
+    }
+  }
+
+  function executionContext(
+    actor: string,
+    id: string,
+    revision: number,
+    signal?: AbortSignal,
+    checkpoint: () => void = () => {},
+  ) {
+    return {
+      readData: (config: Parameters<typeof sources.read>[0]) =>
+        db.transaction(() => {
+          checkpoint()
+          const rows = sources.read(config)
+          checkpoint()
+          return rows
+        })(),
+      readDatabase: async (config: Parameters<typeof databases.read>[0]) => {
+        checkpoint()
+        const rows = await databases.read(config, signal)
+        checkpoint()
+        return rows
+      },
+      social: async (
+        config: Parameters<typeof productAuth.social>[0],
+        input: Parameters<typeof productAuth.social>[1],
+      ) => {
+        checkpoint()
+        const result = await productAuth.social(config, input, {
+          flowId: id,
+          revision,
+          scope: actor,
+          authorize: checkpoint,
+        })
+        checkpoint()
+        return result
+      },
     }
   }
 
@@ -265,11 +327,13 @@ export function flowService(
       id: string,
       revision: number,
       publishedRevision: number,
+      currentMember?: CurrentMember,
     ) {
       active()
       let stage: ReturnType<RuntimeService['stage']> | undefined
       try {
         db.transaction(() => {
+          if (currentMember) authorizeFlow(currentMember(), id, 'flows.publish')
           const row = get(id)
           if (row.published_revision !== publishedRevision)
             throw new ApiError(
@@ -280,7 +344,10 @@ export function flowService(
             throw new ApiError(409, 'This release is already published')
           publicationUnlocked(id)
           const target = release(id, revision)
-          const definition = valid(JSON.parse(target.definition))
+          const saved = draft(JSON.parse(target.definition))
+          if (currentMember)
+            authorizeGraph(currentMember(), id, 'flows.publish', saved)
+          const definition = valid(saved)
           routeAvailable(id, definition)
           stage = runtime.stage({ flowId: id, revision, definition })
           query(
@@ -295,7 +362,7 @@ export function flowService(
         stage?.rollback()
         throw error
       }
-      return present(get(id))
+      return publicationResult(id, currentMember)
     },
     openapi(id: string, source: unknown) {
       if (source !== undefined && source !== 'draft' && source !== 'published')
@@ -328,32 +395,50 @@ export function flowService(
 
       return present(get(id))
     },
-    update(actor: string, id: string, revision: number, value: unknown) {
+    update(
+      actor: string,
+      id: string,
+      revision: number,
+      value: unknown,
+      currentMember?: CurrentMember,
+    ) {
       const definition = draft(value)
 
-      db.transaction(() => {
-        get(id)
-        const change = query(
-          'UPDATE flows SET definition = ?, revision = revision + 1 WHERE id = ? AND revision = ?',
-        ).run(JSON.stringify(definition), id, revision)
-        if (!change.changes)
-          throw new ApiError(409, 'Draft changed. Reload before saving.')
-        audit(actor, 'flow.updated', id)
-      })()
-
-      return present(get(id))
+      return db
+        .transaction(() => {
+          if (currentMember)
+            authorizeGraph(currentMember(), id, 'flows.write', definition)
+          get(id)
+          const change = query(
+            'UPDATE flows SET definition = ?, revision = revision + 1 WHERE id = ? AND revision = ?',
+          ).run(JSON.stringify(definition), id, revision)
+          if (!change.changes)
+            throw new ApiError(409, 'Draft changed. Reload before saving.')
+          audit(actor, 'flow.updated', id)
+          return present(get(id))
+        })
+        .immediate()
     },
-    publish(actor: string, id: string, revision: number) {
+    publish(
+      actor: string,
+      id: string,
+      revision: number,
+      currentMember?: CurrentMember,
+    ) {
       active()
       let stage: ReturnType<RuntimeService['stage']> | undefined
       try {
         db.transaction(() => {
+          if (currentMember) authorizeFlow(currentMember(), id, 'flows.publish')
           const row = get(id)
           publicationUnlocked(id)
           if (row.revision !== revision)
             throw new ApiError(409, 'Draft changed. Reload before publishing.')
 
-          const definition = valid(JSON.parse(row.definition))
+          const saved = draft(JSON.parse(row.definition))
+          if (currentMember)
+            authorizeGraph(currentMember(), id, 'flows.publish', saved)
+          const definition = valid(saved)
           routeAvailable(id, definition)
           stage = runtime.stage({ flowId: id, revision, definition })
 
@@ -376,16 +461,23 @@ export function flowService(
         throw error
       }
 
-      return present(get(id))
+      return publicationResult(id, currentMember)
     },
     async test(
       actor: string,
       id: string,
       input: FlowInput,
       signal?: AbortSignal,
+      currentMember?: CurrentMember,
     ) {
       const row = get(id)
-      const definition = valid(JSON.parse(row.definition))
+      const saved = draft(JSON.parse(row.definition))
+      const checkpoint = () => {
+        if (currentMember)
+          authorizeGraph(currentMember(), id, 'flows.test', saved)
+      }
+      checkpoint()
+      const definition = valid(saved)
       if (definition.graphql)
         throw new ApiError(400, 'Use the GraphQL test endpoint')
       const result = await execute(
@@ -395,7 +487,9 @@ export function flowService(
         input,
         row.revision,
         signal,
+        checkpoint,
       )
+      checkpoint()
       active()
       audit(actor, 'flow.tested', id)
       return result
@@ -405,21 +499,25 @@ export function flowService(
       id: string,
       input: unknown,
       signal?: AbortSignal,
+      currentMember?: CurrentMember,
     ) {
       const row = get(id)
-      const definition = valid(JSON.parse(row.definition))
+      const saved = draft(JSON.parse(row.definition))
+      const checkpoint = () => {
+        if (currentMember)
+          authorizeGraph(currentMember(), id, 'flows.test', saved)
+      }
+      checkpoint()
+      const definition = valid(saved)
       if (!definition.graphql)
         throw new ApiError(400, 'This API does not have a GraphQL schema')
-      const result = await executeGraphql(definition, input, undefined, {
-        readData: sources.read,
-        readDatabase: (config) => databases.read(config, signal),
-        social: (config, input) =>
-          productAuth.social(config, input, {
-            flowId: id,
-            revision: row.revision,
-            scope: actor,
-          }),
-      })
+      const result = await executeGraphql(
+        definition,
+        input,
+        undefined,
+        executionContext(actor, id, row.revision, signal, checkpoint),
+      )
+      checkpoint()
       active()
       audit(actor, 'graphql.tested', id)
       return result
@@ -453,7 +551,9 @@ export function flowService(
         },
         release.revision,
         signal,
+        () => store.checkRuntimeAuthority(key, release.definition),
       )
+      store.checkRuntimeAuthority(key, release.definition)
       active()
       audit(`runtime:${key.id}`, 'flow.executed', release.flowId)
       return result
@@ -479,17 +579,15 @@ export function flowService(
         release.definition,
         input,
         key.permissions,
-        {
-          readData: sources.read,
-          readDatabase: (config) => databases.read(config, signal),
-          social: (config, input) =>
-            productAuth.social(config, input, {
-              flowId: release.flowId,
-              revision: release.revision,
-              scope: `runtime:${key.id}`,
-            }),
-        },
+        executionContext(
+          `runtime:${key.id}`,
+          release.flowId,
+          release.revision,
+          signal,
+          () => store.checkRuntimeAuthority(key, release.definition),
+        ),
       )
+      store.checkRuntimeAuthority(key, release.definition)
       active()
       if (result.visited.length)
         audit(`runtime:${key.id}`, 'graphql.executed', release.flowId)

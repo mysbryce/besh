@@ -5,11 +5,22 @@ import { dirname } from 'node:path'
 import { ApiError } from '../errors'
 import { z } from 'zod'
 import {
-  flowAccessUpdateSchema,
   supportsSelectedFlows,
   type FlowAccess,
   type FlowAccessInput,
+  type MemberAccess,
+  type MemberAccessInput,
 } from './flow-access'
+import {
+  flowAccessUpdateSchema,
+  memberAccessUpdateSchema,
+} from './access-input'
+import {
+  authorizeFlow,
+  authorizeGraph,
+  type CurrentMember,
+} from './authorization'
+import type { Flow } from '../flows/model'
 import {
   builtinPermissions,
   permissionCatalog,
@@ -23,6 +34,7 @@ export type Member = {
   role: BuiltInRole | 'custom'
   permissions: Permission[]
   flowAccess: FlowAccess
+  access: MemberAccess
   roleId?: string
   roleName?: string
 }
@@ -56,6 +68,10 @@ export type RuntimeKey = {
   expiresAt: string
   createdAt: string
   revokedAt: string | null
+  issuerBinding: {
+    memberId: string
+    action: 'runtime-keys.manage' | 'load-tests.run'
+  } | null
   managedBy?: 'load-test'
 }
 
@@ -68,9 +84,21 @@ type RuntimeKeyRow = {
   expires_at: string
   created_at: string
   revoked_at: string | null
+  issuer_member_id: string | null
+  issuer_action: 'runtime-keys.manage' | 'load-tests.run' | null
 }
 
 function runtimeKey(row: RuntimeKeyRow): RuntimeKey {
+  if (
+    (row.issuer_member_id !== null || row.issuer_action !== null) &&
+    (typeof row.issuer_member_id !== 'string' ||
+      !row.issuer_member_id ||
+      !['runtime-keys.manage', 'load-tests.run'].includes(
+        row.issuer_action ?? '',
+      ) ||
+      row.release_revision === null)
+  )
+    throw new ApiError(503, 'Runtime key issuer binding is invalid')
   return {
     id: row.id,
     name: row.name,
@@ -80,6 +108,10 @@ function runtimeKey(row: RuntimeKeyRow): RuntimeKey {
     expiresAt: row.expires_at,
     createdAt: row.created_at,
     revokedAt: row.revoked_at,
+    issuerBinding:
+      row.issuer_member_id && row.issuer_action
+        ? { memberId: row.issuer_member_id, action: row.issuer_action }
+        : null,
   }
 }
 
@@ -402,6 +434,30 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 16').get()) {
+      db.exec(`CREATE TABLE member_source_use (
+        member_id TEXT NOT NULL REFERENCES member_flow_access(member_id) ON DELETE CASCADE,
+        resource_id TEXT NOT NULL REFERENCES data_sources(id), PRIMARY KEY (member_id, resource_id)
+      );
+      CREATE TABLE member_database_use (
+        member_id TEXT NOT NULL REFERENCES member_flow_access(member_id) ON DELETE CASCADE,
+        resource_id TEXT NOT NULL REFERENCES database_connections(id), PRIMARY KEY (member_id, resource_id)
+      );
+      CREATE TABLE member_auth_use (
+        member_id TEXT NOT NULL REFERENCES member_flow_access(member_id) ON DELETE CASCADE,
+        resource_id TEXT NOT NULL REFERENCES auth_connections(id), PRIMARY KEY (member_id, resource_id)
+      );
+      ALTER TABLE runtime_keys ADD COLUMN issuer_member_id TEXT;
+      ALTER TABLE runtime_keys ADD COLUMN issuer_action TEXT CHECK (
+        (issuer_member_id IS NULL AND issuer_action IS NULL) OR
+        (issuer_member_id IS NOT NULL AND issuer_action IS NOT NULL AND issuer_action IN ('runtime-keys.manage', 'load-tests.run'))
+      );`)
+      query('INSERT INTO migrations VALUES (16, ?, ?)').run(
+        'scoped API operation and dependency-use grants with issuer-bound runtime keys',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -456,23 +512,43 @@ export function openStore(path: string, adminToken?: string) {
       'SELECT id, name, role FROM members WHERE id = ?',
     ).get(id)
     if (!row) return null
-    const access = query<
+    const accessRow = query<
       { mode: 'all' | 'selected'; version: number },
       [string]
     >('SELECT mode, version FROM member_flow_access WHERE member_id = ?').get(
       id,
     )
-    if (!access) return null
+    if (!accessRow) return null
     const flowAccess: FlowAccess = {
-      ...access,
+      ...accessRow,
       flowIds:
-        access.mode === 'selected'
+        accessRow.mode === 'selected'
           ? query<{ flow_id: string }, [string]>(
               'SELECT flow_id FROM member_flow_grants WHERE member_id = ? ORDER BY flow_id',
             )
               .all(id)
               .map((grant) => grant.flow_id)
           : [],
+    }
+    const access: MemberAccess = {
+      ...flowAccess,
+      dependencyUse: {
+        sources: query<{ resource_id: string }, [string]>(
+          'SELECT resource_id FROM member_source_use WHERE member_id = ? ORDER BY resource_id',
+        )
+          .all(id)
+          .map((entry) => entry.resource_id),
+        databaseConnections: query<{ resource_id: string }, [string]>(
+          'SELECT resource_id FROM member_database_use WHERE member_id = ? ORDER BY resource_id',
+        )
+          .all(id)
+          .map((entry) => entry.resource_id),
+        authConnections: query<{ resource_id: string }, [string]>(
+          'SELECT resource_id FROM member_auth_use WHERE member_id = ? ORDER BY resource_id',
+        )
+          .all(id)
+          .map((entry) => entry.resource_id),
+      },
     }
     const assignment = query<{ role_id: string }, [string]>(
       'SELECT role_id FROM member_roles WHERE member_id = ?',
@@ -482,6 +558,7 @@ export function openStore(path: string, adminToken?: string) {
         ...row,
         permissions: [...builtinPermissions[row.role]],
         flowAccess,
+        access,
       }
     const custom = query<RoleRow, [string]>(
       'SELECT * FROM workspace_roles WHERE id = ?',
@@ -495,6 +572,7 @@ export function openStore(path: string, adminToken?: string) {
       roleName: custom.name,
       permissions: role(custom).permissions,
       flowAccess,
+      access,
     }
   }
 
@@ -537,7 +615,7 @@ export function openStore(path: string, adminToken?: string) {
     if (!supportsSelectedFlows(permissions))
       throw new ApiError(
         status,
-        'Selected API access requires a read-only role',
+        'Selected API access requires scoped API actions only',
       )
     for (const id of input.flowIds)
       if (!query('SELECT id FROM flows WHERE id = ?').get(id))
@@ -549,6 +627,25 @@ export function openStore(path: string, adminToken?: string) {
     if (input.mode === 'selected')
       for (const flowId of input.flowIds)
         query('INSERT INTO member_flow_grants VALUES (?, ?)').run(id, flowId)
+  }
+
+  function saveDependencyUse(id: string, input: MemberAccessInput) {
+    const families = [
+      ['sources', 'member_source_use', 'data_sources'],
+      ['databaseConnections', 'member_database_use', 'database_connections'],
+      ['authConnections', 'member_auth_use', 'auth_connections'],
+    ] as const
+    for (const [family, table, resources] of families) {
+      query(`DELETE FROM ${table} WHERE member_id = ?`).run(id)
+      if (input.mode === 'selected')
+        for (const resourceId of input.dependencyUse[family]) {
+          if (
+            !query(`SELECT id FROM ${resources} WHERE id = ?`).get(resourceId)
+          )
+            throw new ApiError(404, 'Dependency not found')
+          query(`INSERT INTO ${table} VALUES (?, ?)`).run(id, resourceId)
+        }
+    }
   }
 
   function getRole(id: string) {
@@ -616,7 +713,7 @@ export function openStore(path: string, adminToken?: string) {
 
   function insertRuntimeKey(actor: string, key: RuntimeKey, token: string) {
     query(
-      'INSERT INTO runtime_keys (id, name, flow_id, permissions, token_hash, expires_at, created_at, release_revision) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO runtime_keys (id, name, flow_id, permissions, token_hash, expires_at, created_at, release_revision, issuer_member_id, issuer_action) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).run(
       key.id,
       key.name,
@@ -626,8 +723,49 @@ export function openStore(path: string, adminToken?: string) {
       key.expiresAt,
       key.createdAt,
       key.releaseRevision,
+      key.issuerBinding?.memberId ?? null,
+      key.issuerBinding?.action ?? null,
     )
     audit(actor, 'runtime-key.created', key.id)
+  }
+
+  function keyRow(id: string) {
+    const row = query<RuntimeKeyRow, [string]>(
+      'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action FROM runtime_keys WHERE id = ?',
+    ).get(id)
+    if (!row) throw new ApiError(404, 'Runtime key not found')
+    return row
+  }
+
+  function assertKeyAccess(member: Member, key: RuntimeKey) {
+    try {
+      authorizeFlow(member, key.flowId, 'runtime-keys.manage')
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404)
+        throw new ApiError(404, 'Runtime key not found')
+      throw error
+    }
+    if (member.access.mode === 'selected' && key.issuerBinding === null)
+      throw new ApiError(404, 'Runtime key not found')
+  }
+
+  function issuerAuthority(key: RuntimeKey, definition: Flow, status = 403) {
+    if (!key.issuerBinding) return
+    const issuer = resolveMember(key.issuerBinding.memberId)
+    if (!issuer)
+      throw new ApiError(
+        status,
+        'Runtime key issuer no longer authorizes this API',
+      )
+    try {
+      authorizeGraph(issuer, key.flowId, key.issuerBinding.action, definition)
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error
+      throw new ApiError(
+        status,
+        'Runtime key issuer no longer authorizes this API',
+      )
+    }
   }
 
   return {
@@ -635,6 +773,65 @@ export function openStore(path: string, adminToken?: string) {
     query,
     audit,
     member: resolveMember,
+    assertKeyAccess(member: Member, id: string) {
+      assertKeyAccess(member, runtimeKey(keyRow(id)))
+    },
+    checkRuntimeAuthority(key: RuntimeKey, definition: Flow) {
+      if (key.issuerBinding === null) return
+      db.transaction(() => {
+        const current = runtimeKey(keyRow(key.id))
+        if (current.revokedAt || Date.parse(current.expiresAt) <= Date.now())
+          throw new ApiError(401, 'Authentication required')
+        issuerAuthority(current, definition)
+      })()
+    },
+    protectDependencyUse(
+      family: 'sources' | 'database-connections' | 'auth-connections',
+      id: string,
+    ) {
+      const table = {
+        sources: 'member_source_use',
+        'database-connections': 'member_database_use',
+        'auth-connections': 'member_auth_use',
+      }[family]
+      if (
+        query(
+          `SELECT member_id FROM ${table} WHERE resource_id = ? LIMIT 1`,
+        ).get(id)
+      )
+        throw new ApiError(
+          409,
+          'Remove dependency-use grants before deleting this resource',
+        )
+    },
+    updateAccess(actor: string, id: string, value: unknown) {
+      const parsed = memberAccessUpdateSchema.safeParse(value)
+      if (!parsed.success)
+        throw new ApiError(
+          400,
+          'Provide a complete access profile and expected version',
+        )
+      db.transaction(() => {
+        const current = resolveMember(id)
+        if (!current) throw new ApiError(404, 'Member not found')
+        if (current.role === 'owner')
+          throw new ApiError(409, 'Owner API access cannot be changed')
+        if (
+          current.access.version !== parsed.data.version ||
+          current.access.version === Number.MAX_SAFE_INTEGER
+        )
+          throw new ApiError(409, 'API access changed. Reload before saving.')
+        validateFlowAccess(parsed.data, current.permissions)
+        saveFlowGrants(id, parsed.data)
+        saveDependencyUse(id, parsed.data)
+        query(
+          'UPDATE member_flow_access SET mode = ?, version = version + 1 WHERE member_id = ?',
+        ).run(parsed.data.mode, id)
+        revokeSessions(actor, id)
+        audit(actor, 'member.access.updated', id)
+      }).immediate()
+      return resolveMember(id)!
+    },
     updateFlowAccess(actor: string, id: string, value: unknown) {
       const parsed = flowAccessUpdateSchema.safeParse(value)
       if (!parsed.success)
@@ -656,6 +853,7 @@ export function openStore(path: string, adminToken?: string) {
           'UPDATE member_flow_access SET mode = ?, version = version + 1 WHERE member_id = ?',
         ).run(parsed.data.mode, id)
         saveFlowGrants(id, parsed.data)
+        if (parsed.data.mode === 'all') saveDependencyUse(id, { mode: 'all' })
         revokeSessions(actor, id)
         audit(actor, 'member.flow-access.updated', id)
       }).immediate()
@@ -848,6 +1046,7 @@ export function openStore(path: string, adminToken?: string) {
       account?: { email: string; passwordHash: string },
       roleId?: string,
       flowAccess: FlowAccessInput = { mode: 'all' },
+      access?: MemberAccessInput,
     ) {
       const member = { id: crypto.randomUUID(), name, role }
       const token = crypto.randomUUID() + crypto.randomUUID()
@@ -861,8 +1060,9 @@ export function openStore(path: string, adminToken?: string) {
             400,
             'Built-in roles cannot include a custom role ID',
           )
+        const scope = access ?? flowAccess
         validateFlowAccess(
-          flowAccess,
+          scope,
           custom?.permissions ??
             builtinPermissions[role as 'editor' | 'viewer'],
           400,
@@ -882,9 +1082,10 @@ export function openStore(path: string, adminToken?: string) {
         )
         query('INSERT INTO member_flow_access VALUES (?, ?, 1)').run(
           member.id,
-          flowAccess.mode,
+          scope.mode,
         )
-        saveFlowGrants(member.id, flowAccess)
+        saveFlowGrants(member.id, scope)
+        if (access) saveDependencyUse(member.id, access)
         if (role === 'custom')
           query('INSERT INTO member_roles VALUES (?, ?)').run(
             member.id,
@@ -916,17 +1117,31 @@ export function openStore(path: string, adminToken?: string) {
     listAudit() {
       return query('SELECT * FROM audit ORDER BY id DESC LIMIT 200').all()
     },
-    listRuntimeKeys() {
-      return query<RuntimeKeyRow & { managed: number }, []>(
-        'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys ORDER BY rowid DESC',
+    listRuntimeKeys(member?: Member) {
+      const selected = member?.access.mode === 'selected'
+      return query<RuntimeKeyRow & { managed: number }>(
+        `SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys ${selected ? 'WHERE issuer_member_id IS NOT NULL AND flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)' : ''} ORDER BY rowid DESC`,
       )
-        .all()
+        .all(...(selected ? [member!.id] : []))
         .map((row): RuntimeKey => ({
           ...runtimeKey(row),
           ...(row.managed ? { managedBy: 'load-test' } : {}),
         }))
     },
-    createRuntimeKey(actor: string, input: unknown) {
+    createRuntimeKey(
+      actor: string,
+      input: unknown,
+      currentMember?: CurrentMember,
+      action: 'runtime-keys.manage' | 'load-tests.run' = 'runtime-keys.manage',
+    ) {
+      if (
+        currentMember &&
+        input &&
+        typeof input === 'object' &&
+        'flowId' in input &&
+        typeof input.flowId === 'string'
+      )
+        authorizeFlow(currentMember(), input.flowId, action)
       const parsed = z
         .object({
           name: z.string().max(500),
@@ -972,10 +1187,49 @@ export function openStore(path: string, adminToken?: string) {
         expiresAt: new Date(expiration).toISOString(),
         createdAt: new Date(now).toISOString(),
         revokedAt: null,
+        issuerBinding: null,
       }
       const token = `besh_${randomBytes(32).toString('base64url')}`
 
       db.transaction(() => {
+        if (currentMember) {
+          const member = currentMember()
+          authorizeFlow(member, key.flowId, action)
+          const published = query<
+            { published: string | null; published_revision: number | null },
+            [string]
+          >('SELECT published, published_revision FROM flows WHERE id = ?').get(
+            key.flowId,
+          )
+          if (!published) throw new ApiError(404, 'Flow not found')
+          if (
+            key.releaseRevision !== null &&
+            key.releaseRevision !== published.published_revision
+          )
+            throw new ApiError(
+              409,
+              'Selected release is no longer published. Reload before issuing a pinned key.',
+            )
+          if (!published.published)
+            throw new ApiError(
+              value.releaseRevision === undefined ? 400 : 409,
+              'Publish this API before issuing a runtime key',
+            )
+          authorizeGraph(
+            member,
+            key.flowId,
+            action,
+            JSON.parse(published.published),
+          )
+          if (member.access.mode === 'selected') {
+            if (value.releaseRevision === undefined)
+              throw new ApiError(
+                400,
+                'Selected API keys require the current published release pin',
+              )
+            key.issuerBinding = { memberId: member.id, action }
+          }
+        }
         // Another process may hold the write lock beyond the requested expiry.
         if (expiration <= Date.now())
           throw new ApiError(
@@ -993,13 +1247,11 @@ export function openStore(path: string, adminToken?: string) {
 
       return { ...key, token }
     },
-    rotateRuntimeKey(actor: string, id: string) {
+    rotateRuntimeKey(actor: string, id: string, currentMember?: CurrentMember) {
       return db
         .transaction(() => {
-          const row = query<RuntimeKeyRow, [string]>(
-            'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at FROM runtime_keys WHERE id = ?',
-          ).get(id)
-          if (!row) throw new ApiError(404, 'Runtime key not found')
+          const row = keyRow(id)
+          if (currentMember) assertKeyAccess(currentMember(), runtimeKey(row))
 
           // Load-test credentials stay private and expire with their owning job.
           if (
@@ -1023,6 +1275,25 @@ export function openStore(path: string, adminToken?: string) {
             id: crypto.randomUUID(),
             createdAt: new Date(now).toISOString(),
             revokedAt: null,
+          }
+          const definition =
+            key.releaseRevision === null
+              ? query<{ published: string }, [string]>(
+                  'SELECT published FROM flows WHERE id = ?',
+                ).get(key.flowId)?.published
+              : query<{ definition: string }, [string, number]>(
+                  'SELECT definition FROM releases WHERE flow_id = ? AND revision = ?',
+                ).get(key.flowId, key.releaseRevision)?.definition
+          if (definition) {
+            const graph = JSON.parse(definition) as Flow
+            if (currentMember)
+              authorizeGraph(
+                currentMember(),
+                key.flowId,
+                'runtime-keys.manage',
+                graph,
+              )
+            issuerAuthority(key, graph, 409)
           }
           if (key.releaseRevision === null) {
             validateRuntimeScope(key.flowId, key.permissions, true)
@@ -1054,8 +1325,10 @@ export function openStore(path: string, adminToken?: string) {
         })
         .immediate()
     },
-    revokeRuntimeKey(actor: string, id: string) {
+    revokeRuntimeKey(actor: string, id: string, currentMember?: CurrentMember) {
       db.transaction(() => {
+        if (currentMember)
+          assertKeyAccess(currentMember(), runtimeKey(keyRow(id)))
         if (
           !query(
             'UPDATE runtime_keys SET revoked_at = COALESCE(revoked_at, ?) WHERE id = ?',
@@ -1063,7 +1336,7 @@ export function openStore(path: string, adminToken?: string) {
         )
           throw new ApiError(404, 'Runtime key not found')
         audit(actor, 'runtime-key.revoked', id)
-      })()
+      }).immediate()
 
       return { ok: true }
     },
@@ -1081,7 +1354,7 @@ export function openStore(path: string, adminToken?: string) {
     },
     authenticateRuntime(token: string): RuntimeKey | null {
       const row = query<RuntimeKeyRow, [string]>(
-        'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at FROM runtime_keys WHERE token_hash = ?',
+        'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action FROM runtime_keys WHERE token_hash = ?',
       ).get(hashToken(token))
 
       if (

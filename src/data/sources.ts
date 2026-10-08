@@ -406,16 +406,19 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
       )
     },
     delete(actor: string, id: string) {
-      store.db.transaction(() => {
-        get(id)
-        if (references(id).length)
-          throw new ApiError(
-            409,
-            'This data source is used by a draft or published API. Remove those references before deleting it.',
-          )
-        store.query('DELETE FROM data_sources WHERE id = ?').run(id)
-        store.audit(actor, 'data-source.deleted', id)
-      })()
+      store.db
+        .transaction(() => {
+          get(id)
+          if (references(id).length)
+            throw new ApiError(
+              409,
+              'This data source is used by a draft or published API. Remove those references before deleting it.',
+            )
+          store.protectDependencyUse('sources', id)
+          store.query('DELETE FROM data_sources WHERE id = ?').run(id)
+          store.audit(actor, 'data-source.deleted', id)
+        })
+        .immediate()
       return { ok: true }
     },
     validate(flow: Flow) {
