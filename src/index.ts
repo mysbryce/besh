@@ -47,7 +47,7 @@ if (setupRequired) {
 
 const stop = async () => {
   await app.stop()
-  close()
+  await close()
   process.exit(0)
 }
 

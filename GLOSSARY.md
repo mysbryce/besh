@@ -24,6 +24,10 @@
 - **Data source**: an imported CSV/Excel file or public Google Sheet whose rows are saved as a versioned local snapshot.
 - **Snapshot**: the current saved rows and inferred column types for a data source; refresh/replacement updates the data used by published APIs.
 - **Column mapping**: the reviewed selection of spreadsheet columns and API field names exposed by a generated API.
+- **Uploaded SQLite copy**: an immutable standalone product database upload saved inside the workspace backup; it is separate from Besh's control tables and does not synchronize with its original database.
+- **Database connection**: metadata identifying an uploaded SQLite copy, its version, and inspected tables/columns; currently no live external database credentials or address are used.
+- **Database node**: a bounded read of selected columns from one inspected SQLite table, with optional parameterized equality filtering; rows become `$data`.
+- **Read-only database engine**: a temporary separate SQLite engine reconstructed from saved original bytes for inspection or reads; it cannot write the uploaded copy.
 - **Plugin**: a versioned extension that adds nodes or integrations.
 - **Permission**: a named action a member may perform. Roles group permissions.
 - **Custom role**: an owner-defined set of workspace action permissions, assigned to members without changing the built-in owner, editor, or viewer roles.

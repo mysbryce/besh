@@ -79,6 +79,8 @@ test('owners create custom roles with an explicit catalog while built-in grants 
     'flows.publish',
     'sources.read',
     'sources.write',
+    'database-connections.read',
+    'database-connections.manage',
     'auth-connections.read',
     'auth-connections.manage',
     'runtime-keys.manage',
@@ -1189,7 +1191,7 @@ test('roles, assignments and effective grants survive restart and downloaded bac
     (await (await read('/api/migrations')).json()).map(
       (migration: { version: number }) => migration.version,
     ),
-  ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])
+  ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
 })
 
 test('pending password sign-in resolves changed assignments after verification and pending creation rechecks deleted roles', async () => {

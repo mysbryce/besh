@@ -39,6 +39,20 @@ export const permissionCatalog = [
       'Import, replace, refresh, and delete sources. Replacing data changes what published APIs read.',
   },
   {
+    id: 'database-connections.read',
+    label: 'Read database copies',
+    group: 'Databases',
+    description:
+      'Read uploaded SQLite copy metadata and selected rows. Generated APIs may expose their configured data.',
+  },
+  {
+    id: 'database-connections.manage',
+    label: 'Manage database copies',
+    group: 'Databases',
+    description:
+      'Upload, check, and delete immutable SQLite copies. Workspace backups include all uploaded data.',
+  },
+  {
     id: 'auth-connections.read',
     label: 'Read product login connections',
     group: 'Product login',

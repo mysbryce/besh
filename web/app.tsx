@@ -23,7 +23,11 @@ import { Button } from './components/ui/button'
 import { Badge } from './components/ui/badge'
 import { useStudio } from './store'
 import { api, memberRoleName } from './lib/api'
-import { can, permissionCatalog, type Permission } from '../src/permissions'
+import {
+  can,
+  permissionCatalog,
+  type Permission,
+} from '../src/workspace/permissions'
 import { ThemeControl } from './theme'
 import { GitHubIcon } from './components/github-icon'
 
@@ -42,6 +46,11 @@ const FlowPicker = lazy(() =>
 const DataSources = lazy(() =>
   import('./data-sources').then((module) => ({ default: module.DataSources })),
 )
+const DatabaseConnections = lazy(() =>
+  import('./database-connections').then((module) => ({
+    default: module.DatabaseConnections,
+  })),
+)
 const Account = lazy(() =>
   import('./account').then((module) => ({ default: module.Account })),
 )
@@ -59,6 +68,7 @@ type Setup = { required: boolean; name: string }
 type Page =
   | 'builder'
   | 'data'
+  | 'database'
   | 'audit'
   | 'members'
   | 'keys'
@@ -72,6 +82,7 @@ type Page =
 const navigation = [
   { id: 'builder', name: 'API Studio', icon: Workflow },
   { id: 'data', name: 'Data sources', icon: Table2 },
+  { id: 'database', name: 'Database connections', icon: Database },
   { id: 'product-login', name: 'Product login', icon: GitHubIcon },
   { id: 'load-tests', name: 'Load testing', icon: Gauge },
   { id: 'audit', name: 'Audit trail', icon: Activity },
@@ -155,6 +166,7 @@ export function App() {
   const pageGrants: Partial<Record<Page, Permission[]>> = {
     builder: ['flows.read'],
     data: ['sources.read', 'sources.write'],
+    database: ['database-connections.read', 'database-connections.manage'],
     'product-login': ['auth-connections.read', 'auth-connections.manage'],
     'load-tests': ['load-tests.run'],
     audit: ['audit.read'],
@@ -169,7 +181,9 @@ export function App() {
   const deniedTitle =
     page === 'members' || page === 'updates'
       ? 'Owner access required'
-      : state.member.role === 'custom' || page === 'builder'
+      : state.member.role === 'custom' ||
+          page === 'builder' ||
+          page === 'database'
         ? 'Permission required'
         : page === 'data'
           ? 'Editor access required'
@@ -351,6 +365,8 @@ export function App() {
               <Builder />
             ) : page === 'data' ? (
               <DataSources onOpenApi={() => setPage('builder')} />
+            ) : page === 'database' ? (
+              <DatabaseConnections onOpenApi={() => setPage('builder')} />
             ) : page === 'product-login' ? (
               <ProductAuth onOpenApi={() => setPage('builder')} />
             ) : page === 'load-tests' ? (
@@ -384,7 +400,7 @@ function Roadmap() {
   const items = [
     [
       'Identity & contracts',
-      'Social sign-in templates for the APIs you create, further login providers and WebSocket flows.',
+      'More product login providers, product sessions, and WebSocket flows.',
     ],
     [
       'Connect your data',

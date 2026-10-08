@@ -2,7 +2,7 @@
 
 Build APIs by connecting nodes. Test a draft, inspect its response, and publish when ready.
 
-Besh is an early, local development preview. Build visual REST and GraphQL APIs, then use built-in k6 load testing to check their published behavior. Spreadsheet snapshots, public Google Sheets imports, and a GitHub product login template also work. The GitHub exchange is tested with controlled provider responses; a live OAuth app round trip still needs your credentials and product callback. Database adapters and the full AI agent remain planned. See the [roadmap](roadmap.md).
+Besh is an early, local development preview. Build visual REST and GraphQL APIs, then use built-in k6 load testing to check their published behavior. Spreadsheet snapshots, public Google Sheets imports, uploaded read-only SQLite copies, and a GitHub product login template also work. The GitHub exchange is tested with controlled provider responses; a live OAuth app round trip still needs your credentials and product callback. Live external database adapters, SQL writes, and the full AI agent remain planned. See the [roadmap](roadmap.md).
 
 ## Start in two commands
 
@@ -90,28 +90,29 @@ For a record endpoint, use `/v1/items/:id` and read the path field `id` in your 
 
 ## What works
 
-| Feature       | Current behavior                                                                                        |
-| ------------- | ------------------------------------------------------------------------------------------------------- |
-| Setup         | One-time browser wizard with a server-issued setup link                                                 |
-| Editor        | Add, move, connect, configure, and remove nodes                                                         |
-| Nodes         | HTTP request, condition, spreadsheet rows, GitHub social login, JSON response                           |
-| Data          | CSV/Excel uploads and public Google Sheets, saved previews, typed column mapping                        |
-| Product login | GitHub OAuth connection, generated REST/GraphQL identity draft; product server handles callback/session |
-| Appearance    | Light, dark, or system theme; keyboard-accessible custom controls                                       |
-| HTTP          | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; literal paths and whole-segment parameters                |
-| GraphQL       | Per-API typed schemas, queries/mutations, variables, field selection and bounded execution              |
-| API rules     | Optional REST path/query/body/response types, required fields, nullability, and server checks           |
-| OpenAPI       | JSON downloads for a saved REST draft or published release, kept separate                               |
-| Drafts        | SQLite persistence; incomplete graphs may be saved                                                      |
-| Publishing    | Graph validation, overlapping-route checks, immutable release history, permission-checked rollback      |
-| Load testing  | Permission-authorized local k6 tests of published REST/GraphQL APIs, optional goals, saved summaries    |
-| Concurrency   | Stale save/publish/rollback requests return `409`; active load tests block live route changes           |
-| Access        | Built-in/custom action roles; workspace keys or email/password; expiring browser sessions               |
-| API keys      | Permission-issued keys for one published API, expiring grants, atomic replacement, immediate revocation |
-| Audit         | Changes, tests, runs, backups, and access denials; latest 200 visible                                   |
-| Migrations    | Versioned control-database schema history                                                               |
-| Backups       | Consistent SQLite snapshots and authenticated downloads; restore tested                                 |
-| Updates       | Owner-only manual public GitHub release notices; saved settings and cached results; no installation     |
+| Feature       | Current behavior                                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
+| Setup         | One-time browser wizard with a server-issued setup link                                                   |
+| Editor        | Add, move, connect, configure, and remove nodes                                                           |
+| Nodes         | HTTP request, condition, spreadsheet rows, uploaded SQLite rows, GitHub social login, JSON response       |
+| Data          | CSV/Excel uploads and public Google Sheets, saved previews, typed column mapping                          |
+| Databases     | Immutable uploaded SQLite copies, inspected tables, selected read previews, REST/GraphQL draft generation |
+| Product login | GitHub OAuth connection, generated REST/GraphQL identity draft; product server handles callback/session   |
+| Appearance    | Light, dark, or system theme; keyboard-accessible custom controls                                         |
+| HTTP          | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; literal paths and whole-segment parameters                  |
+| GraphQL       | Per-API typed schemas, queries/mutations, variables, field selection and bounded execution                |
+| API rules     | Optional REST path/query/body/response types, required fields, nullability, and server checks             |
+| OpenAPI       | JSON downloads for a saved REST draft or published release, kept separate                                 |
+| Drafts        | SQLite persistence; incomplete graphs may be saved                                                        |
+| Publishing    | Graph validation, overlapping-route checks, immutable release history, permission-checked rollback        |
+| Load testing  | Permission-authorized local k6 tests of published REST/GraphQL APIs, optional goals, saved summaries      |
+| Concurrency   | Stale save/publish/rollback requests return `409`; active load tests block live route changes             |
+| Access        | Built-in/custom action roles; workspace keys or email/password; expiring browser sessions                 |
+| API keys      | Permission-issued keys for one published API, expiring grants, atomic replacement, immediate revocation   |
+| Audit         | Changes, tests, runs, backups, and access denials; latest 200 visible                                     |
+| Migrations    | Versioned control-database schema history                                                                 |
+| Backups       | Consistent SQLite snapshots and authenticated downloads; restore tested                                   |
+| Updates       | Owner-only manual public GitHub release notices; saved settings and cached results; no installation       |
 
 Draft edits do not change a live endpoint. Save and publish a new revision to update it. Members with flow-read permission can inspect published history; publication permission allows restoring an earlier release without changing the draft. Rollback does not restore spreadsheet rows or provider credentials. Published endpoints require a runtime API key; owner and member tokens only access workspace management and permitted draft tests. Public endpoints remain planned.
 
@@ -119,7 +120,7 @@ Runtime keys grant REST requests, GraphQL queries, or GraphQL mutations for one 
 
 To replace an active token, open **API keys**, select **Replace key**, and confirm. Save the returned token and update your callers: the original stops accepting new requests immediately. Replacement keeps the same name, API, operations, and exact expiration; it does not extend access. Already authenticated requests may finish. For gradual handover, manually create another key, update callers, then revoke the original. Revoked or expired keys need a new issuance. See [runtime API keys](api-keys.md) for confirmation, lost-response recovery, product login attempts, and backup behavior.
 
-Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/input/output limits. Spreadsheet uploads use a separate bounded multipart route. General network requests and external database execution nodes remain planned.
+Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/input/output limits. Spreadsheet and SQLite uploads use separate bounded multipart routes. SQLite reads have additional [database limits](databases.md#limits). General network requests, live external database connections, and SQL writes remain planned.
 
 ## Load test a published API
 
@@ -134,6 +135,10 @@ Write methods and mutations call the live API repeatedly and require dashboard c
 Open **Data sources** with source-read and source-write permission, as owners and editors have by default. Name the source and import a CSV or Excel `.xlsx` file, or choose **Public Google Sheet** and paste its standard share link. Review the first ten rows, detected types, and safe API field names. Choose columns to return, name the API, review its endpoint path and row limit, then select **Create API from data** with flow-write permission. This creates a draft; testing, publication, and caller-key creation each require their separate grants.
 
 Imports save snapshots. Upload replacement and Google refresh require confirmation because published APIs read the latest saved source data. Google refresh is manual; private-sheet OAuth and scheduled synchronization are planned. See [spreadsheet data](data-sources.md) for limits and permissions.
+
+## Make an API from a SQLite copy
+
+Open **Database connections** with the appropriate database-copy grants. Upload a consistent standalone SQLite export, choose a table and fields, and preview a bounded selection of rows. No database server, SQL, or connection string is needed. Generated APIs read the saved copy; changes to your original database do not synchronize automatically. See [uploaded SQLite copies](databases.md) for permissions, generation, limits, and recovery.
 
 ## Add GitHub product login
 
@@ -169,6 +174,7 @@ The table shows unchanged built-in roles. Owners can also create custom roles wi
 | Read drafts                                    | Yes   | Yes    | Yes    |
 | Create/edit/test drafts                        | Yes   | Yes    | No     |
 | Import/read/manage spreadsheet sources         | Yes   | Yes    | No     |
+| Read/upload/check/delete SQLite copies         | Yes   | No     | No     |
 | Read product login connections/generate drafts | Yes   | Yes    | No     |
 | Create/edit/delete product login connections   | Yes   | No     | No     |
 | Publish                                        | Yes   | No     | No     |
@@ -189,7 +195,7 @@ Owners add editors/viewers or custom-role members from **Members**. Fill **Membe
 
 ## Data and recovery
 
-Workspace data lives in `data/besh.sqlite`. Backups live in `data/backups/`. Both folders are ignored by Git. Backups contain credential hashes, workspace data, spreadsheet rows, and encrypted provider secrets; store them privately.
+Workspace data lives in `data/besh.sqlite`. Backups live in `data/backups/`. Root runtime directories `/data/` and `/backups/` are ignored by Git; server source in `src/data/` remains tracked. Backups contain credential hashes, workspace data, spreadsheet rows, entire original SQLite uploads, and encrypted provider secrets; store them privately. Uploaded SQLite data is not encrypted by Besh.
 
 Saving a product login connection creates `data/besh-secrets.key` automatically by default. This local encryption key is not included in SQLite backup downloads. Back it up privately and separately; a restored database needs the original matching key. Never commit it. If encrypted records exist without the key, Besh fails startup rather than replacing it. See [product credential recovery](product-auth.md#back-up-the-encryption-key).
 
@@ -202,7 +208,7 @@ To restore without overwriting your current workspace:
 5. Sign in with credentials valid at backup time. Check flows, logs, and a test response before using the restored copy.
 6. Review restored accounts and sessions, and revoke or replace restored keys. A snapshot can restore old passwords, unexpired sessions, and runtime keys revoked or replaced after it was taken, while omitting later replacements. Ending sessions alone does not disable restored passwords or member keys. Key hashes in a backup cannot recover a lost raw token.
 
-Only Besh's control database is backed up. External database backups, schedules, retention, encryption, and remote storage are planned.
+Besh's control database backup includes saved spreadsheet rows and original uploaded SQLite copies. No separate product copy file is needed for restoration. Live external database backups, schedules, retention, backup encryption, and remote storage are planned.
 
 If you lose the owner key, stop Besh and generate a new long random value. Set `BESH_ADMIN_TOKEN` in a private `.env`, then restart. This replaces the owner token and ends owner sessions when the key changes. Remove the variable afterward; the hash remains in SQLite. The existing owner email/password remains valid; use the recovered key to update **Account & sessions** if that password also needs replacement. Treat server filesystem access as owner access.
 
@@ -231,8 +237,14 @@ Set `BESH_WEB_URL` to the exact public HTTPS origin when using a reverse proxy, 
 ## Project layout
 
 ```text
-src/              Elysia API, SQLite store, backup service
-  flows/          Shared flow model, validation, executor, persistence
+src/              app.ts wiring, index.ts startup, errors.ts shared errors
+  auth/           Workspace sessions and product OAuth
+  data/           Spreadsheet snapshots, Google Sheets, Excel parsing
+  databases/      Uploaded SQLite copies and bounded native readers
+  flows/          Flow model, contracts, validation, executor, releases
+  load-tests/     Local k6 jobs and provisioning
+  updates/        Manual GitHub release notices
+  workspace/      Control store, permissions, backups
 web/              React dashboard and Zustand editor state
   components/ui/  shadcn/ui components
 test/             Bun tests through HTTP and executor interfaces
@@ -241,7 +253,7 @@ scripts/          Local dev startup and preview gallery
 docs/             Architecture, roadmap, testing, API reference
 ```
 
-One package manifest. Shallow folders. Split features only when they need it.
+One package manifest. Server features are grouped by domain; application wiring, startup, and shared errors stay at the source root.
 
 ## Development checks
 
@@ -257,9 +269,9 @@ Code style: no semicolons, single quotes, blank lines between steps, and comment
 
 ## Planned integrations
 
-PostgreSQL, MySQL/MariaDB, SQLite product data, MongoDB, Supabase, Firebase; generated-product social-auth templates for Discord, Facebook, Google and other identity providers; product sessions and identity linking; WebSocket flows; custom plugins; verified update installation/recovery; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI. Workspace sign-in uses email/password or member/owner keys.
+PostgreSQL, MySQL/MariaDB, live SQLite connections and writes, MongoDB, Supabase, Firebase; generated-product social-auth templates for Discord, Facebook, Google and other identity providers; product sessions and identity linking; WebSocket flows; custom plugins; verified update installation/recovery; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI. Workspace sign-in uses email/password or member/owner keys.
 
-These are roadmap items. Public Google Sheets imports and the GitHub product identity template are implemented; other providers and database adapters are not. GitHub needs a real OAuth app and product-server callback for a live sign-in. No external account is required for local flows or uploaded spreadsheets.
+These are roadmap items. Public Google Sheets imports, uploaded read-only SQLite copies, and the GitHub product identity template are implemented; other providers and live database adapters are not. GitHub needs a real OAuth app and product-server callback for a live sign-in. No external account is required for local flows, uploaded spreadsheets, or uploaded SQLite copies.
 
 ## Read more
 
@@ -267,6 +279,8 @@ These are roadmap items. Public Google Sheets imports and the GitHub product ide
 - [Testing](testing.md) · [Glossary](../GLOSSARY.md) · [Agent instructions](../AGENTS.md)
 - [Page/action previews and Git ignore rules](preview.md)
 - [GraphQL schemas and execution](graphql.md)
+- [Spreadsheet data sources](data-sources.md)
+- [Uploaded SQLite database copies](databases.md)
 - [REST API rules and OpenAPI downloads](api-contracts.md)
 - [Workspace accounts and sessions](workspace-auth.md)
 - [Workspace roles and permissions](roles.md)

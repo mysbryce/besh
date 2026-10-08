@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { graphqlFlow, helloFlow } from '../test/fixtures'
-import type { LoadTestRun } from '../src/load-test-model'
+import type { LoadTestRun } from '../src/load-tests/model'
 
 test('owner tests live REST and GraphQL APIs, reviews limits, cancels, and restores history', async ({
   page,

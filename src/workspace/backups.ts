@@ -1,6 +1,6 @@
 import { mkdirSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { ApiError } from './errors'
+import { ApiError } from '../errors'
 import type { Store } from './store'
 
 const backupId = /^[a-f0-9-]{36}\.sqlite$/

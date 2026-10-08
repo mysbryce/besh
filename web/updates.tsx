@@ -6,7 +6,7 @@ import { Checkbox } from './components/ui/checkbox'
 import { Badge } from './components/ui/badge'
 import { api } from './lib/api'
 import { useStudio } from './store'
-import type { UpdateState } from '../src/update-model'
+import type { UpdateState } from '../src/updates/model'
 
 const labels = {
   available: 'Update available',

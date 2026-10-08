@@ -249,6 +249,15 @@ export function ResponseForm({
 }) {
   const [status, setStatus] = useState(String(config.status))
   const [rows, setRows] = useState(() => fieldRows(config.body))
+  const [contents, setContents] = useState(
+    config.body === '$data'
+      ? 'data'
+      : config.body === '$auth'
+        ? 'auth'
+        : rows
+          ? 'fields'
+          : 'structured',
+  )
   const statuses = [200, 201, 202, 204, 400, 401, 403, 404, 409, 422, 500, 503]
   if (!statuses.includes(config.status)) statuses.push(config.status)
 
@@ -269,15 +278,35 @@ export function ResponseForm({
             }))}
         />
       </label>
-      {config.body === '$data' ? (
-        <p>Return spreadsheet rows selected by the data step.</p>
-      ) : config.body === '$auth' ? (
+      <label>
+        Response contents
+        <Select
+          label="Response contents"
+          value={contents}
+          disabled={disabled}
+          options={[
+            { value: 'fields', label: 'Response fields' },
+            { value: 'data', label: 'Rows from data step' },
+            { value: 'auth', label: 'GitHub login result' },
+            ...(contents === 'structured'
+              ? [{ value: 'structured', label: 'Structured value (preserved)' }]
+              : []),
+          ]}
+          onValueChange={(value) => {
+            setContents(value)
+            if (value === 'fields' && !rows) setRows([])
+          }}
+        />
+      </label>
+      {contents === 'data' ? (
+        <p>Return rows selected by the spreadsheet or SQLite data step.</p>
+      ) : contents === 'auth' ? (
         <p>
           Return the GitHub login result: authorization URL for BEGIN, or
           verified identity for COMPLETE. The proof belongs on your product
           server.
         </p>
-      ) : rows ? (
+      ) : contents === 'fields' && rows ? (
         <FieldRows rows={rows} onChange={setRows} disabled={disabled} />
       ) : (
         <p>
@@ -292,7 +321,14 @@ export function ResponseForm({
           try {
             onApply({
               status: Number(status),
-              body: rows ? rowsObject(rows) : config.body,
+              body:
+                contents === 'data'
+                  ? '$data'
+                  : contents === 'auth'
+                    ? '$auth'
+                    : contents === 'fields' && rows
+                      ? rowsObject(rows)
+                      : config.body,
             })
           } catch (error) {
             onError(

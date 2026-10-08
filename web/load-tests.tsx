@@ -6,7 +6,7 @@ import type {
   LoadTestRun,
   LoadTestStart,
   LoadTestTarget,
-} from '../src/load-test-model'
+} from '../src/load-tests/model'
 import { Badge } from './components/ui/badge'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
@@ -15,7 +15,7 @@ import { Textarea } from './components/ui/textarea'
 import { parseRequestInput, RequestForm, routeParameters } from './flow-forms'
 import { api } from './lib/api'
 import { useStudio } from './store'
-import { can } from '../src/permissions'
+import { can } from '../src/workspace/permissions'
 
 const defaults: LoadTestConfig = {
   vus: 1,

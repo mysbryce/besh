@@ -22,7 +22,7 @@ import {
   type Migration,
 } from './lib/api'
 import { useStudio } from './store'
-import { can } from '../src/permissions'
+import { can } from '../src/workspace/permissions'
 import { Roles, MemberAssignment, roleChoice, roleOptions } from './roles'
 
 export function Operations({
@@ -397,8 +397,10 @@ export function Operations({
                   <ShieldCheck />
                   <h2>A safe place to come back to.</h2>
                   <p>
-                    Includes flows, releases, credential hashes, and logs. Store
-                    downloads privately. External databases are not included.
+                    Includes flows, releases, credential hashes, logs, and
+                    complete imported spreadsheet and SQLite copies. Store
+                    downloads privately. Back up the secret key file separately.
+                    External databases are not included.
                   </p>
                 </div>
                 <Button

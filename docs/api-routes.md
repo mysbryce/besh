@@ -42,6 +42,8 @@ Keys follow the flow ID across publication and rollback. They keep their existin
 
 A release stores its graph, route, rules, and referenced resource IDs. Spreadsheet snapshots and product OAuth connection contents remain mutable. Restoring a graph does not restore spreadsheet rows, provider secrets, product sessions, or external database contents. A missing dependency can make an old release unrestorable. Workspace backup restoration is a separate operation.
 
+Uploaded SQLite copies are immutable references. Any archived release using a copy blocks that copy's deletion, even when the release is no longer current. Rollback selects the saved graph and its copy reference; it does not import new bytes or synchronize the original database. See [database copies](databases.md).
+
 Publication and rollback are blocked while that flow has an active load test, so its published route cannot change during the run. Load-test history still records the starting release; tests do not pin mutable data or external resources.
 
 See [roles and permissions](roles.md), [API reference](api.md), [API rules and OpenAPI](api-contracts.md), [runtime keys](api-keys.md), and [load testing](load-testing.md).

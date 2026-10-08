@@ -5,7 +5,7 @@ Goal: help teams build secure, documented APIs with a visual editor.
 ## Decisions
 
 1. Use Bun and Elysia for the server. Use React, Zustand, Tailwind CSS, shadcn/ui, and React Flow for the dashboard. Keep one repository and one package manifest until independent packages are needed.
-2. Keep server code in `src/`, dashboard code in `web/`, tests in `test/`, and design notes in `docs/`. Group growing server features by domain. Avoid empty abstraction layers.
+2. Keep server code in `src/`, dashboard code in `web/`, tests in `test/`, and design notes in `docs/`. Group server features into `auth/`, `data/`, `databases/`, `flows/`, `load-tests/`, `updates/`, and `workspace/`. Only application wiring, startup, and shared errors stay at the source root. Avoid empty abstraction layers.
 3. Store flows as versioned JSON. The dashboard edits this format; the server validates and executes it. Never evaluate JavaScript from a flow.
 4. Separate drafts from releases. Validate before publishing or restoring a release. Existing releases remain unchanged when drafts are edited. Same-method overlapping REST routes fail explicitly rather than relying on literal-route precedence.
 5. Start with a local SQLite control database. Product database connections are separate adapters. Do not pretend SQL databases, MongoDB, Firebase, and Supabase have identical query or transaction semantics.
@@ -21,7 +21,7 @@ Goal: help teams build secure, documented APIs with a visual editor.
 
 The executor must limit graph size, steps, input size, execution time, and output size. Validate node configuration and all edges. Reject cycles until bounded loops are designed. Errors must not reveal credentials or stack traces.
 
-Implemented nodes are request, condition, response, bounded spreadsheet reads, and GitHub social login. Optional REST contracts validate path/query/body input before execution and returned JSON before delivery. Later add broader transformations, database operations, general outbound HTTP, plugins, retries, subflows, and explicit error paths. A finite graph cannot promise support for every possible API.
+Implemented nodes are request, condition, response, bounded spreadsheet reads, uploaded SQLite reads, and GitHub social login. Optional REST contracts validate path/query/body input before execution and returned JSON before delivery. Later add broader transformations, live database connections and writes, general outbound HTTP, plugins, retries, subflows, and explicit error paths. A finite graph cannot promise support for every possible API.
 
 HTTP targets: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. CONNECT and TRACE need separate threat review. OpenAPI describes HTTP operations; WebSocket messages need their own schemas and lifecycle rules.
 
@@ -65,7 +65,17 @@ A data node reads one source, projects approved columns, optionally applies an e
 
 New generated REST drafts also include contracts derived from selected column types/nullability, the row limit, and the optional typed query filter. Existing saved flows remain compatible without a contract. A changed source snapshot must still satisfy the published response rules; refreshing data does not update release contracts. Schema validation and caller-controlled search filters do not implement field or record authorization.
 
-Published graph definitions remain immutable, while source data is mutable: manual replacement or Google refresh changes the saved snapshot read by existing APIs. Members with `sources.write` can perform this data change; it does not grant publication rights. Sources referenced by a current draft or currently published API cannot be deleted. Older graph releases retain IDs rather than source snapshots; a deleted historical source can block rollback. Snapshot data is included in workspace backups. Database adapters and private Google OAuth remain separate planned capabilities.
+Published graph definitions remain immutable, while source data is mutable: manual replacement or Google refresh changes the saved snapshot read by existing APIs. Members with `sources.write` can perform this data change; it does not grant publication rights. Sources referenced by a current draft or currently published API cannot be deleted. Older graph releases retain IDs rather than source snapshots; a deleted historical source can block rollback. Snapshot data is included in workspace backups. Live external database adapters and private Google OAuth remain separate planned capabilities.
+
+## Uploaded SQLite boundary
+
+Migration 12 stores immutable original SQLite bytes and inspected metadata in `database_connections` inside the control database. The product query engine is separate: a trusted child deserializes the bytes in read-only, strict, exact-integer mode. No server file path, raw SQL, extension, uploaded script, or live database credentials are accepted. Ordinary declared scalar columns are inspected before saving; unsupported files, schema features, mixed values, nonfinite numbers, and SQLite integer values outside JSON's safe range are rejected. Safe API keys map to original column labels.
+
+`database-connections.read` authorizes metadata/previews; `database-connections.manage` authorizes upload/check/deletion. Owners receive both; built-in editors/viewers keep their previous grants. Draft generation also requires `flows.write`. Database nodes select inspected fields from one table, with bound optional equality values and a 1–100 row limit. A flow permits at most four database nodes; each replaces `$data`. Generated REST GET and GraphQL `rows` query drafts expose only the selected projection. Testing, publication, rollback, and execution validate dependencies. Any draft or immutable release reference blocks deletion, including old releases.
+
+At most two helpers run per Bun process, shared across application handles. Each has a two-second deadline, a 256 KiB serialized-output bound, a 16 MiB SQLite allocation budget, disabled trusted schema, and query-only mode. Cancellation and shutdown terminate the helper. The allocation cap is not a total process memory cap, and the trusted native helper is not a full OS sandbox. Upload/schema/row limits are documented in the [database guide](databases.md).
+
+Original bytes are preserved unchanged and included atomically in normal workspace backups; ephemeral engines need no separate backup file. Uploaded data is plaintext, including unselected tables/columns in the original copy. Product-secret encryption does not encrypt those bytes. Copies have no replacement, automatic refresh, external synchronization, or SQL writes. Runtime keys authorize whole flow operations; selected columns and caller filters do not establish field/record/tenant authorization.
 
 ## Product login boundary
 
@@ -104,7 +114,7 @@ Uploaded plugin code must run in a real process/container isolation boundary bef
 
 ## Identity and roles
 
-Single-workspace roles include immutable built-in owner/editor/viewer roles and owner-defined custom roles. Owner has all 13 workspace action grants and alone administers roles, members, and other members' sessions. Editor retains six grants for API read/write/test, source read/write, and product-connection reads. Viewer retains `flows.read`. Custom permissions are explicit with no implied dependencies; they do not establish per-resource or multi-workspace isolation.
+Single-workspace roles include immutable built-in owner/editor/viewer roles and owner-defined custom roles. Owner has all 15 workspace action grants and alone administers roles, members, and other members' sessions. Editor retains six grants for API read/write/test, source read/write, and product-connection reads. Viewer retains `flows.read`. Custom permissions are explicit with no implied dependencies; they do not establish per-resource or multi-workspace isolation.
 
 Migration 11 adds `workspace_roles` and `member_roles`. Role CRUD is owner-only and version-checked; assigned roles cannot be deleted. Grant/assignment changes and audit/session revocations commit atomically. Authentication resolves current grants for every request, including bearer credentials; member keys are not rotated. Public member metadata includes permissions and custom-role ID/name. Own account/session actions remain available without action grants. Complete backups include role/assignment state and sensitive credential records, so `backups.manage` grants access to the whole snapshot. See [roles and permissions](roles.md).
 

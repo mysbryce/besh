@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Flow } from '../src/flows/model'
 import { api, type SavedFlow } from './lib/api'
 import { useStudio } from './store'
-import { can } from '../src/permissions'
+import { can } from '../src/workspace/permissions'
 import { Button } from './components/ui/button'
 import { Badge } from './components/ui/badge'
 

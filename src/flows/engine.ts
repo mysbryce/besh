@@ -13,6 +13,8 @@ import { concreteRoute } from './routes'
 export function validateFlow(value: unknown) {
   assertJsonLimit(value)
   const flow = flowSchema.parse(value)
+  if (flow.nodes.filter((node) => node.type === 'database').length > 4)
+    throw new Error('Use at most four database nodes per flow')
   if (flow.nodes.filter((node) => node.type === 'social').length > 1)
     throw new Error('Use at most one product login node per flow')
   if (
@@ -47,7 +49,7 @@ export function validateFlow(value: unknown) {
       throw new Error('Each path must end with a response')
     if (node.type === 'response')
       resolveValue(node.config.body, { body: null, query: {} })
-    if (node.type === 'data') {
+    if (node.type === 'data' || node.type === 'database') {
       if (new Set(node.config.columns).size !== node.config.columns.length)
         throw new Error('Choose each data column once')
       if (node.config.filter)
@@ -167,8 +169,7 @@ export async function executeFlow(
       auth = await context.social(node.config, prepared)
       assertJsonLimit(auth)
     }
-    if (node.type === 'data') {
-      if (!context.readData) throw new Error('Data sources are unavailable')
+    if (node.type === 'data' || node.type === 'database') {
       const configured = node.config.filter
       const resolved = configured
         ? resolveValue(configured.value, prepared, data)
@@ -185,7 +186,14 @@ export async function executeFlow(
               value: resolved as typeof configured.value,
             }
           : undefined
-      data = context.readData({ ...node.config, filter })
+      if (node.type === 'database') {
+        if (!context.readDatabase)
+          throw new Error('Database copies are unavailable')
+        data = await context.readDatabase({ ...node.config, filter })
+      } else {
+        if (!context.readData) throw new Error('Data sources are unavailable')
+        data = context.readData({ ...node.config, filter })
+      }
       assertJsonLimit(data)
     }
     const branch: string | null =

@@ -1,7 +1,7 @@
-import { ApiError } from './errors'
-import type { Store, RuntimePermission } from './store'
-import type { Flow } from './flows/model'
-import { assertJsonLimit } from './flows/engine'
+import { ApiError } from '../errors'
+import type { Store, RuntimePermission } from '../workspace/store'
+import type { Flow } from '../flows/model'
+import { assertJsonLimit } from '../flows/engine'
 import { z } from 'zod'
 import {
   getOperationAST,
@@ -13,16 +13,16 @@ import {
   validate,
   type SelectionSetNode,
 } from 'graphql'
-import { graphqlSchema } from './flows/graphql'
-import { prepareInput } from './flows/contracts'
-import { concreteRoute } from './flows/routes'
+import { graphqlSchema } from '../flows/graphql'
+import { prepareInput } from '../flows/contracts'
+import { concreteRoute } from '../flows/routes'
 import type {
   K6Runner,
   LoadTestRun,
   LoadTestStart,
   LoadTestSummary,
   LoadTestTarget,
-} from './load-test-model'
+} from './model'
 
 type ReleaseRow = { id: string; published: string; published_revision: number }
 type RunRow = {

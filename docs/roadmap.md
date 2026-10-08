@@ -2,9 +2,20 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.5: uploaded SQLite reads and feature folders
+
+- Immutable original SQLite uploads and inspected table/column metadata, saved inside consistent control backups through migration 12.
+- Separate `database-connections.read`/`database-connections.manage` grants, bounded read previews, checks, audited lifecycle changes, and deletion protection for drafts and every immutable release.
+- Read-only product engines in trusted native helpers, with generated parameterized equality reads, selected fields, row limits, deadlines, concurrency/output bounds, and an SQLite allocation cap. This is not a full OS sandbox.
+- Database nodes and generated REST GET/GraphQL query drafts. Live external connections, SQL writes, arbitrary SQL, synchronization, replacement, and other providers remain planned.
+- Beginner upload, table/column/filter previews, generation, node forms, checks, deletion, and stale-action recovery. Later read-setting changes do not rewrite typed contracts; the guide explains regeneration or matching advanced edits.
+- Seven server feature folders under `src/`, with only application wiring, startup, and shared errors at the root. One package remains; ignored runtime data is separate from tracked `src/data/` source.
+
+See [database guide](databases.md) for supported behavior and [testing](testing.md) for local native, permission, recovery, runtime, browser, and preview evidence. This slice does not implement the remaining platform below.
+
 ## Implemented: custom workspace roles and update notices
 
-- Owner-defined roles with 13 explicit workspace action permissions, owner-only member assignment, versioned role edits/deletion, and assigned-role deletion protection. Built-in owner/editor/viewer behavior stays unchanged.
+- Owner-defined roles with 15 explicit workspace actions: 13 introduced in 0.4 plus two database-copy grants in 0.5. Member assignment remains owner-only, with versioned role edits/deletion and assigned-role deletion protection. Built-in editor/viewer behavior stays unchanged.
 - Server resolution of current grants on bearer, cookie, and sign-in requests. Permission/assignment changes commit with audit and affected browser-session revocation; member keys are not rotated.
 - Beginner permission descriptions and independent grants for drafts, publication, sources, product connections, runtime keys, audit, backups, migrations, and bounded load testing. Role administration and other-member session control remain owner-only.
 - Additive migration 11 with role/assignment backup inclusion. Grants remain workspace-wide actions; public endpoint policy, field/record rules, and multi-workspace isolation remain planned.
@@ -50,7 +61,7 @@ Verification status and exact platform evidence belong in [testing](testing.md).
 - Beginner response/request/condition/data field forms with optional advanced JSON, generated GraphQL queries and optional schema editing, readable light/dark themes, and a mobile saved-API picker.
 - CSV/Excel imports and public Google Sheets snapshots, reviewed column mapping, generated REST/typed GraphQL drafts, bounded data reads, manual snapshot replacement/refresh, and referenced-source deletion protection.
 
-Current limits: one local workspace, literal or whole-segment parameterized REST paths, exact GraphQL paths, five node types, workspace-wide action roles, manual SQLite backups, and read-only spreadsheet snapshots. Per-resource sharing and field/record authorization remain planned. Google Sheets supports public exports; private OAuth, spreadsheet write-back, and database adapters remain planned. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
+Current limits: one local workspace, literal or whole-segment parameterized REST paths, exact GraphQL paths, six node types, workspace-wide action roles, manual SQLite backups, read-only spreadsheet snapshots, and uploaded SQLite reads. Per-resource sharing and field/record authorization remain planned. Google Sheets supports public exports; private OAuth, spreadsheet write-back, live external database adapters, and SQL writes remain planned. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
 
 ## Milestone 2: identity and API contracts
 
@@ -69,7 +80,7 @@ Current limits: one local workspace, literal or whole-segment parameterized REST
 
 ## Milestone 3: data and plugins
 
-- SQLite, PostgreSQL, MySQL/MariaDB, MongoDB, Supabase, Firebase adapters.
+- Implemented: uploaded-copy SQLite reads. Planned: live SQLite connections/writes, PostgreSQL, MySQL/MariaDB, MongoDB, Supabase, Firebase adapters.
 - Database connection testing and encrypted secret references beyond the current GitHub credential storage.
 - Private Google Sheets OAuth, spreadsheet write-back, and scheduled synchronization beyond current manual public-sheet snapshots.
 - Parameterized query builder and explicit transaction capabilities.
@@ -103,8 +114,8 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-1. **SQLite product reads.** Build the first product database adapter as an explicitly uploaded read-only copy, with separate connection grants, table/column forms, parameterized reads, and REST/GraphQL generation. Keep the product SQLite engine separate from the control database; preserve original bytes in consistent workspace backups. A local experiment verified read-only deserialization, exact integer handling, and native subprocess cancellation while the parent stays responsive. The adapter itself remains planned. Require hard request/output/concurrency limits and actual malformed-file, permission, runtime, restart, and restore checks before delivery. No arbitrary SQL, server file paths, synchronization, writes, or plugin sandbox claims are included in this first slice.
-2. **Finer authorization.** Define public endpoint policy, resource sharing, field/record rules, tenant ownership, and explicit multi-workspace isolation. Exercise denials at the server before exposing product data. Add invitations/recovery, reviewed product accounts/sessions/linking, and release-pinned grants or coordinated key rollover only with a clear lifecycle. Keep whole-operation runtime grants honest until these checks exist.
+1. **Optional release-pinned runtime keys.** Implement the accepted optional revision-pinning design while retaining existing flow-following keys by default. Exercise issuance, replacement, publication/rollback, protocol/operation grants, caller denials, backup restoration, and managed load-test keys before delivery. Revision pins remain planned and do not add field/record authorization.
+2. **Finer authorization.** Define public endpoint policy, resource sharing, field/record rules, tenant ownership, and explicit multi-workspace isolation. Exercise denials at the server before exposing product data. Add invitations/recovery, reviewed product accounts/sessions/linking, and coordinated key rollover only with a clear lifecycle. Keep whole-operation runtime grants honest until these checks exist.
 3. **Data connections and query tools.** Extend reviewed adapter capabilities and encrypted server-held credentials to PostgreSQL and MySQL/MariaDB; add MongoDB, Supabase, and Firebase with their own transaction, identity, query, and backup semantics. Add live SQLite connection/write capabilities separately from the uploaded-copy read adapter. Ship bounded parameterized read/write forms, pagination, previews, and explicit transactions one adapter at a time. Add migration dry runs, backup gates, restoration checks, and destructive-change review before schema changes. Private Sheets OAuth, write-back, and scheduled synchronization follow their connection/permission work.
 4. **Graph execution and extensions.** Add typed transformations, bounded outbound HTTP, explicit error/retry paths, and subflows with execution limits. Introduce a versioned declarative plugin manifest and SDK before uploaded code. Require a real isolated process/container, capability grants, integrity checks, and resource/network limits before enabling custom-code plugins. Verify each extension against its actual services.
 5. **Product providers and AI operator.** Verify GitHub with a real OAuth app, exact product callback, and private encryption-key backup. Add Discord, Facebook, Google, and generic OIDC individually with state/PKCE, redirect validation, and safe identity linking. Implement provider settings and capability discovery for Anthropic, OpenAI API, OpenRouter, Ollama/compatible endpoints, and a separate restricted Codex CLI process adapter. Add caller-scoped typed tools, durable proposals, budgets, redaction, cancellation, approvals, and adversarial tests. Do not infer live provider success from mocks or stored configuration.

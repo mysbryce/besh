@@ -7,7 +7,7 @@ import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import { api, type AuthConnection, type SavedFlow } from './lib/api'
 import { useStudio } from './store'
-import { can } from '../src/permissions'
+import { can } from '../src/workspace/permissions'
 
 type ConnectionValues = {
   name: string

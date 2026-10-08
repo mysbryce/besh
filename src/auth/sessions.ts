@@ -1,6 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto'
-import { ApiError } from './errors'
-import { hashToken, type Member, type Store } from './store'
+import { ApiError } from '../errors'
+import { hashToken, type Member, type Store } from '../workspace/store'
 import { z } from 'zod'
 
 export const sessionLifetime = 12 * 60 * 60 * 1000

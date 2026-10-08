@@ -6,7 +6,7 @@ Use custom roles when a member needs a smaller set of workspace actions than an 
 
 The built-in roles keep their existing behavior:
 
-- **Owner** has all 13 action permissions and alone manages roles, members, other members' browser sessions, and update notices. The bootstrap owner cannot be reassigned or removed.
+- **Owner** has all 15 action permissions and alone manages roles, members, other members' browser sessions, and update notices. The bootstrap owner cannot be reassigned or removed.
 - **Editor** reads, edits, and tests APIs; reads and manages sources; and reads product-login connection metadata. Editors can generate drafts from sources and product connections.
 - **Viewer** reads APIs, releases, and OpenAPI documents.
 - **Custom** uses only the selected permissions. An empty role can sign in and manage its own account and sessions but has no product-management actions.
@@ -15,25 +15,27 @@ Built-in roles cannot be edited. Custom roles have no implied permissions: grant
 
 ## Understand each permission
 
-| Permission ID             | Dashboard label                  | Allows                                                                                            |
-| ------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `flows.read`              | Read APIs                        | Read saved drafts, release history, and OpenAPI documents                                         |
-| `flows.write`             | Edit APIs                        | Create and save drafts                                                                            |
-| `flows.test`              | Test drafts                      | Execute saved REST/GraphQL drafts, including configured data reads and product-login steps        |
-| `flows.publish`           | Publish and roll back            | Change live behavior by publishing or restoring a release                                         |
-| `sources.read`            | Read data sources                | Read source metadata and saved row previews                                                       |
-| `sources.write`           | Manage data sources              | Import, replace, refresh, and delete sources; changes can affect live API data                    |
-| `auth-connections.read`   | Read product login connections   | Read connection metadata without provider secrets                                                 |
-| `auth-connections.manage` | Manage product login connections | Create, change, and delete server-held credentials; changes affect live login                     |
-| `runtime-keys.manage`     | Manage runtime API keys          | Issue, list, replace, and revoke keys for any published API; new tokens can call their scoped API |
-| `audit.read`              | Read audit history               | Read workspace activity and security events                                                       |
-| `backups.manage`          | Manage workspace backups         | List, create, and download complete backups with saved data and sensitive credential records      |
-| `migrations.read`         | Read migration history           | Read control-database migration history                                                           |
-| `load-tests.run`          | Run load tests                   | Read published targets/history, start bounded local runs, and cancel them; runs can repeat writes |
+| Permission ID                 | Dashboard label                  | Allows                                                                                            |
+| ----------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `flows.read`                  | Read APIs                        | Read saved drafts, release history, and OpenAPI documents                                         |
+| `flows.write`                 | Edit APIs                        | Create and save drafts                                                                            |
+| `flows.test`                  | Test drafts                      | Execute saved REST/GraphQL drafts, including configured data reads and product-login steps        |
+| `flows.publish`               | Publish and roll back            | Change live behavior by publishing or restoring a release                                         |
+| `sources.read`                | Read data sources                | Read source metadata and saved row previews                                                       |
+| `sources.write`               | Manage data sources              | Import, replace, refresh, and delete sources; changes can affect live API data                    |
+| `database-connections.read`   | Read database copies             | Read uploaded SQLite metadata, tables, and selected row previews                                  |
+| `database-connections.manage` | Manage database copies           | Upload, check, and delete immutable SQLite copies; backups include their entire original data     |
+| `auth-connections.read`       | Read product login connections   | Read connection metadata without provider secrets                                                 |
+| `auth-connections.manage`     | Manage product login connections | Create, change, and delete server-held credentials; changes affect live login                     |
+| `runtime-keys.manage`         | Manage runtime API keys          | Issue, list, replace, and revoke keys for any published API; new tokens can call their scoped API |
+| `audit.read`                  | Read audit history               | Read workspace activity and security events                                                       |
+| `backups.manage`              | Manage workspace backups         | List, create, and download complete backups with saved data and sensitive credential records      |
+| `migrations.read`             | Read migration history           | Read control-database migration history                                                           |
+| `load-tests.run`              | Run load tests                   | Read published targets/history, start bounded local runs, and cancel them; runs can repeat writes |
 
-These are workspace-wide action grants. They do not restrict members to selected APIs or sources. **Test drafts** can reveal data returned by the configured flow without a separate source-read grant. **Manage runtime API keys** can issue caller access without a separate publication grant. **Run load tests** prepares its own managed temporary runtime key and can repeat live mutations. Review these capabilities when choosing grants.
+These are workspace-wide action grants. They do not restrict members to selected APIs, sources, or database copies. **Test drafts** can reveal data returned by the configured flow without separate source-read or database-read grants. **Manage runtime API keys** can issue caller access without a separate publication grant. **Run load tests** prepares its own managed temporary runtime key and can repeat live mutations. Review these capabilities when choosing grants.
 
-Creating a draft from a spreadsheet needs both `sources.read` and `flows.write`. Creating a product-login draft needs both `auth-connections.read` and `flows.write`. Testing, publication, and key issuance remain separate actions. For example, a data reviewer can receive `sources.read`; a source-based draft author also needs `flows.read`, `flows.write`, and `flows.test` for the normal Studio workflow.
+Creating a draft from a spreadsheet needs both `sources.read` and `flows.write`. Creating one from an uploaded SQLite copy needs both `database-connections.read` and `flows.write`. Creating a product-login draft needs both `auth-connections.read` and `flows.write`. Testing, publication, and key issuance remain separate actions. For example, a data reviewer can receive `sources.read`; a source-based draft author also needs `flows.read`, `flows.write`, and `flows.test` for the normal Studio workflow. Built-in editors and viewers have no database-copy grants; owners can assign them through a custom role.
 
 A key manager can list, replace, and revoke existing runtime keys without **Read APIs**. Selecting an API for a new key in the dashboard additionally needs **Read APIs**; a management client can issue one for a known published flow ID with key-management permission alone.
 

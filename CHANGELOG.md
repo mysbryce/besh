@@ -4,6 +4,31 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.5.0-alpha.0 — 2026-10-08
+
+### Added
+
+- Read-only uploaded SQLite copies with inspected tables, selected columns, typed equality previews, and REST/GraphQL draft generation.
+- Database flow nodes, explicit connection read/manage permissions, and original-copy inclusion in workspace backups through migration 12.
+- Beginner database forms, custom controls, and page/action previews in light, dark, and phone layouts.
+
+### Changed
+
+- Group server modules in shallow feature folders with direct imports and shared application entrypoints.
+
+### Fixed
+
+- Keep source data modules trackable by limiting generated data-directory ignores to the repository root.
+- Clear stale database errors after a successful explicit refresh.
+- Await native database-reader cleanup before the server exits.
+
+### Security
+
+- Quote inspected identifiers and bind filter values; reject arbitrary SQL, filesystem paths, unsupported structures, and unsafe scalar data.
+- Bound uploads, storage, schemas, rows, native SQLite allocation, reader concurrency, output, and execution time. Cancel trusted child readers on caller abort or shutdown.
+- Recheck current authorization after asynchronous connection operations and protect copies referenced by drafts or any historical release.
+- Document that backups contain complete unencrypted copies and optional filters do not provide record authorization.
+
 ## 0.4.0-alpha.0 — 2026-10-08
 
 ### Added

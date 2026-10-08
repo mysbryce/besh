@@ -14,7 +14,7 @@ import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import { api, type RuntimeKey, type RuntimePermission } from './lib/api'
 import { useStudio } from './store'
-import { can } from '../src/permissions'
+import { can } from '../src/workspace/permissions'
 
 const permissionLabels: Record<RuntimePermission, string> = {
   rest: 'REST requests',

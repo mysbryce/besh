@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createApp } from '../src/app'
 import { helloFlow, graphqlFlow } from './fixtures'
-import type { K6Runner, LoadTestSummary } from '../src/load-test-model'
+import type { K6Runner, LoadTestSummary } from '../src/load-tests/model'
 
 const adminToken = 'load-test-owner-token-32-characters-long'
 const cleanup: (() => void)[] = []

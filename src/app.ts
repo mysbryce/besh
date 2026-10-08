@@ -1,25 +1,26 @@
 import { Elysia, t } from 'elysia'
 import { version } from '../package.json'
 import { z } from 'zod'
-import { permissionCatalog } from './permissions'
-import { updateService, type ReleaseFetch } from './updates'
-import { openStore, hashToken } from './store'
+import { permissionCatalog, type Permission } from './workspace/permissions'
+import { updateService, type ReleaseFetch } from './updates/service'
+import { openStore, hashToken } from './workspace/store'
 import { allow, ApiError, requirePermission } from './errors'
 import { flowService } from './flows/service'
-import { backupService } from './backups'
-import { dataSourceService } from './data-sources'
-import { loadTestService } from './load-tests'
-import { createK6Runner } from './k6'
-import type { K6Runner } from './load-test-model'
-import type { SheetFetch } from './google-sheets'
-import { productAuthService, type OAuthFetch } from './product-auth'
+import { backupService } from './workspace/backups'
+import { dataSourceService } from './data/sources'
+import { databaseConnectionService } from './databases/service'
+import { loadTestService } from './load-tests/service'
+import { createK6Runner } from './load-tests/k6'
+import type { K6Runner } from './load-tests/model'
+import type { SheetFetch } from './data/google-sheets'
+import { productAuthService, type OAuthFetch } from './auth/product'
 import { timingSafeEqual } from 'node:crypto'
 import {
   sessionService,
   sessionCookie,
   browserSecurity,
   optionalAccount,
-} from './sessions'
+} from './auth/sessions'
 
 const assignmentFields = {
   editor: { role: z.literal('editor') },
@@ -56,7 +57,9 @@ async function boundRequest(request: Request) {
       .get('content-type')
       ?.toLowerCase()
       .startsWith('multipart/form-data') &&
-    ((request.method === 'POST' && path === '/api/data-sources/import') ||
+    ((request.method === 'POST' &&
+      (path === '/api/data-sources/import' ||
+        path === '/api/database-connections')) ||
       (request.method === 'PUT' &&
         /^\/api\/data-sources\/[^/]+\/import$/.test(path)))
   const limit = upload ? 3 * 1024 * 1024 : 262_144
@@ -99,6 +102,7 @@ export function createApp(options: AppOptions) {
   const store = openStore(options.databasePath, options.adminToken)
   const sessions = sessionService(store, options.now)
   const sources = dataSourceService(store, options.sheetFetch)
+  const databases = databaseConnectionService(store)
   let productAuth: ReturnType<typeof productAuthService>
   try {
     productAuth = productAuthService(store, options)
@@ -106,7 +110,7 @@ export function createApp(options: AppOptions) {
     store.close()
     throw error
   }
-  const flows = flowService(store, sources, productAuth)
+  const flows = flowService(store, sources, productAuth, databases)
   const backups = backupService(store, options.backupDir)
   const updates = updateService(store, {
     fetch: options.updateFetch,
@@ -123,6 +127,13 @@ export function createApp(options: AppOptions) {
   )
 
   const managementActors = new WeakMap<Request, string>()
+  function currentPermission(request: Request, permission: Permission) {
+    const current = request.headers.has('authorization')
+      ? store.authenticate(bearer(request))
+      : sessions.restore(sessionCookie(request))?.member
+    if (!current) throw new ApiError(401, 'Authentication required')
+    requirePermission(current, permission)
+  }
   const management = new Elysia({ prefix: '/api' })
     .resolve(({ request, status }) => {
       const token = bearer(request)
@@ -240,6 +251,72 @@ export function createApp(options: AppOptions) {
         }),
       },
     )
+    .get('/database-connections', ({ member }) => {
+      requirePermission(member, 'database-connections.read')
+      return databases.list()
+    })
+    .get('/database-connections/:id', ({ member, params }) => {
+      requirePermission(member, 'database-connections.read')
+      return databases.get(params.id)
+    })
+    .post(
+      '/database-connections',
+      ({ member, body, request }) => {
+        requirePermission(member, 'database-connections.manage')
+        return databases.create(
+          member.id,
+          body.name,
+          body.file,
+          () => {
+            currentPermission(request, 'database-connections.manage')
+          },
+          request.signal,
+        )
+      },
+      {
+        body: t.Object(
+          { name: t.String({ maxLength: 200 }), file: t.File() },
+          { additionalProperties: false },
+        ),
+      },
+    )
+    .post(
+      '/database-connections/:id/preview',
+      ({ member, params, body, request }) => {
+        requirePermission(member, 'database-connections.read')
+        return databases.preview(params.id, body, request.signal, () =>
+          currentPermission(request, 'database-connections.read'),
+        )
+      },
+    )
+    .post('/database-connections/:id/api', ({ member, params, body }) => {
+      requirePermission(member, 'database-connections.read')
+      requirePermission(member, 'flows.write')
+      return store.db
+        .transaction(() =>
+          flows.create(member.id, databases.api(params.id, body)),
+        )
+        .immediate()
+    })
+    .post(
+      '/database-connections/:id/check',
+      ({ member, params, body, request }) => {
+        requirePermission(member, 'database-connections.manage')
+        return databases.check(
+          member.id,
+          params.id,
+          body,
+          () => {
+            currentPermission(request, 'database-connections.manage')
+          },
+          request.signal,
+        )
+      },
+    )
+    .delete('/database-connections/:id', ({ member, params, body }) => {
+      requirePermission(member, 'database-connections.manage')
+      return databases.delete(member.id, params.id, body)
+    })
     .get('/data-sources', ({ member }) => {
       requirePermission(member, 'sources.read')
       return sources.list()
@@ -380,9 +457,9 @@ export function createApp(options: AppOptions) {
     )
     .post(
       '/flows/:id/test',
-      ({ member, params, body }) => {
+      ({ member, params, body, request }) => {
         requirePermission(member, 'flows.test')
-        return flows.test(member.id, params.id, body)
+        return flows.test(member.id, params.id, body, request.signal)
       },
       {
         body: t.Object({
@@ -403,9 +480,9 @@ export function createApp(options: AppOptions) {
         throw new ApiError(400, 'Choose a valid role assignment')
       return store.assignMemberRole(member.id, params.id, parsed.data)
     })
-    .post('/flows/:id/graphql/test', ({ member, params, body }) => {
+    .post('/flows/:id/graphql/test', ({ member, params, body, request }) => {
       requirePermission(member, 'flows.test')
-      return flows.testGraphql(member.id, params.id, body)
+      return flows.testGraphql(member.id, params.id, body, request.signal)
     })
     .post('/members', async ({ member, body }) => {
       allow(member, ['owner'])
@@ -496,6 +573,8 @@ export function createApp(options: AppOptions) {
     .onStop(() => {
       loadTests.close()
       updates.close()
+      flows.close()
+      return databases.close()
     })
     .onRequest(async ({ set, request }) => {
       set.headers['cache-control'] = 'no-store'
@@ -616,7 +695,12 @@ export function createApp(options: AppOptions) {
           },
         )
 
-      const result = await flows.graphql(key, `/${params['*']}`, body)
+      const result = await flows.graphql(
+        key,
+        `/${params['*']}`,
+        body,
+        request.signal,
+      )
       return new Response(JSON.stringify(result.body), {
         status: result.status,
         headers: { 'content-type': 'application/graphql-response+json' },
@@ -635,6 +719,7 @@ export function createApp(options: AppOptions) {
           body: body ?? null,
           query,
         },
+        request.signal,
       )
       const empty =
         request.method === 'HEAD' ||
@@ -648,14 +733,18 @@ export function createApp(options: AppOptions) {
     })
 
   let storeClosed = false
+  let shutdown: Promise<void> | undefined
   return {
     app,
     close() {
-      if (storeClosed) return
+      if (storeClosed) return shutdown!
       loadTests.close()
       updates.close()
+      flows.close()
+      shutdown = databases.close()
       store.close()
       storeClosed = true
+      return shutdown
     },
     setupRequired: store.setupStatus().required,
   }

@@ -1,6 +1,6 @@
 # Core API
 
-Management routes accept a workspace session cookie or `Authorization: Bearer <workspace-token>`. Cookie-authenticated writes require the exact browser `Origin` and `X-Besh-CSRF`; bearer management clients remain compatible without these headers. An explicit Authorization header takes precedence over cookies and never falls back after an invalid credential. Send JSON for request bodies. Responses use JSON except backup downloads. Error responses have `{ "error": "message" }`.
+Management routes accept a workspace session cookie or `Authorization: Bearer <workspace-token>`. Cookie-authenticated writes require the exact browser `Origin` and `X-Besh-CSRF`; bearer management clients remain compatible without these headers. An explicit Authorization header takes precedence over cookies and never falls back after an invalid credential. Send JSON for request bodies except multipart uploads. Responses use JSON except backup downloads. Error responses have `{ "error": "message" }`.
 
 GraphQL runtime endpoints use the GraphQL `data`/`errors` envelope. See [GraphQL guide](graphql.md).
 
@@ -86,7 +86,7 @@ Member creation also accepts optional `email` and `password` together, using the
 | PUT    | `/api/roles/:id`   | Owner; exact `{ "name": "Data reviewer", "permissions": [], "version": 1 }` |
 | DELETE | `/api/roles/:id`   | Owner; exact `{ "version": 1 }`; assigned role returns `409`                |
 
-Custom role metadata contains `id`, `name`, `permissions`, `version`, `createdAt`, and `updatedAt`. Creation starts at version 1. Names are trimmed, 1 to 80 characters, control-free, unique under SQLite NOCASE (ASCII case-insensitive), and cannot use a built-in role name. Permissions contain zero to 13 unique supported IDs, with no implied dependencies. Updates/deletion require the positive safe-integer version reviewed by the caller; stale versions return `409`. Unknown roles return `404`.
+Custom role metadata contains `id`, `name`, `permissions`, `version`, `createdAt`, and `updatedAt`. Creation starts at version 1. Names are trimmed, 1 to 80 characters, control-free, unique under SQLite NOCASE (ASCII case-insensitive), and cannot use a built-in role name. Permissions contain zero to 15 unique supported IDs, with no implied dependencies. Updates/deletion require the positive safe-integer version reviewed by the caller; stale versions return `409`. Unknown roles return `404`.
 
 Member role assignment accepts exactly `{ "role": "editor" }`, `{ "role": "viewer" }`, or `{ "role": "custom", "roleId": "..." }`. Permission changes and assignments commit with `role.updated` or `member.role.updated` and affected `session.revoked` events. Role creation/deletion record `role.created`/`role.deleted`. Changing grants revokes sessions for members assigned to that role; assignment changes revoke the member's sessions. Member keys remain valid but resolve current grants on their next request. Renaming a role does not add privileges. Migration 11 adds `workspace_roles` and `member_roles` without changing existing built-in assignments. See [permission catalog and boundaries](roles.md).
 
@@ -220,6 +220,30 @@ Protocol is `rest` or `graphql`; limit is 1 to 100. Filter is optional and perfo
 
 Reads use the latest source snapshot. Replacement/refresh changes live data without publishing a new graph revision. Migration 7 stores source snapshots and audit changes. See [data sources](data-sources.md) for formats, limits, and private-sheet restrictions.
 
+## Uploaded SQLite database copies
+
+`database-connections.read` permits metadata and row previews. `database-connections.manage` permits upload, checking, and deletion. Owners have both; built-in editors and viewers have neither. Draft generation requires both `database-connections.read` and `flows.write`. Runtime keys cannot call these management routes.
+
+| Method | Path                                    | Body / behavior                                                 |
+| ------ | --------------------------------------- | --------------------------------------------------------------- |
+| GET    | `/api/database-connections`             | Read grant; metadata array                                      |
+| GET    | `/api/database-connections/:id`         | Read grant; metadata for one copy                               |
+| POST   | `/api/database-connections`             | Manage grant; multipart `name` and `file`                       |
+| POST   | `/api/database-connections/:id/preview` | Read grant; exact `{ version, table, columns, filter?, limit }` |
+| POST   | `/api/database-connections/:id/check`   | Manage grant; exact `{ "version": 1 }`; reinspects saved bytes  |
+| DELETE | `/api/database-connections/:id`         | Manage grant; exact `{ "version": 1 }`                          |
+| POST   | `/api/database-connections/:id/api`     | Read + flow-write grants; generated saved draft                 |
+
+Metadata contains `id`, `name`, `kind: "sqlite"`, `mode: "uploaded-copy"`, byte count `bytes`, `version`, `tables`, `createdAt`, and `updatedAt`. Each table has `name`, `columns`, and `rowCount`; each column has a safe API `key`, original `label`, scalar `type`, and `nullable`. Metadata excludes the original file bytes. Names are trimmed, control-free, and 1 to 80 characters. New copies start at version 1. There is no replacement or synchronization endpoint.
+
+Preview selects 1 to 32 unique inspected column keys and a limit of 1 to 100 rows. Optional `filter` is exactly `{ "column": "customer_id", "value": 42 }`, using an inspected key and a string, finite number, boolean, or null. Non-null values must match the inspected column type: numeric strings and numeric `0`/`1` for boolean fields are rejected. String values are at most 4,096 characters. SQL identifiers come from the inspected schema; equality values are bound parameters and null matches SQL null. Preview returns `{ version, table, columns, rows }`. A check returns `{ version, ok: true, tables }`; it does not refresh data. Unknown IDs return `404`, stale versions return `409`, and deletion returns `409` for any draft or immutable release reference, including noncurrent history. Create/check/delete commit with `database-connection.created`, `.checked`, or `.deleted` audit events.
+
+Generation accepts exactly `{ version, table, name, path, protocol, columns, filter?, limit }`. `protocol` is `rest` or `graphql`; the path is a literal route. Optional `filter` is `{ "column": "customer_id", "inputName": "customerId" }`. It creates a REST GET draft with typed query input or a GraphQL query named `rows` with a typed argument. Selected fields and nullability generate the response contract/schema. Omitting the optional caller filter leaves the read unfiltered up to its row limit. It neither publishes nor issues a runtime key.
+
+A `database` node uses `{ connectionId, table, columns, filter?, limit }`; results replace `$data`. Filter values can reference `$input.query`, `$input.params`, or `$input.body`. At most four database nodes are allowed per flow. Draft testing, publication, rollback, and runtime execution validate referenced copies/tables/columns. Flow testing can expose configured rows without a separate database-read grant; runtime access follows the published flow's whole-operation key grants, not per-column or record authorization.
+
+Copies are immutable original uploads stored inside the control database and included in consistent backups. Reads use a separate read-only engine in a trusted helper, with at most two active helpers per Bun process, a two-second deadline, 256 KiB output bound, and a 16 MiB SQLite allocation budget. Uploads are at most 2 MiB, with eight copies/16 MiB total; supported schema and row limits are in the [database guide](databases.md). Uploaded data is not encrypted. This is not an external live database connection, SQL-write adapter, or OS sandbox.
+
 ## Product login connections
 
 Connection metadata requires `auth-connections.read`. Draft generation requires both `auth-connections.read` and `flows.write`. Creating, editing, or deleting connections requires `auth-connections.manage`. Owners have all three; built-in editors can read metadata and generate drafts, while viewers and runtime keys have no connection-management access. Custom roles grant each action explicitly. Cookie writes use the usual Origin and CSRF checks.
@@ -250,7 +274,7 @@ The product server keeps the runtime key and proof private, sends only the autho
 
 ## Update notices
 
-These routes are owner-only, including for custom roles with all 13 action permissions. Cookie writes use the normal Origin/CSRF checks. Runtime keys cannot access them.
+These routes are owner-only, including for custom roles with all 15 action permissions. Cookie writes use the normal Origin/CSRF checks. Runtime keys cannot access them.
 
 | Method | Path                 | Body / behavior                                                                                            |
 | ------ | -------------------- | ---------------------------------------------------------------------------------------------------------- |
@@ -330,4 +354,4 @@ The test endpoint returns `{ "status": 200, "body": {}, "visited": ["start", "do
 
 Flows may include optional `contract.params`, `contract.query`, `contract.body`, and `contract.response` schemas. REST draft tests and live calls enforce these rules; GraphQL uses its SDL contract. OpenAPI export describes the selected saved REST draft or immutable published release. See [API rules and OpenAPI](api-contracts.md) for the schema subset, validation behavior, and export boundary.
 
-The GitHub social node performs only its bounded provider exchange and profile read. Arbitrary code, database access, general external HTTP request nodes, other social providers, WebSocket endpoints, and AI execution remain unimplemented. Workspace email/password and key sessions never replace runtime API keys.
+The GitHub social node performs only its bounded provider exchange and profile read. Database nodes read inspected uploaded SQLite copies. Arbitrary code, live external database access, SQL writes, general external HTTP request nodes, other social providers, WebSocket endpoints, and AI execution remain unimplemented. Workspace email/password and key sessions never replace runtime API keys.

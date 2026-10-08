@@ -1,7 +1,7 @@
-import { version } from '../package.json'
-import { ApiError } from './errors'
-import type { Store } from './store'
-import type { ReleaseNotice, UpdateCheck, UpdateState } from './update-model'
+import { version } from '../../package.json'
+import { ApiError } from '../errors'
+import type { Store } from '../workspace/store'
+import type { ReleaseNotice, UpdateCheck, UpdateState } from './model'
 import { z } from 'zod'
 
 function repository(value: string) {

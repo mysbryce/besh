@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { can } from '../src/permissions'
+import { can } from '../src/workspace/permissions'
 import {
   addEdge,
   applyNodeChanges,
@@ -301,7 +301,13 @@ export const useStudio = create<Studio>((set, get) => ({
         ? { field: 'body.active', equals: true }
         : kind === 'response'
           ? { status: 200, body: { message: 'Hello, Besh!' } }
-          : {}
+          : kind === 'database'
+            ? { connectionId: '', table: '', columns: [], limit: 25 }
+            : kind === 'data'
+              ? { sourceId: '', columns: [], limit: 25 }
+              : kind === 'social'
+                ? { connectionId: '' }
+                : {}
     set((state) => ({
       nodes: [
         ...state.nodes,

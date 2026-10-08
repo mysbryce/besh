@@ -7,10 +7,10 @@ import {
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { z } from 'zod'
-import { ApiError } from './errors'
-import { hashToken, type Store } from './store'
-import type { ApiSchema, Flow, SocialConfig } from './flows/model'
-import { socialLoginSchema } from './flows/social-schema'
+import { ApiError } from '../errors'
+import { hashToken, type Store } from '../workspace/store'
+import type { ApiSchema, Flow, SocialConfig } from '../flows/model'
+import { socialLoginSchema } from './social-schema'
 
 export type OAuthFetch = (url: string, init: RequestInit) => Promise<Response>
 

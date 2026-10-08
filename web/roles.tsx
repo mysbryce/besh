@@ -6,7 +6,7 @@ import { Checkbox } from './components/ui/checkbox'
 import { Badge } from './components/ui/badge'
 import { api, memberRoleName, type Member, type Role } from './lib/api'
 import { useStudio } from './store'
-import type { Permission } from '../src/permissions'
+import type { Permission } from '../src/workspace/permissions'
 
 type CatalogEntry = {
   id: Permission

@@ -2,7 +2,8 @@ import { expect, test, type Locator } from '@playwright/test'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { PreviewRecord } from '../scripts/preview-report'
-import type { UpdateState } from '../src/update-model'
+import type { UpdateState } from '../src/updates/model'
+import { databasePreviews } from './database-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -1256,7 +1257,7 @@ test('preview every current page and its actions', async ({
   await capture(
     'Roadmap',
     'Planned integrations',
-    'Product social-auth templates, database adapters, custom plugins, and AI are explicitly marked planned.',
+    'Additional product login providers, remote database adapters, custom plugins, and AI are explicitly marked planned.',
   )
 
   await page.getByRole('button', { name: /Sign out/ }).click()
@@ -4065,6 +4066,7 @@ test('preview every current page and its actions', async ({
   await signIn(owner)
   await page.unroute('**/api/updates')
   await page.unroute('**/api/updates/check')
+  await databasePreviews({ page, directory, owner, capture })
   expect(errors).toEqual([])
 
   await context.clearPermissions()

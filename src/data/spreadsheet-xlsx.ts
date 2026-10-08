@@ -1,6 +1,6 @@
 import { inflateRawSync } from 'node:zlib'
 import { readSheet } from 'read-excel-file/universal'
-import { ApiError } from './errors'
+import { ApiError } from '../errors'
 import { Parser } from 'saxen'
 
 const expandedLimit = 16 * 1024 * 1024

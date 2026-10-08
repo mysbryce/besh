@@ -2,7 +2,7 @@ import { Database, type SQLQueryBindings, type Statement } from 'bun:sqlite'
 import { createHash, randomBytes } from 'node:crypto'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
-import { ApiError } from './errors'
+import { ApiError } from '../errors'
 import { z } from 'zod'
 import {
   builtinPermissions,
@@ -322,6 +322,22 @@ export function openStore(path: string, adminToken?: string) {
       `)
       query('INSERT INTO migrations VALUES (11, ?, ?)').run(
         'custom workspace roles and permissions',
+        new Date().toISOString(),
+      )
+    }
+
+    if (!query('SELECT version FROM migrations WHERE version = 12').get()) {
+      db.exec(`CREATE TABLE database_connections (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        bytes BLOB NOT NULL,
+        metadata TEXT NOT NULL,
+        version INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`)
+      query('INSERT INTO migrations VALUES (12, ?, ?)').run(
+        'immutable uploaded SQLite database copies',
         new Date().toISOString(),
       )
     }

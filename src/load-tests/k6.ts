@@ -11,7 +11,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { z } from 'zod'
-import type { K6Runner } from './load-test-model'
+import type { K6Runner } from './model'
 
 const version = 'v2.3.0'
 const archives: Record<string, { name: string; sha256: string }> = {

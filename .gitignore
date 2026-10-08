@@ -17,8 +17,8 @@ dist/
 .env.*
 !.env.example
 
-data/
-backups/
+/data/
+/backups/
 besh-secrets.key
 *.sqlite
 *.sqlite3

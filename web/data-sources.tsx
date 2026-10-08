@@ -21,7 +21,7 @@ import {
   type SavedFlow,
 } from './lib/api'
 import { useStudio } from './store'
-import { can } from '../src/permissions'
+import { can } from '../src/workspace/permissions'
 
 async function uploadSpreadsheet(
   path: string,

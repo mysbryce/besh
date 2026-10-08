@@ -18,7 +18,7 @@ import { z } from 'zod'
 import { assertJsonLimit, executeFlow } from './engine'
 import type { Flow, FlowResult, FlowContext } from './model'
 import { ApiError } from '../errors'
-import type { RuntimePermission } from '../store'
+import type { RuntimePermission } from '../workspace/store'
 
 const requestSchema = z.object({
   query: z.string().min(1).max(16_384),

@@ -1,12 +1,13 @@
 import { ApiError } from '../errors'
-import type { Store, RuntimeKey } from '../store'
+import type { Store, RuntimeKey } from '../workspace/store'
 import { assertJsonLimit, executeFlow, validateFlow } from './engine'
 import { flowSchema, type Flow, type FlowInput } from './model'
 import { executeGraphql, graphqlSchema } from './graphql'
-import type { dataSourceService } from '../data-sources'
+import type { dataSourceService } from '../data/sources'
 import { flowOpenapi } from './openapi'
-import type { productAuthService } from '../product-auth'
+import type { productAuthService } from '../auth/product'
 import { decodedRoute, matchRoute, overlappingRoutes } from './routes'
+import type { databaseConnectionService } from '../databases/service'
 
 type Row = {
   id: string
@@ -25,8 +26,16 @@ export function flowService(
     ReturnType<typeof productAuthService>,
     'validate' | 'social'
   >,
+  databases: Pick<
+    ReturnType<typeof databaseConnectionService>,
+    'validate' | 'read'
+  >,
 ) {
   const { db, query, audit } = store
+  let closed = false
+  function active() {
+    if (closed) throw new ApiError(503, 'Flow executor is shutting down')
+  }
 
   function get(id: string) {
     const row = query<Row, [string]>('SELECT * FROM flows WHERE id = ?').get(id)
@@ -55,6 +64,7 @@ export function flowService(
       if (flow.graphql) graphqlSchema(flow)
       sources.validate(flow)
       productAuth.validate(flow)
+      databases.validate(flow)
       return flow
     } catch (error) {
       throw new ApiError(
@@ -128,10 +138,12 @@ export function flowService(
     definition: unknown,
     input: FlowInput,
     revision: number,
+    signal?: AbortSignal,
   ) {
     try {
       return await executeFlow(definition, input, {
         readData: sources.read,
+        readDatabase: (config) => databases.read(config, signal),
         social: (config, input) =>
           productAuth.social(config, input, {
             flowId: id,
@@ -141,6 +153,7 @@ export function flowService(
       })
     } catch (error) {
       if (
+        !closed &&
         error instanceof ApiError &&
         (error.status === 400 || error.status === 500)
       )
@@ -284,22 +297,41 @@ export function flowService(
 
       return present(get(id))
     },
-    async test(actor: string, id: string, input: FlowInput) {
+    async test(
+      actor: string,
+      id: string,
+      input: FlowInput,
+      signal?: AbortSignal,
+    ) {
       const row = get(id)
       const definition = valid(JSON.parse(row.definition))
       if (definition.graphql)
         throw new ApiError(400, 'Use the GraphQL test endpoint')
-      const result = await execute(actor, id, definition, input, row.revision)
+      const result = await execute(
+        actor,
+        id,
+        definition,
+        input,
+        row.revision,
+        signal,
+      )
+      active()
       audit(actor, 'flow.tested', id)
       return result
     },
-    async testGraphql(actor: string, id: string, input: unknown) {
+    async testGraphql(
+      actor: string,
+      id: string,
+      input: unknown,
+      signal?: AbortSignal,
+    ) {
       const row = get(id)
       const definition = valid(JSON.parse(row.definition))
       if (!definition.graphql)
         throw new ApiError(400, 'This API does not have a GraphQL schema')
       const result = await executeGraphql(definition, input, undefined, {
         readData: sources.read,
+        readDatabase: (config) => databases.read(config, signal),
         social: (config, input) =>
           productAuth.social(config, input, {
             flowId: id,
@@ -307,10 +339,17 @@ export function flowService(
             scope: actor,
           }),
       })
+      active()
       audit(actor, 'graphql.tested', id)
       return result
     },
-    async run(key: RuntimeKey, method: string, path: string, input: FlowInput) {
+    async run(
+      key: RuntimeKey,
+      method: string,
+      path: string,
+      input: FlowInput,
+      signal?: AbortSignal,
+    ) {
       const segments = decodedRoute(path)
       const row = query<Row, [string]>(
         "SELECT * FROM flows WHERE json_extract(published, '$.method') = ? AND json_extract(published, '$.graphql') IS NULL",
@@ -334,11 +373,18 @@ export function flowService(
           params: matchRoute(JSON.parse(row.published).path, segments)!,
         },
         row.published_revision!,
+        signal,
       )
+      active()
       audit(`runtime:${key.id}`, 'flow.executed', row.id)
       return result
     },
-    async graphql(key: RuntimeKey, path: string, input: unknown) {
+    async graphql(
+      key: RuntimeKey,
+      path: string,
+      input: unknown,
+      signal?: AbortSignal,
+    ) {
       const row = query<Row, [string]>(
         "SELECT * FROM flows WHERE json_extract(published, '$.path') = ? AND json_extract(published, '$.graphql') IS NOT NULL",
       ).get(path)
@@ -352,6 +398,7 @@ export function flowService(
         key.permissions,
         {
           readData: sources.read,
+          readDatabase: (config) => databases.read(config, signal),
           social: (config, input) =>
             productAuth.social(config, input, {
               flowId: row.id,
@@ -360,9 +407,13 @@ export function flowService(
             }),
         },
       )
+      active()
       if (result.visited.length)
         audit(`runtime:${key.id}`, 'graphql.executed', row.id)
       return result
+    },
+    close() {
+      closed = true
     },
   }
 }

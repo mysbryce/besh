@@ -4,7 +4,7 @@
 
 Build and publish APIs visually. Connect nodes, test drafts, and publish REST or GraphQL endpoints with scoped access and audit logs.
 
-Besh is an early local development preview. Database adapters, more login providers, plugins, and the AI operator remain planned.
+Besh is an early local development preview. Remote databases, more login providers, plugins, and the AI operator remain planned.
 
 ## Start locally
 
@@ -27,7 +27,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 
 ## What works
 
-- Visual editor with response fields, input references, conditions, and spreadsheet reads; advanced JSON remains optional.
+- Visual editor with response fields, input references, conditions, and data reads; advanced JSON remains optional.
 - Saved drafts, validated publication, immutable release history, and rollback.
 - REST methods and path parameters, plus typed GraphQL queries/mutations.
 - Built-in k6 load testing for published REST/GraphQL APIs, with automatic local setup and optional goals.
@@ -38,6 +38,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 - Local SQLite persistence, audit history, migrations, and tested backups.
 - Manual GitHub release notices with saved repository settings.
 - CSV, Excel (.xlsx), and public Google Sheets snapshots with manual refresh.
+- Uploaded SQLite copies with table previews and REST/GraphQL draft generation.
 - Readable light/dark themes and keyboard-accessible custom controls.
 - Browser walkthrough and masked page/action preview gallery.
 

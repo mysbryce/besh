@@ -15,7 +15,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Keep local setup easy. Provide a first-run wizard; do not require manual environment edits for the basic workflow.
 - Design common workflows for people who do not write code. Use labeled forms, selectors, examples, and data previews. Keep JSON and schema editors optional advanced tools.
 - Support light, dark, and system appearance. Keep text, controls, focus, and error states readable in both themes; respect reduced-motion settings. Persist appearance preferences only, never credentials.
-- Keep folders shallow: `src/` server, `web/` dashboard, `test/` backend tests, `e2e/` browser tests, `docs/` design notes.
+- Keep feature files together in shallow server folders: `src/auth/`, `src/data/`, `src/databases/`, `src/flows/`, `src/load-tests/`, `src/updates/`, and `src/workspace/`. Root server files compose/start the app or provide shared errors. Keep `web/` dashboard, `test/` backend tests, `e2e/` browser tests, and `docs/` documentation. Avoid empty folders and unnecessary barrel exports.
 - Read applicable local skills when requested. Current requested skills: `tdd`, `wait-what`, `handoff`.
 - Test first through agreed public interfaces. See `docs/testing.md` for approved scope. Work one failing test and implementation at a time.
 - Run relevant tests, type checks, build, and formatting before committing. Run browser tests for editor behavior changes.
@@ -41,6 +41,8 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Save audit events with state changes. Keep migration history and test backup restoration.
 - Separate editable drafts from published releases.
 - Use parameterized queries. Keep product database connections separate from Besh's control database.
+- SQLite product reads use immutable uploaded copies, inspected identifiers, bound values, and the trusted child reader. Preserve its deadline, output, storage, and process-wide concurrency limits. Never accept caller SQL or filesystem paths.
+- Require explicit database read/manage grants for connection operations. Protect copies referenced by drafts or any historical release. Backups contain the complete unencrypted original copy; a projected API is not record authorization.
 - AI tools obey caller permissions. Model output is untrusted. Follow `AI_POLICY.md`.
 
 ## Completion

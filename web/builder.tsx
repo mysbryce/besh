@@ -36,10 +36,11 @@ import {
   type LoginInput,
 } from './product-login-test'
 import { flowSchema, type Flow, type FlowNode } from '../src/flows/model'
-import { socialLoginSchema } from '../src/flows/social-schema'
+import { socialLoginSchema } from '../src/auth/social-schema'
 import { useStudio, type CanvasNode } from './store'
-import { can } from '../src/permissions'
+import { can } from '../src/workspace/permissions'
 import { ReleaseHistory } from './release-history'
+import { DatabaseNodeForm } from './database-node'
 import { ApiRules, OpenApiDownload } from './api-rules'
 import {
   ConditionForm,
@@ -70,6 +71,11 @@ const nodeInfo = {
   data: {
     label: 'Spreadsheet rows',
     description: 'Read selected columns',
+    icon: Database,
+  },
+  database: {
+    label: 'SQLite rows',
+    description: 'Read an uploaded copy',
     icon: Database,
   },
   social: {
@@ -120,7 +126,7 @@ const FlowCard = memo(function FlowCard({
             <span>PROVIDER</span>
             <code>GitHub OAuth</code>
           </>
-        ) : data.kind === 'data' ? (
+        ) : data.kind === 'data' || data.kind === 'database' ? (
           <>
             <span>ROWS</span>
             <code>
@@ -137,6 +143,7 @@ const FlowCard = memo(function FlowCard({
       </div>
       {data.kind === 'request' ||
       data.kind === 'data' ||
+      data.kind === 'database' ||
       data.kind === 'social' ? (
         <Handle type="source" position={Position.Right} />
       ) : null}
@@ -211,7 +218,9 @@ function Inspector({ node }: { node: CanvasNode }) {
               ? 'Connect a GitHub app for your product. BEGIN starts login; COMPLETE verifies the callback.'
               : node.data.kind === 'data'
                 ? 'Choose which spreadsheet rows and columns your API returns.'
-                : 'Connect this node to the first step in your API.'}
+                : node.data.kind === 'database'
+                  ? 'Choose an uploaded SQLite copy, table, and returned columns. Reads are bounded and do not change the copy.'
+                  : 'Connect this node to the first step in your API.'}
       </p>
       {node.data.kind === 'response' &&
       !advanced &&
@@ -280,6 +289,33 @@ function Inspector({ node }: { node: CanvasNode }) {
             message('Configuration applied. Save draft to keep changes.')
           }}
         />
+      ) : null}
+      {node.data.kind === 'database' &&
+      can(member, 'database-connections.read') &&
+      !advanced &&
+      'table' in node.data.config ? (
+        <DatabaseNodeForm
+          config={
+            node.data.config as Extract<
+              FlowNode,
+              { type: 'database' }
+            >['config']
+          }
+          token={token}
+          disabled={readonly}
+          onError={(error) => message(error, true)}
+          onApply={(value) => {
+            configure(node.id, value)
+            message('Configuration applied. Save draft to keep changes.')
+          }}
+        />
+      ) : null}
+      {node.data.kind === 'database' &&
+      !can(member, 'database-connections.read') ? (
+        <p>
+          Read database connections access is needed to choose saved SQLite
+          tables and columns.
+        </p>
       ) : null}
       {node.data.kind === 'data' && !can(member, 'sources.read') ? (
         <p>Read data sources access is needed to choose saved source fields.</p>
@@ -368,7 +404,9 @@ function Canvas() {
       >
         <div className="node-palette">
           <span>ADD A STEP</span>
-          {(['condition', 'response'] as const).map((kind) => {
+          {(
+            ['condition', 'response', 'data', 'database', 'social'] as const
+          ).map((kind) => {
             const Icon = nodeInfo[kind].icon
             return (
               <button
@@ -381,7 +419,11 @@ function Canvas() {
                 onClick={() => addNode(kind)}
               >
                 <Icon size={16} />
-                {kind === 'condition' ? 'Condition' : 'Response'}
+                {kind === 'condition'
+                  ? 'Condition'
+                  : kind === 'response'
+                    ? 'Response'
+                    : nodeInfo[kind].label}
                 <Plus size={13} />
               </button>
             )
@@ -454,7 +496,9 @@ function BuilderSession() {
   const [advancedGraphql, setAdvancedGraphql] = useState(false)
   const [operation, setOperation] = useState(() => {
     if (socialFlow && state.graphql) return loginMutation
-    const data = state.nodes.find((node) => node.data.kind === 'data')
+    const data = state.nodes.find(
+      (node) => node.data.kind === 'data' || node.data.kind === 'database',
+    )
     if (
       state.graphql &&
       data &&
@@ -688,8 +732,12 @@ function BuilderSession() {
           <p>
             {socialFlow
               ? 'A typed login mutation starts or completes GitHub login. BEGIN returns an authorization URL; COMPLETE returns the verified product identity.'
-              : state.nodes.some((node) => node.data.kind === 'data')
-                ? 'Returns selected spreadsheet fields as typed rows. Test the generated query below before publishing.'
+              : state.nodes.some(
+                    (node) =>
+                      node.data.kind === 'data' ||
+                      node.data.kind === 'database',
+                  )
+                ? 'Returns selected data fields as typed rows. Test the generated query below before publishing.'
                 : 'Response fields must match your typed contract. Open Advanced schema to review or customize it.'}
           </p>
           <Button

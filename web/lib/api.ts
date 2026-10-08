@@ -1,5 +1,5 @@
 import type { Flow } from '../../src/flows/model'
-import type { Permission } from '../../src/permissions'
+import type { Permission } from '../../src/workspace/permissions'
 
 export async function apiRulesError(
   contract: Flow['contract'],

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { contractSchema } from './contracts'
 import { validRoute, routeParameters } from './routes'
+import type { DatabaseReadConfig } from '../databases/model'
 export type { ApiSchema, ApiContract } from './contracts'
 
 const position = z.object({ x: z.number().finite(), y: z.number().finite() })
@@ -59,6 +60,33 @@ export const flowSchema = z
                 .optional(),
               limit: z.number().int().min(1).max(100),
             }),
+          }),
+          z.object({
+            ...base,
+            type: z.literal('database'),
+            config: z
+              .object({
+                connectionId: z.string().min(1).max(80),
+                table: z.string().min(1).max(128),
+                columns: z
+                  .array(z.string().regex(/^[a-z][a-z0-9_]{0,63}$/))
+                  .min(1)
+                  .max(32),
+                filter: z
+                  .object({
+                    column: z.string().regex(/^[a-z][a-z0-9_]{0,63}$/),
+                    value: z.union([
+                      z.string().max(4096),
+                      z.number().finite(),
+                      z.boolean(),
+                      z.null(),
+                    ]),
+                  })
+                  .strict()
+                  .optional(),
+                limit: z.number().int().min(1).max(100),
+              })
+              .strict(),
           }),
           z.object({
             ...base,
@@ -128,6 +156,7 @@ export type DataReadConfig = Extract<FlowNode, { type: 'data' }>['config']
 export type SocialConfig = Extract<FlowNode, { type: 'social' }>['config']
 export type FlowContext = {
   readData?: (config: DataReadConfig) => unknown
+  readDatabase?: (config: DatabaseReadConfig) => Promise<unknown>
   social?: (config: SocialConfig, input: { body: unknown }) => Promise<unknown>
 }
 export type FlowInput = {

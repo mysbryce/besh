@@ -10,6 +10,12 @@ In **Data sources**, choose GraphQL, review the column-to-field mapping and row 
 
 Selected spreadsheet columns become fields on the row type; an optional filter becomes a named root argument. Generated APIs expose queries only. The published graph and schema change only on publication, while reads use the source's latest saved snapshot. Confirm replacements and manual Google refreshes carefully. Private-sheet OAuth, writeback, and scheduled synchronization remain planned. See [spreadsheet data](data-sources.md).
 
+## Uploaded SQLite APIs
+
+An API generated from an uploaded SQLite copy exposes `Query.rows` with selected column fields and optional typed equality input. Text becomes `String`, numeric data becomes `Float`, and boolean data becomes `Boolean`; inspected nullability determines each field's nullability. The graph reads one inspected table through a database node and returns its bounded row array.
+
+The saved original copy does not synchronize with its source database. A missing or null optional input leaves the generated read unfiltered up to its row limit. Caller filtering does not restrict access by identity; the runtime key authorizes the whole query operation. Besh adds no field/record/tenant policy. See [database copies](databases.md) for generation, grants, and limits.
+
 ## GitHub product login
 
 In **Product login**, generate a GraphQL draft from a saved GitHub OAuth connection. It exposes `Mutation.login` with a `LoginAction` enum (`BEGIN` or `COMPLETE`), optional code/state/proof arguments, and a typed identity result. Login requires a mutation grant. Its static `Query.info` requires a query grant and does not run the social node. A selected OAuth mutation allows only one root call; ordinary GraphQL APIs retain their existing root budget.

@@ -1,5 +1,5 @@
-import type { Member } from './store'
-import { can, type Permission } from './permissions'
+import type { Member } from './workspace/store'
+import { can, type Permission } from './workspace/permissions'
 
 export class ApiError extends Error {
   constructor(

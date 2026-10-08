@@ -1,6 +1,6 @@
 # Besh documentation
 
-Use this index for setup, supported API behavior, development checks, and planned work. Besh currently runs as a local workspace with spreadsheet snapshots and a GitHub product login template; database adapters and AI execution remain planned.
+Use this index for setup, supported API behavior, development checks, and planned work. Besh currently runs as a local workspace with spreadsheet snapshots, uploaded read-only SQLite copies, and a GitHub product login template. Live external database adapters, SQL writes, and AI execution remain planned.
 
 ## Use Besh
 
@@ -15,6 +15,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [REST API rules and OpenAPI](api-contracts.md): simple field rules, server validation, supported schema subset, and draft/published downloads.
 - [GraphQL APIs](graphql.md): typed schemas, variables, selected operations, runtime grants, and execution limits.
 - [Spreadsheet data sources](data-sources.md): CSV/Excel import, public Google Sheets, reviewed field mapping, generated APIs, and snapshot lifecycle.
+- [Uploaded SQLite database copies](databases.md): bounded import, inspected tables/columns, read previews, generated APIs, permissions, and backup/recovery limits.
 - [GitHub update notices](updates.md): owner-only manual release checks, saved repository/prerelease choices, cached results, and notice-only limits.
 - [Page and action previews](preview.md): capture commands, gallery inventory, masked credentials, data isolation, and Git ignore choices.
 - [Glossary](../GLOSSARY.md): workspace, draft, release, member identity, and caller credentials.
