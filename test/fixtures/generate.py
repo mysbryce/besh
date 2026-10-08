@@ -73,3 +73,20 @@ central = raw.find(b'PK\x01\x02')
 pack_into('<I', raw, 22, 1)
 pack_into('<I', raw, central + 24, 1)
 (root / 'forged-bomb.xlsx').write_bytes(raw)
+
+# Valid bounded worksheet: original tab cells expand in JSON, while business rows stay small.
+provenance_rows = ''.join(
+    f'<row r="{index}"><c r="A{index}" t="inlineStr"><is><t xml:space="preserve">'
+    + '\t' * 4096
+    + f'</t></is></c><c r="B{index}" t="inlineStr"><is><t>Retained</t></is></c></row>'
+    for index in range(2, 2502)
+)
+provenance_sheet = (
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'
+    '<row r="1"><c r="A1" t="inlineStr"><is><t>Tenant</t></is></c>'
+    '<c r="B1" t="inlineStr"><is><t>Name</t></is></c></row>'
+    + provenance_rows
+    + '</sheetData></worksheet>'
+)
+write('provenance-overlimit.xlsx', {**base, 'xl/worksheets/sheet1.xml': provenance_sheet})
+write('provenance-overlimit-uppercase.xlsx', relocate(provenance_sheet, 'data/sheet1.XML'))

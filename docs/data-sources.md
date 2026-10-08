@@ -1,6 +1,6 @@
 # Spreadsheet data sources
 
-Create an API from a spreadsheet without writing JSON. Owners and editors can read and manage sources; built-in viewers cannot. Custom roles can separately grant source reads and changes. Generating an API needs source-read and flow-write permission; there are no implied grants. Published callers need a separate scoped runtime key. See [roles and permissions](roles.md).
+Create an API from a spreadsheet without writing JSON. Owners and editors can read and manage unprotected sources; built-in viewers cannot. Custom roles can separately grant source reads and changes. Generating an API needs source-read and flow-write permission; there are no implied grants. Published callers need a separate scoped runtime key. See [roles and permissions](roles.md).
 
 ## Import and review
 
@@ -18,7 +18,7 @@ Selected access separates **USE** from source reads/management. It permits choos
 
 Uploads save a local snapshot. Replacement imports a new snapshot for the same source. Public Google Sheets are fetched by the server and saved locally; **Refresh saved data** fetches the sheet again. These are manual actions, not background synchronization or write-back to the spreadsheet. Private-sheet OAuth and account connections are not implemented.
 
-Published APIs read the latest saved source snapshot. Refreshing or replacing a source can change live response values without republishing the graph; review the confirmation before proceeding. Owners, editors, and custom members granted source-write permission can make these changes. Release history preserves graph definitions, while source snapshots are mutable data.
+Published APIs read the latest saved source snapshot. Refreshing or replacing a source can change live response values without republishing the graph; review the confirmation before proceeding. Owners, editors, and custom members granted source-write permission can make these changes for unprotected sources; protected full/raw changes require the owner. Release history preserves graph definitions, while source snapshots are mutable data.
 
 Deleting a source used by a current draft or currently published API returns `409`. Remove those references first. Older release history does not retain the source snapshot or block deletion; rollback to an old graph can fail when its source is missing. Import/refresh/replacement failure leaves the last valid snapshot intact. Workspace backups include source data; store them privately and review restored credentials before serving callers.
 
@@ -38,6 +38,16 @@ Optional equality filters compare one spreadsheet column to a caller-supplied in
 - Preview: first 10 rows. API reads: 1 to 100 rows, still bounded by normal runtime response limits.
 - Google imports accept standard HTTPS `docs.google.com` spreadsheet links and restricted Google export redirects. Arbitrary URLs, credentials in links, and unrestricted redirect destinations are rejected.
 
-Migration 7 adds source snapshots to the control database. Database-provider adapters, live SQL queries, spreadsheet writes, private Google OAuth, scheduling, and multi-tenant data isolation remain planned.
+Migration 7 adds source snapshots to the control database. Narrow tenant-protected snapshot reads are implemented in 0.11 as described below. Live external database adapters, spreadsheet writes, private Google OAuth/typed Sheets API provenance, scheduling, broader field authorization, and multi-workspace isolation remain planned.
 
 See [API routes](api.md), [GraphQL](graphql.md), [testing evidence](testing.md), and [security](../SECURITY.md).
+
+## Tenant-protected snapshots
+
+Implemented in 0.11. Under owner-only **Tenant protection**, select a spreadsheet and **Tenant rows only**, then review its **Tenant column**. Fresh imports/refreshes preserve mapped original cell types/text separately from normalized business output, up to 16 MiB per source. Exact original text controls tenant matching: `1.0` and `1` may both display as numeric `1`, but remain different identities; spaces/case matter. Original nonnull numeric/boolean/date cells cannot be coerced into identity text. Null/empty text matches no approved identity.
+
+Original provenance means import-transport cells. Excel preserves typed numeric/boolean/date cells and rejects them as tenant text. CSV and public Sheets CSV preserve exact returned text; the connector cannot verify underlying Google cell types or distinguish identities whose exported display values collide. Keep tenant IDs distinct in the returned CSV. Private typed Sheets API provenance is planned.
+
+Older normalized-only snapshots require reviewed reimport or an owner refresh that collects fresh original cells. Missing/misaligned provenance returns `409`; active malformed provenance fails closed without rows. Header changes must preserve compatible protected-column provenance before committing. Owner policy metadata lists eligible text columns without exposing original cells.
+
+Protected full metadata, rows, refresh, replacement, and management are owner-only. Non-owner normal lists omit these sources; authorized structural catalogs still provide choices without rows/counts. The mandatory tenant predicate AND the optional business filter apply before projection and limits. Use the narrow supported graph and review permanent backup restrictions in [row protection](row-protection.md).

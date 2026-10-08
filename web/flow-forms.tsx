@@ -595,6 +595,7 @@ export function DataNodeForm({
   const state = useStudio()
   const selectedAccess = state.member?.access.mode === 'selected'
   const [sources, setSources] = useState<(DataSource | DependencySource)[]>([])
+  const structuralOnly = selectedAccess || state.member?.role !== 'owner'
   const [error, setError] = useState('')
   const [sourceId, setSourceId] = useState(config.sourceId)
   const [columns, setColumns] = useState(config.columns)
@@ -624,7 +625,7 @@ export function DataNodeForm({
     }
     setError('')
     void api<(DataSource | DependencySource)[]>(
-      selectedAccess ? '/api/dependencies/sources' : '/api/data-sources',
+      structuralOnly ? '/api/dependencies/sources' : '/api/data-sources',
       token,
     )
       .then((result) => {
@@ -641,7 +642,7 @@ export function DataNodeForm({
     return () => {
       active = false
     }
-  }, [token, state.sessionId, state.member?.id, selectedAccess])
+  }, [token, state.sessionId, state.member?.id, selectedAccess, structuralOnly])
 
   const source = sources.find((item) => item.id === sourceId)
   const limits = [...new Set([1, 10, 25, 50, 100, Number(limit)])].sort(
@@ -674,7 +675,9 @@ export function DataNodeForm({
         {source
           ? 'rowCount' in source
             ? `${source.rowCount} saved rows. Published APIs read the latest saved snapshot.`
-            : 'Structure only. Explicit USE allows this API to read the latest saved snapshot; it does not grant source previews.'
+            : selectedAccess
+              ? 'Structure only. Explicit USE allows this API to read the latest saved snapshot; it does not grant source previews.'
+              : 'Structure only. This form does not fetch rows. Protected resource previews and original files are owner-only; published reads use current tenant identity.'
           : selectedAccess
             ? 'No allowed source selected. Ask the owner to review source USE for your selected APIs.'
             : 'Loading saved source details…'}

@@ -58,11 +58,19 @@
 - **Following key**: a runtime key with no release pin; it accepts the flow's current published revision.
 - **Release-pinned key**: a runtime key bound to one graph revision; it accepts that revision only while it is the current publication, without executing an archived release.
 - **Dormant key**: an unexpired, unrevoked pinned key whose revision is not currently published; selecting its exact revision again can restore caller access.
-- **Key replacement**: a key-management-authorized action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, release pin or following mode, issuer binding, and exact expiration; the new token appears once and there is no grace period.
+- **Key replacement**: a key-management-authorized action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, release pin or following mode, issuer binding, tenant identity, and exact expiration; the new token appears once and there is no grace period.
 - **Runtime grant**: permission to invoke an entire REST request, GraphQL query, or GraphQL mutation; it does not filter fields or records.
 - **Audit event**: a record of who performed an action, when, and on which resource.
 - **Migration**: a versioned change to a database schema.
 - **Backup**: a consistent copy of data that can be restored and verified.
 - **Agent proposal**: an AI-generated change that must pass the same checks as a human change.
+
+- **Tenant identity**: an immutable exact text value approved by the owner, referenced by an ID rather than established by request fields.
+- **Tenant assignment**: a versioned owner-managed member-to-identity choice; changing it does not retarget previously issued credentials.
+- **Row policy**: a versioned server-owned source/copy protection setting outside flow JSON, requiring exact tenant predicates on supported API reads.
+- **Original-cell provenance**: preserved import-transport cell type/text used for authorization independently of normalized business output; public Sheets CSV does not establish underlying Google cell types.
+- **Execution principal**: private verified credential/assignment identity carried by the server outside editable input.
+- **Cleanup-only entry**: historical caller/job metadata available for authorized revoke/cancel without granting execution, replacement, or another identity.
+- **Sticky backup restriction**: ordinary backup operations remain owner-only after first tenant protection, including after deprotection; physical older-snapshot replacement is outside that guarantee.
 
 See [architecture](docs/architecture.md) and [roadmap](docs/roadmap.md).

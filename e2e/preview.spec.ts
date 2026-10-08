@@ -9,6 +9,7 @@ import { releasePinPreviews } from './release-pins-preview'
 import { generatedBackendPreviews } from './generated-backend-preview'
 import { flowAccessPreviews } from './flow-access-preview'
 import { scopedActionsPreviews } from './scoped-actions-preview'
+import { tenantProtectionPreviews } from './tenant-protection-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -18,7 +19,7 @@ test('preview every current page and its actions', async ({
   const directory = process.env.BESH_PREVIEW_DIR!
   const setupKey = process.env.BESH_PREVIEW_SETUP_KEY!
   const records: PreviewRecord[] = []
-  test.setTimeout(420_000)
+  test.setTimeout(600_000)
   const errors: string[] = []
   mkdirSync(join(directory, 'images'), { recursive: true })
   page.on('pageerror', (error) => errors.push(error.message))
@@ -4077,6 +4078,7 @@ test('preview every current page and its actions', async ({
   await generatedBackendPreviews({ page, owner, capture })
   await flowAccessPreviews({ page, owner, capture })
   await scopedActionsPreviews({ page, owner, capture })
+  await tenantProtectionPreviews({ page, owner, capture })
   expect(errors).toEqual([])
 
   await context.clearPermissions()

@@ -144,6 +144,7 @@ test('owners issue runtime keys for one published REST flow and revoke immediate
       createdAt: key.createdAt,
       revokedAt: null,
       issuerBinding: null,
+      tenantId: null,
     },
   ])
   expect(JSON.stringify(listed)).not.toContain(key.token)
@@ -955,7 +956,7 @@ test('backups restore published flows and migration history survives restarts', 
     ).json()
     expect(
       migrations.map((migration: { version: number }) => migration.version),
-    ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+    ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
     expect(await (await request('/api/backups')).json()).toHaveLength(1)
   } finally {
     restored.close()

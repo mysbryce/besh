@@ -59,7 +59,7 @@ Member keys are not rotated by a role change. Their next request uses the new gr
 
 Renaming a role without changing its permission set keeps its members' browser sessions. Custom members without **Read APIs** open **Account & sessions** on sign-in or reload. Pages show permission guidance when access is missing.
 
-Backups include roles, member assignments, and session state. Restoring an old backup can restore old grants and unexpired sessions; review them alongside credentials before serving the restored workspace. A downloaded backup contains more than the downloader's normal page access. Grant `backups.manage` only to someone trusted with the complete workspace snapshot.
+Backups include roles, member assignments, and session state. Restoring an old backup can restore old grants and unexpired sessions; review them alongside credentials before serving the restored workspace. A downloaded backup contains more than the downloader's normal page access. Grant `backups.manage` only to someone trusted with the complete workspace snapshot. After first tenant protection, ordinary backup operations are permanently owner-only even when this grant remains assigned.
 
 Custom roles do not add public endpoints, field/record authorization, product account policies, or multi-workspace tenant isolation. Runtime keys keep their flow scope, operation grants, expiration, and revocation behavior. See [API reference](api.md), [workspace sessions](workspace-auth.md), [runtime keys](api-keys.md), and [roadmap](roadmap.md).
 
@@ -87,7 +87,7 @@ The member list shows **All APIs** or **Selected APIs · N**. An API-reading mem
 
 The owner updates access with the version they reviewed. Every accepted access update, even an identical choice, increments the version and commits with audit and affected browser-session revocation. Role assignment also increments that version while retaining compatible access. Compatible custom-role permission edits keep the version but apply normal grant-change session revocation. Existing member keys use current policy on their next request; already authorized requests may finish. Migrations 15 and 16 include selected APIs, dependency USE, and issuer bindings in complete backups; restoring an old snapshot can restore old sharing and session state.
 
-API reading includes graph literals and dependency references, so share exports deliberately. Selected access adds no row, field, product-identity, or tenant isolation. Existing unbound runtime keys remain independent; keys issued by selected members carry live issuer authority as described below. See [API reference](api.md#selected-api-reading).
+API reading includes graph literals and dependency references, so share exports deliberately. Selected access adds no row, field, product-identity, or tenant isolation. Existing unbound runtime keys retain unprotected behavior; keys issued by selected members carry live issuer authority as described below. See [API reference](api.md#selected-api-reading).
 
 ## Selected API actions and dependency USE
 
@@ -99,6 +99,14 @@ The owner form uses **Dependencies these APIs may use**, with **Use spreadsheet 
 
 Member `access` carries separate API and typed USE lists; `flowAccess` remains its compatibility projection with the same version. Old selected-to-selected API-only updates preserve USE; switching to all clears it. Resources cannot be deleted while USE is assigned. Exact requests are in the [API contract](api.md#selected-api-actions-and-dependency-use).
 
-Selected runtime-key issuance pins the current publication and links the key to the original member's key-management action. Calls recheck that issuer's current action, API selection, and immutable release dependencies. Deleted or unauthorized issuers remain denied; unbound credentials keep their independent behavior. Replacement retains issuer/action/pin/grants/expiry, even for an owner. Selected managers administer bound keys for shared APIs, including another issuer's key; this is shared-API administration. Unbound keys stay hidden. Revocation requires action/API scope but remains available after USE removal. See [runtime keys](api-keys.md#issuer-bound-keys).
+Selected runtime-key issuance pins the current publication and links the key to the original member's key-management action. Calls recheck that issuer's current action, API selection, and immutable release dependencies. Deleted or unauthorized issuers remain denied; unbound credentials retain unprotected behavior; live resource protection adds identity requirements. Replacement retains issuer/action/tenant/pin/grants/expiry, even for an owner. Selected managers administer authorized bound keys for shared APIs, subject to tenant-entry privacy for every non-owner; this is shared-API administration. Unbound keys stay hidden. Revocation requires action/API scope but remains available after USE removal. See [runtime keys](api-keys.md#issuer-bound-keys).
 
 Managed load-test keys carry the issuer's load-test action and starting pin. Selected history/cancellation covers bound jobs for shared APIs; cancellation remains available after USE removal with current action/API scope. Runs stay bounded to thirty seconds, without an instant cross-process kill of admitted requests or native work. See [load testing](load-testing.md#selected-issuers), [roadmap](roadmap.md), and exact evidence in [testing](testing.md).
+
+## Tenant protection and global grants
+
+Implemented in 0.11. A separate owner-assigned tenant identity and resource row policy narrow supported API data reads. API sharing and USE still do not establish that identity. Every non-owner, including an all-mode manager, derives protected draft/key/load-test identity from assignment and cannot choose another tenant.
+
+Protected full resource metadata, previews, checks, refresh/replacement, and management are owner-only; ordinary non-owner lists omit them before revealing rows/counts. Structural catalogs keep authorized choices without raw data. First protection permanently makes all ordinary backup routes owner-only, including old archives and after deprotection. A global source/database/backup grant cannot bypass these boundaries.
+
+Tenant-bearing keys/jobs add privacy to shared-API administration for every non-owner: foreign entries are hidden, while an original issuer's historical entries remain cleanup-visible after reassignment. Scoped revoke/cancel still needs current action/API access but not USE; cleanup cannot mint or rotate a different identity. Owner raw previews and complete backups remain explicitly privileged. See [row protection](row-protection.md).

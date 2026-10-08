@@ -40,6 +40,7 @@ import { socialLoginSchema } from '../src/auth/social-schema'
 import { useStudio, type CanvasNode } from './store'
 import { can } from '../src/workspace/permissions'
 import { canReadDependencyStructure } from './dependency-access'
+import { TenantReview, useTenantReview } from './tenant-review'
 import { ReleaseHistory } from './release-history'
 import { DatabaseNodeForm } from './database-node'
 import { ApiRules, OpenApiDownload } from './api-rules'
@@ -531,33 +532,52 @@ function BuilderSession() {
   const [operationName, setOperationName] = useState('')
   const writable = can(state.member, 'flows.write')
   const testable = can(state.member, 'flows.test')
+  const tenantReview = useTenantReview(
+    state.id,
+    'draft',
+    testable && !state.dirty,
+    state.revision,
+  )
   const publishedEndpoint = state.flows.find(
     (flow) => flow.id === state.id,
   )?.publishedEndpoint
 
   function testFlow() {
+    if (!tenantReview.ready) return
     void state.task(async () => {
       if (socialFlow) {
         const values =
           loginInput.action === 'BEGIN' ? { action: 'BEGIN' } : loginInput
         if (state.graphql)
-          await state.testGraphql({ query: loginMutation, variables: values })
-        else await state.test(values, {})
+          await state.testGraphql(
+            { query: loginMutation, variables: values },
+            tenantReview.requestTenantId,
+          )
+        else
+          await state.test(values, {}, undefined, tenantReview.requestTenantId)
         return
       }
       if (state.graphql) {
-        await state.testGraphql({
-          query: operation,
-          variables: JSON.parse(variables),
-          ...(operationName.trim()
-            ? { operationName: operationName.trim() }
-            : {}),
-        })
+        await state.testGraphql(
+          {
+            query: operation,
+            variables: JSON.parse(variables),
+            ...(operationName.trim()
+              ? { operationName: operationName.trim() }
+              : {}),
+          },
+          tenantReview.requestTenantId,
+        )
         return
       }
       if (inputError && !advancedInput) throw new Error(inputError)
       const parsed = parseRequestInput(input)
-      await state.test(parsed.body, parsed.query, parsed.params)
+      await state.test(
+        parsed.body,
+        parsed.query,
+        parsed.params,
+        tenantReview.requestTenantId,
+      )
     })
   }
 
@@ -950,9 +970,18 @@ function BuilderSession() {
               </Button>
             </>
           )}
+          {testable && state.id && !state.dirty ? (
+            <TenantReview review={tenantReview} disabled={state.busy} />
+          ) : null}
           <Button
             variant="outline"
-            disabled={state.busy || !testable || !state.id || state.dirty}
+            disabled={
+              state.busy ||
+              !testable ||
+              !state.id ||
+              state.dirty ||
+              !tenantReview.ready
+            }
             onClick={testFlow}
           >
             <Play />

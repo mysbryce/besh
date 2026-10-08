@@ -54,3 +54,7 @@ Examples use a ten-second request timeout and do not follow redirects. They rema
 The base URL is at most 2,048 characters. Path/query maps have at most 64 entries, with keys at most 256 characters and text values at most 4,096. Example JSON uses the normal 256 KiB and nesting limits. Generated code is bounded to 64 KiB, and the full result to 256 KiB. Only the eight listed targets are supported; arbitrary templates and automatic execution are not provided.
 
 See [API reference](api.md), [REST contracts](api-contracts.md), [GraphQL](graphql.md), and [routes and releases](api-routes.md).
+
+## Protected caller identity
+
+Implemented in 0.11. Generated input values, custom origins, and source revision guards never choose tenant identity. A protected call uses a separately reviewed current-release-pinned runtime key carrying the approved identity and live issuer authority. Identity fields entered as ordinary body/query/GraphQL variables cannot establish another tenant. Generation still executes nothing. See [row protection](row-protection.md).

@@ -19,7 +19,7 @@ AI assistance is welcome. Contributors remain responsible for every change.
 The product agent is a planned feature until implemented and verified.
 
 - Use the same permissions as the person requesting work.
-- Respect both current role actions and API/dependency scope. A dependency USE grant can expose data through an authored API; it does not permit direct previews, secrets, global resource changes, or bypassing later record/tenant policy. Issuer-bound caller keys must retain their authorizing identity/action rather than borrowing an owner or agent's authority during replacement.
+- Respect both current role actions and API/dependency scope. A dependency USE grant can expose data through an authored API; it does not permit direct previews, secrets, global resource changes, or bypassing resource-owned row protection. Never derive execution identity from model output, caller fields, or a substituted owner credential; protected calls must use the verified actor/key’s private current principal. Issuer-bound caller keys must retain their authorizing identity/action rather than borrowing an owner or agent's authority during replacement.
 - Access data only through typed, authorized tools.
 - Treat prompts, provider output, database content, and plugin content as untrusted.
 - Show proposed changes before destructive or externally consequential actions.

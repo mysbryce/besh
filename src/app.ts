@@ -1,9 +1,16 @@
 import { Elysia, t, type AnyElysia } from 'elysia'
 import { version } from '../package.json'
 import { z } from 'zod'
-import { permissionCatalog, type Permission } from './workspace/permissions'
+import {
+  can,
+  permissionCatalog,
+  type Permission,
+} from './workspace/permissions'
 import { flowAccessSchema, memberAccessSchema } from './workspace/access-input'
 import { dependencyService } from './workspace/dependencies'
+import { rowPolicyService } from './workspace/row-policy'
+import { tenantService } from './workspace/tenants'
+import { assertRawResource } from './workspace/raw-access'
 import { authorizeFlow } from './workspace/authorization'
 import { updateService, type ReleaseFetch } from './updates/service'
 import { openStore, hashToken, type Member } from './workspace/store'
@@ -39,6 +46,7 @@ const memberFields = {
   password: z.string().max(128).optional(),
   flowAccess: flowAccessSchema.optional(),
   access: memberAccessSchema.optional(),
+  tenantId: z.string().min(1).max(80).nullable().optional(),
 }
 const createMemberSchema = z
   .discriminatedUnion('role', [
@@ -116,6 +124,8 @@ export function createApp(options: AppOptions) {
   const store = openStore(options.databasePath, options.adminToken)
   const sessions = sessionService(store, options.now)
   const dependencies = dependencyService(store)
+  const rowPolicies = rowPolicyService(store)
+  const tenants = tenantService(store)
   const sources = dataSourceService(store, options.sheetFetch)
   const databases = databaseConnectionService(store)
   let productAuth: ReturnType<typeof productAuthService>
@@ -139,7 +149,11 @@ export function createApp(options: AppOptions) {
     throw error
   }
   const flows = flowService(store, sources, productAuth, databases, runtime)
-  const backups = backupService(store, options.backupDir)
+  const backups = backupService(store, options.backupDir, (actor) => {
+    const member = store.member(actor)
+    if (!member) throw new ApiError(401, 'Authentication required')
+    requireBackup(member)
+  })
   const updates = updateService(store, {
     fetch: options.updateFetch,
     now: options.now,
@@ -156,6 +170,17 @@ export function createApp(options: AppOptions) {
   )
 
   const managementActors = new WeakMap<Request, string>()
+  function requireBackup(member: Member) {
+    requirePermission(member, 'backups.manage')
+    const state = store
+      .query<{ backups_owner_only: number }, []>(
+        'SELECT backups_owner_only FROM row_protection_state WHERE id = 1',
+      )
+      .get()
+    if (!state) throw new ApiError(503, 'Row protection state is unavailable')
+    if (state.backups_owner_only && member.role !== 'owner')
+      throw new ApiError(403, 'Workspace backups require the owner')
+  }
   function requireFlowRead(member: Member, id: string) {
     authorizeFlow(member, id, 'flows.read')
   }
@@ -210,6 +235,7 @@ export function createApp(options: AppOptions) {
           '/api/account',
           '/api/sessions',
           '/api/permissions',
+          '/api/tenant-context',
         ].includes(path)) ||
       (request.method === 'PUT' && path === '/api/account') ||
       (request.method === 'DELETE' && /^\/api\/sessions\/[^/]+$/.test(path))
@@ -242,7 +268,7 @@ export function createApp(options: AppOptions) {
       return
     }
     const flow =
-      /^\/api\/flows\/([^/]+)(\/releases(?:\/[^/]+)?|\/openapi|\/client-code|\/backend-code)?$/.exec(
+      /^\/api\/flows\/([^/]+)(\/releases(?:\/[^/]+)?|\/openapi|\/client-code|\/backend-code|\/row-access)?$/.exec(
         path,
       )
     if (
@@ -253,7 +279,20 @@ export function createApp(options: AppOptions) {
       try {
         id = decodeURIComponent(flow[1])
       } catch {}
-      requireFlowRead(member, id)
+      if (flow[2] === '/row-access') {
+        const permission = (
+          [
+            'flows.read',
+            'flows.write',
+            'flows.test',
+            'flows.publish',
+            'runtime-keys.manage',
+            'load-tests.run',
+          ] as const
+        ).find((permission) => can(member, permission))
+        if (!permission) throw new ApiError(403, 'Permission denied')
+        authorizeFlow(member, id, permission)
+      } else requireFlowRead(member, id)
       return
     }
     throw new ApiError(403, 'Permission denied')
@@ -261,6 +300,16 @@ export function createApp(options: AppOptions) {
   function currentPermission(request: Request, permission: Permission) {
     const current = currentMember(request)
     requirePermission(current, permission)
+  }
+  function currentRawPermission(
+    request: Request,
+    family: 'sources' | 'database-connections',
+    id: string,
+    permissions: readonly Permission[],
+  ) {
+    const current = currentMember(request)
+    for (const permission of permissions) requirePermission(current, permission)
+    assertRawResource(store, current, family, id)
   }
   function currentMember(request: Request) {
     const current = request.headers.has('authorization')
@@ -285,6 +334,57 @@ export function createApp(options: AppOptions) {
       }
 
       managementActors.set(request, member.id)
+      if (member.role !== 'owner') {
+        const path = new URL(request.url).pathname
+        const key = /^\/api\/runtime-keys\/([^/]+)(\/rotate)?$/.exec(path)
+        if (
+          key &&
+          ((request.method === 'POST' && key[2]) ||
+            (request.method === 'DELETE' && !key[2]))
+        ) {
+          let id = ''
+          try {
+            id = decodeURIComponent(key[1])
+          } catch {}
+          store.assertKeyAccess(member, id)
+        }
+        const job = /^\/api\/load-tests\/([^/]+)(\/cancel)?$/.exec(path)
+        if (
+          job &&
+          job[1] !== 'targets' &&
+          ((['GET', 'HEAD'].includes(request.method) && !job[2]) ||
+            (request.method === 'POST' && job[2]))
+        ) {
+          let id = ''
+          try {
+            id = decodeURIComponent(job[1])
+          } catch {}
+          loadTests.assertAccess(member, id)
+        }
+      }
+      const raw =
+        /^\/api\/(data-sources|database-connections)\/([^/]+)(?:\/(?:import|refresh|preview|check|api))?$/.exec(
+          new URL(request.url).pathname,
+        )
+      if (
+        raw &&
+        !(
+          raw[1] === 'data-sources' &&
+          request.method === 'POST' &&
+          ['import', 'google-sheets'].includes(raw[2])
+        )
+      ) {
+        let id = ''
+        try {
+          id = decodeURIComponent(raw[2])
+        } catch {}
+        assertRawResource(
+          store,
+          member,
+          raw[1] === 'data-sources' ? 'sources' : 'database-connections',
+          id,
+        )
+      }
       enforceSelectedAccess(member, request)
 
       if (session && !['GET', 'HEAD', 'OPTIONS'].includes(request.method))
@@ -293,6 +393,55 @@ export function createApp(options: AppOptions) {
       return { member, session }
     })
     .get('/me', ({ member }) => member)
+    .get('/tenant-context', ({ member }) => tenants.context(member.id))
+    .get('/tenants', ({ member }) => {
+      allow(member, ['owner'])
+      return tenants.list()
+    })
+    .post('/tenants', ({ member, body, request }) => {
+      allow(member, ['owner'])
+      return tenants.create(member.id, body, () =>
+        allow(currentMember(request), ['owner']),
+      )
+    })
+    .put('/tenants/:id', ({ member, params, body, request }) => {
+      allow(member, ['owner'])
+      return tenants.update(member.id, params.id, body, () =>
+        allow(currentMember(request), ['owner']),
+      )
+    })
+    .put('/members/:id/tenant', ({ member, params, body, request }) => {
+      allow(member, ['owner'])
+      return tenants.assign(member.id, params.id, body, () =>
+        allow(currentMember(request), ['owner']),
+      )
+    })
+    .get('/data-sources/:id/row-policy', ({ member, params }) => {
+      allow(member, ['owner'])
+      return rowPolicies.source(params.id)
+    })
+    .put(
+      '/data-sources/:id/row-policy',
+      ({ member, params, body, request }) => {
+        allow(member, ['owner'])
+        return rowPolicies.updateSource(member.id, params.id, body, () =>
+          allow(currentMember(request), ['owner']),
+        )
+      },
+    )
+    .get('/database-connections/:id/row-policy', ({ member, params }) => {
+      allow(member, ['owner'])
+      return rowPolicies.database(params.id)
+    })
+    .put(
+      '/database-connections/:id/row-policy',
+      ({ member, params, body, request }) => {
+        allow(member, ['owner'])
+        return rowPolicies.updateDatabase(member.id, params.id, body, () =>
+          allow(currentMember(request), ['owner']),
+        )
+      },
+    )
     .get('/permissions', () => permissionCatalog)
     .get('/dependencies/sources', ({ member }) =>
       dependencies.catalog(member, 'sources'),
@@ -450,7 +599,7 @@ export function createApp(options: AppOptions) {
     )
     .get('/database-connections', ({ member }) => {
       requirePermission(member, 'database-connections.read')
-      return databases.list()
+      return databases.list(member)
     })
     .get('/database-connections/:id', ({ member, params }) => {
       requirePermission(member, 'database-connections.read')
@@ -482,19 +631,28 @@ export function createApp(options: AppOptions) {
       ({ member, params, body, request }) => {
         requirePermission(member, 'database-connections.read')
         return databases.preview(params.id, body, request.signal, () =>
-          currentPermission(request, 'database-connections.read'),
+          currentRawPermission(request, 'database-connections', params.id, [
+            'database-connections.read',
+          ]),
         )
       },
     )
-    .post('/database-connections/:id/api', ({ member, params, body }) => {
-      requirePermission(member, 'database-connections.read')
-      requirePermission(member, 'flows.write')
-      return store.db
-        .transaction(() =>
-          flows.create(member.id, databases.api(params.id, body)),
-        )
-        .immediate()
-    })
+    .post(
+      '/database-connections/:id/api',
+      ({ member, params, body, request }) => {
+        requirePermission(member, 'database-connections.read')
+        requirePermission(member, 'flows.write')
+        return store.db
+          .transaction(() => {
+            currentRawPermission(request, 'database-connections', params.id, [
+              'database-connections.read',
+              'flows.write',
+            ])
+            return flows.create(member.id, databases.api(params.id, body))
+          })
+          .immediate()
+      },
+    )
     .post(
       '/database-connections/:id/check',
       ({ member, params, body, request }) => {
@@ -504,19 +662,28 @@ export function createApp(options: AppOptions) {
           params.id,
           body,
           () => {
-            currentPermission(request, 'database-connections.manage')
+            currentRawPermission(request, 'database-connections', params.id, [
+              'database-connections.manage',
+            ])
           },
           request.signal,
         )
       },
     )
-    .delete('/database-connections/:id', ({ member, params, body }) => {
-      requirePermission(member, 'database-connections.manage')
-      return databases.delete(member.id, params.id, body)
-    })
+    .delete(
+      '/database-connections/:id',
+      ({ member, params, body, request }) => {
+        requirePermission(member, 'database-connections.manage')
+        return databases.delete(member.id, params.id, body, () =>
+          currentRawPermission(request, 'database-connections', params.id, [
+            'database-connections.manage',
+          ]),
+        )
+      },
+    )
     .get('/data-sources', ({ member }) => {
       requirePermission(member, 'sources.read')
-      return sources.list()
+      return sources.list(member)
     })
     .get('/data-sources/:id', ({ member, params }) => {
       requirePermission(member, 'sources.read')
@@ -524,24 +691,40 @@ export function createApp(options: AppOptions) {
     })
     .post(
       '/data-sources/import',
-      ({ member, body }) => {
+      ({ member, body, request }) => {
         requirePermission(member, 'sources.write')
-        return sources.importFile(member.id, body.name, body.file)
+        return sources.importFile(
+          member.id,
+          body.name,
+          body.file,
+          undefined,
+          () => currentPermission(request, 'sources.write'),
+        )
       },
       {
         body: t.Object({ name: t.String({ maxLength: 200 }), file: t.File() }),
       },
     )
-    .post('/data-sources/:id/api', ({ member, params, body }) => {
+    .post('/data-sources/:id/api', ({ member, params, body, request }) => {
       requirePermission(member, 'sources.read')
       requirePermission(member, 'flows.write')
-      return flows.create(member.id, sources.api(params.id, body))
+      return store.db
+        .transaction(() => {
+          currentRawPermission(request, 'sources', params.id, [
+            'sources.read',
+            'flows.write',
+          ])
+          return flows.create(member.id, sources.api(params.id, body))
+        })
+        .immediate()
     })
     .post(
       '/data-sources/google-sheets',
-      ({ member, body }) => {
+      ({ member, body, request }) => {
         requirePermission(member, 'sources.write')
-        return sources.importGoogle(member.id, body.name, body.url)
+        return sources.importGoogle(member.id, body.name, body.url, () =>
+          currentPermission(request, 'sources.write'),
+        )
       },
       {
         body: t.Object({
@@ -552,9 +735,19 @@ export function createApp(options: AppOptions) {
     )
     .put(
       '/data-sources/:id/import',
-      ({ member, params, body }) => {
+      ({ member, params, body, request }) => {
         requirePermission(member, 'sources.write')
-        return sources.importFile(member.id, body.name, body.file, params.id)
+        return sources.importFile(
+          member.id,
+          body.name,
+          body.file,
+          params.id,
+          () => {
+            const current = currentMember(request)
+            requirePermission(current, 'sources.write')
+            assertRawResource(store, current, 'sources', params.id)
+          },
+        )
       },
       {
         body: t.Object({
@@ -563,13 +756,19 @@ export function createApp(options: AppOptions) {
         }),
       },
     )
-    .post('/data-sources/:id/refresh', ({ member, params }) => {
+    .post('/data-sources/:id/refresh', ({ member, params, request }) => {
       requirePermission(member, 'sources.write')
-      return sources.refresh(member.id, params.id)
+      return sources.refresh(member.id, params.id, () => {
+        const current = currentMember(request)
+        requirePermission(current, 'sources.write')
+        assertRawResource(store, current, 'sources', params.id)
+      })
     })
-    .delete('/data-sources/:id', ({ member, params }) => {
+    .delete('/data-sources/:id', ({ member, params, request }) => {
       requirePermission(member, 'sources.write')
-      return sources.delete(member.id, params.id)
+      return sources.delete(member.id, params.id, () =>
+        currentRawPermission(request, 'sources', params.id, ['sources.write']),
+      )
     })
     .get('/flows', ({ member }) => {
       requirePermission(member, 'flows.read')
@@ -581,6 +780,9 @@ export function createApp(options: AppOptions) {
       requireFlowRead(member, params.id)
       return flows.get(params.id)
     })
+    .get('/flows/:id/row-access', ({ member, params, request }) =>
+      flows.rowAccess(member, params.id, new URL(request.url)),
+    )
     .get('/flows/:id/releases', ({ member, params }) => {
       requireFlowRead(member, params.id)
       return flows.releases(params.id)
@@ -663,8 +865,14 @@ export function createApp(options: AppOptions) {
       '/flows/:id/test',
       ({ member, params, body, request }) => {
         requirePermission(member, 'flows.test')
-        return flows.test(member.id, params.id, body, request.signal, () =>
-          currentMember(request),
+        const { tenantId, ...input } = body
+        return flows.test(
+          member.id,
+          params.id,
+          input,
+          request.signal,
+          () => currentMember(request),
+          tenantId,
         )
       },
       {
@@ -672,6 +880,7 @@ export function createApp(options: AppOptions) {
           body: t.Any(),
           query: t.Record(t.String(), t.String()),
           params: t.Optional(t.Record(t.String(), t.String())),
+          tenantId: t.Optional(t.String({ minLength: 1, maxLength: 80 })),
         }),
       },
     )
@@ -696,11 +905,23 @@ export function createApp(options: AppOptions) {
     })
     .post('/flows/:id/graphql/test', ({ member, params, body, request }) => {
       requirePermission(member, 'flows.test')
-      return flows.testGraphql(member.id, params.id, body, request.signal, () =>
-        currentMember(request),
+      const input = z
+        .object({ tenantId: z.string().min(1).max(80).optional() })
+        .passthrough()
+        .safeParse(body)
+      if (!input.success)
+        throw new ApiError(400, 'Provide a valid GraphQL test request')
+      const { tenantId, ...operation } = input.data
+      return flows.testGraphql(
+        member.id,
+        params.id,
+        operation,
+        request.signal,
+        () => currentMember(request),
+        tenantId,
       )
     })
-    .post('/members', async ({ member, body }) => {
+    .post('/members', async ({ member, body, request }) => {
       allow(member, ['owner'])
       const parsed = createMemberSchema.safeParse(body)
       if (!parsed.success)
@@ -709,14 +930,18 @@ export function createApp(options: AppOptions) {
           'Choose a member name and valid role assignment',
         )
       const input = parsed.data
+      const account = await optionalAccount(input)
+      allow(currentMember(request), ['owner'])
       return store.createMember(
         member.id,
         input.name,
         input.role,
-        await optionalAccount(input),
+        account,
         input.role === 'custom' ? input.roleId : undefined,
         input.flowAccess,
         input.access,
+        input.tenantId,
+        () => currentMember(request),
       )
     })
     .delete('/members/:id', ({ member, params }) => {
@@ -762,17 +987,23 @@ export function createApp(options: AppOptions) {
       requirePermission(member, 'migrations.read')
       return store.query('SELECT * FROM migrations ORDER BY version').all()
     })
-    .get('/backups', ({ member }) => {
-      requirePermission(member, 'backups.manage')
-      return backups.list()
+    .get('/backups', ({ member, request }) => {
+      requireBackup(member)
+      return backups.list(member.id, () =>
+        requireBackup(currentMember(request)),
+      )
     })
-    .post('/backups', ({ member }) => {
-      requirePermission(member, 'backups.manage')
-      return backups.create(member.id)
+    .post('/backups', ({ member, request }) => {
+      requireBackup(member)
+      return backups.create(member.id, () =>
+        requireBackup(currentMember(request)),
+      )
     })
-    .get('/backups/:id', ({ member, params }) => {
-      requirePermission(member, 'backups.manage')
-      return backups.download(member.id, params.id)
+    .get('/backups/:id', ({ member, params, request }) => {
+      requireBackup(member)
+      return backups.download(member.id, params.id, () =>
+        requireBackup(currentMember(request)),
+      )
     })
 
   const buildApp = () => {

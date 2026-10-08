@@ -4,6 +4,7 @@ import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import type { RuntimePermission } from './lib/api'
+import { TenantReview, useTenantReview } from './tenant-review'
 
 type ManualKeyInput = {
   name: string
@@ -11,6 +12,7 @@ type ManualKeyInput = {
   releaseRevision: number
   permissions: RuntimePermission[]
   expiresAt: string
+  tenantLabel?: string
 }
 
 export function ManualPinnedKeyForm({
@@ -36,6 +38,7 @@ export function ManualPinnedKeyForm({
   const [revision, setRevision] = useState('')
   const [operation, setOperation] = useState('rest')
   const [days, setDays] = useState('30')
+  const tenantReview = useTenantReview(flowId, 'published', !!flowId)
   const revisionNumber = Number(revision)
   const validRevision =
     /^[1-9]\d*$/.test(revision) && Number.isSafeInteger(revisionNumber)
@@ -44,7 +47,11 @@ export function ManualPinnedKeyForm({
       ? ['query', 'mutation']
       : [operation as RuntimePermission]
   const valid =
-    !!name.trim() && flowIds.includes(flowId) && validRevision && !reviewNeeded
+    !!name.trim() &&
+    flowIds.includes(flowId) &&
+    validRevision &&
+    !reviewNeeded &&
+    tenantReview.ready
 
   return (
     <form
@@ -60,14 +67,18 @@ export function ManualPinnedKeyForm({
           expiresAt: new Date(
             Date.now() + Number(days) * 24 * 60 * 60 * 1000,
           ).toISOString(),
+          ...(tenantReview.required
+            ? { tenantLabel: tenantReview.context?.tenant?.label }
+            : {}),
         })
       }}
     >
       <p className="credential-note">
         Read APIs is not granted. These IDs come from your selected access;
-        endpoint details and current revisions have not been read. Ask the owner
-        for the current published revision and operation type. Besh verifies
-        them before issuing a key. Only this release is supported.
+        endpoint details and drafts have not been read. Ask the owner for the
+        current published revision and operation type. Besh verifies them before
+        issuing a key. Only this release is supported. Protection checks read
+        minimal row-access metadata and your own assigned identity.
       </p>
       <div className="runtime-key-fields">
         <label>
@@ -139,6 +150,7 @@ export function ManualPinnedKeyForm({
           />
         </label>
       </div>
+      <TenantReview review={tenantReview} disabled={disabled} />
       {reviewNeeded ? (
         <p className="credential-note">
           The supplied release could not be confirmed. Ask the owner for the

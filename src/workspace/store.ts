@@ -21,6 +21,13 @@ import {
   type CurrentMember,
 } from './authorization'
 import type { Flow } from '../flows/model'
+import type { TenantAssignment } from './tenant-model'
+import {
+  memberRowPrincipal,
+  protectedShape,
+  runtimeRowPrincipal,
+} from './row-authority'
+import { activeTenant } from './tenants'
 import {
   builtinPermissions,
   permissionCatalog,
@@ -35,6 +42,7 @@ export type Member = {
   permissions: Permission[]
   flowAccess: FlowAccess
   access: MemberAccess
+  tenantAssignment: TenantAssignment
   roleId?: string
   roleName?: string
 }
@@ -72,7 +80,9 @@ export type RuntimeKey = {
     memberId: string
     action: 'runtime-keys.manage' | 'load-tests.run'
   } | null
+  tenantId: string | null
   managedBy?: 'load-test'
+  cleanupOnly?: boolean
 }
 
 type RuntimeKeyRow = {
@@ -86,6 +96,7 @@ type RuntimeKeyRow = {
   revoked_at: string | null
   issuer_member_id: string | null
   issuer_action: 'runtime-keys.manage' | 'load-tests.run' | null
+  tenant_id: string | null
 }
 
 function runtimeKey(row: RuntimeKeyRow): RuntimeKey {
@@ -108,6 +119,7 @@ function runtimeKey(row: RuntimeKeyRow): RuntimeKey {
     expiresAt: row.expires_at,
     createdAt: row.created_at,
     revokedAt: row.revoked_at,
+    tenantId: row.tenant_id,
     issuerBinding:
       row.issuer_member_id && row.issuer_action
         ? { memberId: row.issuer_member_id, action: row.issuer_action }
@@ -458,6 +470,55 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 17').get()) {
+      db.exec(`
+        CREATE TABLE tenants (
+          id TEXT PRIMARY KEY, label TEXT NOT NULL, value TEXT NOT NULL COLLATE BINARY UNIQUE,
+          state TEXT NOT NULL CHECK(state IN ('active', 'retired')),
+          version INTEGER NOT NULL CHECK(version > 0 AND version <= 9007199254740991),
+          created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+        );
+        CREATE TABLE member_tenants (
+          member_id TEXT PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
+          tenant_id TEXT REFERENCES tenants(id),
+          version INTEGER NOT NULL CHECK(version > 0 AND version <= 9007199254740991)
+        );
+        INSERT INTO member_tenants SELECT id, NULL, 1 FROM members;
+        CREATE TABLE source_row_policies (
+          resource_id TEXT PRIMARY KEY REFERENCES data_sources(id) ON DELETE CASCADE,
+          mode TEXT NOT NULL CHECK(mode IN ('unprotected', 'tenant')),
+          tenant_column TEXT,
+          version INTEGER NOT NULL CHECK(version > 0 AND version <= 9007199254740991),
+          CHECK ((mode = 'unprotected' AND tenant_column IS NULL) OR (mode = 'tenant' AND tenant_column IS NOT NULL))
+        );
+        INSERT INTO source_row_policies SELECT id, 'unprotected', NULL, 1 FROM data_sources;
+        CREATE TABLE database_row_policies (
+          resource_id TEXT PRIMARY KEY REFERENCES database_connections(id) ON DELETE CASCADE,
+          mode TEXT NOT NULL CHECK(mode IN ('unprotected', 'tenant')),
+          version INTEGER NOT NULL CHECK(version > 0 AND version <= 9007199254740991)
+        );
+        INSERT INTO database_row_policies SELECT id, 'unprotected', 1 FROM database_connections;
+        CREATE TABLE database_tenant_columns (
+          resource_id TEXT NOT NULL REFERENCES database_row_policies(resource_id) ON DELETE CASCADE,
+          table_name TEXT NOT NULL, column_key TEXT NOT NULL,
+          PRIMARY KEY(resource_id, table_name)
+        );
+        CREATE TABLE row_protection_state (
+          id INTEGER PRIMARY KEY CHECK(id = 1),
+          backups_owner_only INTEGER NOT NULL CHECK(backups_owner_only IN (0, 1))
+        );
+        INSERT INTO row_protection_state VALUES (1, 0);
+        ALTER TABLE data_sources ADD COLUMN original_cells BLOB;
+        ALTER TABLE runtime_keys ADD COLUMN tenant_id TEXT REFERENCES tenants(id)
+          CHECK(tenant_id IS NULL OR release_revision IS NOT NULL);
+        ALTER TABLE load_tests ADD COLUMN tenant_id TEXT REFERENCES tenants(id);
+      `)
+      query('INSERT INTO migrations VALUES (17, ?, ?)').run(
+        'trusted tenant identities and resource-owned row protection',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -470,6 +531,9 @@ export function openStore(path: string, adminToken?: string) {
       ).run(hash)
       query(
         "INSERT OR IGNORE INTO member_flow_access VALUES ('owner', 'all', 1)",
+      ).run()
+      query(
+        "INSERT OR IGNORE INTO member_tenants VALUES ('owner', NULL, 1)",
       ).run()
 
       if (previous?.token_hash !== hash) {
@@ -519,6 +583,17 @@ export function openStore(path: string, adminToken?: string) {
       id,
     )
     if (!accessRow) return null
+    const tenantAssignment = query<
+      { tenant_id: string | null; version: number },
+      [string]
+    >('SELECT tenant_id, version FROM member_tenants WHERE member_id = ?').get(
+      id,
+    )
+    if (!tenantAssignment) return null
+    const tenant = {
+      tenantId: tenantAssignment.tenant_id,
+      version: tenantAssignment.version,
+    }
     const flowAccess: FlowAccess = {
       ...accessRow,
       flowIds:
@@ -559,6 +634,7 @@ export function openStore(path: string, adminToken?: string) {
         permissions: [...builtinPermissions[row.role]],
         flowAccess,
         access,
+        tenantAssignment: tenant,
       }
     const custom = query<RoleRow, [string]>(
       'SELECT * FROM workspace_roles WHERE id = ?',
@@ -573,6 +649,7 @@ export function openStore(path: string, adminToken?: string) {
       permissions: role(custom).permissions,
       flowAccess,
       access,
+      tenantAssignment: tenant,
     }
   }
 
@@ -713,7 +790,7 @@ export function openStore(path: string, adminToken?: string) {
 
   function insertRuntimeKey(actor: string, key: RuntimeKey, token: string) {
     query(
-      'INSERT INTO runtime_keys (id, name, flow_id, permissions, token_hash, expires_at, created_at, release_revision, issuer_member_id, issuer_action) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO runtime_keys (id, name, flow_id, permissions, token_hash, expires_at, created_at, release_revision, issuer_member_id, issuer_action, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     ).run(
       key.id,
       key.name,
@@ -725,13 +802,14 @@ export function openStore(path: string, adminToken?: string) {
       key.releaseRevision,
       key.issuerBinding?.memberId ?? null,
       key.issuerBinding?.action ?? null,
+      key.tenantId,
     )
     audit(actor, 'runtime-key.created', key.id)
   }
 
   function keyRow(id: string) {
     const row = query<RuntimeKeyRow, [string]>(
-      'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action FROM runtime_keys WHERE id = ?',
+      'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action, tenant_id FROM runtime_keys WHERE id = ?',
     ).get(id)
     if (!row) throw new ApiError(404, 'Runtime key not found')
     return row
@@ -747,9 +825,25 @@ export function openStore(path: string, adminToken?: string) {
     }
     if (member.access.mode === 'selected' && key.issuerBinding === null)
       throw new ApiError(404, 'Runtime key not found')
+    if (
+      member.role !== 'owner' &&
+      key.tenantId !== null &&
+      !(
+        (key.issuerBinding !== null &&
+          key.tenantId === member.tenantAssignment.tenantId) ||
+        key.issuerBinding?.memberId === member.id
+      )
+    )
+      throw new ApiError(404, 'Runtime key not found')
   }
 
   function issuerAuthority(key: RuntimeKey, definition: Flow, status = 403) {
+    runtimeRowPrincipal(
+      { db, query, member: resolveMember },
+      key,
+      definition,
+      status,
+    )
     if (!key.issuerBinding) return
     const issuer = resolveMember(key.issuerBinding.memberId)
     if (!issuer)
@@ -768,22 +862,56 @@ export function openStore(path: string, adminToken?: string) {
     }
   }
 
+  function keyCleanupOnly(member: Member | undefined, key: RuntimeKey) {
+    if (!key.tenantId) return false
+    if (key.revokedAt || Date.parse(key.expiresAt) <= Date.now()) return true
+    if (
+      member &&
+      member.role !== 'owner' &&
+      member.tenantAssignment.tenantId !== key.tenantId
+    )
+      return true
+    const release = query<{ definition: string }, [string, number]>(
+      'SELECT definition FROM releases WHERE flow_id = ? AND revision = ?',
+    ).get(key.flowId, key.releaseRevision!)
+    if (!release) return true
+    try {
+      const definition = JSON.parse(release.definition) as Flow
+      issuerAuthority(key, definition)
+      if (member)
+        authorizeGraph(member, key.flowId, 'runtime-keys.manage', definition)
+      return false
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error
+      return true
+    }
+  }
+
   return {
     db,
     query,
     audit,
+    revokeMemberSessions: revokeSessions,
     member: resolveMember,
     assertKeyAccess(member: Member, id: string) {
       assertKeyAccess(member, runtimeKey(keyRow(id)))
     },
     checkRuntimeAuthority(key: RuntimeKey, definition: Flow) {
-      if (key.issuerBinding === null) return
+      if (
+        key.issuerBinding === null &&
+        key.tenantId === null &&
+        !protectedShape({ db, query }, definition).required
+      )
+        return
       db.transaction(() => {
         const current = runtimeKey(keyRow(key.id))
         if (current.revokedAt || Date.parse(current.expiresAt) <= Date.now())
           throw new ApiError(401, 'Authentication required')
         issuerAuthority(current, definition)
       })()
+    },
+    checkRuntimeIssuerAuthority(id: string, definition: Flow) {
+      issuerAuthority(runtimeKey(keyRow(id)), definition)
     },
     protectDependencyUse(
       family: 'sources' | 'database-connections' | 'auth-connections',
@@ -1022,6 +1150,7 @@ export function openStore(path: string, adminToken?: string) {
           hashToken(token),
         )
         query("INSERT INTO member_flow_access VALUES ('owner', 'all', 1)").run()
+        query("INSERT INTO member_tenants VALUES ('owner', NULL, 1)").run()
         query("UPDATE settings SET value = ? WHERE key = 'workspace'").run(name)
         if (account)
           query('INSERT INTO accounts VALUES (?, ?, ?)').run(
@@ -1047,60 +1176,72 @@ export function openStore(path: string, adminToken?: string) {
       roleId?: string,
       flowAccess: FlowAccessInput = { mode: 'all' },
       access?: MemberAccessInput,
+      tenantId: string | null = null,
+      currentMember?: CurrentMember,
     ) {
       const member = { id: crypto.randomUUID(), name, role }
       const token = crypto.randomUUID() + crypto.randomUUID()
 
-      db.transaction(() => {
-        const custom = role === 'custom' && roleId ? getRole(roleId) : null
-        if (role === 'custom' && !custom)
-          throw new ApiError(404, 'Role not found')
-        if (role !== 'custom' && roleId !== undefined)
-          throw new ApiError(
+      const created = db
+        .transaction(() => {
+          if (currentMember && currentMember().role !== 'owner')
+            throw new ApiError(403, 'Owner access required')
+          const custom = role === 'custom' && roleId ? getRole(roleId) : null
+          if (role === 'custom' && !custom)
+            throw new ApiError(404, 'Role not found')
+          if (role !== 'custom' && roleId !== undefined)
+            throw new ApiError(
+              400,
+              'Built-in roles cannot include a custom role ID',
+            )
+          const scope = access ?? flowAccess
+          validateFlowAccess(
+            scope,
+            custom?.permissions ??
+              builtinPermissions[role as 'editor' | 'viewer'],
             400,
-            'Built-in roles cannot include a custom role ID',
           )
-        const scope = access ?? flowAccess
-        validateFlowAccess(
-          scope,
-          custom?.permissions ??
-            builtinPermissions[role as 'editor' | 'viewer'],
-          400,
-        )
-        if (
-          account &&
-          query('SELECT member_id FROM accounts WHERE email = ?').get(
-            account.email,
+          if (
+            account &&
+            query('SELECT member_id FROM accounts WHERE email = ?').get(
+              account.email,
+            )
           )
-        )
-          throw new ApiError(409, 'Email address unavailable')
-        query('INSERT INTO members VALUES (?, ?, ?, ?)').run(
-          member.id,
-          name,
-          role === 'custom' ? 'viewer' : role,
-          hashToken(token),
-        )
-        query('INSERT INTO member_flow_access VALUES (?, ?, 1)').run(
-          member.id,
-          scope.mode,
-        )
-        saveFlowGrants(member.id, scope)
-        if (access) saveDependencyUse(member.id, access)
-        if (role === 'custom')
-          query('INSERT INTO member_roles VALUES (?, ?)').run(
+            throw new ApiError(409, 'Email address unavailable')
+          if (tenantId !== null) activeTenant(db, tenantId)
+          query('INSERT INTO members VALUES (?, ?, ?, ?)').run(
             member.id,
-            roleId!,
+            name,
+            role === 'custom' ? 'viewer' : role,
+            hashToken(token),
           )
-        if (account)
-          query('INSERT INTO accounts VALUES (?, ?, ?)').run(
+          query('INSERT INTO member_flow_access VALUES (?, ?, 1)').run(
             member.id,
-            account.email,
-            account.passwordHash,
+            scope.mode,
           )
-        audit(actor, 'member.created', member.id)
-      }).immediate()
+          query('INSERT INTO member_tenants VALUES (?, ?, 1)').run(
+            member.id,
+            tenantId,
+          )
+          saveFlowGrants(member.id, scope)
+          if (access) saveDependencyUse(member.id, access)
+          if (role === 'custom')
+            query('INSERT INTO member_roles VALUES (?, ?)').run(
+              member.id,
+              roleId!,
+            )
+          if (account)
+            query('INSERT INTO accounts VALUES (?, ?, ?)').run(
+              member.id,
+              account.email,
+              account.passwordHash,
+            )
+          audit(actor, 'member.created', member.id)
+          return resolveMember(member.id)!
+        })
+        .immediate()
 
-      return { ...resolveMember(member.id)!, token }
+      return { ...created, token }
     },
     revokeMember(actor: string, id: string) {
       if (id === 'owner')
@@ -1120,12 +1261,20 @@ export function openStore(path: string, adminToken?: string) {
     listRuntimeKeys(member?: Member) {
       const selected = member?.access.mode === 'selected'
       return query<RuntimeKeyRow & { managed: number }>(
-        `SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys ${selected ? 'WHERE issuer_member_id IS NOT NULL AND flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)' : ''} ORDER BY rowid DESC`,
+        `SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action, tenant_id, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys WHERE 1 = 1 ${selected ? 'AND issuer_member_id IS NOT NULL AND flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)' : ''} ${member && member.role !== 'owner' ? 'AND (tenant_id IS NULL OR issuer_member_id = ? OR (issuer_member_id IS NOT NULL AND tenant_id = ?))' : ''} ORDER BY rowid DESC`,
       )
-        .all(...(selected ? [member!.id] : []))
+        .all(
+          ...(selected ? [member!.id] : []),
+          ...(member && member.role !== 'owner'
+            ? [member.id, member.tenantAssignment.tenantId]
+            : []),
+        )
         .map((row): RuntimeKey => ({
           ...runtimeKey(row),
           ...(row.managed ? { managedBy: 'load-test' } : {}),
+          ...(keyCleanupOnly(member, runtimeKey(row))
+            ? { cleanupOnly: true }
+            : {}),
         }))
     },
     createRuntimeKey(
@@ -1152,6 +1301,7 @@ export function openStore(path: string, adminToken?: string) {
             .max(3),
           expiresAt: z.string().max(100),
           releaseRevision: z.number().int().positive().safe().optional(),
+          tenantId: z.string().min(1).max(80).optional(),
         })
         .strict()
         .safeParse(input)
@@ -1188,6 +1338,7 @@ export function openStore(path: string, adminToken?: string) {
         createdAt: new Date(now).toISOString(),
         revokedAt: null,
         issuerBinding: null,
+        tenantId: null,
       }
       const token = `besh_${randomBytes(32).toString('base64url')}`
 
@@ -1221,13 +1372,22 @@ export function openStore(path: string, adminToken?: string) {
             action,
             JSON.parse(published.published),
           )
-          if (member.access.mode === 'selected') {
+          const graph = JSON.parse(published.published) as Flow
+          const principal = memberRowPrincipal(
+            { db, query },
+            member,
+            graph,
+            value.tenantId,
+          )
+          key.tenantId = principal?.tenantId ?? null
+          if (member.access.mode === 'selected' || principal) {
             if (value.releaseRevision === undefined)
               throw new ApiError(
                 400,
-                'Selected API keys require the current published release pin',
+                'Selected or protected API keys require the current published release pin',
               )
-            key.issuerBinding = { memberId: member.id, action }
+            if (member.role !== 'owner' || action === 'load-tests.run')
+              key.issuerBinding = { memberId: member.id, action }
           }
         }
         // Another process may hold the write lock beyond the requested expiry.
@@ -1293,6 +1453,18 @@ export function openStore(path: string, adminToken?: string) {
                 'runtime-keys.manage',
                 graph,
               )
+            if (currentMember && key.tenantId !== null) {
+              const member = currentMember()
+              if (
+                member.role !== 'owner' &&
+                (key.issuerBinding === null ||
+                  member.tenantAssignment.tenantId !== key.tenantId)
+              )
+                throw new ApiError(
+                  409,
+                  'Historical tenant credentials are available for cleanup only',
+                )
+            }
             issuerAuthority(key, graph, 409)
           }
           if (key.releaseRevision === null) {
@@ -1354,7 +1526,7 @@ export function openStore(path: string, adminToken?: string) {
     },
     authenticateRuntime(token: string): RuntimeKey | null {
       const row = query<RuntimeKeyRow, [string]>(
-        'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action FROM runtime_keys WHERE token_hash = ?',
+        'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action, tenant_id FROM runtime_keys WHERE token_hash = ?',
       ).get(hashToken(token))
 
       if (

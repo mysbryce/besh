@@ -23,6 +23,8 @@ import {
 import { useStudio } from './store'
 import { can } from '../src/workspace/permissions'
 import { ManualPinnedKeyForm } from './runtime-key-manual'
+import { TenantReview, useTenantReview } from './tenant-review'
+import { useTenantContext } from './tenant-context'
 
 const permissionLabels: Record<RuntimePermission, string> = {
   rest: 'REST requests',
@@ -58,6 +60,8 @@ type Creation = {
   releaseRevision?: number
   apiName: string
   route: string
+  tenantId?: string
+  tenantLabel?: string
 }
 
 export function RuntimeKeys() {
@@ -107,6 +111,39 @@ export function RuntimeKeys() {
     ? ['query', 'mutation']
     : ['rest']
   const locked = busy || loading || !!issued
+  const tenantReview = useTenantReview(
+    selected?.id,
+    'published',
+    readable && !!selected?.publishedRevision,
+  )
+  const requiresPin = selectedAccess || tenantReview.required
+  const ownTenantContext = useTenantContext(can(member, 'runtime-keys.manage'))
+
+  useEffect(() => {
+    if (
+      tenantReview.required &&
+      selected?.publishedRevision &&
+      selected.publishedEndpoint
+    )
+      setPin((previous) =>
+        previous?.flowId === selected.id
+          ? previous
+          : {
+              flowId: selected.id,
+              revision: selected.publishedRevision!,
+              endpoint: selected.publishedEndpoint!,
+            },
+      )
+  }, [tenantReview.required, selected?.id, selected?.publishedRevision])
+
+  function tenantLabel(key: Pick<RuntimeKey, 'tenantId'>) {
+    if (!key.tenantId) return 'No tenant identity'
+    if (member?.role === 'owner')
+      return `Original tenant: ${tenantReview.tenants.find((tenant) => tenant.id === key.tenantId)?.label ?? `Tenant ${key.tenantId.slice(0, 8)}`}`
+    return key.tenantId === ownTenantContext.context?.tenant?.id
+      ? `Original tenant: ${ownTenantContext.context.tenant.label}`
+      : 'Original tenant · historical identity'
+  }
 
   function currentSession() {
     const state = useStudio.getState()
@@ -201,7 +238,12 @@ export function RuntimeKeys() {
   }
 
   function issue(value: Creation) {
-    const { apiName: _apiName, route: _route, ...body } = value
+    const {
+      apiName: _apiName,
+      route: _route,
+      tenantLabel: _tenantLabel,
+      ...body
+    } = value
     perform(async (current) => {
       try {
         const created = await api<RuntimeKey & { token: string }>(
@@ -245,6 +287,7 @@ export function RuntimeKeys() {
   function keyStatus(key: RuntimeKey) {
     if (key.revokedAt) return 'Revoked'
     if (Date.parse(key.expiresAt) <= Date.now()) return 'Expired'
+    if (key.cleanupOnly) return 'Cleanup only'
     const flow =
       readable && metadataKnown
         ? flows.find((flow) => flow.id === key.flowId)
@@ -255,7 +298,9 @@ export function RuntimeKeys() {
       ? 'Dormant'
       : key.issuerBinding
         ? 'Current release · linked to member'
-        : 'Active'
+        : key.tenantId
+          ? 'Current release · original tenant'
+          : 'Active'
   }
 
   function perform(work: (current: () => boolean) => Promise<void>) {
@@ -351,7 +396,8 @@ export function RuntimeKeys() {
               !metadataKnown ||
               !name.trim() ||
               !permissions.length ||
-              (selectedAccess && !selectedPin)
+              !tenantReview.ready ||
+              (requiresPin && !selectedPin)
             )
               return
 
@@ -365,6 +411,18 @@ export function RuntimeKeys() {
               ...(selectedPin ? { releaseRevision: selectedPin.revision } : {}),
               apiName: selected.name,
               route: `${endpoint?.method} ${endpoint?.graphql ? '/graphql' : '/run'}${endpoint?.path}`,
+              ...(tenantReview.requestTenantId
+                ? { tenantId: tenantReview.requestTenantId }
+                : {}),
+              ...(tenantReview.required
+                ? {
+                    tenantLabel: tenantReview.owner
+                      ? tenantReview.tenants.find(
+                          (tenant) => tenant.id === tenantReview.tenantId,
+                        )?.label
+                      : tenantReview.context?.tenant?.label,
+                  }
+                : {}),
             }
             if (selectedPin) setReview(value)
             else issue(value)
@@ -430,7 +488,7 @@ export function RuntimeKeys() {
               Release access
               <Select
                 label="Release access"
-                value={selectedPin || selectedAccess ? 'pin' : 'follow'}
+                value={selectedPin || requiresPin ? 'pin' : 'follow'}
                 disabled={locked || !metadataKnown}
                 onValueChange={(value) => {
                   if (
@@ -443,10 +501,10 @@ export function RuntimeKeys() {
                       revision: selected.publishedRevision,
                       endpoint: selected.publishedEndpoint,
                     })
-                  else if (!selectedAccess) setPin(null)
+                  else if (!requiresPin) setPin(null)
                 }}
                 options={[
-                  ...(!selectedAccess
+                  ...(!requiresPin
                     ? [{ value: 'follow', label: 'Follow published changes' }]
                     : []),
                   { value: 'pin', label: 'Only this release' },
@@ -454,6 +512,14 @@ export function RuntimeKeys() {
               />
             </label>
           </div>
+          <TenantReview review={tenantReview} disabled={locked} />
+          {tenantReview.required ? (
+            <p className="credential-note">
+              Protected callers require the current release pin. The original
+              tenant stays unchanged through replacement, publication and
+              rollback.
+            </p>
+          ) : null}
           {selectedPin ? (
             <p className="credential-note">
               Only release {selectedPin.revision} selected. Current published
@@ -543,7 +609,8 @@ export function RuntimeKeys() {
                 !name.trim() ||
                 !permissions.length ||
                 !metadataKnown ||
-                (selectedAccess && !selectedPin)
+                !tenantReview.ready ||
+                (requiresPin && !selectedPin)
               }
             >
               <Plus />
@@ -608,6 +675,12 @@ export function RuntimeKeys() {
                   .join(', ')}
                 <br />
                 Expires {new Date(issuedRecord.expiresAt).toLocaleString()}
+                {issuedRecord.tenantId ? (
+                  <>
+                    <br />
+                    {tenantLabel(issuedRecord)}
+                  </>
+                ) : null}
                 <br />
                 {issuedRecord.issuerBinding ? (
                   <>
@@ -661,6 +734,14 @@ export function RuntimeKeys() {
               <tr key={key.id}>
                 <td>
                   <div>{key.name}</div>
+                  {key.tenantId ? <small>{tenantLabel(key)}</small> : null}
+                  {key.cleanupOnly ? (
+                    <p className="field-help">
+                      Historical tenant access is unavailable. Revoke this key
+                      or ask the owner to review current identity. Replacement
+                      cannot retarget it.
+                    </p>
+                  ) : null}
                   {key.issuerBinding ? (
                     <small>{issuerLabel(key, member)}</small>
                   ) : null}
@@ -688,6 +769,7 @@ export function RuntimeKeys() {
                 </td>
                 <td>
                   {!key.managedBy &&
+                  !key.cleanupOnly &&
                   !key.revokedAt &&
                   Date.parse(key.expiresAt) > Date.now() ? (
                     <Button
@@ -698,7 +780,7 @@ export function RuntimeKeys() {
                         if (locked) return
                         if (
                           !window.confirm(
-                            `Replace API key ${key.name}? The old key stops working immediately. The new key keeps the same API, permissions, ${key.issuerBinding ? 'member link, ' : ''}and expiry. Release access: ${releaseLabel(key)}.${key.issuerBinding ? ` ${issuerLabel(key, member)}.` : ''} Permissions: ${key.permissions.map((permission) => permissionLabels[permission]).join(', ')}. Expires: ${new Date(key.expiresAt).toLocaleString()}.${keyStatus(key) === 'Dormant' ? ' This key remains dormant until its pinned release is current again.' : ''}${key.issuerBinding ? ' The original member must still have its required action, API access and dependency USE.' : ''} Save the new key and update your caller.`,
+                            `Replace API key ${key.name}? The old key stops working immediately. The new key keeps the same API, permissions, ${key.issuerBinding ? 'member link, ' : ''}and expiry. Release access: ${releaseLabel(key)}.${key.issuerBinding ? ` ${issuerLabel(key, member)}.` : ''} Permissions: ${key.permissions.map((permission) => permissionLabels[permission]).join(', ')}. Expires: ${new Date(key.expiresAt).toLocaleString()}.${keyStatus(key) === 'Dormant' ? ' This key remains dormant until its pinned release is current again.' : ''}${key.issuerBinding ? ' The original member must still have its required action, API access and dependency USE.' : ''}${key.tenantId ? ` ${tenantLabel(key)}. Replacement keeps this identity and cannot retarget it after member reassignment.` : ''} Save the new key and update your caller.`,
                           )
                         )
                           return
@@ -820,6 +902,13 @@ export function RuntimeKeys() {
             <br />
             Expires: {new Date(review.expiresAt).toLocaleString()}
           </p>
+          {review.tenantLabel ? (
+            <p>
+              Original tenant: <strong>{review.tenantLabel}</strong>. This
+              identity stays fixed through replacement; current tenant and
+              member authority are checked on every protected call.
+            </p>
+          ) : null}
           {selectedAccess && member ? (
             <p>
               Linked to member {member.name} · API key management. Works only

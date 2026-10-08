@@ -282,6 +282,27 @@ test('owners upload a read-only SQLite copy and preview real table rows', async 
     await expect(result).not.toContainText(
       'GraphQL field could not be resolved',
     )
+    await page.getByRole('button', { name: 'Fit View', exact: true }).click()
+    await expect
+      .poll(() =>
+        page.locator('.canvas').evaluate((canvas) => {
+          const bounds = canvas.getBoundingClientRect()
+          const nodes = [...canvas.querySelectorAll('.react-flow__node')]
+          return (
+            nodes.length === 3 &&
+            nodes.every((node) => {
+              const box = node.getBoundingClientRect()
+              return (
+                box.left >= bounds.left &&
+                box.right <= bounds.right &&
+                box.top >= bounds.top &&
+                box.bottom <= bounds.bottom
+              )
+            })
+          )
+        }),
+      )
+      .toBe(true)
     await page
       .locator('.react-flow__node')
       .filter({ hasText: 'JSON response' })

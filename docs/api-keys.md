@@ -2,7 +2,7 @@
 
 Runtime API keys let a caller use one published Besh API. They are separate from workspace sign-in: owner/member keys and browser sessions manage the workspace, while runtime keys call published endpoints.
 
-Owners and custom members with runtime-key management permission can create, list, replace, or revoke authorized runtime keys. Built-in editors and viewers cannot. Each key has a name, one published API, allowed operations, and an expiration. REST keys allow **REST requests**. GraphQL keys allow **GraphQL queries**, **GraphQL mutations**, or both. These grants cover entire operations; field and record authorization remain planned. Unbound keys remain independent of workspace grant changes; issuer-bound keys also depend on current member authority. See [roles and permissions](roles.md).
+Owners and custom members with runtime-key management permission can create, list, replace, or revoke authorized runtime keys. Built-in editors and viewers cannot. Each key has a name, one published API, allowed operations, and an expiration. REST keys allow **REST requests**. GraphQL keys allow **GraphQL queries**, **GraphQL mutations**, or both. These grants cover entire operations; the separate narrow tenant-row policy is implemented in 0.11, while broader field/record authorization remains planned. Unbound keys remain independent of workspace grant changes for unprotected APIs; issuer-bound keys also depend on current member authority. See [roles and permissions](roles.md).
 
 The normal API picker needs `flows.read`. A selected key manager without API reading instead uses **Shared API ID**, **Known published release**, and **Operation type**, with values reviewed by the owner. No private API lookup is made. Key-management permission still allows authorized inventory, replacement, and revocation; the management API can issue for a known published flow without API reading.
 
@@ -15,7 +15,7 @@ The normal API picker needs `flows.read`. A selected key manager without API rea
 5. Select **Create API key**. Copy the token and save it privately before acknowledging that you saved it.
 6. Configure the caller to send `Authorization: Bearer <runtime-key>` to the published endpoint.
 
-Under **Release access**, all-mode managers can keep **Follow published changes** or choose **Only this release**. Selected managers use **Only this release** and a live issuer binding. A pin captures the reviewed publication. Refresh does not silently move it to a newer revision; use **Use current release** to review that change. **Create release-pinned API key** confirms the API, route, **Only release N**, operations, and exact expiry before **Create pinned key**. The no-read form reviews supplied metadata instead of fetching the private route; after `409`, **Review supplied release** or an edited revision makes that review explicit.
+For unprotected APIs, under **Release access**, all-mode managers can keep **Follow published changes** or choose **Only this release**. Selected managers use **Only this release** and a live issuer binding. A pin captures the reviewed publication. Refresh does not silently move it to a newer revision; use **Use current release** to review that change. **Create release-pinned API key** confirms the API, route, **Only release N**, operations, and exact expiry before **Create pinned key**. The no-read form reviews supplied metadata instead of fetching the private route; after `409`, **Review supplied release** or an edited revision makes that review explicit.
 
 For a REST API published at `/hello`:
 
@@ -32,7 +32,7 @@ Use the endpoint shown for the published API. For `/v1/items/:id`, substitute an
 
 A following key has `releaseRevision: null` and accepts the flow's current published behavior. Existing keys keep this default. A pinned key has a positive `releaseRevision` and accepts requests only while that exact revision is currently published. Issue a pin for the current publication; a stale expected revision returns `409` without issuing a key. This is not a way to serve archived releases at separate routes.
 
-A valid pinned key becomes **dormant** when another revision is selected. At the current route it returns `403` before typed input validation or flow effects; an old route that is no longer published returns `404`. Rolling back to its exact revision makes it usable again if it remains unexpired and unrevoked. Expired/revoked keys return `401` and cannot be revived by rollback. Requests already authorized may finish after publication changes.
+A valid pinned key becomes **dormant** when another revision is selected. At the current route it returns `403` before typed input validation or flow effects; an old route that is no longer published returns `404`. Rolling back to its exact revision can restore access if it remains unexpired/unrevoked and current issuer, tenant, and dependency authority still permits the call. Expired/revoked keys return `401` and cannot be revived by rollback. Requests already authorized may finish after publication changes.
 
 Changing an active pin into a dormant one does not revoke it. Replacing a dormant key preserves its dormant pin; issuing a separate current-release or following key is a different decision. Rollback does not undo revocation, and expiry still applies while the key is dormant.
 
@@ -44,7 +44,7 @@ If required published API metadata fails to load, the normal picker blocks creat
 
 ## Replace an active or dormant key
 
-Replacement creates a new token and immediately revokes the old key in one database transaction. It preserves the old key's name, API, allowed operations, exact expiration, and release pin or following mode. It does not renew the lifetime or add permissions.
+Replacement creates a new token and immediately revokes the old key in one database transaction. It preserves the old key's name, API, allowed operations, exact expiration, release pin or following mode, original issuer/action, and tenant identity. It does not renew the lifetime or add permissions.
 
 Keys marked **Managed by load testing** are pinned to their run's starting revision, revoked automatically, and cannot be replaced. Use **Cancel run** to stop the load job; manual key revocation ends its caller access. See [load testing](load-testing.md).
 
@@ -72,7 +72,7 @@ The dashboard retains an issued token in memory until you acknowledge saving it.
 
 ## Revoke or let a key expire
 
-Use **Revoke** when a caller should stop using an API. Revocation keeps metadata for the key and stops subsequent requests immediately. It does not cancel requests that already passed authentication. Revoking an already revoked key is safe; it stays revoked.
+Use **Revoke** when a caller should stop using an API. Revocation keeps metadata for the key and stops subsequent requests immediately. It cannot undo effects already admitted; protected asynchronous reads also recheck authority before returning rows. Revoking an already revoked key is safe; it stays revoked.
 
 Expiration is required. When the saved expiration arrives, subsequent requests fail even if no one revokes the key. To continue after expiry, create a new key. Replacement before expiry keeps the existing expiration rather than extending it.
 
@@ -80,13 +80,23 @@ Invalid, expired, or revoked credentials return `401`. A valid key for another A
 
 ## Issuer-bound keys
 
-Implemented in 0.10, required nullable metadata `issuerBinding: { memberId, action } | null` identifies a key's original member and authorizing action. Selected issuance requires an explicit current pin and derives the binding on the server. A bound key depends on that issuer's current action, API access, and dependency USE for the immutable release. Removing authority or deleting the issuer denies calls with `403`; old unbound keys remain independent. Restoring the authority can restore access while the key is unexpired, unrevoked, and its pin is current. Owner/all-mode ordinary issuance remains unbound.
+Implemented in 0.10, required nullable metadata `issuerBinding: { memberId, action } | null` identifies a key's original member and authorizing action. Selected issuance requires an explicit current pin and derives the binding on the server. A bound key depends on that issuer's current action, API access, and dependency USE for the immutable release. Removing authority or deleting the issuer denies calls with `403`; old unbound keys retain unprotected behavior; newly protected resources require tenant authority. Restoring the authority can restore access while the key is unexpired, unrevoked, and its pin is current. Owner/all-mode ordinary issuance for unprotected APIs remains unbound.
 
 Replacement checks current actor and original issuer authority and retains issuer/action/pin/grants/exact expiry, even for an owner. Blocked issuer authority returns `409` without replacement. Deleting a member retains a fail-closed issuer identity instead of clearing it. Checks also run around asynchronous data/provider work and before results; they do not undo already performed effects or promise cancellation of admitted work.
 
-Selected key managers can list/manage bound keys for their shared APIs, while unbound keys are hidden as `404`. This is shared-API administration, not a claim that keys belong only to the member who created them. Revocation and scoped cleanup require the action/API scope but do not require retained USE. Managed load-test keys remain nonreplaceable.
+Selected key managers can list/manage authorized bound keys for their shared APIs, while unbound keys are hidden as `404`. Tenant-bearing entries have the additional visibility restrictions below for every non-owner. This is shared-API administration, not a claim that keys belong only to the member who created them. Revocation and scoped cleanup require the action/API scope but do not require retained USE. Managed load-test keys remain nonreplaceable.
 
 Rows show **Linked to member _name_ · API key management** or **Load testing** for managed keys. Another issuer uses **Original member** and a short ID without a team lookup. **Current release · linked to member** describes metadata, not a guarantee that live issuer permissions allow a call. This is not product-user, record, field, or tenant authorization. See [selected actions and USE](roles.md#selected-api-actions-and-dependency-use).
+
+## Protected tenant keys
+
+Implemented in 0.11. A protected key has `tenantId` identifying an approved immutable tenant value, plus a required current-release pin. The owner reviews a tenant under **Protected tenant rows** / **Reviewed tenant**. Every non-owner, including an all-mode manager, uses their current assigned tenant and gets a live original-member/action binding; there is no arbitrary identity picker. Ordinary request fields cannot establish identity.
+
+A protected caller needs the active approved identity, matching live issuer assignment/authority, current resource policies, and the exact current pin. Reassignment or retirement denies existing calls; restoring matching authority may restore an unexpired, unrevoked current pin. Resource data/policies stay live rather than being frozen by that pin. Legacy null-tenant keys cannot read a newly protected resource.
+
+Replacement preserves tenant, issuer/action, pin, grants, and exact expiry, including owner replacement of a bound key. A non-owner cannot replace an independent owner-origin protected key or switch it to another tenant. Foreign-tenant entries are omitted from every non-owner's inventory and hidden direct IDs return `404`. Own historical entries remain visible for revoke/cancel as **cleanup-only** after reassignment; this does not permit replacement or calling. Action/API scope still applies, while cleanup does not require USE. Null-tenant cleanup cannot upgrade a legacy credential into tenant authority.
+
+Keep issued tokens private; lost creation/replacement responses still require refresh and one-time-secret recovery described above. See [row protection](row-protection.md) for owner setup and restore limits.
 
 ## Product login attempts
 
@@ -96,7 +106,7 @@ GitHub product login binds each BEGIN attempt to the runtime key that started it
 
 Save runtime tokens privately in the caller's server configuration or secret store. Do not place them in browser code, browser storage, URLs, or logs. The server stores token hashes and shows raw tokens only when creating or replacing a key. Key lists and audit records contain metadata, not tokens.
 
-A SQLite backup saves key hashes, scope, release pins, issuer bindings, expiration, and revocation state; it cannot recover a raw token. Restoring an older backup can restore old keys/member authority and omit a later replacement. Review restored metadata and revoke or replace restored access before resuming callers. Retain the new token privately when replacement is used.
+A SQLite backup saves key hashes, scope, release pins, issuer bindings, tenant identity, expiration, and revocation state; it cannot recover a raw token. Restoring an older backup can restore old keys/member authority and omit a later replacement. Review restored metadata and revoke or replace restored access before resuming callers. Retain the new token privately when replacement is used.
 
 GitHub connection secrets use a separate encryption key file. SQLite backup downloads omit that file; restore the matching private key with databases containing encrypted product credentials. See [data and recovery](getting-started.md#data-and-recovery) and [product credential recovery](product-auth.md#back-up-the-encryption-key).
 

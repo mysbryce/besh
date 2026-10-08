@@ -39,3 +39,7 @@ By default the loader uses a unique OS temporary directory, exclusively creates 
 Generated code is bounded to 1 MiB; exceeding that limit rejects generation with `400`. Artifacts include source and definition SHA-256 values for checking their exact generated content. A hash is not a signature or proof of publisher authenticity. Performance comparisons belong in [testing](testing.md); route registration alone establishes no latency, throughput, or production-capacity guarantee.
 
 Each publication currently rebuilds the complete router. Local measurements show higher total create/publish cost as successive publications rebuild larger route sets. Compilation/rebuild optimization remains future work; these samples establish no production-scale claim.
+
+## Live row policies
+
+Implemented in 0.11. Generated modules still invoke server-owned adapter policies and private credential identity. An immutable graph artifact, edited projection, or rollback cannot remove live resource protection. Unsupported protected shapes fail closed; the graph pin does not freeze tenant assignments, row policies, or data. See [row protection](row-protection.md).

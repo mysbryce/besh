@@ -63,6 +63,11 @@ const LoadTests = lazy(() =>
 const Updates = lazy(() =>
   import('./updates').then((module) => ({ default: module.Updates })),
 )
+const TenantProtection = lazy(() =>
+  import('./tenant-protection').then((module) => ({
+    default: module.TenantProtection,
+  })),
+)
 
 type Setup = { required: boolean; name: string }
 type Page =
@@ -78,6 +83,7 @@ type Page =
   | 'product-login'
   | 'load-tests'
   | 'updates'
+  | 'tenant-protection'
 
 const navigation = [
   { id: 'builder', name: 'API Studio', icon: Workflow },
@@ -87,6 +93,7 @@ const navigation = [
   { id: 'load-tests', name: 'Load testing', icon: Gauge },
   { id: 'audit', name: 'Audit trail', icon: Activity },
   { id: 'members', name: 'Members', icon: Users },
+  { id: 'tenant-protection', name: 'Tenant protection', icon: ShieldCheck },
   { id: 'keys', name: 'API keys', icon: KeyRound },
   { id: 'account', name: 'Account & sessions', icon: UserRound },
   { id: 'backups', name: 'Data & backups', icon: Database },
@@ -179,12 +186,12 @@ export function App() {
   const forbidden =
     selectedAccess && !selectedPages.includes(page)
       ? true
-      : page === 'members' || page === 'updates'
+      : page === 'members' || page === 'updates' || page === 'tenant-protection'
         ? state.member.role !== 'owner'
         : !!grants &&
           !grants.some((permission) => can(state.member, permission))
   const deniedTitle =
-    page === 'members' || page === 'updates'
+    page === 'members' || page === 'updates' || page === 'tenant-protection'
       ? 'Owner access required'
       : state.member.role === 'custom' ||
           page === 'builder' ||
@@ -232,6 +239,10 @@ export function App() {
           <nav aria-label="Workspace navigation">
             {navigation
               .filter(({ id }) => !selectedAccess || selectedPages.includes(id))
+              .filter(
+                ({ id }) =>
+                  id !== 'tenant-protection' || state.member?.role === 'owner',
+              )
               .map(({ id, name, icon: Icon }) => (
                 <button
                   key={id}
@@ -375,9 +386,12 @@ export function App() {
                     ? 'Only the owner can manage members and roles.'
                     : page === 'updates'
                       ? 'Only the owner can manage Besh release settings and update notices.'
-                      : page === 'load-tests' && state.member.role !== 'custom'
-                        ? `Your ${state.member.role} role cannot run or view workspace load tests. Ask an owner to test the published API.`
-                        : `Your ${memberRoleName(state.member)} role needs ${grants?.map((permission) => permissionCatalog.find((entry) => entry.id === permission)?.label).join(' or ')} access. Ask the workspace owner to review your grants.`}
+                      : page === 'tenant-protection'
+                        ? 'Only the owner can approve tenant identities and row protection.'
+                        : page === 'load-tests' &&
+                            state.member.role !== 'custom'
+                          ? `Your ${state.member.role} role cannot run or view workspace load tests. Ask an owner to test the published API.`
+                          : `Your ${memberRoleName(state.member)} role needs ${grants?.map((permission) => permissionCatalog.find((entry) => entry.id === permission)?.label).join(' or ')} access. Ask the workspace owner to review your grants.`}
                 </p>
               </div>
             ) : page === 'builder' ? (
@@ -410,6 +424,8 @@ export function App() {
               <Account />
             ) : page === 'updates' ? (
               <Updates />
+            ) : page === 'tenant-protection' ? (
+              <TenantProtection />
             ) : (
               <Operations key={page} page={page} />
             )}

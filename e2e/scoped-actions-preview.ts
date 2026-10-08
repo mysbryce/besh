@@ -515,13 +515,46 @@ export async function scopedActionsPreviews({
   await page.getByRole('button', { name: 'Sign out', exact: true }).click()
   let privateFlowReads = 0
   let noReadSession = true
+  const rowAccessPath = `/api/flows/${flow.id}/row-access`
+  const rowAccessReads: Promise<{
+    path: string
+    source: string | null
+    metadata: unknown
+  }>[] = []
   page.on('request', (request) => {
+    const path = new URL(request.url()).pathname
     if (
       noReadSession &&
-      new URL(request.url()).pathname.startsWith('/api/flows')
+      path.startsWith('/api/flows') &&
+      path !== rowAccessPath
     )
       privateFlowReads++
   })
+  page.on('response', (response) => {
+    const url = new URL(response.url())
+    if (noReadSession && url.pathname === rowAccessPath)
+      rowAccessReads.push(
+        response.json().then((metadata: unknown) => ({
+          path: url.pathname,
+          source: url.searchParams.get('source'),
+          metadata,
+        })),
+      )
+  })
+  async function assertRowAccessReads() {
+    expect(rowAccessReads.length).toBeGreaterThan(0)
+    for (const read of await Promise.all(rowAccessReads))
+      expect(read).toEqual({
+        path: rowAccessPath,
+        source: 'published',
+        metadata: {
+          source: 'published',
+          revision: 2,
+          required: false,
+          supported: true,
+        },
+      })
+  }
   await page.getByLabel('Workspace token').fill(keyManager.token)
   await page
     .getByRole('button', { name: 'Open workspace', exact: true })
@@ -544,7 +577,7 @@ export async function scopedActionsPreviews({
   await capture(
     'Permissions',
     'Selected key-only supplied release',
-    'A key manager without Read APIs supplies a known current revision for a shared API ID. No private definition or endpoint metadata is fetched.',
+    'A key manager without Read APIs supplies a known current revision for a shared API ID. Only action-authorized minimal row-protection review is read; private definitions, endpoints and schemas stay unread.',
   )
   await page
     .getByRole('button', { name: 'Create API key', exact: true })
@@ -561,6 +594,7 @@ export async function scopedActionsPreviews({
   })
   expect(noReadResult.status()).toBe(200)
   expect(privateFlowReads).toBe(0)
+  await assertRowAccessReads()
   await expect(
     page.getByRole('region', { name: 'Save API key', exact: true }),
   ).toContainText('Current release unknown')
@@ -617,7 +651,7 @@ export async function scopedActionsPreviews({
   await capture(
     'Mobile dark',
     'No-read pinned key form phone',
-    'Shared IDs and owner-provided revision inputs remain contained; the member-linked release workflow needs no forbidden API metadata request.',
+    'Shared IDs and owner-provided revision inputs remain contained. Minimal row-protection review is action-authorized; private API definitions, endpoints and schemas stay unread.',
   )
   await appearance('Light')
   await capture(
@@ -627,6 +661,7 @@ export async function scopedActionsPreviews({
   )
   await page.setViewportSize({ width: 1440, height: 1000 })
   expect(privateFlowReads).toBe(0)
+  await assertRowAccessReads()
   noReadSession = false
   await page.getByRole('button', { name: 'Sign out', exact: true }).click()
   await page.getByLabel('Workspace token').fill(token)

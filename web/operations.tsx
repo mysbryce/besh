@@ -38,13 +38,16 @@ import type {
   DependencyDatabase,
   DependencySource,
 } from '../src/workspace/dependency-model'
+import type { Tenant } from '../src/workspace/tenant-model'
+import { TenantAssignmentEditor } from './tenant-assignment'
+import { useTenantContext } from './tenant-context'
 
 export function Operations({
   page,
 }: {
   page: 'audit' | 'members' | 'backups'
 }) {
-  const { token, member, task, busy, message } = useStudio()
+  const { token, member, sessionId, task, busy, message } = useStudio()
   const [audit, setAudit] = useState<AuditEvent[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [backups, setBackups] = useState<Backup[]>([])
@@ -60,20 +63,28 @@ export function Operations({
     emptyDependencyCatalog,
   )
   const [sharingMember, setSharingMember] = useState<Member | null>(null)
+  const [tenantMember, setTenantMember] = useState<Member | null>(null)
+  const [tenants, setTenants] = useState<Tenant[]>([])
+  const [newTenantId, setNewTenantId] = useState('none')
   const [issued, setIssued] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const backupAllowed = can(member, 'backups.manage')
+  const tenantContext = useTenantContext(page === 'backups')
+  const backupGranted = can(member, 'backups.manage')
+  const backupAllowed =
+    backupGranted &&
+    (member?.role === 'owner' ||
+      tenantContext.context?.backupsOwnerOnly === false)
   const migrationsAllowed = can(member, 'migrations.read')
   const allowed =
     page === 'members'
       ? member?.role === 'owner'
       : page === 'audit'
         ? can(member, 'audit.read')
-        : backupAllowed || migrationsAllowed
+        : backupGranted || migrationsAllowed
   const sharingCompatible = selectedRoleCompatible(
     role === 'viewer' || role === 'editor' ? role : 'custom',
     roles.find((item) => item.id === role)?.permissions ?? ['sources.write'],
@@ -98,6 +109,7 @@ export function Operations({
         sources,
         databaseConnections,
         authConnections,
+        identities,
       ] = await Promise.all([
         api<Member[]>('/api/members', token),
         api<Role[]>('/api/roles', token),
@@ -108,15 +120,21 @@ export function Operations({
           token,
         ),
         api<DependencyAuth[]>('/api/dependencies/auth-connections', token),
+        api<Tenant[]>('/api/tenants', token),
       ])
       setMembers(people)
       setRoles(custom)
       setFlows(available)
       setDependencies({ sources, databaseConnections, authConnections })
+      setTenants(identities)
     }
     if (page === 'backups') {
+      const protection = await tenantContext.refresh()
+      const copiesAllowed =
+        backupGranted &&
+        (member?.role === 'owner' || protection?.backupsOwnerOnly === false)
       const [copies, history] = await Promise.all([
-        backupAllowed
+        copiesAllowed
           ? api<Backup[]>('/api/backups', token)
           : Promise.resolve([]),
         migrationsAllowed
@@ -146,6 +164,7 @@ export function Operations({
               '/api/dependencies/sources',
               '/api/dependencies/database-connections',
               '/api/dependencies/auth-connections',
+              '/api/tenants',
             ]
           : [
               ...(backupAllowed ? ['/api/backups'] : []),
@@ -164,6 +183,7 @@ export function Operations({
             databaseConnections: data[4] as DependencyDatabase[],
             authConnections: data[5] as DependencyAuth[],
           })
+          setTenants(data[6] as Tenant[])
         }
         if (page === 'backups') {
           setBackups(backupAllowed ? (data[0] as Backup[]) : [])
@@ -187,6 +207,7 @@ export function Operations({
     page,
     token,
     member?.id,
+    sessionId,
     member?.permissions,
     allowed,
     backupAllowed,
@@ -254,6 +275,24 @@ export function Operations({
                 (flowAccess.mode === 'selected' && !sharingCompatible)
               )
                 return
+              const initialTenant = tenants.find(
+                (tenant) =>
+                  tenant.id === newTenantId && tenant.state === 'active',
+              )
+              if (newTenantId !== 'none' && !initialTenant) {
+                message(
+                  'Refresh Members and review an active tenant before creating this member.',
+                  true,
+                )
+                return
+              }
+              if (
+                initialTenant &&
+                !window.confirm(
+                  `Create ${name} with assigned tenant ${initialTenant.label}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.`,
+                )
+              )
+                return
               void task(async () => {
                 const created = await api<Member & { token: string }>(
                   '/api/members',
@@ -263,6 +302,7 @@ export function Operations({
                     name,
                     ...roleChoice(role),
                     access: flowAccess,
+                    ...(initialTenant ? { tenantId: initialTenant.id } : {}),
                     ...(email.trim() ? { email: email.trim(), password } : {}),
                   },
                 )
@@ -271,6 +311,7 @@ export function Operations({
                 setEmail('')
                 setPassword('')
                 setFlowAccess({ mode: 'all' })
+                setNewTenantId('none')
                 await refresh()
                 message('Member created. Save their token; it is shown once.')
               })
@@ -338,6 +379,28 @@ export function Operations({
               compatible={sharingCompatible}
               disabled={busy || loading || !!issued}
             />
+            <label>
+              New member tenant
+              <Select
+                label="New member tenant"
+                value={newTenantId}
+                onValueChange={setNewTenantId}
+                disabled={busy || loading || !!issued}
+                options={[
+                  { value: 'none', label: 'No tenant assigned' },
+                  ...tenants
+                    .filter((tenant) => tenant.state === 'active')
+                    .map((tenant) => ({
+                      value: tenant.id,
+                      label: tenant.label,
+                    })),
+                ]}
+              />
+              <small>
+                Optional initial assignment. Review before adding the member; no
+                separate credential creation and reassignment occurs.
+              </small>
+            </label>
             <Button
               disabled={
                 busy ||
@@ -386,6 +449,20 @@ export function Operations({
               onClose={() => setSharingMember(null)}
             />
           ) : null}
+          {tenantMember ? (
+            <TenantAssignmentEditor
+              key={tenantMember.id}
+              member={tenantMember}
+              onRefreshed={(latest) =>
+                setMembers((people) =>
+                  people.map((person) =>
+                    person.id === latest.id ? latest : person,
+                  ),
+                )
+              }
+              onClose={() => setTenantMember(null)}
+            />
+          ) : null}
           <div className="data-table">
             <table>
               <thead>
@@ -394,6 +471,7 @@ export function Operations({
                   <th>Role</th>
                   <th>Access</th>
                   <th>API access</th>
+                  <th>Tenant identity</th>
                 </tr>
               </thead>
               <tbody>
@@ -450,13 +528,48 @@ export function Operations({
                         <Button
                           variant="outline"
                           size="sm"
-                          disabled={busy || !!issued || !!sharingMember}
+                          disabled={
+                            busy ||
+                            !!issued ||
+                            !!sharingMember ||
+                            !!tenantMember
+                          }
                           onClick={() => setSharingMember(person)}
                         >
                           Manage APIs for {person.name}
                         </Button>
                       ) : (
                         <p>Owner access cannot be restricted.</p>
+                      )}
+                    </td>
+                    <td>
+                      {person.role === 'owner' ? (
+                        <p>Owner reviews a tenant for each protected action.</p>
+                      ) : (
+                        <>
+                          <p>
+                            {person.tenantAssignment.tenantId
+                              ? (tenants.find(
+                                  (tenant) =>
+                                    tenant.id ===
+                                    person.tenantAssignment.tenantId,
+                                )?.label ?? 'Assigned tenant')
+                              : 'No tenant assigned'}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={
+                              busy ||
+                              !!issued ||
+                              !!sharingMember ||
+                              !!tenantMember
+                            }
+                            onClick={() => setTenantMember(person)}
+                          >
+                            Manage tenant for {person.name}
+                          </Button>
+                        </>
                       )}
                     </td>
                   </tr>
@@ -503,6 +616,20 @@ export function Operations({
       ) : null}
       {page === 'backups' ? (
         <>
+          {tenantContext.loading ? (
+            <p aria-live="polite">Reviewing workspace backup protection…</p>
+          ) : null}
+          {tenantContext.error ? (
+            <p role="alert" className="form-error">
+              {tenantContext.error} Use Refresh before requesting backups.
+            </p>
+          ) : null}
+          {tenantContext.context?.backupsOwnerOnly ? (
+            <p>
+              Backups are owner-only permanently, including old archives and
+              after removing row protection.
+            </p>
+          ) : null}
           {backupAllowed ? (
             <>
               <div className="backup-callout">
@@ -561,9 +688,19 @@ export function Operations({
                                 )
                                 if (!response.ok)
                                   throw new Error('Download failed')
-                                const url = URL.createObjectURL(
-                                  await response.blob(),
+                                const archive = await response.blob()
+                                const state = useStudio.getState()
+                                if (
+                                  state.member?.id !== member?.id ||
+                                  state.token !== token ||
+                                  state.sessionId !== sessionId
                                 )
+                                  return
+                                if (archive.size !== backup.bytes)
+                                  throw new Error(
+                                    'Backup download interrupted or incomplete. No file saved. Refresh and try again.',
+                                  )
+                                const url = URL.createObjectURL(archive)
                                 const anchor = document.createElement('a')
                                 anchor.href = url
                                 anchor.download = backup.id

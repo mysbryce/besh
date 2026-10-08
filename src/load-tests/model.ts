@@ -19,6 +19,7 @@ export type LoadTestRequest = {
 
 export type LoadTestStart = {
   flowId: string
+  tenantId?: string
   config?: Partial<LoadTestConfig>
   request?: Partial<LoadTestRequest>
 }
@@ -31,6 +32,7 @@ export type LoadTestTarget = {
   path: string
   graphql: { schema: string } | null
   unavailableReason: string | null
+  tenantRequired?: boolean
 }
 
 export type LoadTestSummary = {
@@ -58,6 +60,8 @@ export type LoadTestRun = {
   finishedAt: string | null
   summary: LoadTestSummary | null
   error: string | null
+  tenantId: string | null
+  cleanupOnly?: boolean
 }
 
 export type K6RunInput = {

@@ -4,6 +4,34 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.11.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Owner-approved tenant identities and versioned member assignments, with beginner review and recovery forms.
+- Protected read-only spreadsheet and SQLite APIs using exact tenant predicates before business filters, limits, and returned fields.
+- Protected draft tests, pinned member-linked runtime keys, and managed k6 jobs using current assigned identity.
+- Migration 17 preserving legacy defaults and caller metadata, with reviewed spreadsheet reimport and tested backup restoration.
+
+### Security
+
+- Keep row policies outside editable graphs and reject unsupported protected branches, mixed reads, literals, and GraphQL row shapes.
+- Preserve original spreadsheet cell text and use bound SQLite BINARY equality; request values cannot establish tenant identity.
+- Recheck current credentials, issuer authority, assignment, and resource policy around asynchronous reads before returning rows.
+- Filter tenant-bearing key/job inventory for every non-owner, preserve identity and exact expiry through replacement, and retain authorized historical cleanup.
+- Restrict protected raw resources to the owner; first protection permanently reserves ordinary backup operations for the owner.
+- Bound backup read chunks and check current authority during downloads; keep private SQLite operation metadata out of process arguments.
+- Recheck raw-resource protection after SQLite readers and inside contended source/database deletion and draft-generation transactions.
+
+### Fixed
+
+- Reject incomplete backup downloads before saving or reporting success.
+- Require explicit refresh after stale or unconfirmed tenant/policy saves and fence reviews to the current API, actor, and session.
+- Preserve large Excel imports and relationship-selected worksheet paths while enforcing original-cell storage limits.
+- Keep protected GraphQL business filters supported and mark historical jobs cleanup-only after dependency-use loss.
+- Deny delegated raw reads and mutations when another process activates protection before their final authority checkpoint.
+- Keep complete long tenant labels inside phone action buttons and review headings.
+
 ## 0.10.0-alpha.0 — 2026-10-09
 
 ### Added

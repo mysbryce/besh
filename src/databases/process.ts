@@ -37,13 +37,17 @@ export function databaseProcesses() {
       try {
         if (controller.signal.aborted)
           throw new ApiError(503, 'SQLite read was cancelled')
+        const metadata = Buffer.from(JSON.stringify(operation), 'utf8')
+        if (!metadata.length || metadata.length > 16384)
+          throw new ApiError(400, 'SQLite operation size limit exceeded')
+        const header = Buffer.alloc(4)
+        header.writeUInt32LE(metadata.length)
         child = Bun.spawn(
           [
             process.execPath,
             '--no-env-file',
             '--no-install',
             fileURLToPath(new URL('./worker.ts', import.meta.url)),
-            JSON.stringify(operation),
           ],
           {
             env: {
@@ -52,7 +56,7 @@ export function databaseProcesses() {
                 : {}),
               ...(process.env.TEMP ? { TEMP: process.env.TEMP } : {}),
             },
-            stdin: bytes,
+            stdin: Buffer.concat([header, metadata, bytes]),
             stdout: 'pipe',
             stderr: 'ignore',
           },

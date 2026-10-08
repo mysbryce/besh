@@ -22,6 +22,7 @@ import {
 import { graphqlSchema } from '../flows/graphql'
 import { prepareInput } from '../flows/contracts'
 import { concreteRoute } from '../flows/routes'
+import { memberRowPrincipal, protectedShape } from '../workspace/row-authority'
 import type {
   K6Runner,
   LoadTestRun,
@@ -37,11 +38,13 @@ type RunRow = {
   status: LoadTestRun['status']
   runtime_key_id: string
   actor: string
+  tenant_id: string | null
 }
 
 const startSchema = z
   .object({
     flowId: z.string().min(1).max(100),
+    tenantId: z.string().min(1).max(80).optional(),
     config: z
       .object({
         vus: z.number().int().min(1).max(10).optional(),
@@ -172,6 +175,19 @@ export function loadTestService(
   function assertAccess(member: Member, id: string) {
     requirePermission(member, 'load-tests.run')
     const row = get(id)
+    const bound = store
+      .query<
+        { issuer_member_id: string | null; tenant_id: string | null },
+        [string]
+      >('SELECT issuer_member_id, tenant_id FROM runtime_keys WHERE id = ?')
+      .get(row.runtime_key_id)
+    if (
+      member.role !== 'owner' &&
+      bound?.tenant_id !== null &&
+      bound?.tenant_id !== member.tenantAssignment.tenantId &&
+      bound?.issuer_member_id !== member.id
+    )
+      throw new ApiError(404, 'Load test not found')
     if (member.access.mode === 'selected') {
       const key = store
         .query<
@@ -192,6 +208,46 @@ export function loadTestService(
       )
         throw new ApiError(404, 'Load test not found')
     }
+  }
+
+  function present(row: RunRow, member?: Member): LoadTestRun {
+    const run = { ...JSON.parse(row.metadata), tenantId: row.tenant_id }
+    const tenant =
+      row.tenant_id === null
+        ? null
+        : store
+            .query<{ state: string }, [string]>(
+              'SELECT state FROM tenants WHERE id = ?',
+            )
+            .get(row.tenant_id)
+    if (
+      row.tenant_id !== null &&
+      (tenant?.state !== 'active' ||
+        (member &&
+          member.role !== 'owner' &&
+          row.tenant_id !== member.tenantAssignment.tenantId))
+    )
+      run.cleanupOnly = true
+    if (row.tenant_id !== null && !run.cleanupOnly) {
+      const release = store
+        .query<{ definition: string }, [string, number]>(
+          'SELECT definition FROM releases WHERE flow_id = ? AND revision = ?',
+        )
+        .get(run.flowId, run.revision)
+      if (!release) run.cleanupOnly = true
+      else {
+        try {
+          const definition = JSON.parse(release.definition) as Flow
+          store.checkRuntimeIssuerAuthority(row.runtime_key_id, definition)
+          if (member)
+            authorizeGraph(member, run.flowId, 'load-tests.run', definition)
+        } catch (error) {
+          if (!(error instanceof ApiError)) throw error
+          run.cleanupOnly = true
+        }
+      }
+    }
+    return run
   }
 
   function finish(
@@ -250,7 +306,7 @@ export function loadTestService(
         )
         .all(...(selected ? [member!.id] : []))
         .filter((row) => {
-          if (!selected) return true
+          if (!member) return true
           try {
             authorizeGraph(
               member!,
@@ -258,9 +314,17 @@ export function loadTestService(
               'load-tests.run',
               JSON.parse(row.published),
             )
+            const graph = JSON.parse(row.published) as Flow
+            if (member.role !== 'owner')
+              memberRowPrincipal(store, member, graph)
+            else if (!protectedShape(store, graph).supported) return false
             return true
           } catch (error) {
-            if (error instanceof ApiError && error.status === 404) return false
+            if (
+              error instanceof ApiError &&
+              [400, 403, 404].includes(error.status)
+            )
+              return false
             throw error
           }
         })
@@ -276,21 +340,29 @@ export function loadTestService(
             unavailableReason: flow.nodes.some((node) => node.type === 'social')
               ? 'Product login APIs cannot be load tested automatically'
               : null,
+            ...(protectedShape(store, flow).required
+              ? { tenantRequired: true }
+              : {}),
           }
         })
     },
     list(member?: Member): LoadTestRun[] {
       const selected = member?.access.mode === 'selected'
       return store
-        .query<{ metadata: string }>(
-          `SELECT load_tests.metadata FROM load_tests ${selected ? "JOIN runtime_keys ON runtime_keys.id = load_tests.runtime_key_id WHERE issuer_member_id IS NOT NULL AND issuer_action = 'load-tests.run' AND runtime_keys.flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)" : ''} ORDER BY load_tests.rowid DESC LIMIT 100`,
+        .query<RunRow>(
+          `SELECT load_tests.* FROM load_tests JOIN runtime_keys ON runtime_keys.id = load_tests.runtime_key_id WHERE 1 = 1 ${selected ? "AND issuer_member_id IS NOT NULL AND issuer_action = 'load-tests.run' AND runtime_keys.flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)" : ''} ${member && member.role !== 'owner' ? 'AND (load_tests.tenant_id IS NULL OR issuer_member_id = ? OR (issuer_member_id IS NOT NULL AND load_tests.tenant_id = ?))' : ''} ORDER BY load_tests.rowid DESC LIMIT 100`,
         )
-        .all(...(selected ? [member!.id] : []))
-        .map((row) => JSON.parse(row.metadata))
+        .all(
+          ...(selected ? [member!.id] : []),
+          ...(member && member.role !== 'owner'
+            ? [member.id, member.tenantAssignment.tenantId]
+            : []),
+        )
+        .map((row) => present(row, member))
     },
     get(id: string, member?: Member): LoadTestRun {
       if (member) assertAccess(member, id)
-      return JSON.parse(get(id).metadata)
+      return present(get(id), member)
     },
     start(
       actor: string,
@@ -344,6 +416,12 @@ export function loadTestService(
           const flow = JSON.parse(row.published) as Flow
           if (currentMember)
             authorizeGraph(currentMember(), row.id, 'load-tests.run', flow)
+          const principal = memberRowPrincipal(
+            store,
+            currentMember ? currentMember() : store.member(actor)!,
+            flow,
+            value.tenantId,
+          )
           if (flow.nodes.some((node) => node.type === 'social'))
             throw new ApiError(
               400,
@@ -398,6 +476,7 @@ export function loadTestService(
             finishedAt: null,
             summary: null,
             error: null,
+            tenantId: principal?.tenantId ?? null,
           }
           const key = store.createRuntimeKey(
             actor,
@@ -407,13 +486,23 @@ export function loadTestService(
               permissions: [permission],
               releaseRevision: row.published_revision,
               expiresAt: new Date(Date.now() + 300_000).toISOString(),
+              ...(value.tenantId === undefined
+                ? {}
+                : { tenantId: value.tenantId }),
             },
             currentMember,
             'load-tests.run',
           )
           store
-            .query('INSERT INTO load_tests VALUES (?, ?, ?, ?, ?)')
-            .run(run.id, JSON.stringify(run), 'running', key.id, actor)
+            .query('INSERT INTO load_tests VALUES (?, ?, ?, ?, ?, ?)')
+            .run(
+              run.id,
+              JSON.stringify(run),
+              'running',
+              key.id,
+              actor,
+              run.tenantId,
+            )
           store.audit(actor, 'load-test.started', run.id)
           return {
             run,
@@ -468,7 +557,7 @@ export function loadTestService(
         })
         .immediate()
       controller?.abort()
-      return JSON.parse(get(id).metadata)
+      return present(get(id), currentMember?.())
     },
     close() {
       if (closed) return

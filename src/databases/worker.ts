@@ -133,7 +133,20 @@ function inspect(db: Database): DatabaseTable[] {
 }
 
 try {
-  const bytes = new Uint8Array(await Bun.stdin.arrayBuffer())
+  const input = Buffer.from(await Bun.stdin.arrayBuffer())
+  if (input.length < 4 || input.length > 4 + 16384 + 2 * 1024 * 1024)
+    fail('SQLite input size limit exceeded')
+  const metadataLength = input.readUInt32LE(0)
+  if (
+    !metadataLength ||
+    metadataLength > 16384 ||
+    metadataLength + 4 >= input.length
+  )
+    fail('Invalid SQLite operation')
+  const operation = JSON.parse(
+    input.subarray(4, 4 + metadataLength).toString('utf8'),
+  )
+  const bytes = new Uint8Array(input.subarray(4 + metadataLength))
   if (
     bytes.length < 100 ||
     bytes.length > 2 * 1024 * 1024 ||
@@ -154,7 +167,6 @@ try {
     if (db.query('PRAGMA quick_check(1)').values()[0]?.[0] !== 'ok')
       fail('Upload a valid SQLite database export')
     const tables = inspect(db)
-    const operation = JSON.parse(process.argv[2] ?? '{"action":"inspect"}')
     if (operation.action === 'inspect') {
       process.stdout.write(JSON.stringify({ tables }))
     } else if (operation.action === 'read') {
@@ -193,15 +205,35 @@ try {
         typeof filterValue !== filtered.type
       )
         fail('Filter value must match the inspected column type')
-      const sql = `SELECT ${selected.map((column) => quote(column.label)).join(', ')} FROM ${quote(table.name)}${filtered ? ` WHERE ${quote(filtered.label)} IS ?` : ''} LIMIT ?`
-      const values = filtered
-        ? [
-            typeof filterValue === 'boolean'
-              ? Number(filterValue)
-              : filterValue,
-            operation.limit,
-          ]
-        : [operation.limit]
+      const tenant = operation.tenant
+      const tenantColumn = tenant
+        ? table.columns.find((column) => column.key === tenant.column)
+        : undefined
+      if (
+        tenant &&
+        (!tenantColumn ||
+          tenantColumn.type !== 'string' ||
+          typeof tenant.value !== 'string')
+      )
+        fail('Choose an inspected text tenant column')
+      const predicates = [
+        ...(tenantColumn
+          ? [`${quote(tenantColumn.label)} COLLATE BINARY = ?`]
+          : []),
+        ...(filtered ? [`${quote(filtered.label)} IS ?`] : []),
+      ]
+      const sql = `SELECT ${selected.map((column) => quote(column.label)).join(', ')} FROM ${quote(table.name)}${predicates.length ? ` WHERE ${predicates.join(' AND ')}` : ''} LIMIT ?`
+      const values = [
+        ...(tenantColumn ? [tenant.value] : []),
+        ...(filtered
+          ? [
+              typeof filterValue === 'boolean'
+                ? Number(filterValue)
+                : filterValue,
+              operation.limit,
+            ]
+          : [operation.limit]),
+      ]
       const rows: DataRow[] = db
         .query(sql)
         .values(...values)

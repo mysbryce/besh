@@ -16,6 +16,8 @@ import { parseRequestInput, RequestForm, routeParameters } from './flow-forms'
 import { api } from './lib/api'
 import { useStudio } from './store'
 import { can } from '../src/workspace/permissions'
+import { TenantReview, useTenantReview } from './tenant-review'
+import { useTenantContext } from './tenant-context'
 
 const defaults: LoadTestConfig = {
   vus: 1,
@@ -56,6 +58,15 @@ export function LoadTests() {
     targets.find((target) => target.id === targetId) ?? targets[0]
   const running = runs.find((run) => run.status === 'running')
   const result = runs.find((run) => run.id === runId) ?? running ?? runs[0]
+  const tenantContext = useTenantContext(can(member, 'load-tests.run'))
+  function historyTenant(run: LoadTestRun) {
+    if (!run.tenantId) return 'No tenant identity'
+    return run.tenantId === tenantContext.context?.tenant?.id
+      ? `Original tenant: ${tenantContext.context.tenant.label}`
+      : member?.role === 'owner'
+        ? `Original tenant: ${run.tenantId.slice(0, 8)}`
+        : 'Original tenant · historical identity'
+  }
 
   function current() {
     const state = useStudio.getState()
@@ -244,12 +255,12 @@ export function LoadTests() {
             disabled={
               busy || loading || !!running || !!selected.unavailableReason
             }
-            onRun={(request, config) => {
+            onRun={(request, config, tenantId, tenantLabel) => {
               if (pending.current || useStudio.getState().busy || !current())
                 return
               if (
                 !window.confirm(
-                  `Send repeated LIVE ${selected.method} requests to ${endpointPath(selected)}? This can change data for writes and mutations. Run ${config.vus} virtual user${config.vus === 1 ? '' : 's'} for ${config.durationSeconds} second${config.durationSeconds === 1 ? '' : 's'}.`,
+                  `Send repeated LIVE ${selected.method} requests to ${endpointPath(selected)}? ${tenantLabel ? `Original tenant: ${tenantLabel}. ` : ''}This can change data for writes and mutations. Run ${config.vus} virtual user${config.vus === 1 ? '' : 's'} for ${config.durationSeconds} second${config.durationSeconds === 1 ? '' : 's'}.`,
                 )
               )
                 return
@@ -257,6 +268,7 @@ export function LoadTests() {
                 flowId: selected.id,
                 config,
                 request,
+                ...(tenantId ? { tenantId } : {}),
               })
             }}
           />
@@ -272,6 +284,7 @@ export function LoadTests() {
         <Results
           run={result}
           busy={busy}
+          tenantLabel={historyTenant(result)}
           onCancel={() => void perform(`/api/load-tests/${result.id}/cancel`)}
         />
       ) : null}
@@ -293,6 +306,12 @@ export function LoadTests() {
               >
                 <strong>{run.flowName}</strong>
                 <span>{statusLabels[run.status]}</span>
+                {run.tenantId ? (
+                  <small>
+                    {historyTenant(run)}
+                    {run.cleanupOnly ? ' · Cleanup only' : ''}
+                  </small>
+                ) : null}
                 <small>
                   {new Date(run.createdAt).toLocaleString()} · v{run.revision} ·{' '}
                   {run.config.vus} VU · {run.config.durationSeconds}s
@@ -315,7 +334,12 @@ function StartForm({
 }: {
   target: LoadTestTarget
   disabled: boolean
-  onRun: (request: LoadTestRequest, config: LoadTestConfig) => void
+  onRun: (
+    request: LoadTestRequest,
+    config: LoadTestConfig,
+    tenantId?: string,
+    tenantLabel?: string,
+  ) => void
 }) {
   const [config, setConfig] = useState(defaults)
   const [settings, setSettings] = useState(false)
@@ -335,6 +359,12 @@ function StartForm({
   const [variablesJson, setVariablesJson] = useState('{}')
   const [operationName, setOperationName] = useState('')
   const [seeding, setSeeding] = useState(!!target.graphql)
+  const tenantReview = useTenantReview(
+    target.id,
+    'published',
+    true,
+    target.revision,
+  )
 
   useEffect(() => {
     if (!target.graphql) return
@@ -359,6 +389,7 @@ function StartForm({
 
   function start(event: React.FormEvent) {
     event.preventDefault()
+    if (!tenantReview.ready) return
     setError('')
     try {
       if (
@@ -409,7 +440,18 @@ function StartForm({
         throw new Error(
           'Enter a value for every path parameter in Request inputs.',
         )
-      onRun(input, config)
+      onRun(
+        input,
+        config,
+        tenantReview.requestTenantId,
+        tenantReview.required
+          ? tenantReview.owner
+            ? tenantReview.tenants.find(
+                (tenant) => tenant.id === tenantReview.tenantId,
+              )?.label
+            : tenantReview.context?.tenant?.label
+          : undefined,
+      )
     } catch (reason) {
       setError(
         reason instanceof Error ? reason.message : 'Check request inputs.',
@@ -662,8 +704,12 @@ function StartForm({
           {error}
         </p>
       ) : null}
+      <TenantReview review={tenantReview} disabled={disabled} />
       <div className="load-test-actions">
-        <Button disabled={disabled || seeding} type="submit">
+        <Button
+          disabled={disabled || seeding || !tenantReview.ready}
+          type="submit"
+        >
           <Play /> Run load test
         </Button>
         <span>Live requests. Writes and mutations can change data.</span>
@@ -820,10 +866,12 @@ function Results({
   run,
   busy,
   onCancel,
+  tenantLabel,
 }: {
   run: LoadTestRun
   busy: boolean
   onCancel: () => void
+  tenantLabel: string
 }) {
   const summary = run.summary
   return (
@@ -843,6 +891,15 @@ function Results({
         {run.config.durationSeconds} second
         {run.config.durationSeconds === 1 ? '' : 's'}
       </p>
+      {run.tenantId ? (
+        <p>
+          {tenantLabel}. This run keeps its original identity and pinned
+          release.
+          {run.cleanupOnly
+            ? ' Cleanup only: current assignment or authority no longer permits this run. History and cancellation remain available; it cannot be restarted with another tenant.'
+            : ''}
+        </p>
+      ) : null}
       {run.status === 'running' ? (
         <>
           <p role="status">

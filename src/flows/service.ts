@@ -17,6 +17,15 @@ import {
   authorizeGraph,
   type CurrentMember,
 } from '../workspace/authorization'
+import {
+  databaseReadPermit,
+  memberRowPrincipal,
+  protectedShape,
+  rowCheckpoint,
+  runtimeRowPrincipal,
+  sourceReadPermit,
+  type RowPrincipal,
+} from '../workspace/row-authority'
 
 type Row = {
   id: string
@@ -75,6 +84,11 @@ export function flowService(
       sources.validate(flow)
       productAuth.validate(flow)
       databases.validate(flow)
+      if (!protectedShape(store, flow).supported)
+        throw new ApiError(
+          400,
+          'Protected APIs require one protected read between request and response',
+        )
       return flow
     } catch (error) {
       throw new ApiError(
@@ -188,12 +202,13 @@ export function flowService(
     revision: number,
     signal?: AbortSignal,
     checkpoint: () => void = () => {},
+    principal: () => RowPrincipal | null = () => null,
   ) {
     try {
       return await executeFlow(
         definition,
         input,
-        executionContext(actor, id, revision, signal, checkpoint),
+        executionContext(actor, id, revision, signal, checkpoint, principal),
       )
     } catch (error) {
       if (
@@ -212,19 +227,37 @@ export function flowService(
     revision: number,
     signal?: AbortSignal,
     checkpoint: () => void = () => {},
+    principal: () => RowPrincipal | null = () => null,
   ) {
     return {
       readData: (config: Parameters<typeof sources.read>[0]) =>
         db.transaction(() => {
           checkpoint()
-          const rows = sources.read(config)
+          const rows = sources.read(
+            config,
+            sourceReadPermit(store, config.sourceId, principal()),
+          )
           checkpoint()
           return rows
         })(),
       readDatabase: async (config: Parameters<typeof databases.read>[0]) => {
         checkpoint()
-        const rows = await databases.read(config, signal)
+        const permit = databaseReadPermit(
+          store,
+          config.connectionId,
+          config.table,
+          principal(),
+        )
+        const rows = await databases.read(config, signal, permit)
         checkpoint()
+        const current = databaseReadPermit(
+          store,
+          config.connectionId,
+          config.table,
+          principal(),
+        )
+        if (JSON.stringify(current) !== JSON.stringify(permit))
+          throw new ApiError(403, 'Row policy changed during this read')
         return rows
       },
       social: async (
@@ -245,6 +278,51 @@ export function flowService(
   }
 
   return {
+    rowAccess(
+      member: import('../workspace/store').Member,
+      id: string,
+      url: URL,
+    ) {
+      const permissions = [
+        'flows.read',
+        'flows.write',
+        'flows.test',
+        'flows.publish',
+        'runtime-keys.manage',
+        'load-tests.run',
+      ] as const
+      const permitted = permissions.filter((permission) =>
+        can(member, permission),
+      )
+      if (!permitted.length) throw new ApiError(403, 'Permission denied')
+      authorizeFlow(member, id, permitted[0]!)
+      const row = get(id)
+      if (
+        url.searchParams.getAll('source').length > 1 ||
+        [...url.searchParams.keys()].some((key) => key !== 'source')
+      )
+        throw new ApiError(400, 'Choose draft or published row-access source')
+      const source = url.searchParams.get('source') ?? 'published'
+      if (source !== 'draft' && source !== 'published')
+        throw new ApiError(400, 'Choose draft or published row-access source')
+      const allowed =
+        source === 'draft'
+          ? ['flows.read', 'flows.write', 'flows.test', 'flows.publish']
+          : ['flows.read', 'runtime-keys.manage', 'load-tests.run']
+      const permission = permitted.find((value) => allowed.includes(value))
+      if (!permission) throw new ApiError(403, 'Permission denied')
+      if (source === 'published' && !row.published)
+        throw new ApiError(404, 'This API has no published release')
+      const definition = draft(
+        JSON.parse(source === 'draft' ? row.definition : row.published!),
+      )
+      authorizeGraph(member, id, permission, definition)
+      return {
+        source,
+        revision: source === 'draft' ? row.revision : row.published_revision!,
+        ...protectedShape(store, definition),
+      }
+    },
     clientCodeMetadata(id: string, source: unknown) {
       return db
         .transaction(() => {
@@ -469,13 +547,28 @@ export function flowService(
       input: FlowInput,
       signal?: AbortSignal,
       currentMember?: CurrentMember,
+      tenantId?: string,
     ) {
       const row = get(id)
       const saved = draft(JSON.parse(row.definition))
-      const checkpoint = () => {
-        if (currentMember)
-          authorizeGraph(currentMember(), id, 'flows.test', saved)
-      }
+      const principal = () =>
+        memberRowPrincipal(
+          store,
+          currentMember ? currentMember() : store.member(actor)!,
+          saved,
+          tenantId,
+        )
+      const checkpoint = rowCheckpoint(
+        store,
+        saved,
+        () => {
+          active()
+          if (currentMember)
+            authorizeGraph(currentMember(), id, 'flows.test', saved)
+          principal()
+        },
+        principal,
+      )
       checkpoint()
       const definition = valid(saved)
       if (definition.graphql)
@@ -488,6 +581,7 @@ export function flowService(
         row.revision,
         signal,
         checkpoint,
+        principal,
       )
       checkpoint()
       active()
@@ -500,13 +594,28 @@ export function flowService(
       input: unknown,
       signal?: AbortSignal,
       currentMember?: CurrentMember,
+      tenantId?: string,
     ) {
       const row = get(id)
       const saved = draft(JSON.parse(row.definition))
-      const checkpoint = () => {
-        if (currentMember)
-          authorizeGraph(currentMember(), id, 'flows.test', saved)
-      }
+      const principal = () =>
+        memberRowPrincipal(
+          store,
+          currentMember ? currentMember() : store.member(actor)!,
+          saved,
+          tenantId,
+        )
+      const checkpoint = rowCheckpoint(
+        store,
+        saved,
+        () => {
+          active()
+          if (currentMember)
+            authorizeGraph(currentMember(), id, 'flows.test', saved)
+          principal()
+        },
+        principal,
+      )
       checkpoint()
       const definition = valid(saved)
       if (!definition.graphql)
@@ -515,7 +624,14 @@ export function flowService(
         definition,
         input,
         undefined,
-        executionContext(actor, id, row.revision, signal, checkpoint),
+        executionContext(
+          actor,
+          id,
+          row.revision,
+          signal,
+          checkpoint,
+          principal,
+        ),
       )
       checkpoint()
       active()
@@ -541,6 +657,10 @@ export function flowService(
           'Runtime key is pinned to a release that is not currently published',
         )
 
+      const checkpoint = rowCheckpoint(store, release.definition, () => {
+        active()
+        store.checkRuntimeAuthority(key, release.definition)
+      })
       const result = await execute(
         `runtime:${key.id}`,
         release.flowId,
@@ -551,9 +671,10 @@ export function flowService(
         },
         release.revision,
         signal,
-        () => store.checkRuntimeAuthority(key, release.definition),
+        checkpoint,
+        () => runtimeRowPrincipal(store, key, release.definition),
       )
-      store.checkRuntimeAuthority(key, release.definition)
+      checkpoint()
       active()
       audit(`runtime:${key.id}`, 'flow.executed', release.flowId)
       return result
@@ -575,6 +696,10 @@ export function flowService(
           'Runtime key is pinned to a release that is not currently published',
         )
 
+      const checkpoint = rowCheckpoint(store, release.definition, () => {
+        active()
+        store.checkRuntimeAuthority(key, release.definition)
+      })
       const result = await executeGraphql(
         release.definition,
         input,
@@ -584,10 +709,11 @@ export function flowService(
           release.flowId,
           release.revision,
           signal,
-          () => store.checkRuntimeAuthority(key, release.definition),
+          checkpoint,
+          () => runtimeRowPrincipal(store, key, release.definition),
         ),
       )
-      store.checkRuntimeAuthority(key, release.definition)
+      checkpoint()
       active()
       if (result.visited.length)
         audit(`runtime:${key.id}`, 'graphql.executed', release.flowId)

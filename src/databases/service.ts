@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { ApiError } from '../errors'
-import type { Store } from '../workspace/store'
+import type { Member, Store } from '../workspace/store'
 import type {
   DatabaseConnection,
   DatabasePreview,
@@ -10,6 +10,7 @@ import type {
 import { databaseProcesses } from './process'
 import { databaseApi } from './api'
 import type { Flow } from '../flows/model'
+import type { RowReadPermit } from '../workspace/row-authority'
 
 const versionSchema = z.number().int().positive().safe()
 const readFields = {
@@ -91,13 +92,32 @@ export function databaseConnectionService(store: Store) {
       throw new ApiError(400, 'Choose an inspected table and columns')
     return table
   }
+  function rowPolicy(id: string, table: string) {
+    const policy = store
+      .query<
+        {
+          mode: 'unprotected' | 'tenant'
+          version: number
+          column_key: string | null
+        },
+        [string, string]
+      >(
+        'SELECT mode, version, column_key FROM database_row_policies LEFT JOIN database_tenant_columns ON database_tenant_columns.resource_id = database_row_policies.resource_id AND table_name = ? WHERE database_row_policies.resource_id = ?',
+      )
+      .get(table, id)
+    if (!policy || (policy.mode !== 'unprotected' && policy.mode !== 'tenant'))
+      throw new ApiError(503, 'Database row policy is unavailable')
+    if (policy.mode === 'tenant' && !policy.column_key)
+      throw new ApiError(503, 'Protected database tenant column is unavailable')
+    return policy
+  }
   return {
-    list() {
+    list(member: Member) {
       return store
-        .query<Row, []>(
-          'SELECT * FROM database_connections ORDER BY created_at DESC',
+        .query<Row, [number]>(
+          "SELECT database_connections.* FROM database_connections LEFT JOIN database_row_policies ON resource_id = database_connections.id WHERE ? = 1 OR database_row_policies.mode = 'unprotected' ORDER BY created_at DESC",
         )
-        .all()
+        .all(member.role === 'owner' ? 1 : 0)
         .map(present)
     },
     get(id: string) {
@@ -127,8 +147,9 @@ export function databaseConnectionService(store: Store) {
       authorize()
       const id = crypto.randomUUID()
       const time = new Date().toISOString()
-      store.db
+      return store.db
         .transaction(() => {
+          authorize()
           const quota = store
             .query<{ count: number; bytes: number }, []>(
               'SELECT count(*) AS count, coalesce(sum(length(bytes)), 0) AS bytes FROM database_connections',
@@ -152,9 +173,14 @@ export function databaseConnectionService(store: Store) {
               time,
             )
           store.audit(actor, 'database-connection.created', id)
+          store
+            .query(
+              "INSERT INTO database_row_policies VALUES (?, 'unprotected', 1)",
+            )
+            .run(id)
+          return present(row(id))
         })
         .immediate()
-      return present(row(id))
     },
     async preview(
       id: string,
@@ -162,6 +188,7 @@ export function databaseConnectionService(store: Store) {
       signal?: AbortSignal,
       authorize?: () => void,
     ): Promise<DatabasePreview> {
+      authorize?.()
       const parsed = z
         .object({ version: versionSchema, ...readFields })
         .strict()
@@ -197,6 +224,7 @@ export function databaseConnectionService(store: Store) {
       authorize: () => void,
       signal?: AbortSignal,
     ) {
+      authorize()
       const parsed = z
         .object({ version: versionSchema })
         .strict()
@@ -216,6 +244,7 @@ export function databaseConnectionService(store: Store) {
       authorize()
       store.db
         .transaction(() => {
+          authorize()
           expected(id, parsed.data.version)
           store.audit(actor, 'database-connection.checked', id)
         })
@@ -226,7 +255,7 @@ export function databaseConnectionService(store: Store) {
         tables: result.tables as DatabaseTable[],
       }
     },
-    delete(actor: string, id: string, value: unknown) {
+    delete(actor: string, id: string, value: unknown, authorize?: () => void) {
       const parsed = z
         .object({ version: versionSchema })
         .strict()
@@ -238,6 +267,7 @@ export function databaseConnectionService(store: Store) {
         )
       store.db
         .transaction(() => {
+          authorize?.()
           expected(id, parsed.data.version)
           const definitions = store
             .query<{ definition: string }, []>(
@@ -268,14 +298,54 @@ export function databaseConnectionService(store: Store) {
         if (node.type === 'database')
           readOptions(present(row(node.config.connectionId)), node.config)
     },
-    async read(config: DatabaseReadConfig, signal?: AbortSignal) {
-      const current = row(config.connectionId)
-      readOptions(present(current), config)
+    async read(
+      config: DatabaseReadConfig,
+      signal?: AbortSignal,
+      permit?: RowReadPermit,
+    ) {
+      const { current, policy } = store.db.transaction(() => {
+        const current = row(config.connectionId)
+        const table = readOptions(present(current), config)
+        const policy = rowPolicy(config.connectionId, config.table)
+        if (
+          policy.mode === 'tenant' &&
+          (!permit ||
+            permit.column !== policy.column_key ||
+            !table.columns.some(
+              (column) =>
+                column.key === permit.column && column.type === 'string',
+            ) ||
+            permit.policyVersion !== policy.version ||
+            permit.resourceVersion !== current.version)
+        )
+          throw new ApiError(
+            403,
+            'A current trusted tenant identity is required',
+          )
+        return { current, policy }
+      })()
       const result = await workers.run(
         current.bytes,
-        { action: 'read', ...config },
+        {
+          action: 'read',
+          ...config,
+          ...(policy.mode === 'tenant' && permit
+            ? { tenant: { column: permit.column, value: permit.value } }
+            : {}),
+        },
         signal,
       )
+      if (closed) throw new ApiError(503, 'SQLite reader is shutting down')
+      store.db.transaction(() => {
+        const latest = rowPolicy(config.connectionId, config.table)
+        if (
+          row(config.connectionId).version !== current.version ||
+          latest.version !== policy.version ||
+          latest.mode !== policy.mode ||
+          latest.column_key !== policy.column_key
+        )
+          throw new ApiError(403, 'Row policy changed during this read')
+      })()
       return result.rows
     },
     close() {

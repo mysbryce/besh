@@ -31,6 +31,7 @@ export function DatabaseNodeForm({
 }) {
   const state = useStudio()
   const selectedAccess = state.member?.access.mode === 'selected'
+  const structuralOnly = selectedAccess || state.member?.role !== 'owner'
   const [connections, setConnections] = useState<
     (DatabaseConnection | DependencyDatabase)[]
   >([])
@@ -77,7 +78,7 @@ export function DatabaseNodeForm({
     setLoading(true)
     setError('')
     void api<(DatabaseConnection | DependencyDatabase)[]>(
-      selectedAccess
+      structuralOnly
         ? '/api/dependencies/database-connections'
         : '/api/database-connections',
       token,
@@ -99,7 +100,14 @@ export function DatabaseNodeForm({
     return () => {
       active = false
     }
-  }, [token, state.sessionId, state.member?.id, retry, selectedAccess])
+  }, [
+    token,
+    state.sessionId,
+    state.member?.id,
+    retry,
+    selectedAccess,
+    structuralOnly,
+  ])
   const connection = connections.find((item) => item.id === connectionId)
   return (
     <div className="simple-form">

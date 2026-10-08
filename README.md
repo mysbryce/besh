@@ -31,7 +31,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 - [Generated backend routes](docs/runtime-code.md), saved drafts, release history, and rollback.
 - [Client code examples](docs/client-code.md) in eight targets.
 - Built-in k6 load testing with automatic setup and optional goals.
-- [Roles and selected-API sharing](docs/roles.md), workspace accounts, and scoped runtime keys.
+- [Roles and selected-API sharing](docs/roles.md), scoped keys, and [protected tenant rows](docs/row-protection.md).
 - [CSV, Excel, public Sheets](docs/data-sources.md), uploaded SQLite copies, and GitHub product-login templates.
 - Audit logs, migrations, tested backups, and GitHub update notices.
 - Light/dark themes, accessible custom controls, and page/action previews.

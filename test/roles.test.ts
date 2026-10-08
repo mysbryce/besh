@@ -157,6 +157,7 @@ test('custom members receive only chosen actions with one-time atomic credential
     roleName: role.name,
     permissions: ['flows.write'],
     flowAccess: { mode: 'all', flowIds: [], version: 1 },
+    tenantAssignment: { tenantId: null, version: 1 },
     access: {
       mode: 'all',
       flowIds: [],
@@ -1202,7 +1203,7 @@ test('roles, assignments and effective grants survive restart and downloaded bac
     (await (await read('/api/migrations')).json()).map(
       (migration: { version: number }) => migration.version,
     ),
-  ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+  ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
 })
 
 test('pending password sign-in resolves changed assignments after verification and pending creation rechecks deleted roles', async () => {

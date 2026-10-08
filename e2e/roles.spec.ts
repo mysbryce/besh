@@ -408,6 +408,11 @@ test('delegated operators manage keys and run tests without API read access', as
   const headers = { authorization: `Bearer ${token}` }
   const errors: string[] = []
   const privateReads: string[] = []
+  const rowAccessReads: {
+    path: string
+    source: string | null
+    metadata: unknown
+  }[] = []
   let accountOnly = false
   page.on('pageerror', (error) => errors.push(error.message))
   const server = spawn('bun', ['src/index.ts'], {
@@ -448,8 +453,10 @@ test('delegated operators manage keys and run tests without API read access', as
     })
     await page.route('**/*', async (route) => {
       const url = new URL(route.request().url())
+      const rowAccess = /^\/api\/flows\/[^/]+\/row-access$/.test(url.pathname)
       if (
         accountOnly &&
+        !rowAccess &&
         /^\/api\/(flows|roles|members|data-sources|auth-connections|runtime-keys|audit|backups|migrations|load-tests)(\/|$)/.test(
           url.pathname,
         )
@@ -459,11 +466,16 @@ test('delegated operators manage keys and run tests without API read access', as
         !/^\/(api\/|auth\/|setup\/|health$|run\/|graphql\/)/.test(url.pathname)
       )
         return route.continue()
-      await route.fulfill({
-        response: await route.fetch({
-          url: `${backend}${url.pathname}${url.search}`,
-        }),
+      const response = await route.fetch({
+        url: `${backend}${url.pathname}${url.search}`,
       })
+      if (accountOnly && rowAccess)
+        rowAccessReads.push({
+          path: url.pathname,
+          source: url.searchParams.get('source'),
+          metadata: await response.json(),
+        })
+      await route.fulfill({ response })
     })
     const custom = await (
       await page.request.post(`${backend}/api/roles`, {
@@ -610,6 +622,18 @@ test('delegated operators manage keys and run tests without API read access', as
         /^\/api\/(flows|backups|roles|members)(\/|$)/.test(path),
       ),
     ).toEqual([])
+    expect(rowAccessReads.length).toBeGreaterThan(0)
+    for (const read of rowAccessReads)
+      expect(read).toEqual({
+        path: `/api/flows/${seeded.id}/row-access`,
+        source: 'published',
+        metadata: {
+          source: 'published',
+          revision: 1,
+          required: false,
+          supported: true,
+        },
+      })
     accountOnly = false
     const publisherRole = await (
       await page.request.post(`${backend}/api/roles`, {

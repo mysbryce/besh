@@ -98,8 +98,9 @@ type Studio = {
     body: unknown,
     query: Record<string, string>,
     params?: Record<string, string>,
+    tenantId?: string,
   ) => Promise<void>
-  testGraphql: (input: unknown) => Promise<void>
+  testGraphql: (input: unknown, tenantId?: string) => Promise<void>
   publish: () => Promise<void>
   task: (work: () => Promise<void>) => Promise<void>
   message: (notice: string, failed?: boolean) => void
@@ -379,14 +380,19 @@ export const useStudio = create<Studio>((set, get) => ({
     return flow
   },
 
-  async test(body, query, params) {
+  async test(body, query, params, tenantId) {
     const state = get()
     if (!state.id || state.dirty) throw new Error('Save draft before testing.')
     const result = await api<FlowResult>(
       `/api/flows/${state.id}/test`,
       state.token,
       'POST',
-      { body, query, ...(params ? { params } : {}) },
+      {
+        body,
+        query,
+        ...(params ? { params } : {}),
+        ...(tenantId ? { tenantId } : {}),
+      },
     )
     set({
       result,
@@ -413,14 +419,14 @@ export const useStudio = create<Studio>((set, get) => ({
     }))
   },
 
-  async testGraphql(input) {
+  async testGraphql(input, tenantId) {
     const state = get()
     if (!state.id || state.dirty) throw new Error('Save draft before testing.')
     const result = await api<FlowResult>(
       `/api/flows/${state.id}/graphql/test`,
       state.token,
       'POST',
-      input,
+      tenantId ? { ...(input as Record<string, unknown>), tenantId } : input,
     )
     set({
       result,

@@ -2,6 +2,7 @@ import { inflateRawSync } from 'node:zlib'
 import { readSheet } from 'read-excel-file/universal'
 import { ApiError } from '../errors'
 import { Parser } from 'saxen'
+import { storedWorkbook } from './workbook-archive'
 
 const expandedLimit = 16 * 1024 * 1024
 
@@ -255,7 +256,10 @@ export async function readExcel(file: File) {
     const bytes = Buffer.from(await file.arrayBuffer())
     const entries = inspectArchive(bytes)
     const sheetName = inspectXml(entries)
-    const data = await readSheet(new Uint8Array(bytes).buffer, { trim: false })
+    const data = await readSheet(
+      new Uint8Array(storedWorkbook(entries)).buffer,
+      { trim: false },
+    )
     return { data, sheetName }
   } catch (error) {
     if (error instanceof ApiError) throw error

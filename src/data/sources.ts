@@ -5,6 +5,16 @@ import { readExcel } from './spreadsheet-xlsx'
 import { flowSchema, type Flow, type DataReadConfig } from '../flows/model'
 import { z } from 'zod'
 import { fetchGoogleSheet, type SheetFetch } from './google-sheets'
+import {
+  originalCell,
+  encodeProvenance,
+  readProvenance,
+  textColumns,
+} from './provenance'
+import type { RowReadPermit } from '../workspace/row-authority'
+import type { Member } from '../workspace/store'
+import { assertRawResource } from '../workspace/raw-access'
+import { requirePermission } from '../errors'
 
 export type DataColumn = {
   key: string
@@ -40,6 +50,7 @@ type SourceRow = {
   sheet_name: string | null
   created_at: string
   updated_at: string
+  original_cells: Uint8Array | null
 }
 
 const uploadLimit = 2 * 1024 * 1024
@@ -154,14 +165,18 @@ function normalize(data: unknown[][]) {
     keys.add(key)
     return { key, label, type: 'string', nullable: false }
   })
-  const values = data
+  const originals = data
     .slice(1)
     .map((row) => {
       if (row.length > headers.length)
         throw new ApiError(400, 'A row has more values than the header row')
-      return columns.map((_column, index) => typedCell(row[index]))
+      return {
+        values: columns.map((_column, index) => typedCell(row[index])),
+        cells: columns.map((_column, index) => originalCell(row[index])),
+      }
     })
-    .filter((row) => row.some((value) => value !== null))
+    .filter((row) => row.values.some((value) => value !== null))
+  const values = originals.map((row) => row.values)
   if (!values.length)
     throw new ApiError(400, 'Add at least one nonempty data row')
   for (const [index, column] of columns.entries()) {
@@ -190,7 +205,15 @@ function normalize(data: unknown[][]) {
   )
   if (Buffer.byteLength(JSON.stringify(rows)) > 8 * 1024 * 1024)
     throw new ApiError(400, 'Imported snapshot exceeds 8 MiB')
-  return { columns, rows }
+  const provenance = encodeProvenance({
+    format: 1,
+    columns: columns.map((column, index) => ({
+      key: column.key,
+      header: headers[index] as string,
+    })),
+    rows: originals.map((row) => row.cells),
+  })
+  return { columns, rows, provenance }
 }
 
 function metadata(row: SourceRow): DataSource {
@@ -258,6 +281,7 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
     sourceUrl: string | null,
     sheetName: string | null,
     previous?: SourceRow,
+    authorize?: () => void,
   ) {
     const title = name.trim()
     if (!title || title.length > 80)
@@ -275,80 +299,138 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
       sheet_name: sheetName,
       created_at: previous?.created_at ?? now,
       updated_at: now,
+      original_cells: parsed.provenance,
     }
     const result = preview(row)
-    store.db.transaction(() => {
-      if (previous) {
-        if (get(previous.id).version !== previous.version)
-          throw new ApiError(
-            409,
-            'Data source changed. Reload before replacing it.',
-          )
-        const oldColumns = metadata(previous).columns
-        for (const node of references(previous.id, true)) {
-          if (node.type !== 'data') continue
-          for (const key of [
-            ...node.config.columns,
-            ...(node.config.filter ? [node.config.filter.column] : []),
-          ]) {
-            const old = oldColumns.find((column) => column.key === key)
-            const next = parsed.columns.find((column) => column.key === key)
+    store.db
+      .transaction(() => {
+        authorize?.()
+        const member = store.member(actor)
+        if (!member) throw new ApiError(401, 'Authentication required')
+        requirePermission(member, 'sources.write')
+        if (previous) assertRawResource(store, member, 'sources', previous.id)
+        if (previous) {
+          if (get(previous.id).version !== previous.version)
+            throw new ApiError(
+              409,
+              'Data source changed. Reload before replacing it.',
+            )
+          const oldColumns = metadata(previous).columns
+          const policy = store
+            .query<{ mode: string; tenant_column: string | null }, [string]>(
+              'SELECT mode, tenant_column FROM source_row_policies WHERE resource_id = ?',
+            )
+            .get(previous.id)
+          if (policy?.mode === 'tenant') {
+            const provenance = readProvenance(
+              parsed.provenance,
+              parsed.columns,
+              parsed.rows.length,
+            )
+            const previousProvenance = readProvenance(
+              previous.original_cells,
+              oldColumns,
+              previous.row_count,
+            )
+            const old = oldColumns.find(
+              (column) => column.key === policy.tenant_column,
+            )
+            const next = parsed.columns.find(
+              (column) => column.key === policy.tenant_column,
+            )
+            const oldHeader = previousProvenance?.columns.find(
+              (column) => column.key === policy.tenant_column,
+            )?.header
+            const nextHeader = provenance?.columns.find(
+              (column) => column.key === policy.tenant_column,
+            )?.header
             if (
+              !provenance ||
+              !previousProvenance ||
+              !textColumns(provenance).includes(policy.tenant_column!) ||
               !old ||
               !next ||
-              old.type !== next.type ||
               old.label !== next.label ||
-              (!old.nullable && next.nullable)
+              oldHeader !== nextHeader
             )
               throw new ApiError(
                 409,
-                'Replacement changes a published API column or filter type. Keep its columns and types compatible.',
+                'Replacement must preserve the protected original text column',
               )
           }
-        }
-        store
-          .query(
-            'UPDATE data_sources SET name = ?, columns = ?, rows = ?, row_count = ?, version = ?, source_url = ?, sheet_name = ?, updated_at = ? WHERE id = ?',
-          )
-          .run(
-            row.name,
-            row.columns,
-            row.rows,
-            row.row_count,
-            row.version,
-            row.source_url,
-            row.sheet_name,
-            row.updated_at,
-            row.id,
-          )
-      } else
-        store
-          .query(
-            'INSERT INTO data_sources VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          )
-          .run(
-            row.id,
-            row.name,
-            row.kind,
-            row.columns,
-            row.rows,
-            row.row_count,
-            row.version,
-            row.source_url,
-            row.sheet_name,
-            row.created_at,
-            row.updated_at,
-          )
-      store.audit(
-        actor,
-        previous
-          ? kind === 'google-sheets'
-            ? 'data-source.refreshed'
-            : 'data-source.replaced'
-          : 'data-source.imported',
-        row.id,
-      )
-    })()
+          for (const node of references(previous.id, true)) {
+            if (node.type !== 'data') continue
+            for (const key of [
+              ...node.config.columns,
+              ...(node.config.filter ? [node.config.filter.column] : []),
+            ]) {
+              const old = oldColumns.find((column) => column.key === key)
+              const next = parsed.columns.find((column) => column.key === key)
+              if (
+                !old ||
+                !next ||
+                old.type !== next.type ||
+                old.label !== next.label ||
+                (!old.nullable && next.nullable)
+              )
+                throw new ApiError(
+                  409,
+                  'Replacement changes a published API column or filter type. Keep its columns and types compatible.',
+                )
+            }
+          }
+          store
+            .query(
+              'UPDATE data_sources SET name = ?, columns = ?, rows = ?, row_count = ?, version = ?, source_url = ?, sheet_name = ?, updated_at = ?, original_cells = ? WHERE id = ?',
+            )
+            .run(
+              row.name,
+              row.columns,
+              row.rows,
+              row.row_count,
+              row.version,
+              row.source_url,
+              row.sheet_name,
+              row.updated_at,
+              row.original_cells,
+              row.id,
+            )
+        } else
+          store
+            .query(
+              'INSERT INTO data_sources VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            )
+            .run(
+              row.id,
+              row.name,
+              row.kind,
+              row.columns,
+              row.rows,
+              row.row_count,
+              row.version,
+              row.source_url,
+              row.sheet_name,
+              row.created_at,
+              row.updated_at,
+              row.original_cells,
+            )
+        if (!previous)
+          store
+            .query(
+              "INSERT INTO source_row_policies VALUES (?, 'unprotected', NULL, 1)",
+            )
+            .run(row.id)
+        store.audit(
+          actor,
+          previous
+            ? kind === 'google-sheets'
+              ? 'data-source.refreshed'
+              : 'data-source.replaced'
+            : 'data-source.imported',
+          row.id,
+        )
+      })
+      .immediate()
     return result
   }
 
@@ -365,16 +447,24 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
   }
 
   return {
-    list() {
+    list(member?: Member) {
       return store
-        .query<SourceRow, []>('SELECT * FROM data_sources ORDER BY rowid DESC')
+        .query<SourceRow, []>(
+          `SELECT * FROM data_sources ${member && member.role !== 'owner' ? "WHERE id NOT IN (SELECT resource_id FROM source_row_policies WHERE mode = 'tenant')" : ''} ORDER BY rowid DESC`,
+        )
         .all()
         .map(metadata)
     },
     get(id: string) {
       return preview(get(id))
     },
-    async importGoogle(actor: string, name: string, url: string) {
+    async importGoogle(
+      actor: string,
+      name: string,
+      url: string,
+      authorize?: () => void,
+    ) {
+      authorize?.()
       if (!name.trim() || name.trim().length > 80)
         throw new ApiError(400, 'Name must contain 1 to 80 characters')
       const sheet = await fetchGoogleSheet(url, sheetFetch)
@@ -385,9 +475,12 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
         csv(sheet.bytes),
         sheet.sourceUrl,
         null,
+        undefined,
+        authorize,
       )
     },
-    async refresh(actor: string, id: string) {
+    async refresh(actor: string, id: string, authorize?: () => void) {
+      authorize?.()
       const previous = get(id)
       if (previous.kind !== 'google-sheets' || !previous.source_url)
         throw new ApiError(
@@ -403,11 +496,13 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
         sheet.sourceUrl,
         null,
         previous,
+        authorize,
       )
     },
-    delete(actor: string, id: string) {
+    delete(actor: string, id: string, authorize?: () => void) {
       store.db
         .transaction(() => {
+          authorize?.()
           get(id)
           if (references(id).length)
             throw new ApiError(
@@ -434,7 +529,7 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
         }
       }
     },
-    read(config: DataReadConfig) {
+    read(config: DataReadConfig, permit?: RowReadPermit) {
       const row = get(config.sourceId)
       const columns = metadata(row).columns
       if (
@@ -444,6 +539,47 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
       )
         throw new ApiError(400, 'A selected data column does not exist')
       let rows = JSON.parse(row.rows) as DataRow[]
+      const policy = store
+        .query<
+          { mode: string; tenant_column: string | null; version: number },
+          [string]
+        >(
+          'SELECT mode, tenant_column, version FROM source_row_policies WHERE resource_id = ?',
+        )
+        .get(config.sourceId)
+      if (policy?.mode === 'tenant') {
+        if (
+          !permit ||
+          permit.column !== policy.tenant_column ||
+          permit.policyVersion !== policy.version ||
+          permit.resourceVersion !== row.version
+        )
+          throw new ApiError(
+            403,
+            'A current trusted tenant identity is required',
+          )
+        const provenance = readProvenance(
+          row.original_cells,
+          columns,
+          row.row_count,
+        )
+        if (
+          !provenance ||
+          rows.length !== row.row_count ||
+          !textColumns(provenance).includes(permit.column)
+        )
+          throw new ApiError(
+            503,
+            'Protected source provenance is unavailable. Reimport this source.',
+          )
+        const index = provenance.columns.findIndex(
+          (column) => column.key === permit.column,
+        )
+        rows = rows.filter((_, rowIndex) => {
+          const cell = provenance.rows[rowIndex]![index]!
+          return cell.type === 'text' && cell.value === permit.value
+        })
+      }
       if (config.filter) {
         const column = columns.find(
           (item) => item.key === config.filter!.column,
@@ -616,7 +752,9 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
       name: string | undefined,
       file: File,
       id?: string,
+      authorize?: () => void,
     ) {
+      authorize?.()
       const previous = id ? get(id) : undefined
       if (previous && previous.kind !== 'upload')
         throw new ApiError(400, 'Use Refresh for a Google Sheets data source')
@@ -635,7 +773,16 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
       } else if (extension === 'csv') {
         parsed = csv(new Uint8Array(await file.arrayBuffer()))
       } else throw new ApiError(400, 'Choose an .xlsx or .csv file')
-      return save(actor, title, 'upload', parsed, null, sheetName, previous)
+      return save(
+        actor,
+        title,
+        'upload',
+        parsed,
+        null,
+        sheetName,
+        previous,
+        authorize,
+      )
     },
   }
 }
