@@ -2,8 +2,9 @@ import { Elysia, t, type AnyElysia } from 'elysia'
 import { version } from '../package.json'
 import { z } from 'zod'
 import { permissionCatalog, type Permission } from './workspace/permissions'
+import { flowAccessSchema } from './workspace/flow-access'
 import { updateService, type ReleaseFetch } from './updates/service'
-import { openStore, hashToken } from './workspace/store'
+import { openStore, hashToken, type Member } from './workspace/store'
 import { allow, ApiError, requirePermission } from './errors'
 import { flowService } from './flows/service'
 import { clientCodeTargets } from './flows/client-code-model'
@@ -34,6 +35,7 @@ const memberFields = {
   name: z.string().trim().min(1).max(80),
   email: z.string().max(254).optional(),
   password: z.string().max(128).optional(),
+  flowAccess: flowAccessSchema.optional(),
 }
 const createMemberSchema = z.discriminatedUnion('role', [
   z.object({ ...memberFields, ...assignmentFields.editor }).strict(),
@@ -146,6 +148,51 @@ export function createApp(options: AppOptions) {
   )
 
   const managementActors = new WeakMap<Request, string>()
+  function requireFlowRead(member: Member, id: string) {
+    requirePermission(member, 'flows.read')
+    if (
+      member.flowAccess.mode === 'selected' &&
+      !member.flowAccess.flowIds.includes(id)
+    )
+      throw new ApiError(404, 'Flow not found')
+  }
+  function enforceSelectedAccess(member: Member, request: Request) {
+    if (member.flowAccess.mode !== 'selected') return
+    const path = new URL(request.url).pathname
+    const read = request.method === 'GET' || request.method === 'HEAD'
+    if (
+      (read &&
+        [
+          '/api/me',
+          '/api/account',
+          '/api/sessions',
+          '/api/permissions',
+        ].includes(path)) ||
+      (request.method === 'PUT' && path === '/api/account') ||
+      (request.method === 'DELETE' && /^\/api\/sessions\/[^/]+$/.test(path))
+    )
+      return
+    if (read && ['/api/flows', '/api/client-code/targets'].includes(path)) {
+      requirePermission(member, 'flows.read')
+      return
+    }
+    const flow =
+      /^\/api\/flows\/([^/]+)(\/releases(?:\/[^/]+)?|\/openapi|\/client-code|\/backend-code)?$/.exec(
+        path,
+      )
+    if (
+      flow &&
+      (read || (request.method === 'POST' && flow[2] === '/client-code'))
+    ) {
+      let id = ''
+      try {
+        id = decodeURIComponent(flow[1])
+      } catch {}
+      requireFlowRead(member, id)
+      return
+    }
+    throw new ApiError(403, 'Permission denied')
+  }
   function currentPermission(request: Request, permission: Permission) {
     const current = request.headers.has('authorization')
       ? store.authenticate(bearer(request))
@@ -169,6 +216,7 @@ export function createApp(options: AppOptions) {
       }
 
       managementActors.set(request, member.id)
+      enforceSelectedAccess(member, request)
 
       if (session && !['GET', 'HEAD', 'OPTIONS'].includes(request.method))
         browser.checkWrite(request, session.csrfToken)
@@ -182,14 +230,14 @@ export function createApp(options: AppOptions) {
       return clientCodeTargets
     })
     .get('/flows/:id/client-code', ({ member, params, request }) => {
-      requirePermission(member, 'flows.read')
+      requireFlowRead(member, params.id)
       const sources = new URL(request.url).searchParams.getAll('source')
       if (sources.length > 1)
         throw new ApiError(400, 'Choose one example source')
       return flows.clientCodeMetadata(params.id, sources[0])
     })
     .get('/flows/:id/backend-code', ({ member, params, request }) => {
-      requirePermission(member, 'flows.read')
+      requireFlowRead(member, params.id)
       const query = new URL(request.url).searchParams
       const revisions = query.getAll('revision')
       if (
@@ -210,7 +258,7 @@ export function createApp(options: AppOptions) {
       )
     })
     .post('/flows/:id/client-code', ({ member, params, body }) => {
-      requirePermission(member, 'flows.read')
+      requireFlowRead(member, params.id)
       return flows.clientCode(params.id, body)
     })
     .get('/updates', ({ member }) => {
@@ -289,9 +337,14 @@ export function createApp(options: AppOptions) {
     .get('/sessions', ({ member, session }) =>
       sessions.list(member, session?.sessionId),
     )
-    .delete('/sessions/:id', ({ member, params }) =>
-      sessions.revoke(member, params.id),
-    )
+    .delete('/sessions/:id', ({ member, params }) => {
+      if (
+        member.flowAccess.mode === 'selected' &&
+        !sessions.list(member).some((session) => session.id === params.id)
+      )
+        throw new ApiError(404, 'Session not found')
+      return sessions.revoke(member, params.id)
+    })
     .get('/account', ({ member }) => sessions.account(member.id))
     .put(
       '/account',
@@ -431,18 +484,20 @@ export function createApp(options: AppOptions) {
     })
     .get('/flows', ({ member }) => {
       requirePermission(member, 'flows.read')
-      return flows.list()
+      return flows.list(
+        member.flowAccess.mode === 'selected' ? member.id : undefined,
+      )
     })
     .get('/flows/:id', ({ member, params }) => {
-      requirePermission(member, 'flows.read')
+      requireFlowRead(member, params.id)
       return flows.get(params.id)
     })
     .get('/flows/:id/releases', ({ member, params }) => {
-      requirePermission(member, 'flows.read')
+      requireFlowRead(member, params.id)
       return flows.releases(params.id)
     })
     .get('/flows/:id/releases/:revision', ({ member, params }) => {
-      requirePermission(member, 'flows.read')
+      requireFlowRead(member, params.id)
       if (
         !/^[1-9]\d*$/.test(params.revision) ||
         !Number.isSafeInteger(Number(params.revision))
@@ -472,7 +527,7 @@ export function createApp(options: AppOptions) {
       )
     })
     .get('/flows/:id/openapi', ({ member, params, request }) => {
-      requirePermission(member, 'flows.read')
+      requireFlowRead(member, params.id)
       const selections = new URL(request.url).searchParams.getAll('source')
       if (selections.length > 1)
         throw new ApiError(400, 'Choose one OpenAPI source')
@@ -528,6 +583,10 @@ export function createApp(options: AppOptions) {
       allow(member, ['owner'])
       return store.listMembers()
     })
+    .put('/members/:id/flow-access', ({ member, params, body }) => {
+      allow(member, ['owner'])
+      return store.updateFlowAccess(member.id, params.id, body)
+    })
     .put('/members/:id/role', ({ member, params, body }) => {
       allow(member, ['owner'])
       const parsed = assignmentSchema.safeParse(body)
@@ -554,6 +613,7 @@ export function createApp(options: AppOptions) {
         input.role,
         await optionalAccount(input),
         input.role === 'custom' ? input.roleId : undefined,
+        input.flowAccess,
       )
     })
     .delete('/members/:id', ({ member, params }) => {
@@ -629,6 +689,15 @@ export function createApp(options: AppOptions) {
         set.headers['content-security-policy'] =
           "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'; form-action 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
         await boundRequest(request)
+        if (new URL(request.url).pathname.startsWith('/api/')) {
+          const member = request.headers.has('authorization')
+            ? store.authenticate(bearer(request))
+            : sessions.restore(sessionCookie(request))?.member
+          if (member?.flowAccess.mode === 'selected') {
+            managementActors.set(request, member.id)
+            enforceSelectedAccess(member, request)
+          }
+        }
         return runtime.preflight(request, app)
       })
       .onError(({ error, code, set, request }) => {

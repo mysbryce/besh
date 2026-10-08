@@ -128,7 +128,19 @@ Uploaded plugin code must run in a real process/container isolation boundary bef
 
 ## Identity and roles
 
-Single-workspace roles include immutable built-in owner/editor/viewer roles and owner-defined custom roles. Owner has all 15 workspace action grants and alone administers roles, members, and other members' sessions. Editor retains six grants for API read/write/test, source read/write, and product-connection reads. Viewer retains `flows.read`. Custom permissions are explicit with no implied dependencies; they do not establish per-resource or multi-workspace isolation.
+### Selected-API reading
+
+The 0.9 authorization slice separates role actions from member API scope. Existing members default to `all`; owner access is immutable. A `selected` scope is allowed only for a viewer or custom role with permissions contained in `flows.read`, including an empty custom role. It contains at most 256 unique existing API IDs, and an empty set reveals no APIs. Selection never manufactures a missing role permission.
+
+Owner-only member creation can assign the initial scope atomically. Migration 15 adds `member_flow_access`/`member_flow_grants`, defaults old members to all/version 1, and includes scope/selection state in complete backups. Every accepted scope PUT increments the version, audits `member.flow-access.updated`, and revokes affected cookies, even for an identical choice. Role assignment retains compatible scope and increments its version; compatible permission edits keep that version and apply existing grant-change cookie revocation. IDs read back sorted.
+
+Current scope is resolved on bearer/cookie requests, not trusted from cached browser metadata. Incompatible assignment or assigned-role expansion fails before changes. API lists and every direct-ID read/export seam, including history, OpenAPI, client examples, and generated backend source, filter or return the same `404` for unknown and inaccessible IDs before malformed-input validation; members missing `flows.read` retain `403`. Selected global operations are also denied at the current policy boundary. Own account/session operations remain available, while foreign/missing session IDs both return `404`. Already admitted reads may finish.
+
+This slice is read-only workspace sharing. Source/database/provider access remains separate, privileged global actions cannot combine with selected scope, and published runtime credentials remain unchanged. Broader editing/testing needs dependency-use and credential/export checks; field/record/tenant authorization requires a separate trusted principal and enforceable data predicates. See [roles and sharing](roles.md#selected-api-reading) and exact verification in [testing](testing.md).
+
+### Current action roles
+
+Single-workspace roles include immutable built-in owner/editor/viewer roles and owner-defined custom roles. Owner has all 15 workspace action grants and alone administers roles, members, and other members' sessions. Editor retains six grants for API read/write/test, source read/write, and product-connection reads. Viewer retains `flows.read`. Custom permissions are explicit with no implied dependencies. Role actions alone do not select resources; the separate API scope narrows eligible reading. Multi-workspace isolation remains planned.
 
 Migration 11 adds `workspace_roles` and `member_roles`. Role CRUD is owner-only and version-checked; assigned roles cannot be deleted. Grant/assignment changes and audit/session revocations commit atomically. Authentication resolves current grants for every request, including bearer credentials; member keys are not rotated. Public member metadata includes permissions and custom-role ID/name. Own account/session actions remain available without action grants. Complete backups include role/assignment state and sensitive credential records, so `backups.manage` grants access to the whole snapshot. See [roles and permissions](roles.md).
 

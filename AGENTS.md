@@ -40,6 +40,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Never evaluate uploaded JavaScript inside the server process.
 - Keep load tests permission-authorized, bounded, and restricted to the local published API. Owners have the grant by default; custom roles need `load-tests.run`. Use generated k6 scripts and temporary scoped keys; never accept arbitrary target URLs, uploaded scripts, or CLI options. Persist summaries, not request payloads, process logs, or secrets.
 - Resolve current workspace action grants at the server on every request. Keep member/role administration and update notices owner-only. Permission changes and member assignments revoke affected browser sessions with audit; runtime keys keep their separate scope.
+- Preserve selected-API sharing as a separate read-only scope: owner-managed, default all access, eligible viewer/read-only custom roles only, and enforced on every API read/export route. Every accepted scope update advances its version, audits, and revokes affected cookies; bearer requests resolve current access. Never use workspace sharing or projected fields as product/tenant authorization.
 - Keep secrets on the server; store credential hashes where possible. Do not log tokens or payloads by default.
 - Encrypt product OAuth secrets and PKCE verifiers with the private key file. Back up that file separately from SQLite; never commit it or recreate it while encrypted records exist.
 - Save audit events with state changes. Keep migration history and test backup restoration.

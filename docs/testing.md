@@ -19,11 +19,20 @@ Use real SQLite in temporary directories. Test through public routes or exported
 - `bun run preview:all --no-serve`: full page/action walkthrough with masked screenshots and an isolated demo workspace. See [preview inventory](preview.md).
 - `bun run format:check`: formatting.
 
-Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. Tests run against temporary SQLite databases on API ports `4311`–`4313`, `4315`–`4319`, and `4321`, and dashboard port `5179`. The production story serves the built dashboard and API together on port `4314`.
+Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. Tests run against temporary SQLite databases on API ports `4311`–`4313`, `4315`–`4319`, `4321`, and `4326`, and dashboard port `5179`. The production story serves the built dashboard and API together on port `4314`.
 
 ## Verified on 2026-10-08–09
 
 Windows, Bun 1.3.14, Node 22.22.1, TypeScript 7.0.2, Playwright 1.64.0 with installed Chrome.
+
+### Selected-API reading
+
+- Backend validation: 202 tests with 3,456 assertions across 16 files passed. Eight new public HTTP tests cover default all access, selected and empty scopes, every flow read/export, matching hidden/unknown denials before parsing, strict atomic creation and versioned changes, compatible roles, password/current bearer policy, CSRF, session privacy/revocation, concurrency, and backup/restart. Scope grants never add a missing action permission.
+- An actual packaged 0.8 migration-14 backup upgraded to migration 15 through native HTTP. Existing viewer/editor credentials retained all access. Selected REST/GraphQL definitions, releases, OpenAPI, client examples, and backend artifacts enforced matching 404 denials; stale versions, empty selections, all restoration, and a fresh current-backup restore passed. An existing pinned published caller stayed independent. The legacy archive remained byte-identical.
+- Two separate native Bun processes shared SQLite. Concurrent access changes with the same version produced one HTTP 200, one HTTP 409, and one scope-change audit. The peer immediately rejected the old browser cookie and used the latest bearer list/backend-export policy without a management refresh.
+- All 17 browser stories passed in about 5.7 minutes; the final shared journey passed separately in 36.3 seconds. It exercises atomic selected-member creation, incompatible roles, REST/GraphQL exports, hidden IDs and private-read absence, actual cookie revocation/relogin, version conflicts, pending saves, lost response recovery, metadata errors, late responses, empty selections, and all restoration. Public viewport assertions verify the sharing editor opens visibly from lower table rows on desktop and phones before helper scrolling.
+- Two concrete public browser regressions failed before correction: a lost response after a real committed save left another review enabled, and explicit access refresh left the parent table summary stale. The dashboard now requires Refresh after an unconfirmed save and updates both the form and table from the reviewed current policy. A selected member with no APIs sees guidance instead of an imaginary editable graph.
+- The full walkthrough passed in about 5.6 minutes with 510 masked screenshots. All 36 new sharing states were visually inspected, including original-size phone panels, current-policy recovery, masked receipts, permission boundaries, and empty selections. Gallery filters, all image URLs, private-file denial, and light/dark/system persistence passed. The initial production chunk is 449.77 kB before gzip; member controls remain in the lazy operations module. Type checks, build, and whole-repository formatting passed.
 
 ### Generated backend and registered routes
 

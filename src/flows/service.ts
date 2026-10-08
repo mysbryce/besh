@@ -218,10 +218,14 @@ export function flowService(
         )
       return flowClientCode(selected.flow, selected.source, parsed.data)
     },
-    list() {
-      return query<Row, []>('SELECT * FROM flows ORDER BY rowid DESC')
-        .all()
-        .map(present)
+    list(selectedMemberId?: string) {
+      const rows =
+        selectedMemberId === undefined
+          ? query<Row, []>('SELECT * FROM flows ORDER BY rowid DESC').all()
+          : query<Row, [string]>(
+              'SELECT flows.* FROM flows JOIN member_flow_grants ON member_flow_grants.flow_id = flows.id WHERE member_flow_grants.member_id = ? ORDER BY flows.rowid DESC',
+            ).all(selectedMemberId)
+      return rows.map(present)
     },
     get(id: string) {
       return present(get(id))

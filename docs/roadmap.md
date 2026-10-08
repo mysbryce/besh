@@ -2,6 +2,15 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.9: selected-API reading
+
+- Owner-managed all/selected access for viewers or custom roles with only API-read permission; existing/default members retain all access and owner scope stays immutable.
+- API list filtering and direct-ID/read/export checks, including history, OpenAPI, client examples, and generated backend code; selection does not imply source/database access.
+- Versioned atomic scope changes, audit/session revocation, immediate bearer policy, incompatible grant-expansion protection, and additive migration 15.
+- Beginner member creation/assignment and stale-edit recovery, with an empty selection sharing no APIs.
+
+Every accepted scope update advances its version and revokes affected browser sessions, even for the same selection; role assignment also advances that version. Lost or stale save outcomes require explicit refresh/review. This is read-only workspace sharing; runtime caller credentials, broader editing/testing, field/record rules, and tenant isolation remain separate. See [roles and sharing](roles.md#selected-api-reading) and exact verification in [testing](testing.md).
+
 ## Implemented in 0.8: generated backend and registered runtime routes
 
 - Canonical trusted CommonJS artifacts and hashes generated for publication, actual REST method/path and GraphQL routes, and fresh compiled local activation instead of wildcard/path-to-flow dispatch.
@@ -9,7 +18,7 @@ This is the product plan. Planned features are not implementation claims.
 - Additive migration 14, artifact/counter backup inclusion, rollback/startup reconstruction, caught-failure restoration, and fail-closed runtime recovery.
 - Flow-read-authorized current-publication code inspection, copy/download, revision recovery, and clear runtime-dependent module requirements.
 
-Failed peer reconstruction or local router restoration leaves runtime blocked until restart or a successful local publication stage. Ordinary requests retain credential/data/audit SQL; registered routing does not establish a performance improvement or distributed availability. See [published backend code](runtime-code.md) and exact evidence in [testing](testing.md). Selected-API reading is next planned work; field/record/tenant isolation and the remaining platform stay planned.
+Failed peer reconstruction or local router restoration leaves runtime blocked until restart or a successful local publication stage. Ordinary requests retain credential/data/audit SQL; registered routing does not establish a performance improvement or distributed availability. See [published backend code](runtime-code.md) and exact evidence in [testing](testing.md). Selected-API reading is implemented in 0.9; broader editing/testing, field/record/tenant isolation, and the remaining platform stay planned.
 
 ## Implemented in 0.7: optional release-pinned runtime keys
 
@@ -17,7 +26,7 @@ Failed peer reconstruction or local router restoration leaves runtime blocked un
 - Atomic current-publication issuance guards, dormant-key denials before effects, exact rollback reactivation, pin-preserving replacement, and managed load-test revision pins.
 - Additive migration 13 and beginner key mode/status/recovery forms, including key-only management without forbidden API reads.
 
-See [runtime keys](api-keys.md) and [testing](testing.md) for behavior and exact verification. Generated backend routing is implemented in 0.8 above. Selected-API reading, broader resource/dependency checks, and trusted tenant/field/record policies remain planned.
+See [runtime keys](api-keys.md) and [testing](testing.md) for behavior and exact verification. Generated backend routing and selected-API reading are implemented above. Broader resource/dependency checks and trusted tenant/field/record policies remain planned.
 
 ## Implemented in 0.6: server-side client code examples
 
@@ -86,7 +95,7 @@ Verification status and exact platform evidence belong in [testing](testing.md).
 - Beginner response/request/condition/data field forms with optional advanced JSON, generated GraphQL queries and optional schema editing, readable light/dark themes, and a mobile saved-API picker.
 - CSV/Excel imports and public Google Sheets snapshots, reviewed column mapping, generated REST/typed GraphQL drafts, bounded data reads, manual snapshot replacement/refresh, and referenced-source deletion protection.
 
-Current limits: one local workspace, literal or whole-segment parameterized REST paths, exact GraphQL paths, six node types, workspace-wide action roles, manual SQLite backups, read-only spreadsheet snapshots, and uploaded SQLite reads. Per-resource sharing and field/record authorization remain planned. Google Sheets supports public exports; private OAuth, spreadsheet write-back, live external database adapters, and SQL writes remain planned. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
+Current limits: one local workspace, literal or whole-segment parameterized REST paths, exact GraphQL paths, six node types, action roles with optional selected-API reading, manual SQLite backups, read-only spreadsheet snapshots, and uploaded SQLite reads. Broader resource sharing and field/record authorization remain planned. Google Sheets supports public exports; private OAuth, spreadsheet write-back, live external database adapters, and SQL writes remain planned. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
 
 ## Milestone 2: identity and API contracts
 
@@ -97,7 +106,7 @@ Current limits: one local workspace, literal or whole-segment parameterized REST
 - Implemented GitHub product identity template: permission-managed encrypted OAuth connections and draft generation, REST POST or typed GraphQL login mutation, ten-minute state/proof with S256 PKCE, one-use caller/flow/revision/connection binding, and normalized identity output. Product servers retain runtime keys and separate proof, handle their own callbacks, and create their own sessions. Controlled GitHub responses test the boundary; no live OAuth app round trip has been verified.
 - Planned product auth expansion: Discord, Facebook, Google, generic OIDC, product sessions/accounts, and reviewed identity linking. These do not change workspace sign-in.
 - Planned workspace invites and account recovery.
-- Implemented: built-in roles plus owner-managed custom workspace action grants, version checks, member assignment, immediate current-grant resolution, affected session revocation, and audit. Planned: resource-specific sharing and multi-workspace isolation.
+- Implemented: built-in roles plus owner-managed custom workspace action grants, version checks, member assignment, immediate current-grant resolution, affected session revocation, audit, and selected-API reading. Planned: broader resource sharing and multi-workspace isolation.
 - Extend GraphQL with reviewed introspection policy, custom scalar contracts, and subscriptions alongside WebSocket work. Whole-query/mutation runtime grants are implemented; field-level grants remain planned.
 - WebSocket flows, lifecycle events, subscriptions, quotas and revocation.
 - Implemented: safe whole-segment REST path parameters, explicit version-prefix flows, immutable release inspection, and permission-checked rollback. Same-method route overlap is rejected; draft edits and mutable dependencies stay separate from releases.
@@ -139,8 +148,8 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-1. **Selected-API reading.** Start with owner-managed sharing for read-only members. Close listing/direct-ID/history/OpenAPI/client-code/generated-backend seams before broader sharing. Preserve existing all-access defaults; resource grants must not manufacture missing role actions. Keep account/session actions available, show only authorized APIs, and provide beginner assignment/recovery forms. This is resource-scoped workspace access, not product-user or tenant isolation.
-2. **Broader authorization.** Broader editing/testing requires explicit dependency-use checks, scoped runtime-key/load-test operations, and honest privileged backup/audit boundaries. Then add protected read-only tenant rows with server-derived identity binding and mandatory adapter predicates, followed by enforceable field rules. Caller headers/query/body and static projections never establish tenant identity or authorization. Define public endpoint policy and explicit multi-workspace isolation separately. Exercise denials at the server before exposing product data. Add invitations/recovery, reviewed product accounts/sessions/linking, and coordinated key rollover only with a clear lifecycle. Keep whole-operation runtime grants honest until these checks exist.
+1. **Broader API actions and dependency use.** Extend sharing beyond reading only after existing-API editing/testing/publication enforce explicit dependency-use checks and close graph-reference/export paths. Design issuer-bound runtime-key management and bounded k6 behavior against current member policy, including revocation and issuer removal, before enabling these actions for selected members. Preserve current caller credentials until that lifecycle is implemented and tested. Keep whole-workspace backup/audit privileges explicit; selection must not manufacture a missing role action or dependency grant.
+2. **Tenant, field, and product authorization.** Add protected read-only tenant rows with server-derived identity binding and mandatory adapter predicates, followed by enforceable field rules. Caller headers/query/body and static projections never establish tenant identity or authorization. Define public endpoint policy and explicit multi-workspace isolation separately. Exercise denials at the server before exposing product data. Add invitations/recovery, reviewed product accounts/sessions/linking, and coordinated key rollover only with a clear lifecycle. Keep whole-operation runtime grants honest until these checks exist.
 3. **Data connections and query tools.** Extend reviewed adapter capabilities and encrypted server-held credentials to PostgreSQL and MySQL/MariaDB; add MongoDB, Supabase, and Firebase with their own transaction, identity, query, and backup semantics. Add live SQLite connection/write capabilities separately from the uploaded-copy read adapter. Ship bounded parameterized read/write forms, pagination, previews, and explicit transactions one adapter at a time. Add migration dry runs, backup gates, restoration checks, and destructive-change review before schema changes. Private Sheets OAuth, write-back, and scheduled synchronization follow their connection/permission work.
 4. **Graph execution and extensions.** Add typed transformations, bounded outbound HTTP, explicit error/retry paths, and subflows with execution limits. Introduce a versioned declarative plugin manifest and SDK before uploaded code. Require a real isolated process/container, capability grants, integrity checks, and resource/network limits before enabling custom-code plugins. Verify each extension against its actual services.
 5. **Product providers and AI operator.** Verify GitHub with a real OAuth app, exact product callback, and private encryption-key backup. Add Discord, Facebook, Google, and generic OIDC individually with state/PKCE, redirect validation, and safe identity linking. Implement provider settings and capability discovery for Anthropic, OpenAI API, OpenRouter, Ollama/compatible endpoints, and a separate restricted Codex CLI process adapter. Add caller-scoped typed tools, durable proposals, budgets, redaction, cancellation, approvals, and adversarial tests. Do not infer live provider success from mocks or stored configuration.

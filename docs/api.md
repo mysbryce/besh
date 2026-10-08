@@ -4,7 +4,7 @@ Management routes accept a workspace session cookie or `Authorization: Bearer <w
 
 GraphQL runtime endpoints use the GraphQL `data`/`errors` envelope. See [GraphQL guide](graphql.md).
 
-Management action permissions are resolved from the member's current role on every request. Built-in owner/editor/viewer behavior is preserved; custom roles grant explicit workspace-wide actions. Only owners administer members, roles, and other members' sessions. Runtime API keys remain separate. See [roles and permissions](roles.md).
+Management action permissions and API access are resolved from current server state on every request. Built-in action permissions are preserved; custom roles grant explicit actions. Eligible read-only members can also have a selected-API scope, enforced on every API read/export route. Only owners administer members, roles, sharing, and other members' sessions. Runtime API keys remain separate. See [roles and permissions](roles.md).
 
 ## Setup
 
@@ -30,9 +30,9 @@ The setup API also accepts optional `email` and `password` together to create th
 | GET    | `/api/sessions`     | Member's active sessions; owners receive all workspace sessions, with metadata only                                                                                |
 | DELETE | `/api/sessions/:id` | Own session or any session for an owner; returns `{ "ok": true }`                                                                                                  |
 
-Login and restoration return `{ "member": { "id": "...", "name": "...", "role": "viewer", "permissions": ["flows.read"] }, "csrfToken": "...", "sessionId": "...", "expiresAt": "..." }`. Every public member response includes current `permissions`; custom members also include `roleId` and `roleName`. The secret appears only in the `besh_session` HttpOnly, SameSite=Strict cookie, with Secure on HTTPS. Session expiration is fixed at 12 hours. Each member has at most 20 active sessions; the next successful login evicts the oldest transactionally and records an audit event.
+Login and restoration return `{ "member": { "id": "...", "name": "...", "role": "viewer", "permissions": ["flows.read"], "flowAccess": { "mode": "all", "flowIds": [], "version": 1 } }, "csrfToken": "...", "sessionId": "...", "expiresAt": "..." }`. Every public member response includes current `permissions` and `flowAccess`; custom members also include `roleId` and `roleName`. The secret appears only in the `besh_session` HttpOnly, SameSite=Strict cookie, with Secure on HTTPS. Session expiration is fixed at 12 hours. Each member has at most 20 active sessions; the next successful login evicts the oldest transactionally and records an audit event.
 
-Session metadata contains `id`, `memberId`, `memberName`, `createdAt`, `expiresAt`, `lastSeenAt`, and `current`. It excludes secrets, hashes, and payloads. Expired sessions are omitted. An unknown session ID returns `404`; revoking another member's session without owner permission returns `403`. Revoking the current session ends subsequent management access through that cookie.
+Session metadata contains `id`, `memberId`, `memberName`, `createdAt`, `expiresAt`, `lastSeenAt`, and `current`. It excludes secrets, hashes, and payloads. Expired sessions are omitted. An unknown session ID returns `404`; revoking another member's session without owner permission returns `403`, with the selected-mode policy below hiding foreign session IDs as `404`. Revoking the current session ends subsequent management access through that cookie.
 
 Updating an account requires a current password or that same member's valid key in the request body, including for bearer clients. The update retains the current cookie session and revokes the member's others. A bearer-authenticated update has no current cookie session and revokes all that member's sessions. Duplicate email returns `409`; invalid proof returns `403`. The member key is unchanged.
 
@@ -43,7 +43,7 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 | Method | Path                                | Permission / body                                                                       |
 | ------ | ----------------------------------- | --------------------------------------------------------------------------------------- |
 | GET    | `/api/me`                           | Any member; identity and current permissions                                            |
-| GET    | `/api/flows`                        | `flows.read`; full drafts and revision metadata                                         |
+| GET    | `/api/flows`                        | `flows.read`; drafts/revisions filtered by current API scope                            |
 | GET    | `/api/flows/:id`                    | `flows.read`                                                                            |
 | GET    | `/api/flows/:id/releases`           | `flows.read`; immutable revisions and current selection                                 |
 | GET    | `/api/flows/:id/releases/:revision` | `flows.read`; selected definition and current flag                                      |
@@ -58,6 +58,7 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 | GET    | `/api/members`                      | Owner; member metadata without credential hashes or tokens                              |
 | POST   | `/api/members`                      | Owner; name and `viewer`, `editor`, or `custom` role; custom requires `roleId`          |
 | PUT    | `/api/members/:id/role`             | Owner; `{ "role": "viewer" }` or `{ "role": "custom", "roleId": "..." }`                |
+| PUT    | `/api/members/:id/flow-access`      | Owner; exact scope and expected version; see selected-API reading                       |
 | DELETE | `/api/members/:id`                  | Owner; cannot remove bootstrap owner                                                    |
 | GET    | `/api/runtime-keys`                 | `runtime-keys.manage`; metadata including revoked keys                                  |
 | POST   | `/api/runtime-keys`                 | `runtime-keys.manage`; name, flow ID, grants, expiration; token once                    |
@@ -90,6 +91,18 @@ Member creation also accepts optional `email` and `password` together, using the
 Custom role metadata contains `id`, `name`, `permissions`, `version`, `createdAt`, and `updatedAt`. Creation starts at version 1. Names are trimmed, 1 to 80 characters, control-free, unique under SQLite NOCASE (ASCII case-insensitive), and cannot use a built-in role name. Permissions contain zero to 15 unique supported IDs, with no implied dependencies. Updates/deletion require the positive safe-integer version reviewed by the caller; stale versions return `409`. Unknown roles return `404`.
 
 Member role assignment accepts exactly `{ "role": "editor" }`, `{ "role": "viewer" }`, or `{ "role": "custom", "roleId": "..." }`. Permission changes and assignments commit with `role.updated` or `member.role.updated` and affected `session.revoked` events. Role creation/deletion record `role.created`/`role.deleted`. Changing grants revokes sessions for members assigned to that role; assignment changes revoke the member's sessions. Member keys remain valid but resolve current grants on their next request. Renaming a role does not add privileges. Migration 11 adds `workspace_roles` and `member_roles` without changing existing built-in assignments. See [permission catalog and boundaries](roles.md).
+
+## Selected-API reading
+
+Required member metadata includes `flowAccess: { mode: "all" | "selected", flowIds: string[], version: number }`. Existing members and new members without an explicit choice default to `all` with version 1; the owner remains immutable all-access. All mode returns an empty `flowIds` array, while selected IDs are sorted. Roles still determine permitted actions.
+
+Owner-only `PUT /api/members/:id/flow-access` accepts exactly `{ "mode": "all", "version": 1 }` or `{ "mode": "selected", "flowIds": ["<flow-id>"], "version": 1 }`. The expected version must be a positive safe-integer JSON number. Selected IDs must be unique existing strings of 1 to 80 characters, at most 256; an empty array shares no APIs. Malformed bodies return `400`; missing members or selected APIs return `404`; stale versions and owner-scope edits return `409`. `POST /api/members` can also include initial `flowAccess: { "mode": "all" }` or `{ "mode": "selected", "flowIds": [...] }`, without a version, assigning the scope atomically with member creation.
+
+Selected scope is valid only for viewers or custom roles whose permissions are a subset of `flows.read`, including an empty custom role. It never grants a missing action. Editors or custom roles with any other action are incompatible. Incompatible creation returns `400`; incompatible role assignment or an assigned custom-role expansion returns `409` before changes.
+
+Every accepted scope PUT, including an identical scope, increments its version and commits `member.flow-access.updated` with affected `session.revoked` events. Role assignment retains a compatible scope and increments its version; compatible custom-role permission edits do not increment scope version but apply existing grant-change cookie revocation. Bearer keys remain unchanged and resolve current policy on the next request. Already authorized in-flight reads may finish.
+
+API lists are filtered. Every API-ID read/export route requires both `flows.read` and scope: missing action returns `403`; an inaccessible or unknown ID returns `404` before malformed request/query validation. This covers saved drafts, release history/detail, OpenAPI, client metadata/generation, and generated backend code. Selected members retain their own account/session actions; foreign/missing session IDs both return `404`. Other workspace action routes remain denied. Published runtime keys, rows/fields, source/database previews, and tenant authorization are unaffected. Migration 15 adds `member_flow_access`/`member_flow_grants` to complete backups. See [roles and sharing](roles.md#selected-api-reading) and exact verification in [testing](testing.md).
 
 ## Published backend code
 

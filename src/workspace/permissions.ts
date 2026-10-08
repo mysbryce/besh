@@ -1,9 +1,12 @@
+import type { FlowAccess } from './flow-access'
+
 export const permissionCatalog = [
   {
     id: 'flows.read',
     label: 'Read APIs',
     group: 'APIs',
-    description: 'Read drafts, release history, and OpenAPI documents.',
+    description:
+      'Read authorized API drafts, release history, OpenAPI documents, client examples, and generated backend source.',
   },
   {
     id: 'flows.write',
@@ -106,6 +109,7 @@ export type BuiltInRole = 'owner' | 'editor' | 'viewer'
 export type PermissionMember = {
   role: BuiltInRole | 'custom'
   permissions?: readonly string[]
+  flowAccess?: FlowAccess
 }
 
 export const builtinPermissions: Record<BuiltInRole, readonly Permission[]> = {
@@ -126,6 +130,8 @@ export function can(
   permission: Permission,
 ) {
   if (!member) return false
+  if (member.flowAccess?.mode === 'selected' && permission !== 'flows.read')
+    return false
   return (
     member.permissions ??
     (member.role === 'custom' ? [] : builtinPermissions[member.role])

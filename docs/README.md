@@ -6,7 +6,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 
 - [Getting started](getting-started.md): installation, first API, runtime keys, roles, configuration, recovery, project layout, and development commands.
 - [Workspace accounts and sessions](workspace-auth.md): key or email/password sign-in, account changes, session metadata, revocation, and recovery boundaries.
-- [Workspace roles and permissions](roles.md): built-in/custom roles, action grants, member assignment, immediate server checks, and session revocation.
+- [Workspace roles and permissions](roles.md): built-in/custom roles, action grants, selected-API reading, member assignment, current server checks, and session revocation.
 - [Runtime API keys](api-keys.md): create, use, replace, revoke, expire, save one-time tokens, and review restored access.
 - [Published backend code](runtime-code.md): generated modules, registered routes, source inspection, runtime checks, and recovery.
 - [Client code examples](client-code.md): eight server-side targets, saved-source selection, typed inputs, dependencies, and copied-code limits.

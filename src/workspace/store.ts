@@ -5,6 +5,12 @@ import { dirname } from 'node:path'
 import { ApiError } from '../errors'
 import { z } from 'zod'
 import {
+  flowAccessUpdateSchema,
+  supportsSelectedFlows,
+  type FlowAccess,
+  type FlowAccessInput,
+} from './flow-access'
+import {
   builtinPermissions,
   permissionCatalog,
   type BuiltInRole,
@@ -16,6 +22,7 @@ export type Member = {
   name: string
   role: BuiltInRole | 'custom'
   permissions: Permission[]
+  flowAccess: FlowAccess
   roleId?: string
   roleName?: string
 }
@@ -377,6 +384,24 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 15').get()) {
+      db.exec(`CREATE TABLE member_flow_access (
+        member_id TEXT PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
+        mode TEXT NOT NULL CHECK (mode IN ('all', 'selected')),
+        version INTEGER NOT NULL CHECK (version > 0 AND version <= 9007199254740991)
+      );
+      INSERT INTO member_flow_access SELECT id, 'all', 1 FROM members;
+      CREATE TABLE member_flow_grants (
+        member_id TEXT NOT NULL REFERENCES member_flow_access(member_id) ON DELETE CASCADE,
+        flow_id TEXT NOT NULL REFERENCES flows(id),
+        PRIMARY KEY (member_id, flow_id)
+      );`)
+      query('INSERT INTO migrations VALUES (15, ?, ?)').run(
+        'versioned selected API read access for workspace members',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -387,6 +412,9 @@ export function openStore(path: string, adminToken?: string) {
         `INSERT INTO members (id, name, role, token_hash) VALUES ('owner', 'Owner', 'owner', ?)
       ON CONFLICT(id) DO UPDATE SET token_hash = excluded.token_hash`,
       ).run(hash)
+      query(
+        "INSERT OR IGNORE INTO member_flow_access VALUES ('owner', 'all', 1)",
+      ).run()
 
       if (previous?.token_hash !== hash) {
         query("DELETE FROM sessions WHERE member_id = 'owner'").run()
@@ -420,15 +448,41 @@ export function openStore(path: string, adminToken?: string) {
   }
 
   function resolveMember(id: string): Member | null {
+    return db.transaction(() => resolveMemberSnapshot(id))()
+  }
+
+  function resolveMemberSnapshot(id: string): Member | null {
     const row = query<MemberRow, [string]>(
       'SELECT id, name, role FROM members WHERE id = ?',
     ).get(id)
     if (!row) return null
+    const access = query<
+      { mode: 'all' | 'selected'; version: number },
+      [string]
+    >('SELECT mode, version FROM member_flow_access WHERE member_id = ?').get(
+      id,
+    )
+    if (!access) return null
+    const flowAccess: FlowAccess = {
+      ...access,
+      flowIds:
+        access.mode === 'selected'
+          ? query<{ flow_id: string }, [string]>(
+              'SELECT flow_id FROM member_flow_grants WHERE member_id = ? ORDER BY flow_id',
+            )
+              .all(id)
+              .map((grant) => grant.flow_id)
+          : [],
+    }
     const assignment = query<{ role_id: string }, [string]>(
       'SELECT role_id FROM member_roles WHERE member_id = ?',
     ).get(id)
     if (!assignment || row.role === 'owner')
-      return { ...row, permissions: [...builtinPermissions[row.role]] }
+      return {
+        ...row,
+        permissions: [...builtinPermissions[row.role]],
+        flowAccess,
+      }
     const custom = query<RoleRow, [string]>(
       'SELECT * FROM workspace_roles WHERE id = ?',
     ).get(assignment.role_id)
@@ -440,6 +494,7 @@ export function openStore(path: string, adminToken?: string) {
       roleId: custom.id,
       roleName: custom.name,
       permissions: role(custom).permissions,
+      flowAccess,
     }
   }
 
@@ -471,6 +526,29 @@ export function openStore(path: string, adminToken?: string) {
         'Choose a role name and distinct supported permissions',
       )
     return parsed.data
+  }
+
+  function validateFlowAccess(
+    input: FlowAccessInput,
+    permissions: readonly string[],
+    status = 409,
+  ) {
+    if (input.mode !== 'selected') return
+    if (!supportsSelectedFlows(permissions))
+      throw new ApiError(
+        status,
+        'Selected API access requires a read-only role',
+      )
+    for (const id of input.flowIds)
+      if (!query('SELECT id FROM flows WHERE id = ?').get(id))
+        throw new ApiError(404, 'Flow not found')
+  }
+
+  function saveFlowGrants(id: string, input: FlowAccessInput) {
+    query('DELETE FROM member_flow_grants WHERE member_id = ?').run(id)
+    if (input.mode === 'selected')
+      for (const flowId of input.flowIds)
+        query('INSERT INTO member_flow_grants VALUES (?, ?)').run(id, flowId)
   }
 
   function getRole(id: string) {
@@ -557,6 +635,32 @@ export function openStore(path: string, adminToken?: string) {
     query,
     audit,
     member: resolveMember,
+    updateFlowAccess(actor: string, id: string, value: unknown) {
+      const parsed = flowAccessUpdateSchema.safeParse(value)
+      if (!parsed.success)
+        throw new ApiError(
+          400,
+          'Choose all APIs or up to 256 distinct API IDs and the expected access version',
+        )
+      db.transaction(() => {
+        const current = resolveMember(id)
+        if (!current) throw new ApiError(404, 'Member not found')
+        if (current.role === 'owner')
+          throw new ApiError(409, 'Owner API access cannot be changed')
+        if (current.flowAccess.version !== parsed.data.version)
+          throw new ApiError(409, 'API access changed. Reload before saving.')
+        if (current.flowAccess.version === Number.MAX_SAFE_INTEGER)
+          throw new ApiError(409, 'API access version limit reached')
+        validateFlowAccess(parsed.data, current.permissions)
+        query(
+          'UPDATE member_flow_access SET mode = ?, version = version + 1 WHERE member_id = ?',
+        ).run(parsed.data.mode, id)
+        saveFlowGrants(id, parsed.data)
+        revokeSessions(actor, id)
+        audit(actor, 'member.flow-access.updated', id)
+      }).immediate()
+      return resolveMember(id)!
+    },
     listRoles() {
       return query<RoleRow, []>('SELECT * FROM workspace_roles ORDER BY name')
         .all()
@@ -607,6 +711,16 @@ export function openStore(path: string, adminToken?: string) {
         const current = getRole(id)
         if (current.version !== parsed.data.version)
           throw new ApiError(409, 'Role changed. Reload before saving.')
+        if (
+          !supportsSelectedFlows(input.permissions) &&
+          query(
+            "SELECT member_roles.member_id FROM member_roles JOIN member_flow_access ON member_flow_access.member_id = member_roles.member_id WHERE role_id = ? AND mode = 'selected' LIMIT 1",
+          ).get(id)
+        )
+          throw new ApiError(
+            409,
+            'Reassign selected API members before adding global permissions',
+          )
         if (
           query(
             'SELECT id FROM workspace_roles WHERE id != ? AND name = ? COLLATE NOCASE',
@@ -667,7 +781,13 @@ export function openStore(path: string, adminToken?: string) {
         if (!current) throw new ApiError(404, 'Member not found')
         if (current.role === 'owner')
           throw new ApiError(409, 'The owner role cannot be changed')
-        if (assignment.role === 'custom') getRole(assignment.roleId)
+        const permissions =
+          assignment.role === 'custom'
+            ? getRole(assignment.roleId).permissions
+            : builtinPermissions[assignment.role]
+        validateFlowAccess(current.flowAccess, permissions)
+        if (current.flowAccess.version === Number.MAX_SAFE_INTEGER)
+          throw new ApiError(409, 'API access version limit reached')
         query('UPDATE members SET role = ? WHERE id = ?').run(
           assignment.role === 'custom' ? 'viewer' : assignment.role,
           id,
@@ -678,6 +798,9 @@ export function openStore(path: string, adminToken?: string) {
             id,
             assignment.roleId,
           )
+        query(
+          'UPDATE member_flow_access SET version = version + 1 WHERE member_id = ?',
+        ).run(id)
         revokeSessions(actor, id)
         audit(actor, 'member.role.updated', id)
       }).immediate()
@@ -700,6 +823,7 @@ export function openStore(path: string, adminToken?: string) {
         query("INSERT INTO members VALUES ('owner', 'Owner', 'owner', ?)").run(
           hashToken(token),
         )
+        query("INSERT INTO member_flow_access VALUES ('owner', 'all', 1)").run()
         query("UPDATE settings SET value = ? WHERE key = 'workspace'").run(name)
         if (account)
           query('INSERT INTO accounts VALUES (?, ?, ?)').run(
@@ -723,22 +847,26 @@ export function openStore(path: string, adminToken?: string) {
       role: 'editor' | 'viewer' | 'custom',
       account?: { email: string; passwordHash: string },
       roleId?: string,
+      flowAccess: FlowAccessInput = { mode: 'all' },
     ) {
       const member = { id: crypto.randomUUID(), name, role }
       const token = crypto.randomUUID() + crypto.randomUUID()
 
       db.transaction(() => {
-        if (role === 'custom') {
-          if (
-            !roleId ||
-            !query('SELECT id FROM workspace_roles WHERE id = ?').get(roleId)
-          )
-            throw new ApiError(404, 'Role not found')
-        } else if (roleId !== undefined)
+        const custom = role === 'custom' && roleId ? getRole(roleId) : null
+        if (role === 'custom' && !custom)
+          throw new ApiError(404, 'Role not found')
+        if (role !== 'custom' && roleId !== undefined)
           throw new ApiError(
             400,
             'Built-in roles cannot include a custom role ID',
           )
+        validateFlowAccess(
+          flowAccess,
+          custom?.permissions ??
+            builtinPermissions[role as 'editor' | 'viewer'],
+          400,
+        )
         if (
           account &&
           query('SELECT member_id FROM accounts WHERE email = ?').get(
@@ -752,6 +880,11 @@ export function openStore(path: string, adminToken?: string) {
           role === 'custom' ? 'viewer' : role,
           hashToken(token),
         )
+        query('INSERT INTO member_flow_access VALUES (?, ?, 1)').run(
+          member.id,
+          flowAccess.mode,
+        )
+        saveFlowGrants(member.id, flowAccess)
         if (role === 'custom')
           query('INSERT INTO member_roles VALUES (?, ?)').run(
             member.id,

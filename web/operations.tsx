@@ -18,12 +18,15 @@ import {
   type Backup,
   type Member,
   type Role,
+  type SavedFlow,
   memberRoleName,
   type Migration,
 } from './lib/api'
 import { useStudio } from './store'
 import { can } from '../src/workspace/permissions'
 import { Roles, MemberAssignment, roleChoice, roleOptions } from './roles'
+import { FlowAccessFields, FlowAccessEditor } from './flow-access'
+import type { FlowAccessInput } from '../src/workspace/flow-access'
 
 export function Operations({
   page,
@@ -38,6 +41,9 @@ export function Operations({
   const [name, setName] = useState('')
   const [role, setRole] = useState('viewer')
   const [roles, setRoles] = useState<Role[]>([])
+  const [flows, setFlows] = useState<SavedFlow[]>([])
+  const [flowAccess, setFlowAccess] = useState<FlowAccessInput>({ mode: 'all' })
+  const [sharingMember, setSharingMember] = useState<Member | null>(null)
   const [issued, setIssued] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -52,6 +58,11 @@ export function Operations({
       : page === 'audit'
         ? can(member, 'audit.read')
         : backupAllowed || migrationsAllowed
+  const sharingCompatible =
+    role === 'viewer' ||
+    (
+      roles.find((item) => item.id === role)?.permissions ?? ['flows.write']
+    ).every((permission) => permission === 'flows.read')
 
   useEffect(() => {
     if (
@@ -65,12 +76,14 @@ export function Operations({
   async function refresh() {
     if (page === 'audit') setAudit(await api<AuditEvent[]>('/api/audit', token))
     if (page === 'members') {
-      const [people, custom] = await Promise.all([
+      const [people, custom, available] = await Promise.all([
         api<Member[]>('/api/members', token),
         api<Role[]>('/api/roles', token),
+        api<SavedFlow[]>('/api/flows', token),
       ])
       setMembers(people)
       setRoles(custom)
+      setFlows(available)
     }
     if (page === 'backups') {
       const [copies, history] = await Promise.all([
@@ -97,7 +110,7 @@ export function Operations({
       page === 'audit'
         ? ['/api/audit']
         : page === 'members'
-          ? ['/api/members', '/api/roles']
+          ? ['/api/members', '/api/roles', '/api/flows']
           : [
               ...(backupAllowed ? ['/api/backups'] : []),
               ...(migrationsAllowed ? ['/api/migrations'] : []),
@@ -109,6 +122,7 @@ export function Operations({
         if (page === 'members') {
           setMembers(data[0] as Member[])
           setRoles(data[1] as Role[])
+          setFlows(data[2] as SavedFlow[])
         }
         if (page === 'backups') {
           setBackups(backupAllowed ? (data[0] as Backup[]) : [])
@@ -192,6 +206,13 @@ export function Operations({
             className="member-form"
             onSubmit={(event) => {
               event.preventDefault()
+              if (
+                busy ||
+                loading ||
+                !!issued ||
+                (flowAccess.mode === 'selected' && !sharingCompatible)
+              )
+                return
               void task(async () => {
                 const created = await api<Member & { token: string }>(
                   '/api/members',
@@ -200,6 +221,7 @@ export function Operations({
                   {
                     name,
                     ...roleChoice(role),
+                    flowAccess,
                     ...(email.trim() ? { email: email.trim(), password } : {}),
                   },
                 )
@@ -207,6 +229,7 @@ export function Operations({
                 setName('')
                 setEmail('')
                 setPassword('')
+                setFlowAccess({ mode: 'all' })
                 await refresh()
                 message('Member created. Save their token; it is shown once.')
               })
@@ -265,7 +288,22 @@ export function Operations({
                 12 to 128 characters. Leave email blank for key-only access.
               </small>
             </label>
-            <Button disabled={busy || !!issued}>
+            <FlowAccessFields
+              label="New member API access"
+              value={flowAccess}
+              onChange={setFlowAccess}
+              flows={flows}
+              compatible={sharingCompatible}
+              disabled={busy || loading || !!issued}
+            />
+            <Button
+              disabled={
+                busy ||
+                loading ||
+                !!issued ||
+                (flowAccess.mode === 'selected' && !sharingCompatible)
+              }
+            >
               <Plus />
               Add member
             </Button>
@@ -291,6 +329,21 @@ export function Operations({
               </Button>
             </div>
           ) : null}
+          {sharingMember ? (
+            <FlowAccessEditor
+              key={sharingMember.id}
+              member={sharingMember}
+              onChanged={refresh}
+              onRefreshed={(latest) =>
+                setMembers((people) =>
+                  people.map((person) =>
+                    person.id === latest.id ? latest : person,
+                  ),
+                )
+              }
+              onClose={() => setSharingMember(null)}
+            />
+          ) : null}
           <div className="data-table">
             <table>
               <thead>
@@ -298,6 +351,7 @@ export function Operations({
                   <th>Member</th>
                   <th>Role</th>
                   <th>Access</th>
+                  <th>API access</th>
                 </tr>
               </thead>
               <tbody>
@@ -344,6 +398,23 @@ export function Operations({
                           <Trash2 />
                           Revoke
                         </Button>
+                      )}
+                    </td>
+                    <td>
+                      {person.flowAccess?.mode === 'selected'
+                        ? `Selected APIs · ${person.flowAccess.flowIds.length}`
+                        : 'All APIs'}
+                      {person.role !== 'owner' ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={busy || !!issued || !!sharingMember}
+                          onClick={() => setSharingMember(person)}
+                        >
+                          Manage APIs for {person.name}
+                        </Button>
+                      ) : (
+                        <p>Owner access cannot be restricted.</p>
                       )}
                     </td>
                   </tr>

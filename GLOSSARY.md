@@ -37,6 +37,9 @@
 - **Permission**: a named action a member may perform. Roles group permissions.
 - **Custom role**: an owner-defined set of workspace action permissions, assigned to members without changing the built-in owner, editor, or viewer roles.
 - **Role version**: a concurrency value required when editing or deleting a custom role; stale values are rejected.
+- **API access scope**: a member's separate all-API or selected-API reading choice; it cannot grant a role action or change published runtime-key access.
+- **API access version**: the concurrency value advanced by accepted sharing updates or role assignments; stale sharing forms must refresh before saving.
+- **Selected API access**: a read-only sharing mode that lets an eligible member read chosen workspace APIs, without source previews or field/record/tenant authorization.
 - **Update notice**: a manually checked public GitHub release version and link; it does not install an update or establish compatibility or authenticity.
 - **Update settings revision**: the expected version of saved repository/prerelease settings, checked before saving or requesting a release notice.
 - **Member token**: a member credential for workspace management under that member's current role; it cannot invoke published endpoints.

@@ -1,5 +1,6 @@
 import type { Flow } from '../../src/flows/model'
 import type { Permission } from '../../src/workspace/permissions'
+import type { FlowAccess } from '../../src/workspace/flow-access'
 
 export async function apiRulesError(
   contract: Flow['contract'],
@@ -84,6 +85,7 @@ export type Member = {
   name: string
   role: 'owner' | 'editor' | 'viewer' | 'custom'
   permissions: Permission[]
+  flowAccess: FlowAccess
   roleId?: string
   roleName?: string
 }

@@ -4,6 +4,20 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.9.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Owner-managed all-API or selected-API reading for compatible read-only members, including an empty selection.
+- Beginner member access forms, explicit confirmation, version-conflict recovery, and immediate browser-session revocation after access changes.
+- Migration 15 storing member access modes and selected API grants with backup and restart restoration.
+
+### Security
+
+- Filter API lists and enforce selected access for definitions, releases, OpenAPI, client examples, and generated backend code at the server.
+- Keep role actions independent from API selections and reject incompatible global permissions before changing members or custom roles.
+- Preserve separate published runtime credentials and avoid granting related data, account, field, or tenant access implicitly.
+
 ## 0.8.0-alpha.0 — 2026-10-09
 
 ### Added

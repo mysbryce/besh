@@ -271,9 +271,15 @@ export function App() {
               ))
             ) : (
               <p>
-                Your next idea starts here.
-                <br />
-                Create your first API.
+                {state.member.flowAccess.mode === 'selected' ? (
+                  'No APIs shared. Ask the owner to review your API access.'
+                ) : (
+                  <>
+                    Your next idea starts here.
+                    <br />
+                    Create your first API.
+                  </>
+                )}
               </p>
             )}
           </div>
@@ -362,7 +368,19 @@ export function App() {
                 </p>
               </div>
             ) : page === 'builder' ? (
-              <Builder />
+              state.member.flowAccess.mode === 'selected' &&
+              !state.flows.length ? (
+                <div className="empty-panel">
+                  <ShieldCheck />
+                  <h1>No APIs shared</h1>
+                  <p>
+                    Ask the workspace owner to review your selected API access.
+                    You can still manage your own account and sessions.
+                  </p>
+                </div>
+              ) : (
+                <Builder />
+              )
             ) : page === 'data' ? (
               <DataSources onOpenApi={() => setPage('builder')} />
             ) : page === 'database' ? (

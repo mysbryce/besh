@@ -8,7 +8,7 @@ The built-in roles keep their existing behavior:
 
 - **Owner** has all 15 action permissions and alone manages roles, members, other members' browser sessions, and update notices. The bootstrap owner cannot be reassigned or removed.
 - **Editor** reads, edits, and tests APIs; reads and manages sources; and reads product-login connection metadata. Editors can generate drafts from sources and product connections.
-- **Viewer** reads APIs, releases, and OpenAPI documents.
+- **Viewer** reads APIs, releases, OpenAPI documents, and generated client/backend code.
 - **Custom** uses only the selected permissions. An empty role can sign in and manage its own account and sessions but has no product-management actions.
 
 Built-in roles cannot be edited. Custom roles have no implied permissions: granting **Edit APIs** does not automatically grant **Read APIs** or **Test drafts**. Select each action needed for the member's workflow.
@@ -17,7 +17,7 @@ Built-in roles cannot be edited. Custom roles have no implied permissions: grant
 
 | Permission ID                 | Dashboard label                  | Allows                                                                                            |
 | ----------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `flows.read`                  | Read APIs                        | Read saved drafts, release history, and OpenAPI documents                                         |
+| `flows.read`                  | Read APIs                        | Read saved drafts, release history, OpenAPI, and generated client/backend code                    |
 | `flows.write`                 | Edit APIs                        | Create and save drafts                                                                            |
 | `flows.test`                  | Test drafts                      | Execute saved REST/GraphQL drafts, including configured data reads and product-login steps        |
 | `flows.publish`               | Publish and roll back            | Change live behavior by publishing or restoring a release                                         |
@@ -33,7 +33,7 @@ Built-in roles cannot be edited. Custom roles have no implied permissions: grant
 | `migrations.read`             | Read migration history           | Read control-database migration history                                                           |
 | `load-tests.run`              | Run load tests                   | Read published targets/history, start bounded local runs, and cancel them; runs can repeat writes |
 
-These are workspace-wide action grants. They do not restrict members to selected APIs, sources, or database copies. **Test drafts** can reveal data returned by the configured flow without separate source-read or database-read grants. **Manage runtime API keys** can issue caller access without a separate publication grant. **Run load tests** prepares its own managed temporary runtime key and can repeat live mutations. Review these capabilities when choosing grants.
+These are workspace action grants. Existing/default members can read every API when they have **Read APIs**; eligible members can instead use selected-API reading below. Source and database-copy grants remain workspace-wide. **Test drafts** can reveal data returned by the configured flow without separate source-read or database-read grants. **Manage runtime API keys** can issue caller access without a separate publication grant. **Run load tests** prepares its own managed temporary runtime key and can repeat live mutations. Review these capabilities when choosing grants.
 
 Creating a draft from a spreadsheet needs both `sources.read` and `flows.write`. Creating one from an uploaded SQLite copy needs both `database-connections.read` and `flows.write`. Creating a product-login draft needs both `auth-connections.read` and `flows.write`. Testing, publication, and key issuance remain separate actions. For example, a data reviewer can receive `sources.read`; a source-based draft author also needs `flows.read`, `flows.write`, and `flows.test` for the normal Studio workflow. Built-in editors and viewers have no database-copy grants; owners can assign them through a custom role.
 
@@ -62,3 +62,29 @@ Renaming a role without changing its permission set keeps its members' browser s
 Backups include roles, member assignments, and session state. Restoring an old backup can restore old grants and unexpired sessions; review them alongside credentials before serving the restored workspace. A downloaded backup contains more than the downloader's normal page access. Grant `backups.manage` only to someone trusted with the complete workspace snapshot.
 
 Custom roles do not add public endpoints, field/record authorization, product account policies, or multi-workspace tenant isolation. Runtime keys keep their flow scope, operation grants, expiration, and revocation behavior. See [API reference](api.md), [workspace sessions](workspace-auth.md), [runtime keys](api-keys.md), and [roadmap](roadmap.md).
+
+## Selected-API reading
+
+Implemented in 0.9, this lets an owner share only chosen APIs with a read-only member. Exact verification belongs in [testing](testing.md).
+
+The member keeps a role and also has an API-access choice:
+
+- **All APIs** preserves existing/default behavior, subject to the role's permissions. The owner always has all access.
+- **Selected APIs only** permits reading only the chosen APIs. An empty selection shares no APIs.
+
+Selected access is limited to viewers and custom roles whose only possible action is **Read APIs**. An empty custom role is allowed, but selection does not grant it API reading. Editors and custom roles with any other action cannot use selected access. To add an editing, data, key-management, audit, backup, migration, or load-test grant, first change the member to all access and review the wider exposure. Incompatible member creation is rejected; incompatible role assignment or assigned-role expansion is rejected before changing state.
+
+For an eligible member with **Read APIs**, the selection covers API lists, saved drafts, release history, OpenAPI, client examples, and generated backend code. Direct requests for an unshared or unknown API return the same `404`, including malformed read/export requests rejected before input validation. A member without **Read APIs** still receives the normal `403`; selecting IDs never adds the action. A visible graph can contain configured literals and dependency references; sharing it does not grant source/database previews or provider credentials.
+
+1. When adding a viewer or eligible custom member, choose **Selected APIs only** under **API access**, then **Choose APIs to share**. Select the **Share _API name_** checkboxes. No selection means the member can sign in but sees no APIs.
+2. For an existing member, select **Manage APIs for _name_** to open **API sharing for _name_**. Choose **All APIs** or review the selected checkboxes.
+3. Select **Review API sharing**, check the scope and session effects, then **Confirm API sharing**. The affected member signs in again; their existing member key immediately uses the new policy.
+4. After a conflict, your selections stay visible but review is disabled. **Refresh API access** explicitly replaces unsaved selections with the latest policy/version; review that state before submitting again.
+
+If current metadata cannot be loaded, saving stays blocked. If a save response is lost, the change may already have committed: the page shows **Could not confirm whether API sharing was saved. Refresh to read the current policy.** Use **Refresh API access** to read the outcome and current version before reviewing another change; do not blindly retry. Successful save/refresh updates the member-table summary.
+
+The member list shows **All APIs** or **Selected APIs · N**. An API-reading member with an empty selection sees **No APIs shared** in Studio and can ask the owner for access. Own account/session actions remain available; selected members cannot inspect another member's session, and unknown/foreign session IDs both return `404`.
+
+The owner updates access with the version they reviewed. Every accepted scope update, even an identical selection, increments the version and commits with audit and affected browser-session revocation. Role assignment also increments that version while retaining a compatible scope. Compatible custom-role permission edits keep the scope version but apply normal grant-change session revocation. Existing member keys use current policy on their next request; already authorized requests may finish. Migration 15 adds scope and selected-API state to complete workspace backups; restoring an old snapshot can restore old sharing and session state.
+
+This restricts workspace reading only. It does not change issued runtime API keys, published caller access, rows, fields, product identities, or tenant isolation. Broader editing/testing and resource policies remain planned. See [API reference](api.md#selected-api-reading).

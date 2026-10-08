@@ -1639,6 +1639,13 @@ td code {
   flex: 1;
   font-size: 11px;
 }
+.member-form > .role-editor {
+  grid-column: 1 / -1;
+}
+.member-form .permission-option {
+  flex-direction: row;
+  align-items: flex-start;
+}
 .member-form input {
   background: var(--surface);
 }

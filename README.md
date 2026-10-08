@@ -27,21 +27,14 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 
 ## What works
 
-- Visual editor with response fields, input references, conditions, and data reads; advanced JSON remains optional.
-- Saved drafts, [generated backend routes](docs/runtime-code.md), immutable release history, and rollback.
-- REST methods and path parameters, plus typed GraphQL queries/mutations.
-- [Server-side client examples](docs/client-code.md) for JavaScript Axios/Fetch, PHP/shell cURL, Rust, Go, Java, and C++.
-- Built-in k6 load testing for published REST/GraphQL APIs, with automatic local setup and optional goals.
-- Optional REST input/response rules and separate draft/published OpenAPI downloads.
-- Built-in and custom action roles; expiring runtime API keys with optional release pins, replacement, and revocation.
-- Optional email/password sign-in and revocable workspace browser sessions.
-- GitHub product-login templates for REST and GraphQL, with server-held credentials.
-- Local SQLite persistence, audit history, migrations, and tested backups.
-- Manual GitHub release notices with saved repository settings.
-- CSV, Excel (.xlsx), and public Google Sheets snapshots with manual refresh.
-- Uploaded SQLite copies with table previews and REST/GraphQL draft generation.
-- Readable light/dark themes and keyboard-accessible custom controls.
-- Browser walkthrough and masked page/action preview gallery.
+- Visual REST/GraphQL builder, typed inputs, OpenAPI, and beginner forms.
+- [Generated backend routes](docs/runtime-code.md), saved drafts, release history, and rollback.
+- [Client code examples](docs/client-code.md) in eight targets.
+- Built-in k6 load testing with automatic setup and optional goals.
+- [Roles and selected-API sharing](docs/roles.md), workspace accounts, and scoped runtime keys.
+- [CSV, Excel, public Sheets](docs/data-sources.md), uploaded SQLite copies, and GitHub product-login templates.
+- Audit logs, migrations, tested backups, and GitHub update notices.
+- Light/dark themes, accessible custom controls, and page/action previews.
 
 ## Documentation
 
