@@ -1,0 +1,9 @@
+.agents
+.claude
+node_modules
+dist
+data
+bun.lock
+coverage
+test-results
+playwright-report

@@ -1,0 +1,63 @@
+# Besh architecture
+
+Goal: help teams build secure, documented APIs with a visual editor.
+
+## Decisions
+
+1. Use Bun and Elysia for the server. Use React, Zustand, Tailwind CSS, shadcn/ui, and React Flow for the dashboard. Keep one repository and one package manifest until independent packages are needed.
+2. Keep server code in `src/`, dashboard code in `web/`, tests in `test/`, and design notes in `docs/`. Group growing server features by domain. Avoid empty abstraction layers.
+3. Store flows as versioned JSON. The dashboard edits this format; the server validates and executes it. Never evaluate JavaScript from a flow.
+4. Separate drafts from releases. Validate before publishing. Existing releases remain unchanged when drafts are edited. Route conflicts must fail explicitly.
+5. Start with a local SQLite control database. Product database connections are separate adapters. Do not pretend SQL databases, MongoDB, Firebase, and Supabase have identical query or transaction semantics.
+6. Keep management authentication separate from endpoint authentication. Every management operation checks permission on the server. Public endpoints must be an explicit choice.
+7. Record state changes and their audit events together. Keep migration history. Back up before destructive changes and test restore procedures.
+8. Add integrations through capability-based adapters. Unsupported features fail clearly. A provider listed in a roadmap is not a working integration.
+9. Keep AI providers replaceable. Use typed tools with the caller's permissions. Models cannot grant themselves access. Codex CLI requires a separate, restricted process adapter; an HTTP provider adapter cannot substitute for it.
+10. Check GitHub releases for update notices. Do not execute downloaded code or silently migrate a running installation. Pin dependencies and release artifacts.
+
+## Runtime boundary
+
+`Dashboard -> management API -> validate draft -> publish release -> runtime API -> flow executor`
+
+The executor must limit graph size, steps, input size, execution time, and output size. Validate node configuration and all edges. Reject cycles until bounded loops are designed. Errors must not reveal credentials or stack traces.
+
+Start with request, condition, response, and safe data transformation nodes. Later add validation schemas, database operations, outbound HTTP, plugins, retries, subflows, and explicit error paths. A finite graph cannot promise support for every possible API.
+
+HTTP targets: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. CONNECT and TRACE need separate threat review. OpenAPI describes HTTP operations; WebSocket messages need their own schemas and lifecycle rules.
+
+## Extensions
+
+| Adapter     | Required boundary                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| SQL         | Prepared parameters, pools, transactions, dialect-specific migrations and backup         |
+| MongoDB     | Typed document filters, bounded queries, index management, no raw operator injection     |
+| Supabase    | Server-held secrets, RLS-aware access, explicit tenant ownership                         |
+| Firebase    | Verified identity, scoped Admin SDK operations, security rules and export strategy       |
+| Social auth | OAuth state, PKCE where supported, redirect allowlist, identity linking safeguards       |
+| Plugin      | Manifest, API version, integrity, capability grants, isolated runtime, resource limits   |
+| AI          | Provider configuration, redaction, tool permissions, budgets, approval and audit         |
+| WebSocket   | Origin and authentication checks, message schemas, rate limits, revocation and reconnect |
+
+Uploaded plugin code must run in a real process/container isolation boundary before public uploads are enabled. A JavaScript VM or Bun Worker is not a security sandbox. Declarative plugins can be introduced earlier with a constrained schema.
+
+## Identity and roles
+
+Initial single-workspace roles: owner, editor, viewer. Owner manages members, publication, backups, and settings. Editor edits and tests drafts. Viewer reads allowed resources. Add custom permissions and multi-workspace isolation with explicit tests before claiming multi-tenancy.
+
+Social providers planned: GitHub, Discord, Facebook, Google, and generic OIDC where supported. Keep dashboard identity and generated API identity configurable independently.
+
+## Agent policy
+
+The future agent should inspect APIs, explain runs, propose flows, test drafts, and manage permitted data through typed tools. Destructive data changes, publication, plugin execution, migrations, and external transfers require scoped authorization. Persist proposals and decisions. Treat database values, plugin output, and model responses as untrusted input.
+
+Provider targets: Anthropic, OpenAI API, OpenRouter, Ollama/OpenAI-compatible endpoints, and a local Codex CLI adapter. Discover model capabilities rather than assuming all providers support tools, JSON schemas, or streaming equally. No mandatory cloud gateway.
+
+## Sources
+
+- [Elysia repository](https://github.com/elysiajs/elysia): simple source and test layout, MIT license.
+- [Elysia feature structure](https://elysiajs.com/essential/best-practice): group related routes, services, and models.
+- [React Flow](https://reactflow.dev/learn): node editor and graph interactions.
+- [shadcn/ui with Vite](https://ui.shadcn.com/docs/installation/vite): dashboard component setup.
+- [Bun SQLite](https://bun.sh/docs/runtime/sqlite): local control database.
+
+See [roadmap](roadmap.md), [glossary](../GLOSSARY.md), and [AI policy](../AI_POLICY.md).
