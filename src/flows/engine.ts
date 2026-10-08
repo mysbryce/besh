@@ -6,6 +6,8 @@ import {
   type FlowNode,
   type FlowContext,
 } from './model'
+import { checkValue, prepareInput } from './contracts'
+import { ApiError } from '../errors'
 
 export function validateFlow(value: unknown) {
   assertJsonLimit(value)
@@ -100,7 +102,7 @@ function readPath(input: unknown, path: string): unknown {
 
 function resolveValue(
   value: unknown,
-  input: FlowInput,
+  input: ReturnType<typeof prepareInput>,
   data: unknown = null,
   depth = 0,
 ): unknown {
@@ -127,6 +129,7 @@ export function executeFlow(
 ): FlowResult {
   assertJsonLimit(input)
   const flow = validateFlow(value)
+  const prepared = prepareInput(flow.contract, input)
   let node: FlowNode | undefined = flow.nodes.find(
     (item) => item.type === 'request',
   )
@@ -135,15 +138,22 @@ export function executeFlow(
   while (node && visited.length < 64) {
     visited.push(node.id)
     if (node.type === 'response') {
-      const body = resolveValue(node.config.body, input, data)
+      const body = resolveValue(node.config.body, prepared, data)
       assertJsonLimit(body)
+      if (flow.contract?.response) {
+        try {
+          checkValue(flow.contract.response, body, 'response')
+        } catch {
+          throw new ApiError(500, 'Response does not match response rules')
+        }
+      }
       return { status: node.config.status, body, visited }
     }
     if (node.type === 'data') {
       if (!context.readData) throw new Error('Data sources are unavailable')
       const configured = node.config.filter
       const resolved = configured
-        ? resolveValue(configured.value, input, data)
+        ? resolveValue(configured.value, prepared, data)
         : null
       const filter =
         configured &&
@@ -162,7 +172,7 @@ export function executeFlow(
     }
     const branch: string | null =
       node.type === 'condition'
-        ? String(readPath(input, node.config.field) === node.config.equals)
+        ? String(readPath(prepared, node.config.field) === node.config.equals)
         : null
     const edge: Flow['edges'][number] | undefined = flow.edges.find(
       (item) =>

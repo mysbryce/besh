@@ -532,7 +532,44 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
         name: options.name,
         method: graphql ? 'POST' : 'GET',
         path: options.path,
-        ...(graphql ? { graphql: { schema } } : {}),
+        ...(graphql
+          ? { graphql: { schema } }
+          : {
+              contract: {
+                ...(options.filter && filterColumn
+                  ? {
+                      query: {
+                        type: 'object',
+                        properties: {
+                          [options.filter.inputName]: {
+                            type: filterColumn.type,
+                          },
+                        },
+                      },
+                    }
+                  : {}),
+                response: {
+                  type: 'array',
+                  maxItems: options.limit,
+                  items: {
+                    type: 'object',
+                    properties: Object.fromEntries(
+                      options.columns.map((key) => {
+                        const column = source.columns.find(
+                          (item) => item.key === key,
+                        )!
+                        return [
+                          key,
+                          { type: column.type, nullable: column.nullable },
+                        ]
+                      }),
+                    ),
+                    required: options.columns,
+                    additionalProperties: false,
+                  },
+                },
+              },
+            }),
         nodes: [
           {
             id: 'request',

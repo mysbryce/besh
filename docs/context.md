@@ -16,6 +16,7 @@
 - User prefers compact `besh` branding in the preview gallery navigation rather than a large walkthrough title.
 - User requires readable dark mode and beginner workflows with field forms; basic API creation and testing must not require JSON editing.
 - User requested spreadsheet-driven APIs using Excel and Google Sheets. CSV/Excel import and public Google Sheets snapshots now use server-checked owner/editor access, reviewed column mapping, bounded reads, and runtime credentials.
+- REST API rules and OpenAPI continue Milestone 2. Optional contracts stay inside saved flow revisions; recursive field forms cover objects, lists, item rules, and limits, while GraphQL SDL stays authoritative. Draft and published exports remain separate management operations.
 - User asked to continue ordinary authorized work without creating further goals after automated review stopped one agent's review. Root completed defensive Excel parser validation and its public HTTP regressions. No additional policy or permission gates were introduced.
 - No vault state was supplied; user stated vault unavailable. Repository docs hold current decisions. No direct vault access occurred.
 
@@ -27,6 +28,8 @@
 - Separate draft and published definitions to avoid changing live endpoints during edits. Revision checks prevent lost updates.
 - Use role-scoped bearer keys for workspace management and separate expiring runtime keys for callers. Whole-query/mutation grants avoid conflating member access with published API execution. Session/social authentication and field/record permissions remain planned.
 - Use MIT for Besh with Besh's own copyright attribution.
+- Use a bounded explicit schema subset rather than accepting arbitrary JSON Schema keywords. Convert declared numeric/boolean query text only; preserve exact JSON body/response types. Reject invalid input before execution and hide mismatched response data behind a generic 500.
+- Generate OpenAPI 3.1.1 from the chosen saved REST snapshot. Omitted source means published, with no draft fallback. Emit schema/route/security metadata rather than inferring contracts from literals or leaking source rows and credentials. Old flows without rules remain compatible.
 
 ## Verification notes
 
@@ -43,7 +46,12 @@
 - Beginner response/request/condition forms were introduced through failing browser slices. The advanced request editor also rejected valid JSON with the wrong envelope shape after a `null` regression exposed a component crash; request strings resembling references remain literal input data.
 - Spreadsheet browser slices exercised real CSV import, generated visual REST/GraphQL drafts, simple source/column/limit settings, typed optional filters, publication with scoped credentials, replacement visible to live callers, and referenced-source deletion rejection. Controlled HTTP responses verified Google UI states offline; a separate real-network smoke verified public Google import and refresh.
 - Generated GraphQL drafts seed a matching rows query and hide schema/variable JSON until Advanced is opened. Loading or creating another draft resets test state; saving the current draft preserves its in-progress inputs.
-- Final combined check passed types, 49 backend tests with 380 assertions, production build, and formatting. Two Chrome browser tests passed in 31.4 seconds; the appearance regression passed again in 2.3 seconds after the border correction. The expanded walkthrough captured 148 masked light/dark desktop/phone screenshots in 49.3 seconds. Gallery controls, all image URLs, mobile containment, private-path denial, and theme persistence checks passed; affected screenshots were inspected. Real public Google import/refresh and built-server Excel/dark/CSP smokes also passed.
+- The first spreadsheet delivery passed types, 49 backend tests with 380 assertions, production build, and formatting. Two Chrome browser tests passed in 31.4 seconds. Its walkthrough captured 148 masked screenshots. Gallery controls, image URLs, mobile containment, private-path denial, and theme persistence passed. Real public Google import/refresh and built-server Excel/dark/CSP smokes also passed.
 - Visual review caught faint input borders: a global border rule overrode Tailwind's input token. Browser contrast checks failed at 1.29:1 in light mode and 1.69:1 in dark mode, then passed after explicit input/textarea border, focus, and invalid-state rules restored the intended tokens. Captures wait for the real Appearance control rather than its temporary lazy-loading fallback.
+
+- REST-contract red/green slices covered malformed schemas, unsafe property names, strict query conversion, body/output validation, roles, audits, immutable releases, and OpenAPI exports. A raw property-name check was needed before schema parsing because parsing could discard `__proto__`. Independent validators checked actual HTTP/export examples against the official OpenAPI 3.1 schema and JSON Schema 2020-12 rules.
+- The final REST-contract check passed types, 59 backend tests with 514 assertions, production build, and formatting. All three Chrome stories passed in about 1.3 minutes. The preview grew to 165 masked states, including nested rules and real draft/release document downloads.
+- Loading the shared rule validator on demand reduced the initial dashboard bundle from roughly 569 kB to 473.51 kB and removed the build warning. The complete browser suite passed after this change.
+- Preview integration caught offscreen connection handles after adding the rule panel; capture now brings both handles into view and checks the created edge. Visual review also caught an OpenAPI menu mid-fade; capture waits for full opacity instead of adding a fixed delay.
 
 See [testing](testing.md), [architecture](architecture.md), and [roadmap](roadmap.md) for durable detail.

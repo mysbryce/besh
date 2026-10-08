@@ -16,27 +16,28 @@ Setup needs the challenge from the local server terminal. It returns `409` once 
 
 ## Workspace
 
-| Method | Path                          | Permission / body                                                                   |
-| ------ | ----------------------------- | ----------------------------------------------------------------------------------- |
-| GET    | `/api/me`                     | Any member                                                                          |
-| GET    | `/api/flows`                  | Any member; full drafts and revision metadata                                       |
-| GET    | `/api/flows/:id`              | Any member                                                                          |
-| POST   | `/api/flows`                  | Owner/editor; flow definition                                                       |
-| PUT    | `/api/flows/:id`              | Owner/editor; flow definition plus current `revision`                               |
-| POST   | `/api/flows/:id/test`         | Owner/editor; `{ "body": {}, "query": {} }`                                         |
-| POST   | `/api/flows/:id/graphql/test` | Owner/editor; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }` |
-| POST   | `/api/flows/:id/publish`      | Owner; `{ "revision": 1 }`                                                          |
-| GET    | `/api/members`                | Owner; no credential hashes or tokens                                               |
-| POST   | `/api/members`                | Owner; `{ "name": "Reader", "role": "viewer" }`; role may be `editor`               |
-| DELETE | `/api/members/:id`            | Owner; cannot remove bootstrap owner                                                |
-| GET    | `/api/runtime-keys`           | Owner; key metadata, including revoked keys; no tokens or hashes                    |
-| POST   | `/api/runtime-keys`           | Owner; name, published flow ID, grants, expiration; returns the token once          |
-| DELETE | `/api/runtime-keys/:id`       | Owner; immediate revocation; retains metadata                                       |
-| GET    | `/api/audit`                  | Owner; latest 200 events, newest first                                              |
-| GET    | `/api/migrations`             | Owner; schema versions in applied order                                             |
-| GET    | `/api/backups`                | Owner; local backup metadata                                                        |
-| POST   | `/api/backups`                | Owner; creates snapshot                                                             |
-| GET    | `/api/backups/:id`            | Owner; SQLite download                                                              |
+| Method | Path                          | Permission / body                                                                    |
+| ------ | ----------------------------- | ------------------------------------------------------------------------------------ |
+| GET    | `/api/me`                     | Any member                                                                           |
+| GET    | `/api/flows`                  | Any member; full drafts and revision metadata                                        |
+| GET    | `/api/flows/:id`              | Any member                                                                           |
+| GET    | `/api/flows/:id/openapi`      | Any member; `source=draft` or `source=published` (default); saved REST snapshot only |
+| POST   | `/api/flows`                  | Owner/editor; flow definition                                                        |
+| PUT    | `/api/flows/:id`              | Owner/editor; flow definition plus current `revision`                                |
+| POST   | `/api/flows/:id/test`         | Owner/editor; `{ "body": {}, "query": {} }`                                          |
+| POST   | `/api/flows/:id/graphql/test` | Owner/editor; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`  |
+| POST   | `/api/flows/:id/publish`      | Owner; `{ "revision": 1 }`                                                           |
+| GET    | `/api/members`                | Owner; no credential hashes or tokens                                                |
+| POST   | `/api/members`                | Owner; `{ "name": "Reader", "role": "viewer" }`; role may be `editor`                |
+| DELETE | `/api/members/:id`            | Owner; cannot remove bootstrap owner                                                 |
+| GET    | `/api/runtime-keys`           | Owner; key metadata, including revoked keys; no tokens or hashes                     |
+| POST   | `/api/runtime-keys`           | Owner; name, published flow ID, grants, expiration; returns the token once           |
+| DELETE | `/api/runtime-keys/:id`       | Owner; immediate revocation; retains metadata                                        |
+| GET    | `/api/audit`                  | Owner; latest 200 events, newest first                                               |
+| GET    | `/api/migrations`             | Owner; schema versions in applied order                                              |
+| GET    | `/api/backups`                | Owner; local backup metadata                                                         |
+| POST   | `/api/backups`                | Owner; creates snapshot                                                              |
+| GET    | `/api/backups/:id`            | Owner; SQLite download                                                               |
 
 Drafts may be incomplete. Publishing and testing require one request node, reachable nodes, valid edges, and a response at every terminal path. Conditions require exactly one `true` and one `false` edge. Cycles are rejected.
 
@@ -130,7 +131,7 @@ Keys follow the flow's published revisions rather than pinning one release. Revi
 
 ## Runtime
 
-Published routes live at `/run` plus their configured path. All seven supported methods require a runtime API key with the `rest` grant for that flow. Paths are exact; route parameters are not implemented. Query values are strings. HEAD and status codes 204, 205 and 304 return no body.
+Published routes live at `/run` plus their configured path. All seven supported methods require a runtime API key with the `rest` grant for that flow. Paths are exact; route parameters are not implemented. Query values start as strings; optional REST rules convert declared numeric and boolean fields before execution. HEAD and status codes 204, 205 and 304 return no body.
 
 ```sh
 curl 'http://127.0.0.1:3000/run/hello?name=Ada' \
@@ -139,4 +140,6 @@ curl 'http://127.0.0.1:3000/run/hello?name=Ada' \
 
 The test endpoint returns `{ "status": 200, "body": {}, "visited": ["start", "done"] }`. The runtime endpoint returns the configured body and HTTP status directly.
 
-No arbitrary code, database access, external HTTP requests, social login, WebSocket endpoint, or AI execution is exposed in this version. OpenAPI export is planned.
+Flows may include optional `contract.query`, `contract.body`, and `contract.response` schemas. REST draft tests and live calls enforce these rules; GraphQL uses its SDL contract. OpenAPI export describes the selected saved REST draft or immutable published release. See [API rules and OpenAPI](api-contracts.md) for the schema subset, validation behavior, and export boundary.
+
+No arbitrary code, database access, external HTTP requests, social login, WebSocket endpoint, or AI execution is exposed in this version.

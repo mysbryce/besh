@@ -6,6 +6,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 
 - [Getting started](getting-started.md): installation, first API, runtime keys, roles, configuration, recovery, project layout, and development commands.
 - [Core API reference](api.md): setup and management HTTP routes, flow format, runtime-key lifecycle, and published REST authentication.
+- [REST API rules and OpenAPI](api-contracts.md): simple field rules, server validation, supported schema subset, and draft/published downloads.
 - [GraphQL APIs](graphql.md): typed schemas, variables, selected operations, runtime grants, and execution limits.
 - [Spreadsheet data sources](data-sources.md): CSV/Excel import, public Google Sheets, reviewed field mapping, generated APIs, and snapshot lifecycle.
 - [Page and action previews](preview.md): capture commands, gallery inventory, masked credentials, data isolation, and Git ignore choices.

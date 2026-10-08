@@ -97,6 +97,8 @@ Input references replace a whole value and preserve JSON types. Supported roots 
 | Appearance  | Light, dark, or system theme; keyboard-accessible custom controls                          |
 | HTTP        | GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS; exact paths                                  |
 | GraphQL     | Per-API typed schemas, queries/mutations, variables, field selection and bounded execution |
+| API rules   | Optional REST query/body/response types, required fields, nullability, and server checks   |
+| OpenAPI     | JSON downloads for a saved REST draft or published release, kept separate                  |
 | Drafts      | SQLite persistence; incomplete graphs may be saved                                         |
 | Publishing  | Graph validation, route conflict checks, immutable release history                         |
 | Concurrency | Stale save/publish requests return `409`                                                   |
@@ -117,6 +119,12 @@ Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/i
 Open **Data sources** with an owner or editor key. Name the source and import a CSV or Excel `.xlsx` file, or choose **Public Google Sheet** and paste its standard share link. Review the first ten rows, detected types, and safe API field names. Choose columns to return, name the API, review its endpoint path and row limit, then select **Create API from data**. This creates a draft; test it before the owner publishes it and creates a caller key.
 
 Imports save snapshots. Upload replacement and Google refresh require confirmation because published APIs read the latest saved source data. Google refresh is manual; private-sheet OAuth and scheduled synchronization are planned. See [spreadsheet data](data-sources.md) for limits and permissions.
+
+## Add REST API rules
+
+Open **API rules** in the REST studio. Add query, body, or response fields using names, type selectors, and required choices. Body and response fields can also allow null. Nested objects, lists, item rules, and optional limits all use forms. Save and test valid input, then try a missing required field. The server returns 400 for invalid input and a generic 500 for a response that violates its rules. GraphQL uses its own schema.
+
+Choose a saved draft or published release to download its OpenAPI document. Save browser edits before exporting a draft. Published documentation and live rules stay at the last published revision until the owner republishes. Downloads require a workspace member token; calling the documented route requires its runtime API key. See [REST API rules and OpenAPI](api-contracts.md) for a quick example, supported types, and limits.
 
 ## Build a GraphQL API
 
@@ -218,6 +226,7 @@ These are roadmap items. Public Google Sheets imports already work; private iden
 - [Testing](testing.md) · [Glossary](../GLOSSARY.md) · [Agent instructions](../AGENTS.md)
 - [Page/action previews and Git ignore rules](preview.md)
 - [GraphQL schemas and execution](graphql.md)
+- [REST API rules and OpenAPI downloads](api-contracts.md)
 - [AI policy](../AI_POLICY.md) · [Code of conduct](../CODE_OF_CONDUCT.md) · [Security](../SECURITY.md)
 
 MIT licensed. See [LICENSE](../LICENSE) and [third-party notices](../THIRD_PARTY_NOTICES.md).

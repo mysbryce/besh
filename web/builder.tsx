@@ -29,6 +29,7 @@ import { Textarea } from './components/ui/textarea'
 import { Badge } from './components/ui/badge'
 import { flowSchema, type Flow, type FlowNode } from '../src/flows/model'
 import { useStudio, type CanvasNode } from './store'
+import { ApiRules, OpenApiDownload } from './api-rules'
 import {
   ConditionForm,
   DataNodeForm,
@@ -486,7 +487,16 @@ function BuilderSession() {
             label="API type"
             value={state.graphql ? 'graphql' : 'rest'}
             disabled={!writable || state.busy}
-            onValueChange={(value) =>
+            onValueChange={(value) => {
+              if (
+                value === 'graphql' &&
+                state.contract &&
+                Object.values(state.contract).some(Boolean) &&
+                !confirm(
+                  'Switch to GraphQL? This removes REST API rules from this draft. GraphQL uses its own typed schema.',
+                )
+              )
+                return
               state.edit({
                 graphql:
                   value === 'graphql'
@@ -496,8 +506,9 @@ function BuilderSession() {
                       }
                     : undefined,
                 ...(value === 'graphql' ? { method: 'POST' } : {}),
+                ...(value === 'graphql' ? { contract: undefined } : {}),
               })
-            }
+            }}
             options={[
               { value: 'rest', label: 'REST' },
               { value: 'graphql', label: 'GraphQL' },
@@ -511,9 +522,22 @@ function BuilderSession() {
             label="HTTP method"
             value={state.method}
             disabled={!writable || state.busy || !!state.graphql}
-            onValueChange={(value) =>
+            onValueChange={(value) => {
+              if (['GET', 'HEAD'].includes(value) && state.contract?.body) {
+                if (
+                  !confirm(
+                    `${value} requests have no body. Remove request body rules from this draft?`,
+                  )
+                )
+                  return
+                state.edit({
+                  method: value as Flow['method'],
+                  contract: { ...state.contract, body: undefined },
+                })
+                return
+              }
               state.edit({ method: value as Flow['method'] })
-            }
+            }}
             options={[
               'GET',
               'POST',
@@ -608,7 +632,10 @@ function BuilderSession() {
             </>
           ) : null}
         </section>
-      ) : null}
+      ) : (
+        <ApiRules />
+      )}
+      <OpenApiDownload />
       <section className="editor-panel">
         <div className="editor-toolbar">
           <div>

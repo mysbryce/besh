@@ -1,5 +1,61 @@
 import type { Flow } from '../../src/flows/model'
 
+export async function apiRulesError(
+  contract: Flow['contract'],
+): Promise<string | null> {
+  if (!contract) return null
+
+  function inspect(
+    schema: NonNullable<Flow['contract']>['body'],
+    path: string,
+  ): string | null {
+    if (!schema) return null
+    if (schema.type === 'object') {
+      for (const [name, property] of Object.entries(schema.properties ?? {})) {
+        if (
+          !/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(name) ||
+          ['__proto__', 'prototype', 'constructor'].includes(name)
+        )
+          return `${path}: field names need a letter or underscore first, then letters, digits or underscores (up to 64 characters).`
+        const error = inspect(property, `${path}.${name}`)
+        if (error) return error
+      }
+    } else if (schema.type === 'array') {
+      if (
+        schema.minItems !== undefined &&
+        schema.maxItems !== undefined &&
+        schema.minItems > schema.maxItems
+      )
+        return `${path}: minimum items must not exceed maximum items.`
+      return inspect(schema.items, `${path} items`)
+    } else if (schema.type === 'string') {
+      if (
+        schema.minLength !== undefined &&
+        schema.maxLength !== undefined &&
+        schema.minLength > schema.maxLength
+      )
+        return `${path}: minimum characters must not exceed maximum characters.`
+    } else if (schema.type === 'number' || schema.type === 'integer') {
+      if (
+        schema.minimum !== undefined &&
+        schema.maximum !== undefined &&
+        schema.minimum > schema.maximum
+      )
+        return `${path}: minimum must not exceed maximum.`
+    }
+    return null
+  }
+
+  for (const [key, schema] of Object.entries(contract)) {
+    const error = inspect(schema, `${key} rules`)
+    if (error) return error
+  }
+  const { contractSchema } = await import('../../src/flows/contracts')
+  if (!contractSchema.safeParse(contract).success)
+    return 'Check API rules: lengths and item counts must be whole, nonnegative numbers. Keep rules within 8 levels, 64 fields per object and 256 shapes; query fields must be scalar and cannot allow null.'
+  return null
+}
+
 export type SavedFlow = Flow & {
   id: string
   revision: number

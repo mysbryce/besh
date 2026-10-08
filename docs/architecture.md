@@ -21,11 +21,15 @@ Goal: help teams build secure, documented APIs with a visual editor.
 
 The executor must limit graph size, steps, input size, execution time, and output size. Validate node configuration and all edges. Reject cycles until bounded loops are designed. Errors must not reveal credentials or stack traces.
 
-Implemented nodes are request, condition, response, and bounded spreadsheet reads. Later add validation schemas, broader transformations, database operations, outbound HTTP, plugins, retries, subflows, and explicit error paths. A finite graph cannot promise support for every possible API.
+Implemented nodes are request, condition, response, and bounded spreadsheet reads. Optional REST contracts validate query/body input before execution and returned JSON before delivery. Later add broader transformations, database operations, outbound HTTP, plugins, retries, subflows, and explicit error paths. A finite graph cannot promise support for every possible API.
 
 HTTP targets: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS. CONNECT and TRACE need separate threat review. OpenAPI describes HTTP operations; WebSocket messages need their own schemas and lifecycle rules.
 
 GraphQL uses one POST endpoint per visual API at `/graphql/<path>`. Optional SDL lives inside the versioned flow definition; each root field runs the flow with arguments as input. GraphQL.js handles schema and operation validation and typed field selection. Runtime budgets include expanded fragments, depth, root calls, and output size. REST routes remain under `/run/<path>`. See [GraphQL guide](graphql.md) for supported behavior.
+
+REST contracts live inside the versioned flow as `contract.query`, `contract.body`, and `contract.response`. They use a bounded subset of JSON Schema concepts, not a general schema evaluator. Numeric/boolean query conversion happens only for declared fields; body and response values retain their exact JSON types. Rules are checked on the server for draft tests, publication, and runtime calls. Input failures return 400 without submitted values; response mismatches return a generic 500 without partial output. GET/HEAD cannot declare a body contract. GraphQL SDL remains authoritative and cannot be combined with a REST contract.
+
+The member-authenticated OpenAPI route selects a saved draft or published release explicitly and defaults to published. It generates OpenAPI 3.1.1 from that selected snapshot, including the actual `/run` route and runtime bearer-key requirement. Export does not include flow-node literals, source rows, or credential values. Saving a draft changes neither live validation nor published documentation. See [API rules and OpenAPI](api-contracts.md).
 
 Checkboxes and dropdowns use local styled components built on Radix primitives. Keep labels, keyboard navigation, disabled states, and focus return intact. Browser-native form controls may exist as hidden accessibility/form plumbing; no native checkbox, radio, or select is exposed as the visual control. New radio groups must follow the same rule.
 
@@ -36,6 +40,8 @@ Basic response, condition, and REST request editing uses labeled field forms. Ra
 Migration 7 stores CSV/Excel and public Google Sheets snapshots in the control database. Only owners/editors can access source metadata, previews, lifecycle actions, or generated drafts. Public Google exports use a restricted HTTPS URL/redirect policy and bounded requests. Upload formats, archive expansion, row counts, column counts, and normalized snapshot sizes are checked before persistence. Uploaded formulas and code are not executed.
 
 A data node reads one source, projects approved columns, optionally applies an equality filter, and returns at most 100 rows within normal response limits. `$data` resolves its result. Generated REST and GraphQL APIs are normal drafts and use the existing validation, publication, and scoped runtime-key boundaries. Generated GraphQL is query-only and includes typed selected columns.
+
+New generated REST drafts also include contracts derived from selected column types/nullability, the row limit, and the optional typed query filter. Existing saved flows remain compatible without a contract. A changed source snapshot must still satisfy the published response rules; refreshing data does not update release contracts. Schema validation and caller-controlled search filters do not implement field or record authorization.
 
 Published graph definitions remain immutable, while source data is mutable: manual replacement or Google refresh changes the saved snapshot read by existing APIs. Owners/editors can perform this data change; it does not grant publication rights. Sources referenced by a draft or release cannot be deleted. Snapshot data is included in workspace backups. Database adapters and private Google OAuth remain separate planned capabilities.
 

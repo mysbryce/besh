@@ -4,6 +4,7 @@ import { assertJsonLimit, executeFlow, validateFlow } from './engine'
 import { flowSchema, type Flow, type FlowInput } from './model'
 import { executeGraphql, graphqlSchema } from './graphql'
 import type { dataSourceService } from '../data-sources'
+import { flowOpenapi } from './openapi'
 
 type Row = {
   id: string
@@ -71,6 +72,24 @@ export function flowService(
     }
   }
 
+  function execute(
+    actor: string,
+    id: string,
+    definition: unknown,
+    input: FlowInput,
+  ) {
+    try {
+      return executeFlow(definition, input, { readData: sources.read })
+    } catch (error) {
+      if (
+        error instanceof ApiError &&
+        (error.status === 400 || error.status === 500)
+      )
+        audit(actor, 'flow.validation-failed', id)
+      throw error
+    }
+  }
+
   return {
     list() {
       return query<Row, []>('SELECT * FROM flows ORDER BY rowid DESC')
@@ -79,6 +98,24 @@ export function flowService(
     },
     get(id: string) {
       return present(get(id))
+    },
+    openapi(id: string, source: unknown) {
+      if (source !== undefined && source !== 'draft' && source !== 'published')
+        throw new ApiError(400, 'Choose draft or published OpenAPI source')
+      const selected = source ?? 'published'
+      const row = get(id)
+      if (selected === 'published' && !row.published)
+        throw new ApiError(404, 'This API has no published release')
+      const definition = selected === 'draft' ? row.definition : row.published!
+      const flow = draft(JSON.parse(definition))
+      if (flow.graphql)
+        throw new ApiError(400, 'OpenAPI is available for REST APIs only')
+      return flowOpenapi(
+        flow,
+        row.id,
+        selected === 'draft' ? row.revision : row.published_revision!,
+        selected,
+      )
     },
     create(actor: string, value: unknown) {
       const definition = draft(value)
@@ -144,7 +181,7 @@ export function flowService(
       const definition = valid(JSON.parse(get(id).definition))
       if (definition.graphql)
         throw new ApiError(400, 'Use the GraphQL test endpoint')
-      const result = executeFlow(definition, input, { readData: sources.read })
+      const result = execute(actor, id, definition, input)
       audit(actor, 'flow.tested', id)
       return result
     },
@@ -166,9 +203,12 @@ export function flowService(
       if (row.id !== key.flowId || !key.permissions.includes('rest'))
         throw new ApiError(403, 'Runtime key does not allow this endpoint')
 
-      const result = executeFlow(JSON.parse(row.published), input, {
-        readData: sources.read,
-      })
+      const result = execute(
+        `runtime:${key.id}`,
+        row.id,
+        JSON.parse(row.published),
+        input,
+      )
       audit(`runtime:${key.id}`, 'flow.executed', row.id)
       return result
     },

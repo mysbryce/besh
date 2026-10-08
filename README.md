@@ -28,6 +28,7 @@ Open `http://127.0.0.1:5173` and sign in with your saved workspace key. See [get
 - Visual editor with response fields, input references, conditions, and spreadsheet reads; advanced JSON remains optional.
 - Saved drafts, validated publication, and immutable releases.
 - REST methods and typed GraphQL queries/mutations.
+- Optional REST input/response rules and separate draft/published OpenAPI downloads.
 - Owner, editor, and viewer roles; separate expiring runtime API keys.
 - Local SQLite persistence, audit history, migrations, and tested backups.
 - CSV, Excel (.xlsx), and public Google Sheets snapshots with manual refresh.

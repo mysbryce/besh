@@ -6,6 +6,9 @@
 - **Edge**: a connection that chooses which node runs next.
 - **Draft**: an editable flow. Saving a draft does not change a published endpoint.
 - **Release**: a validated, immutable copy of a flow used by callers.
+- **API rules**: optional REST query, body, and response constraints checked by the server; GraphQL uses its schema instead.
+- **Contract**: the versioned definition of an API's accepted inputs and returned data.
+- **OpenAPI document**: a downloadable description of one saved REST draft or published release, including its route, rules, and runtime-key authentication.
 - **GraphQL schema**: a typed contract describing query/mutation fields, their arguments, and returned data.
 - **GraphQL operation**: a query or mutation selecting fields from a published schema; variables supply typed argument values.
 - **Run**: one execution of a flow with an input and a result.

@@ -128,6 +128,19 @@ export function createApp(options: AppOptions) {
     })
     .get('/flows', () => flows.list())
     .get('/flows/:id', ({ params }) => flows.get(params.id))
+    .get('/flows/:id/openapi', ({ params, request }) => {
+      const selections = new URL(request.url).searchParams.getAll('source')
+      if (selections.length > 1)
+        throw new ApiError(400, 'Choose one OpenAPI source')
+      const specification = flows.openapi(params.id, selections[0])
+      const safeId = params.id.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80)
+      return new Response(JSON.stringify(specification, null, 2), {
+        headers: {
+          'content-type': 'application/json',
+          'content-disposition': `attachment; filename="besh-${safeId}-openapi.json"`,
+        },
+      })
+    })
     .post('/flows', ({ member, body }) => {
       allow(member, ['owner', 'editor'])
       return flows.create(member.id, body)

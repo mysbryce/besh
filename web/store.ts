@@ -10,7 +10,7 @@ import {
   type Connection,
 } from '@xyflow/react'
 import type { Flow, FlowNode, FlowResult } from '../src/flows/model'
-import { api, type Member, type SavedFlow } from './lib/api'
+import { api, apiRulesError, type Member, type SavedFlow } from './lib/api'
 
 export type CanvasNode = Node<
   { kind: FlowNode['type']; config: FlowNode['config'] },
@@ -49,6 +49,7 @@ type Studio = {
   method: Flow['method']
   path: string
   graphql: Flow['graphql']
+  contract: Flow['contract']
   revision: number
   publishedRevision: number | null
   nodes: CanvasNode[]
@@ -65,7 +66,9 @@ type Studio = {
   load: (flow: SavedFlow) => void
   openCreated: (flow: SavedFlow) => void
   edit: (
-    fields: Partial<Pick<Studio, 'name' | 'path' | 'method' | 'graphql'>>,
+    fields: Partial<
+      Pick<Studio, 'name' | 'path' | 'method' | 'graphql' | 'contract'>
+    >,
   ) => void
   onNodesChange: (changes: NodeChange<CanvasNode>[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
@@ -89,6 +92,7 @@ function editState(flow?: SavedFlow) {
     method: flow?.method ?? ('GET' as Flow['method']),
     path: flow?.path ?? '/hello',
     graphql: flow?.graphql,
+    contract: flow?.contract,
     revision: flow?.revision ?? 0,
     publishedRevision: flow?.publishedRevision ?? null,
     nodes: flow
@@ -232,11 +236,14 @@ export const useStudio = create<Studio>((set, get) => ({
 
   async save() {
     const state = get()
+    const ruleError = await apiRulesError(state.contract)
+    if (ruleError) throw new Error(ruleError)
     const definition = {
       name: state.name,
       method: state.method,
       path: state.path,
       graphql: state.graphql,
+      contract: state.graphql ? undefined : state.contract,
       nodes: state.nodes.map((node) => ({
         id: node.id,
         type: node.data.kind,

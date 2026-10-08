@@ -17,6 +17,9 @@ test('preview every current page and its actions', async ({
 
   async function capture(group: string, title: string, detail: string) {
     const dropdownOpen = (await page.getByRole('listbox').count()) > 0
+    if (dropdownOpen) {
+      await expect(page.getByRole('listbox')).toHaveCSS('opacity', '1')
+    }
     if (!dropdownOpen && (await page.locator('.theme-control').count())) {
       await expect(
         page.getByRole('combobox', { name: 'Appearance' }),
@@ -106,6 +109,10 @@ test('preview every current page and its actions', async ({
   }
 
   async function connect(source: Locator, target: Locator) {
+    await source.scrollIntoViewIfNeeded()
+    await target.scrollIntoViewIfNeeded()
+    await expect(source).toBeInViewport()
+    await expect(target).toBeInViewport()
     const from = await source.boundingBox()
     const to = await target.boundingBox()
     if (!from || !to) throw new Error('Connection handles are not visible')
@@ -478,6 +485,7 @@ test('preview every current page and its actions', async ({
       .locator('.react-flow__handle.source'),
     responseNode.locator('.react-flow__handle.target'),
   )
+  await expect(page.locator('.react-flow__edge')).toHaveCount(1)
   await capture(
     'API Studio',
     'Connect node handles',
@@ -1289,6 +1297,266 @@ test('preview every current page and its actions', async ({
       })
     ).status(),
   ).toBe(401)
+
+  await page.getByRole('button', { name: 'New API', exact: true }).click()
+  await page.getByLabel('API name').fill('Typed count API')
+  await page.getByLabel('Endpoint path').fill('/typed-count')
+  const rulesToggle = page.getByRole('button', {
+    name: 'API rules',
+    exact: true,
+  })
+  if ((await rulesToggle.getAttribute('aria-expanded')) !== 'true')
+    await rulesToggle.click()
+  await page
+    .getByRole('checkbox', { name: 'Validate query parameters', exact: true })
+    .check()
+  await page
+    .getByRole('button', { name: 'Add Query field', exact: true })
+    .click()
+  await page.getByLabel('Query field name 1', { exact: true }).fill('count')
+  await page
+    .getByRole('combobox', { name: 'Query field 1 type', exact: true })
+    .click()
+  await capture(
+    'API rules',
+    'Choose a query rule type',
+    'The custom type dropdown offers text, numbers, whole numbers, and true/false values without JSON editing.',
+  )
+  await page.getByRole('option', { name: 'Whole number', exact: true }).click()
+  await page
+    .getByRole('checkbox', { name: 'Query field 1 required', exact: true })
+    .check()
+  await page
+    .getByRole('checkbox', { name: 'Validate response', exact: true })
+    .check()
+  await page
+    .getByRole('button', { name: 'Add Response field', exact: true })
+    .click()
+  await page.getByLabel('Response field name 1', { exact: true }).fill('count')
+  await page
+    .getByRole('combobox', { name: 'Response field 1 type', exact: true })
+    .click()
+  await page.getByRole('option', { name: 'Whole number', exact: true }).click()
+  await page
+    .getByRole('checkbox', { name: 'Response field 1 required', exact: true })
+    .check()
+  await capture(
+    'API rules',
+    'Required query and response fields',
+    'Labeled forms define a required whole-number query parameter and matching response field. Server rules are optional and separate from authorization.',
+  )
+  await appearance('Dark')
+  await capture(
+    'API rules',
+    'Dark rule controls',
+    'Rule names, custom type controls, required choices, and allow-null choices remain readable in dark appearance.',
+  )
+  await page
+    .getByRole('combobox', { name: 'Query field 1 type', exact: true })
+    .click()
+  await capture(
+    'API rules',
+    'Dark rule type dropdown',
+    'The open custom dropdown keeps typed rule choices and the selected whole-number value readable in dark mode.',
+  )
+  await page.keyboard.press('Escape')
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+  ).toBe(true)
+  await capture(
+    'API rules',
+    'Phone dark API rules',
+    'API rules fit a 390px phone viewport with accessible custom controls and no horizontal document overflow.',
+  )
+  await appearance('Light')
+  await capture(
+    'API rules',
+    'Phone light API rules',
+    'The same query and response field forms remain contained and readable in light phone appearance.',
+  )
+  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.getByRole('combobox', { name: 'HTTP method' }).click()
+  await page.getByRole('option', { name: 'POST', exact: true }).click()
+  await page
+    .getByRole('checkbox', { name: 'Validate request body', exact: true })
+    .check()
+  await page.getByRole('combobox', { name: 'Body type', exact: true }).click()
+  await capture(
+    'API rules',
+    'Choose a request body shape',
+    'A POST body can be text, a number, true/false, an object, or a list. A custom selector exposes these shapes without JSON editing.',
+  )
+  await page.getByRole('option', { name: 'List of items', exact: true }).click()
+  await page
+    .getByRole('button', { name: 'Add Body item field', exact: true })
+    .click()
+  await page.getByLabel('Body item field name 1', { exact: true }).fill('name')
+  await page
+    .getByRole('checkbox', { name: 'Body item field 1 required', exact: true })
+    .check()
+  await capture(
+    'API rules',
+    'Nested object fields in a body list',
+    'Recursive field forms define a list of objects with a required text name. Each object and nested field has its own rules.',
+  )
+  await page
+    .locator('details')
+    .filter({ has: page.getByLabel('Body minItems', { exact: true }) })
+    .getByText('Limits and description', { exact: true })
+    .click()
+  await page.getByLabel('Body minItems', { exact: true }).fill('1')
+  await page.getByLabel('Body maxItems', { exact: true }).fill('5')
+  await page
+    .getByLabel('Body description', { exact: true })
+    .fill('One to five named items')
+  await page
+    .locator('details')
+    .filter({
+      has: page.getByLabel('Body item field 1 minLength', { exact: true }),
+    })
+    .getByText('Limits and description', { exact: true })
+    .click()
+  await page
+    .getByLabel('Body item field 1 minLength', { exact: true })
+    .fill('1')
+  await page
+    .getByLabel('Body item field 1 maxLength', { exact: true })
+    .fill('80')
+  await capture(
+    'API rules',
+    'List and nested text limits',
+    'Optional limits constrain list length and nested text length. Descriptions document intent while all rules remain server-checked.',
+  )
+  await page.getByRole('combobox', { name: 'HTTP method' }).click()
+  page.once('dialog', (dialog) => dialog.accept())
+  await page.getByRole('option', { name: 'GET', exact: true }).click()
+  await expect(
+    page.getByRole('checkbox', { name: 'Validate request body', exact: true }),
+  ).not.toBeChecked()
+  await page
+    .locator('details')
+    .filter({ has: page.getByLabel('Query field 1 minimum', { exact: true }) })
+    .getByText('Limits and description', { exact: true })
+    .click()
+  await page.getByLabel('Query field 1 minimum', { exact: true }).fill('3')
+  await page.getByLabel('Query field 1 maximum', { exact: true }).fill('2')
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await notice('query rules.count: minimum must not exceed maximum.')
+  await expect(
+    page.getByRole('button', { name: 'Publish', exact: true }),
+  ).toBeDisabled()
+  await capture(
+    'API rules',
+    'Contradictory limits cannot save',
+    'The form explains that minimum exceeds maximum before saving. This new API remains unsaved and cannot publish; the server also validates contract limits.',
+  )
+  await page.getByLabel('Query field 1 minimum', { exact: true }).fill('')
+  await page.getByLabel('Query field 1 maximum', { exact: true }).fill('')
+  await page
+    .locator('.react-flow__node')
+    .filter({ hasText: 'JSON response' })
+    .click()
+  await configure({ status: 200, body: { count: '$input.query.count' } })
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await notice('Draft saved')
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await notice('Input query.count')
+  await capture(
+    'API rules',
+    'Missing required query input',
+    'The real server rejects missing count with 400 before executing the saved draft. The error contains no submitted values.',
+  )
+  await page
+    .getByRole('button', { name: 'Add query parameter', exact: true })
+    .click()
+  await page.getByLabel('Query name 1', { exact: true }).fill('count')
+  await page.getByLabel('Query value 1', { exact: true }).fill('3')
+  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  await expect(page.getByTestId('test-result')).toContainText('"count": 3')
+  await expect(page.getByTestId('test-result')).not.toContainText(
+    '"count": "3"',
+  )
+  await capture(
+    'API rules',
+    'Valid typed response',
+    'Query text 3 becomes a JSON whole number before execution and passes the saved response rules.',
+  )
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  await notice('/run/typed-count')
+
+  async function downloadOpenapi() {
+    const pending = page.waitForEvent('download')
+    await page
+      .getByRole('button', { name: 'Download OpenAPI', exact: true })
+      .click()
+    const document = await pending
+    const filename = join(directory, `openapi-${Date.now()}.json`)
+    await document.saveAs(filename)
+    return JSON.parse(readFileSync(filename, 'utf8'))
+  }
+
+  await page.getByRole('combobox', { name: 'OpenAPI source' }).click()
+  await capture(
+    'OpenAPI',
+    'Choose documentation snapshot',
+    'The custom selector distinguishes the saved draft revision from the immutable published release; browser edits must be saved before export.',
+  )
+  await page.getByRole('option', { name: /^Saved draft/ }).click()
+  const draftDocument = await downloadOpenapi()
+  expect(draftDocument.openapi).toBe('3.1.1')
+  expect(draftDocument['x-besh-source']).toBe('draft')
+  expect(draftDocument.paths['/run/typed-count'].get.parameters).toEqual([
+    { name: 'count', in: 'query', required: true, schema: { type: 'integer' } },
+  ])
+  expect(draftDocument.paths['/run/typed-count'].get.security).toEqual([
+    { RuntimeKey: [] },
+  ])
+  await capture(
+    'OpenAPI',
+    'Download saved draft documentation',
+    'A real JSON download describes the saved REST method, route, integer query rules, and required runtime bearer authentication.',
+  )
+  await page.getByRole('combobox', { name: 'OpenAPI source' }).click()
+  await page.getByRole('option', { name: /^Published release/ }).click()
+  const publishedDocument = await downloadOpenapi()
+  expect(publishedDocument['x-besh-source']).toBe('published')
+  expect(publishedDocument['x-besh-revision']).toBe(1)
+  await capture(
+    'OpenAPI',
+    'Download published documentation',
+    'Published export describes release 1. Download access uses member identity; callers of this route still need a separate runtime API key.',
+  )
+  await page.getByLabel('Endpoint path').fill('/typed-count-next')
+  await page
+    .getByRole('checkbox', { name: 'Response field 1 allow null', exact: true })
+    .check()
+  await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  await notice('Draft saved')
+  const stillPublished = await downloadOpenapi()
+  expect(stillPublished).toEqual(publishedDocument)
+  await capture(
+    'OpenAPI',
+    'Edited draft keeps live documentation',
+    'Saved revision 2 changes the draft route and response nullability. Published download remains exactly the release-1 document.',
+  )
+  await page.getByRole('combobox', { name: 'OpenAPI source' }).click()
+  await page.getByRole('option', { name: /^Saved draft/ }).click()
+  const nextDraft = await downloadOpenapi()
+  expect(nextDraft['x-besh-revision']).toBe(2)
+  expect(
+    nextDraft.paths['/run/typed-count-next'].get.responses['200'].content[
+      'application/json'
+    ].schema.properties.count.type,
+  ).toEqual(['integer', 'null'])
+  expect(nextDraft.paths['/run/typed-count']).toBeUndefined()
+  await capture(
+    'OpenAPI',
+    'Updated draft documentation',
+    'The saved-draft download describes the new route and nullable integer response with OpenAPI 3.1 JSON Schema type unions; release 1 stays live.',
+  )
 
   await page.getByRole('button', { name: 'New API', exact: true }).click()
   await page.getByLabel('API name').fill('GraphQL greeting')
