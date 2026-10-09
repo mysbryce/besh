@@ -1,0 +1,16 @@
+name: Set up Bun on Windows
+description: Install an exact Bun release and a regular bunx executable in job temporary storage
+
+inputs:
+  bun-version:
+    description: Exact stable Bun version
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install Bun without symbolic links
+      shell: powershell
+      env:
+        BESH_BUN_VERSION: ${{ inputs.bun-version }}
+      run: "& (Join-Path $env:GITHUB_ACTION_PATH 'install.ps1')"

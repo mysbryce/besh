@@ -25,6 +25,14 @@ Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_
 
 Windows, Node 22.22.1, TypeScript 7.0.2, Playwright 1.64.0 with installed Chrome. Earlier deliveries used Bun 1.3.14; current runtime-migration checks use Bun 1.4.2.
 
+### Windows runner without symlink privileges
+
+- The maintainer's real non-admin GitHub runner failed during the upstream action's `bunx.exe` symlink creation with `EPERM`, before project checks. This reported job failure is the bootstrap RED; no new implementation-mirroring unit test was added at the installer boundary.
+- The local composite action downloads the exact official Windows x64 release into a fresh `RUNNER_TEMP` directory, verifies Bun `1.4.2`, and copies a regular `bunx.exe`. Both executables remain outside the user's Bun installation. Only the job's `GITHUB_PATH` file is updated; no administrator terminal, symlink, user/machine PATH edit or Windows policy change is required by the installer.
+- Actual downloads and native execution passed under PowerShell 7.6 and Windows PowerShell. The copied `bunx.exe` ran the existing local Prettier `3.9.9` with `--no-install`; inspection confirmed no reparse point and a UTF-8 job PATH entry without a BOM. These local checks ran as Administrator and do not prove execution under the maintainer's non-admin account.
+- Final Windows PowerShell native installation passed in 5.18 seconds. PowerShell parsing, composite YAML formatting, actionlint 1.7.12, type checks and the production build passed. The installer rejects line breaks, paths outside job temporary storage and reparse-point ancestry before adding its regular executables to the job PATH.
+- Successful complete GitHub execution with the corrected action remains unobserved. Start a new run from the fixed commit; rerunning the previous failed job retains its original commit. Earlier application/browser evidence below remains separate from this CI-only patch.
+
 ### Bounded protected read graphs
 
 - The first real source-first/SQLite-last protected REST test returned `400` rather than executing its saved graph. Path-sensitive graph analysis and the protected-shape gate passed the same test with seven assertions in 547 milliseconds, returning only the literal final SQLite row with the exact visited sequence. An initial sandbox child-reader failure was fixture access, not the product RED.

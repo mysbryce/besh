@@ -4,6 +4,12 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.16.1-alpha.0 — 2026-10-09
+
+### Fixed
+
+- Install Bun and a regular copied `bunx.exe` inside the Windows runner's job temporary directory, avoiding privileged symlink creation and changes to the user's Bun installation.
+
 ## 0.16.0-alpha.0 — 2026-10-09
 
 ### Added
