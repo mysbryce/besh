@@ -15,6 +15,8 @@ import { Select } from './components/ui/select'
 import {
   api,
   ApiError,
+  runtimeEndpointPath,
+  runtimeEndpointUrl,
   type RuntimeKey,
   type RuntimePermission,
   type SavedFlow,
@@ -30,6 +32,7 @@ const permissionLabels: Record<RuntimePermission, string> = {
   rest: 'REST requests',
   query: 'GraphQL queries',
   mutation: 'GraphQL mutations',
+  ws: 'WebSocket messages',
 }
 
 function releaseLabel(key: { releaseRevision: number | null }) {
@@ -101,27 +104,35 @@ export function RuntimeKeys() {
   const selected = published.find((flow) => flow.id === flowId) ?? published[0]
   const selectedPin = pin?.flowId === selected?.id ? pin : null
   const endpoint = selectedPin?.endpoint ?? selected?.publishedEndpoint
+  const websocket = endpoint?.transport === 'websocket'
+  const currentWebSocket =
+    selected?.publishedEndpoint?.transport === 'websocket'
   const permissions: RuntimePermission[] =
     scope && scope.flowId === selected?.id
       ? scope.permissions
-      : endpoint?.graphql
-        ? ['query']
-        : ['rest']
-  const availablePermissions: RuntimePermission[] = endpoint?.graphql
-    ? ['query', 'mutation']
-    : ['rest']
+      : websocket
+        ? ['ws']
+        : endpoint?.graphql
+          ? ['query']
+          : ['rest']
+  const availablePermissions: RuntimePermission[] = websocket
+    ? ['ws']
+    : endpoint?.graphql
+      ? ['query', 'mutation']
+      : ['rest']
   const locked = busy || loading || !!issued
   const tenantReview = useTenantReview(
     selected?.id,
     'published',
     readable && !!selected?.publishedRevision,
   )
-  const requiresPin = selectedAccess || tenantReview.required
+  const requiresPin =
+    selectedAccess || tenantReview.required || currentWebSocket
   const ownTenantContext = useTenantContext(can(member, 'runtime-keys.manage'))
 
   useEffect(() => {
     if (
-      tenantReview.required &&
+      (tenantReview.required || currentWebSocket) &&
       selected?.publishedRevision &&
       selected.publishedEndpoint
     )
@@ -134,7 +145,12 @@ export function RuntimeKeys() {
               endpoint: selected.publishedEndpoint!,
             },
       )
-  }, [tenantReview.required, selected?.id, selected?.publishedRevision])
+  }, [
+    tenantReview.required,
+    currentWebSocket,
+    selected?.id,
+    selected?.publishedRevision,
+  ])
 
   function tenantLabel(key: Pick<RuntimeKey, 'tenantId'>) {
     if (!key.tenantId) return 'No tenant identity'
@@ -410,7 +426,9 @@ export function RuntimeKeys() {
               ).toISOString(),
               ...(selectedPin ? { releaseRevision: selectedPin.revision } : {}),
               apiName: selected.name,
-              route: `${endpoint?.method} ${endpoint?.graphql ? '/graphql' : '/run'}${endpoint?.path}`,
+              route: endpoint
+                ? `${websocket ? 'WebSocket' : endpoint.method} ${runtimeEndpointPath(endpoint)}`
+                : 'Published endpoint unavailable',
               ...(tenantReview.requestTenantId
                 ? { tenantId: tenantReview.requestTenantId }
                 : {}),
@@ -452,7 +470,8 @@ export function RuntimeKeys() {
                   setScope(null)
                   const choice = published.find((flow) => flow.id === value)
                   setPin(
-                    selectedAccess &&
+                    (selectedAccess ||
+                      choice?.publishedEndpoint?.transport === 'websocket') &&
                       choice?.publishedRevision &&
                       choice.publishedEndpoint
                       ? {
@@ -513,6 +532,14 @@ export function RuntimeKeys() {
             </label>
           </div>
           <TenantReview review={tenantReview} disabled={locked} />
+          {currentWebSocket ? (
+            <p className="credential-note">
+              WebSocket callers require the dedicated WebSocket messages grant
+              and a current-release pin. Browser connections use a short-lived
+              ticket from the caller’s server; do not put this runtime key in a
+              browser URL or local storage.
+            </p>
+          ) : null}
           {tenantReview.required ? (
             <p className="credential-note">
               Protected callers require the current release pin. The original
@@ -557,18 +584,16 @@ export function RuntimeKeys() {
           {endpoint ? (
             <div className="runtime-endpoint">
               <label htmlFor="runtime-endpoint-url">
-                {endpoint.method} · Published endpoint URL
+                {endpoint.transport === 'websocket'
+                  ? 'WebSocket'
+                  : endpoint.method}{' '}
+                · Published endpoint URL
               </label>
               <Input
                 id="runtime-endpoint-url"
                 aria-label="Published endpoint URL"
                 readOnly
-                value={
-                  new URL(
-                    `${endpoint.graphql ? '/graphql' : '/run'}${endpoint.path}`,
-                    location.origin,
-                  ).href
-                }
+                value={runtimeEndpointUrl(endpoint)}
               />
             </div>
           ) : null}

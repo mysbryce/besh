@@ -92,7 +92,12 @@ test('publish-only selected responses expose publication metadata and hide an un
     id: flow.id,
     revision: 1,
     publishedRevision: 1,
-    publishedEndpoint: { method: 'GET', path: '/hello', graphql: false },
+    publishedEndpoint: {
+      method: 'GET',
+      path: '/hello',
+      graphql: false,
+      transport: 'rest',
+    },
   })
   await request(`/api/flows/${flow.id}`, 'PUT', {
     ...helloFlow,
@@ -134,7 +139,12 @@ test('publish-only selected responses expose publication metadata and hide an un
     id: flow.id,
     revision: 3,
     publishedRevision: 1,
-    publishedEndpoint: { method: 'GET', path: '/hello', graphql: false },
+    publishedEndpoint: {
+      method: 'GET',
+      path: '/hello',
+      graphql: false,
+      transport: 'rest',
+    },
   })
   const saved = await (await request(`/api/flows/${flow.id}`)).json()
   expect(saved.name).toBe('Private draft name')
@@ -1165,7 +1175,7 @@ test('bound GraphQL callers check current issuer actions and USE before parsing 
 test('typed SQLite and OAuth use catalogs authorize structures and real reads without global resource access', async () => {
   const { request } = workspace()
   const fixture = new Database(':memory:')
-  fixture.exec(
+  fixture.run(
     "CREATE TABLE people (id INTEGER, name TEXT); INSERT INTO people VALUES (1, 'Private Ada')",
   )
   const bytes = fixture.serialize()

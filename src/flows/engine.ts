@@ -9,6 +9,7 @@ import {
 import { checkValue, prepareInput } from './contracts'
 import { ApiError } from '../errors'
 import { concreteRoute } from './routes'
+import { validateWebSocketGraph } from '../websockets/graph'
 
 export function validateFlow(value: unknown) {
   assertJsonLimit(value)
@@ -70,6 +71,7 @@ export function validateFlow(value: unknown) {
   visit(roots[0].id)
   if (visited.size !== nodes.size)
     throw new Error('Remove or connect unreachable nodes')
+  validateWebSocketGraph(flow)
   return flow
 }
 

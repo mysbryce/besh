@@ -285,7 +285,9 @@ export function App() {
                 >
                   <span className="api-dot" />
                   <span>{flow.name}</span>
-                  <small>{flow.graphql ? 'GQL' : flow.method}</small>
+                  <small>
+                    {flow.websocket ? 'WS' : flow.graphql ? 'GQL' : flow.method}
+                  </small>
                 </button>
               ))
             ) : (
@@ -447,7 +449,7 @@ function Roadmap() {
   const items = [
     [
       'Identity & contracts',
-      'More product login providers, product sessions, and WebSocket flows.',
+      'More product login providers, product sessions, and realtime broadcasts.',
     ],
     [
       'Connect your data',

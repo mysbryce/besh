@@ -581,7 +581,7 @@ export async function tenantProtectionPreviews({
       '-e',
       `import { Database } from 'bun:sqlite'
 const db = new Database(':memory:')
-db.exec("CREATE TABLE customers (tenant TEXT, person TEXT); INSERT INTO customers VALUES ('A','Ada'),('B','Bree'); CREATE TABLE orders (tenant TEXT, total INTEGER); INSERT INTO orders VALUES ('A',12),('B',34)")
+db.run("CREATE TABLE customers (tenant TEXT, person TEXT); INSERT INTO customers VALUES ('A','Ada'),('B','Bree'); CREATE TABLE orders (tenant TEXT, total INTEGER); INSERT INTO orders VALUES ('A',12),('B',34)")
 process.stdout.write(db.serialize())
 db.close()`,
     ],

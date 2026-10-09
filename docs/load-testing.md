@@ -2,6 +2,8 @@
 
 Load testing is a main Besh feature. Owners and custom members with load-test permission can send repeated requests to a published REST or GraphQL API and inspect latency, throughput, errors, and pass/fail goals from the dashboard. Besh runs a local [Grafana k6 binary](https://grafana.com/docs/k6/latest/set-up/install-k6/); no Grafana Cloud account is required.
 
+WebSocket publications are omitted from targets. Direct starts for them return an unsupported error without creating a job or temporary key. An API edited to a WebSocket draft remains eligible only while its current publication is supported HTTP. Dedicated WebSocket scripts, metrics, managed callers, and lifecycle/load acceptance remain planned; current k6 checks do not certify socket capacity. See [WebSocket scope](websockets.md).
+
 ## First run
 
 1. Build, test, and publish an API.

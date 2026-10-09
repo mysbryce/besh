@@ -111,7 +111,7 @@ export async function scopedActionsPreviews({
       `
     import { Database } from 'bun:sqlite'
     const database = new Database(':memory:')
-    database.exec('CREATE TABLE customers (name TEXT NOT NULL, city TEXT NOT NULL)')
+    database.run('CREATE TABLE customers (name TEXT NOT NULL, city TEXT NOT NULL)')
     database.query('INSERT INTO customers VALUES (?, ?)').run('Ada', 'London')
     database.query('INSERT INTO customers VALUES (?, ?)').run('Grace', 'New York')
     process.stdout.write(Buffer.from(database.serialize()))

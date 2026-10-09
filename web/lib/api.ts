@@ -2,6 +2,31 @@ import type { Flow } from '../../src/flows/model'
 import type { Permission } from '../../src/workspace/permissions'
 import type { FlowAccess, MemberAccess } from '../../src/workspace/flow-access'
 import type { TenantAssignment } from '../../src/workspace/tenant-model'
+import type { FlowTransport } from '../../src/flows/transport'
+
+export type PublishedEndpoint = {
+  method: Flow['method']
+  path: string
+  graphql: boolean
+  transport: FlowTransport
+}
+
+export function runtimeEndpointPath(endpoint: PublishedEndpoint) {
+  const prefix =
+    endpoint.transport === 'websocket'
+      ? '/ws'
+      : endpoint.graphql
+        ? '/graphql'
+        : '/run'
+  return `${prefix}${endpoint.path}`
+}
+
+export function runtimeEndpointUrl(endpoint: PublishedEndpoint) {
+  const url = new URL(runtimeEndpointPath(endpoint), location.origin)
+  if (endpoint.transport === 'websocket')
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+  return url.href
+}
 
 export async function apiRulesError(
   contract: Flow['contract'],
@@ -63,13 +88,9 @@ export type SavedFlow = Flow & {
   id: string
   revision: number
   publishedRevision: number | null
-  publishedEndpoint: {
-    method: Flow['method']
-    path: string
-    graphql: boolean
-  } | null
+  publishedEndpoint: PublishedEndpoint | null
 }
-export type RuntimePermission = 'rest' | 'query' | 'mutation'
+export type RuntimePermission = 'rest' | 'query' | 'mutation' | 'ws'
 export type RuntimeKey = {
   id: string
   name: string

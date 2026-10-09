@@ -377,7 +377,7 @@ test('protected GraphQL tests use trusted identity and reject unsupported publis
 test('SQLite tenant equality overrides NOCASE and runs before projection and row limits', async () => {
   const { request } = workspace()
   const sqlite = new Database(':memory:')
-  sqlite.exec(
+  sqlite.run(
     "CREATE TABLE people (tenant TEXT COLLATE NOCASE, name TEXT); INSERT INTO people VALUES ('a', 'Foreign'), ('A', 'Ada'), (NULL, 'Unknown')",
   )
   const bytes = sqlite.serialize()

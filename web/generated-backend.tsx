@@ -199,7 +199,10 @@ export function GeneratedBackend() {
               <strong>Published release · revision {artifact.revision}</strong>
               <br />
               <code>
-                {artifact.endpoint.method} {artifact.endpoint.path}
+                {artifact.endpoint.transport === 'websocket'
+                  ? 'WebSocket'
+                  : artifact.endpoint.method}{' '}
+                {artifact.endpoint.path}
               </code>
             </p>
             <p>

@@ -50,7 +50,7 @@ function copy(
   const db = new Database(':memory:')
   let bytes: Uint8Array
   try {
-    db.exec(sql)
+    db.run(sql)
     bytes = new Uint8Array(db.serialize())
   } finally {
     db.close()
@@ -395,7 +395,7 @@ test('quoted SQLite columns keep RTRIM spaces and Unicode identities exact befor
   const db = new Database(':memory:')
   let bytes: Uint8Array
   try {
-    db.exec(
+    db.run(
       'CREATE TABLE "tenant rows""safe" ("tenant id""safe" TEXT COLLATE RTRIM, name TEXT, city TEXT)',
     )
     const insert = db.query('INSERT INTO "tenant rows""safe" VALUES (?, ?, ?)')

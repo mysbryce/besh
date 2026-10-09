@@ -10,6 +10,7 @@ import { generatedBackendPreviews } from './generated-backend-preview'
 import { flowAccessPreviews } from './flow-access-preview'
 import { scopedActionsPreviews } from './scoped-actions-preview'
 import { tenantProtectionPreviews } from './tenant-protection-preview'
+import { websocketPreviews } from './websocket-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -4079,6 +4080,12 @@ test('preview every current page and its actions', async ({
   await flowAccessPreviews({ page, owner, capture })
   await scopedActionsPreviews({ page, owner, capture })
   await tenantProtectionPreviews({ page, owner, capture })
+  await websocketPreviews({
+    page,
+    owner,
+    apiOrigin: new URL(page.url()).origin,
+    capture,
+  })
   expect(errors).toEqual([])
 
   await context.clearPermissions()

@@ -161,7 +161,7 @@ try {
     safeIntegers: true,
   })
   try {
-    db.exec(
+    db.run(
       'PRAGMA hard_heap_limit = 16777216; PRAGMA trusted_schema = OFF; PRAGMA query_only = ON',
     )
     if (db.query('PRAGMA quick_check(1)').values()[0]?.[0] !== 'ok')

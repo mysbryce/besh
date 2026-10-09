@@ -2,6 +2,8 @@
 
 Besh generates server-side request examples for eight targets. Each example describes one saved source revision and uses `BESH_RUNTIME_API_KEY` from the caller's environment. Generating, copying, or downloading code does not call the API, publish a draft, issue a key, or test your application.
 
+These targets support REST and GraphQL HTTP calls. Selecting a WebSocket source returns an explicit unsupported error; no HTTP example or browser runtime key is generated for it. A WebSocket draft with an older published REST release can still use **Published release** for that HTTP source. WebSocket callers use the separate [connection and ticket workflow](websockets.md).
+
 ## Generate an example
 
 1. Save the API, then open **Use this API** in API Studio with **Read APIs** permission.

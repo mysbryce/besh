@@ -63,40 +63,42 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 
 ## Workspace
 
-| Method | Path                                | Permission / body                                                                       |
-| ------ | ----------------------------------- | --------------------------------------------------------------------------------------- |
-| GET    | `/api/me`                           | Any member; identity and current permissions                                            |
-| GET    | `/api/flows`                        | `flows.read`; drafts/revisions filtered by current API scope                            |
-| GET    | `/api/flows/:id`                    | `flows.read`                                                                            |
-| GET    | `/api/flows/:id/releases`           | `flows.read`; immutable revisions and current selection                                 |
-| GET    | `/api/flows/:id/releases/:revision` | `flows.read`; selected definition and current flag                                      |
-| GET    | `/api/flows/:id/openapi`            | `flows.read`; `source=draft` or `source=published` (default)                            |
-| GET    | `/api/flows/:id/backend-code`       | `flows.read`; current module, optional expected `revision`                              |
-| POST   | `/api/flows`                        | `flows.write`; all-mode only; flow definition                                           |
-| PUT    | `/api/flows/:id`                    | `flows.write`; flow definition plus current `revision`                                  |
-| POST   | `/api/flows/:id/test`               | `flows.test`; `{ "body": {}, "query": {}, "params": {} }`                               |
-| POST   | `/api/flows/:id/graphql/test`       | `flows.test`; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`     |
-| POST   | `/api/flows/:id/publish`            | `flows.publish`; `{ "revision": 1 }`                                                    |
-| POST   | `/api/flows/:id/rollback`           | `flows.publish`; `{ "revision": 1, "publishedRevision": 3 }`; selects 1 if 3 is current |
-| GET    | `/api/members`                      | Owner; member metadata without credential hashes or tokens                              |
-| POST   | `/api/members`                      | Owner; name and `viewer`, `editor`, or `custom` role; custom requires `roleId`          |
-| PUT    | `/api/members/:id/role`             | Owner; `{ "role": "viewer" }` or `{ "role": "custom", "roleId": "..." }`                |
-| PUT    | `/api/members/:id/flow-access`      | Owner; exact scope and expected version; see selected-API reading                       |
-| PUT    | `/api/members/:id/access`           | Owner; exact API/dependency access and expected shared version                          |
-| DELETE | `/api/members/:id`                  | Owner; cannot remove bootstrap owner                                                    |
-| GET    | `/api/runtime-keys`                 | `runtime-keys.manage`; metadata including revoked keys                                  |
-| POST   | `/api/runtime-keys`                 | `runtime-keys.manage`; name, flow ID, grants, expiration; token once                    |
-| POST   | `/api/runtime-keys/:id/rotate`      | `runtime-keys.manage`; identical scope/expiration replacement; token once               |
-| DELETE | `/api/runtime-keys/:id`             | `runtime-keys.manage`; revocation with retained metadata                                |
-| GET    | `/api/audit`                        | `audit.read`; latest 200 events, newest first                                           |
-| GET    | `/api/migrations`                   | `migrations.read`; control schema versions in applied order                             |
-| GET    | `/api/backups`                      | `backups.manage`; owner-only permanently after first tenant protection                  |
-| POST   | `/api/backups`                      | `backups.manage`; full snapshot, owner-only after first protection                      |
-| GET    | `/api/backups/:id`                  | `backups.manage`; complete SQLite download, owner-only after first protection           |
+| Method | Path                                | Permission / body                                                                        |
+| ------ | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| GET    | `/api/me`                           | Any member; identity and current permissions                                             |
+| GET    | `/api/flows`                        | `flows.read`; drafts/revisions filtered by current API scope                             |
+| GET    | `/api/flows/:id`                    | `flows.read`                                                                             |
+| GET    | `/api/flows/:id/releases`           | `flows.read`; immutable revisions and current selection                                  |
+| GET    | `/api/flows/:id/releases/:revision` | `flows.read`; selected definition and current flag                                       |
+| GET    | `/api/flows/:id/openapi`            | `flows.read`; `source=draft` or `source=published` (default)                             |
+| GET    | `/api/flows/:id/backend-code`       | `flows.read`; current module, optional expected `revision`                               |
+| POST   | `/api/flows`                        | `flows.write`; all-mode only; flow definition                                            |
+| PUT    | `/api/flows/:id`                    | `flows.write`; flow definition plus current `revision`                                   |
+| POST   | `/api/flows/:id/test`               | `flows.test`; `{ "body": {}, "query": {}, "params": {} }`                                |
+| POST   | `/api/flows/:id/graphql/test`       | `flows.test`; GraphQL `{ "query": "...", "variables": {}, "operationName": "..." }`      |
+| POST   | `/api/flows/:id/ws/test-ticket`     | `flows.test`; exact `{ "revision": 1, "tenantId": "<owner-selector>" }`, tenant optional |
+| WS     | `/api/flows/:id/ws/test`            | Saved-draft ticket, exact original workspace proof and Origin                            |
+| POST   | `/api/flows/:id/publish`            | `flows.publish`; `{ "revision": 1 }`                                                     |
+| POST   | `/api/flows/:id/rollback`           | `flows.publish`; `{ "revision": 1, "publishedRevision": 3 }`; selects 1 if 3 is current  |
+| GET    | `/api/members`                      | Owner; member metadata without credential hashes or tokens                               |
+| POST   | `/api/members`                      | Owner; name and `viewer`, `editor`, or `custom` role; custom requires `roleId`           |
+| PUT    | `/api/members/:id/role`             | Owner; `{ "role": "viewer" }` or `{ "role": "custom", "roleId": "..." }`                 |
+| PUT    | `/api/members/:id/flow-access`      | Owner; exact scope and expected version; see selected-API reading                        |
+| PUT    | `/api/members/:id/access`           | Owner; exact API/dependency access and expected shared version                           |
+| DELETE | `/api/members/:id`                  | Owner; cannot remove bootstrap owner                                                     |
+| GET    | `/api/runtime-keys`                 | `runtime-keys.manage`; metadata including revoked keys                                   |
+| POST   | `/api/runtime-keys`                 | `runtime-keys.manage`; name, flow ID, grants, expiration; token once                     |
+| POST   | `/api/runtime-keys/:id/rotate`      | `runtime-keys.manage`; identical scope/expiration replacement; token once                |
+| DELETE | `/api/runtime-keys/:id`             | `runtime-keys.manage`; revocation with retained metadata                                 |
+| GET    | `/api/audit`                        | `audit.read`; latest 200 events, newest first                                            |
+| GET    | `/api/migrations`                   | `migrations.read`; control schema versions in applied order                              |
+| GET    | `/api/backups`                      | `backups.manage`; owner-only permanently after first tenant protection                   |
+| POST   | `/api/backups`                      | `backups.manage`; full snapshot, owner-only after first protection                       |
+| GET    | `/api/backups/:id`                  | `backups.manage`; complete SQLite download, owner-only after first protection            |
 
 Drafts may be incomplete. Publishing and testing require one request node, reachable nodes, valid edges, and a response at every terminal path. Conditions require exactly one `true` and one `false` edge. Cycles are rejected.
 
-Release-list entries contain `revision`, `createdAt`, `endpoint: { method, path, graphql }`, and `current`. Release detail contains `revision`, `createdAt`, the saved `definition`, and `current`. Unknown flows or releases return `404`. Releases are created by publication, not every draft save.
+Release-list entries contain `revision`, `createdAt`, `endpoint: { method, path, graphql, transport }`, and `current`. The transport is `rest`, `graphql`, or `websocket`; flow metadata's `publishedEndpoint` reports the immutable current publication independently of the draft. Release detail contains `revision`, `createdAt`, the saved `definition`, and `current`. Unknown flows or releases return `404`. Releases are created by publication, not every draft save.
 
 Rollback accepts exactly the two positive integer fields shown above. It changes only the published selection and returns the updated flow metadata; the draft revision and definition stay intact. The server validates the target graph, current dependencies, route availability, and expected current publication before committing with `flow.rolled-back`. Selecting the already current release, a stale publication, or a conflicting route returns `409`. Publication and rollback also return `409` while this flow has an active load test. Runtime keys keep their flow scope and grants; referenced spreadsheet/OAuth data is not rolled back. See [routes and release history](api-routes.md).
 
@@ -156,13 +158,15 @@ Selected key inventory/exact operations cover bound keys for currently shared AP
 
 `GET /api/flows/:id/backend-code?revision=N` requires `flows.read`; `revision` optionally guards the expected current publication, and omission returns the latest publication; runtime keys cannot access management. Unknown/unpublished flows return `404`, an invalid/duplicate revision or an unknown query field returns `400`, and a changed or historical noncurrent revision returns `409`. Artifact integrity failure returns `503`. This read does not publish or execute an API and does not export a draft.
 
-The artifact contains `flowId`, `revision`, numeric `compilerVersion`, `filename` (`besh-<flowId>-r<revision>.cjs`), `code`, `sha256`, `definitionSha256`, `endpoint: { method, path, graphql: boolean }`, and `requirements: string[]`. Generated code is bounded to 1 MiB (`400` on generation overflow). Endpoint paths include the actual `/run` or `/graphql` prefix. Code is canonical CommonJS generated from the validated release and depends on Besh runtime services; it is not a standalone deployment. Configured literals/resource references can appear in downloads; server-held secrets and caller tokens are not automatically inserted. Hashes describe generated content and are not signatures. See [published backend code](runtime-code.md).
+The artifact contains `flowId`, `revision`, numeric `compilerVersion`, `filename` (`besh-<flowId>-r<revision>.cjs`), `code`, `sha256`, `definitionSha256`, `endpoint: { method, path, graphql: boolean, transport }`, and `requirements: string[]`. Compiler 2 is current; retained compiler-1 REST/GraphQL artifacts are verified against their matching trusted renderer before regeneration. Generated code is bounded to 1 MiB (`400` on generation overflow). Endpoint paths include the actual `/run`, `/graphql`, or `/ws` prefix. WebSocket modules register exact upgrades and POST ticket helpers, without a wildcard dispatcher. Code is canonical CommonJS generated from the validated release and depends on Besh runtime services; it is not a standalone deployment. Configured literals/resource references can appear in downloads; server-held secrets and caller tokens are not automatically inserted. Hashes describe generated content and are not signatures. See [published backend code](runtime-code.md).
 
 Publication/rollback stages the module and compiled registered routes with migration-14 artifact/generation state and audit. Runtime keeps credentials, pins, contracts, GraphQL/data/execution limits, and audit SQL. A generation change during parsed-request admission rejects with `503` before effects; an already admitted immutable-release request may finish. Failed peer reconstruction or local restoration blocks runtime with `503` until restart or a successful local publication stage. Exact failure/recovery and native behavior belong in [testing](testing.md).
 
 ## Client code examples
 
 All client-code routes require `flows.read`; runtime keys cannot access them. Cookie POSTs use the normal Origin/CSRF checks. These routes render request source only; they do not execute an API, issue a key, or save example payloads.
+
+All eight HTTP targets explicitly reject a selected WebSocket source with `400`. An API whose saved WebSocket draft still has a published REST release can select that published source for HTTP examples. OpenAPI follows the same REST-source boundary; built-in k6 rejects WebSocket publications.
 
 | Method | Path                         | Behavior                                                                          |
 | ------ | ---------------------------- | --------------------------------------------------------------------------------- |
@@ -397,9 +401,9 @@ Content-Type: application/json
 }
 ```
 
-Issuance accepts exactly `name`, `flowId`, `permissions`, `expiresAt`, and optional `releaseRevision` and owner execution selector `tenantId`; unknown fields return `400`. To pin the key, add `releaseRevision` as a JSON number that is a positive safe integer equal to the flow's current published revision. Numeric strings are not converted. Selected issuers must provide the current pin (`400` if omitted) and satisfy API/USE authority; the server derives their binding. For unprotected targets, all-mode issuers can omit it for following behavior and ordinary unbound issuance; protected targets require a current pin and every non-owner derives current tenant/issuer authority; explicit `null`, strings, booleans, fractions, and unsafe integers return `400`. The current-publication check and insertion/audit are atomic. A stale/noncurrent pin, including a known flow with no publication, returns `409` before newer dependency or grant/protocol checks and without issuing a key or creation audit. An unpublished following target returns `400`; an unknown flow returns `404`.
+Issuance accepts exactly `name`, `flowId`, `permissions`, `expiresAt`, and optional `releaseRevision` and owner execution selector `tenantId`; unknown fields return `400`. To pin the key, add `releaseRevision` as a JSON number that is a positive safe integer equal to the flow's current published revision. Numeric strings are not converted. Selected issuers must provide the current pin (`400` if omitted) and satisfy API/USE authority; the server derives their binding. For unprotected HTTP targets, all-mode issuers can omit it for following behavior and ordinary unbound issuance; protected targets require a current pin and every non-owner derives current tenant/issuer authority; explicit `null`, strings, booleans, fractions, and unsafe integers return `400`. The current-publication check and insertion/audit are atomic. A stale/noncurrent pin, including a known flow with no publication, returns `409` before newer dependency or grant/protocol checks and without issuing a key or creation audit. An unpublished following target returns `400`; an unknown flow returns `404`.
 
-Name must contain 1 to 80 characters after trimming. Expiration must be a future ISO date with timezone within 366 days. A REST flow accepts `rest`; a GraphQL flow accepts `query`, `mutation`, or both. Empty, duplicate, or protocol-incompatible grants are rejected. One key scopes to one published flow ID.
+Name must contain 1 to 80 characters after trimming. Expiration must be a future ISO date with timezone within 366 days. A REST flow accepts `rest`; a GraphQL flow accepts `query`, `mutation`, or both; a WebSocket flow accepts only `ws` and requires the current `releaseRevision` for every issuer (`400` if omitted). WebSocket following keys are not issued. Empty, duplicate, or protocol-incompatible grants are rejected. One key scopes to one published flow ID.
 
 The response contains `id`, `name`, `flowId`, `permissions`, `expiresAt`, `createdAt`, `revokedAt: null`, required nullable `releaseRevision`, `issuerBinding`, and `tenantId`, and a one-time `token`. `GET /api/runtime-keys` returns the same metadata without tokens or hashes. Keys owned by load-test jobs additionally contain `managedBy: "load-test"`; ordinary caller keys omit it. These temporary keys are revoked automatically and cannot be replaced (`409`). Manual revocation is allowed and interrupts their caller access. Revocation returns `{ "ok": true }` and retains `revokedAt`. Repeating revocation succeeds; an unknown key returns `404`.
 
@@ -423,13 +427,13 @@ A successful `200` response uses the issuance response format above, with a new 
 | `404`  | Original key does not exist                                                                                                                   |
 | `409`  | Key is revoked or expired, another replacement won, issuer authority is blocked, or grants no longer match the selected compatibility release |
 
-Replacement also requires current actor authority and, for a bound key, original issuer authority. Following-key compatibility uses the current published release. Pinned-key compatibility uses the immutable pinned release, including when it is dormant; a missing pinned release returns `409` without replacement. Neither uses an edited draft. A failed replacement leaves the old key unchanged. Concurrent replacements allow only one winner. New requests using the old token return `401` immediately after the commit; requests already authenticated may finish.
+Replacement also requires current actor authority and, for a bound key, original issuer authority. Following-key compatibility uses the current published release. Pinned-key compatibility uses the immutable pinned release, including when it is dormant; a missing pinned release returns `409` without replacement. Neither uses an edited draft. A failed replacement leaves the old key unchanged. Concurrent replacements allow only one winner. New requests using the old token return `401` immediately after the commit; HTTP requests already authenticated may finish. WebSocket connections retain current original-key checks; replacement denies further results and closes the old connection through the bounded sweep.
 
 Do not automatically retry after a lost response: the replacement may already have committed and its token cannot be fetched again. List key metadata to inspect the state, then revoke/create or replace an active replacement if its token was lost. For uninterrupted handover, manually create another key, update callers, and revoke the original; this route has no grace period. See [runtime API keys](api-keys.md) for the dashboard workflow.
 
 Runtime keys cannot authenticate management routes. Built-in editor and viewer member tokens cannot manage keys; custom members require `runtime-keys.manage`. Owner and member tokens cannot invoke published endpoints. Missing, expired, or revoked runtime credentials return `401`; valid keys targeting another flow or an ungranted operation return `403`. GraphQL checks the selected query or mutation before flow execution. Grants do not filter fields or records.
 
-Following keys (`releaseRevision: null`) accept the flow's current publication. A pinned key accepts only its exact revision while that revision is currently published; a mismatch at the current route returns `403` before typed input validation or effects. A removed old route returns `404`. Rollback to the exact pin restores access only while the key is unexpired and unrevoked. Pins do not execute archived releases, freeze mutable data/credentials, or add field/record policy. Review following-key grants before republishing broader behavior. Migration 6 adds runtime-key storage; it preserves published releases but intentionally ends member-token runtime access. Existing callers need new runtime credentials.
+Following HTTP keys (`releaseRevision: null`) accept the flow's current publication. A pinned key accepts only its exact revision while that revision is currently published; a mismatch at the current route returns `403` before typed input validation or effects. A removed old route returns `404`. Rollback to the exact pin restores access only while the key is unexpired and unrevoked. Pins do not execute archived releases, freeze mutable data/credentials, or add field/record policy. Review following-key grants before republishing broader behavior. Migration 6 adds runtime-key storage; it preserves published releases but intentionally ends member-token runtime access. Existing callers need new runtime credentials.
 
 Migration 13 adds a nullable, positive integer `release_revision` column; existing keys remain following keys. Replacement retains that value and existing audit behavior. Restoring a backup restores that snapshot's key state and can reactivate a key revoked or replaced later. Review restored keys before resuming callers.
 
@@ -446,4 +450,23 @@ The test endpoint returns `{ "status": 200, "body": {}, "visited": ["start", "do
 
 Flows may include optional `contract.params`, `contract.query`, `contract.body`, and `contract.response` schemas. REST draft tests and live calls enforce these rules; GraphQL uses its SDL contract. OpenAPI export describes the selected saved REST draft or immutable published release. See [API rules and OpenAPI](api-contracts.md) for the schema subset, validation behavior, and export boundary.
 
-The GitHub social node performs only its bounded provider exchange and profile read. Database nodes read inspected uploaded SQLite copies. Arbitrary code, live external database access, SQL writes, general external HTTP request nodes, other social providers, WebSocket endpoints, and AI execution remain unimplemented. Workspace email/password and key sessions never replace runtime API keys.
+The GitHub social node performs only its bounded provider exchange and profile read. Database nodes read inspected uploaded SQLite copies. Arbitrary code, live external database access, SQL writes, general external HTTP request nodes, other social providers, and AI execution remain unimplemented. Workspace email/password and key sessions never replace runtime API keys.
+
+## WebSocket request/reply
+
+Implemented in 0.12. A flow uses `websocket: { input, output, allowedOrigins }` instead of REST `contract` or GraphQL SDL. Its method is GET, its path has static ASCII segments, and its graph is a message echo or one bounded source/SQLite read. Input is a flat typed object; output is a flat object or at most 100 flat rows. Saving validates message schemas; testing and publication also reject unsupported graphs. HTTP draft-test routes reject WebSocket definitions.
+
+| Method | Path                            | Proof / body                                                                              |
+| ------ | ------------------------------- | ----------------------------------------------------------------------------------------- |
+| WS     | `/ws/<published-path>`          | Runtime bearer for native clients, or published ticket subprotocols with approved Origin  |
+| POST   | `/ws/<published-path>/ticket`   | Runtime bearer; exact `{ "revision": 1, "origin": "https://app.example" }`                |
+| POST   | `/api/flows/:id/ws/test-ticket` | `flows.test`; exact `{ "revision": 1, "tenantId": "<owner-selector>" }`, tenant optional  |
+| WS     | `/api/flows/:id/ws/test`        | Draft ticket subprotocols and its original live cookie/session or native member-key proof |
+
+Every published WebSocket key requires only `ws` and the current release pin. Browser-ticket receipts contain `{ ticket, expiresAt, revision, path, protocol: 'besh.ws.v1' }`. Offer `besh.ws.v1` and `besh.ticket.<ticket>`; the server selects only the version protocol. Tickets expire within 30 seconds and are hash-stored/atomically consumed. Explicit Authorization chooses bearer mode without ticket/cookie fallback. Query and fragment input are rejected; never put a nonce or credential in the URL or storage. Published tickets delegate original flow/tenant authority; the product server must authorize their recipient. Ordinary HTTP at an exact socket route returns 426 after proof checks. Publication/rollback rejects socket/ticket-helper collisions.
+
+Cookie draft minting retains workspace Origin/CSRF checks; upgrade requires the exact original live session. Native member-key tickets require their exact original current bearer proof and Origin. A test-only native member may use a known API ID/revision without `flows.read`; Studio requires both Read APIs and Test drafts. Saved-draft conflicts return `409`; the browser offers explicit **Refresh saved draft** before reconnecting. Owner tests review tenant selection; non-owners derive assignment, outside message input.
+
+Messages are `{ "id": "request-1", "body": { "message": "Hello" } }`. Replies are `{ id, result }` or a bounded generic `{ id, error }`; submitted values, credentials, private failure rows, and stack traces are omitted from errors/audits. Limits include one execution per connection, five attempts/second, 32 KiB input, 64 KiB reply, 128 KiB native backpressure, 30-second idle expiry, and five-minute total expiry. Connection/ticket quotas and SQLite reader budgets also apply.
+
+Message and idle checks retain current original credential/session, revision/pin, issuer/action/API/USE, tenant, and the admitted resource policy mode/version. Rechecks around asynchronous reads and before sends deny rows after authority loss. Publication closes affected sockets after commit; exact rollback permits a new connection rather than reviving an old one. HTTP work already admitted may finish, while WS retains these fresh checks. Queued/delivered bytes cannot be recalled. Startup purges tickets once, not on router rebuild; migration 18 adds transport indexing and tickets. See [WebSocket guide](websockets.md) and [testing](testing.md) for detailed bounds and observed recovery. Events, subscriptions, WS exports, and WS k6 targets remain planned.

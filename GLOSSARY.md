@@ -8,7 +8,7 @@
 - **Release**: a validated, immutable copy of a flow used by callers.
 - **Backend artifact**: generated CommonJS source and hashes for a validated published graph; it requires Besh runtime services rather than running as a standalone server.
 - **Runtime generation**: a persisted publication-change counter used to reconstruct current registered handlers and reject requests crossing an activation change.
-- **Registered runtime route**: a published method/path handled by its generated module instead of a wildcard path-to-flow dispatcher.
+- **Registered runtime route**: a published HTTP method/path or exact WebSocket upgrade handled by its generated module instead of a wildcard path-to-flow dispatcher.
 - **Release history**: immutable published flow revisions, with the currently selected revision identified separately from the draft.
 - **Rollback**: a publication-authorized action that selects an earlier validated release for live callers without changing the draft or restoring mutable dependencies.
 - **Path parameter**: a named whole REST path segment, such as `:id` in `/v1/items/:id`, provided by the caller and available as `$input.params.id`.
@@ -20,6 +20,11 @@
 - **OpenAPI document**: a downloadable description of one saved REST draft or published release, including its route, rules, and runtime-key authentication.
 - **GraphQL schema**: a typed contract describing query/mutation fields, their arguments, and returned data.
 - **GraphQL operation**: a query or mutation selecting fields from a published schema; variables supply typed argument values.
+- **WebSocket API**: an authenticated request/reply transport for a flat typed message echo or one bounded spreadsheet/SQLite read; separate from events and GraphQL subscriptions.
+- **Message rules**: the versioned WebSocket received/reply field schemas, separate from REST contracts and GraphQL SDL.
+- **Handshake ticket**: a hash-stored, single-use nonce expiring within 30 seconds, offered through a WebSocket subprotocol rather than a URL; bound to its original proof, API revision, origin, and tenant.
+- **Original connection proof**: the current runtime key, exact workspace session, or native member-key hash behind a WebSocket ticket/connection; a ticket cannot replace a required original draft proof.
+- **Connection policy baseline**: the resource policy mode/version captured when a socket is admitted; a later change closes that connection before further results.
 - **Run**: one execution of a flow with an input and a result.
 - **Load test**: a permission-authorized bounded k6 run that repeatedly calls a published API and reports latency, throughput, errors, and configured goals.
 - **Virtual user**: one concurrent k6 request loop; Besh permits at most ten per load test.
@@ -54,12 +59,12 @@
 - **Login proof**: a separate sensitive value returned to the product server by `BEGIN`, kept out of the authorization URL and browser, and required once for `COMPLETE`.
 - **Provider subject**: the provider's stable user identifier, paired with the provider name for product identity; distinct from a mutable username or email address.
 - **Secret key file**: the local encryption key for saved provider secrets and PKCE verifiers; separate from SQLite backups and restored with the matching database.
-- **Runtime API key**: a server-issued credential granting REST requests or GraphQL query/mutation operations for one published flow, with required expiration and immediate revocation; separate from workspace role permissions.
+- **Runtime API key**: a server-issued credential granting REST requests, GraphQL query/mutation operations, or WebSocket messages for one published flow, with required expiration and revocation; separate from workspace role permissions. Every WebSocket key requires the current release pin.
 - **Following key**: a runtime key with no release pin; it accepts the flow's current published revision.
 - **Release-pinned key**: a runtime key bound to one graph revision; it accepts that revision only while it is the current publication, without executing an archived release.
 - **Dormant key**: an unexpired, unrevoked pinned key whose revision is not currently published; selecting its exact revision again can restore caller access.
 - **Key replacement**: a key-management-authorized action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, release pin or following mode, issuer binding, tenant identity, and exact expiration; the new token appears once and there is no grace period.
-- **Runtime grant**: permission to invoke an entire REST request, GraphQL query, or GraphQL mutation; it does not filter fields or records.
+- **Runtime grant**: permission to invoke an entire REST request, GraphQL query/mutation, or WebSocket request/reply operation; it does not filter fields or records.
 - **Audit event**: a record of who performed an action, when, and on which resource.
 - **Migration**: a versioned change to a database schema.
 - **Backup**: a consistent copy of data that can be restored and verified.

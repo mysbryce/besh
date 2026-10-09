@@ -6,6 +6,12 @@ export type BackendCodeArtifact = {
   code: string
   sha256: string
   definitionSha256: string
-  endpoint: { method: string; path: string; graphql: boolean }
+  endpoint: {
+    method: string
+    path: string
+    graphql: boolean
+    transport?: FlowTransport
+  }
   requirements: string[]
 }
+import type { FlowTransport } from './transport'

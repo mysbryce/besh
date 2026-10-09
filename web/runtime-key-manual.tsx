@@ -133,6 +133,7 @@ export function ManualPinnedKeyForm({
               { value: 'query', label: 'GraphQL queries' },
               { value: 'mutation', label: 'GraphQL mutations' },
               { value: 'both', label: 'GraphQL queries and mutations' },
+              { value: 'ws', label: 'WebSocket messages' },
             ]}
           />
         </label>

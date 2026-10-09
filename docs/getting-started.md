@@ -6,7 +6,7 @@ Besh is an early, local development preview. Build visual REST and GraphQL APIs,
 
 ## Start in two commands
 
-Install [Bun](https://bun.sh/docs/installation) 1.3.14 or newer. From this folder:
+Install [Bun](https://bun.sh/docs/installation) 1.4.2 or newer. From this folder:
 
 ```sh
 bun install --frozen-lockfile
@@ -279,9 +279,9 @@ Code style: no semicolons, single quotes, blank lines between steps, and comment
 
 ## Planned integrations
 
-PostgreSQL, MySQL/MariaDB, live SQLite connections and writes, MongoDB, Supabase, Firebase; generated-product social-auth templates for Discord, Facebook, Google and other identity providers; product sessions and identity linking; WebSocket flows; custom plugins; verified update installation/recovery; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI. Workspace sign-in uses email/password or member/owner keys.
+PostgreSQL, MySQL/MariaDB, live SQLite connections and writes, MongoDB, Supabase, Firebase; generated-product social-auth templates for Discord, Facebook, Google and other identity providers; product sessions and identity linking; WebSocket events/subscriptions and WS client/load tooling; custom plugins; verified update installation/recovery; and a full AI operator for Anthropic, OpenAI, OpenRouter, Ollama-compatible APIs and Codex CLI. Workspace sign-in uses email/password or member/owner keys.
 
-These are roadmap items. Public Google Sheets imports, uploaded read-only SQLite copies, and the GitHub product identity template are implemented; other providers and live database adapters are not. GitHub needs a real OAuth app and product-server callback for a live sign-in. No external account is required for local flows, uploaded spreadsheets, or uploaded SQLite copies.
+These are roadmap items. Public Google Sheets imports, uploaded read-only SQLite copies, typed WebSocket request/reply, and the GitHub product identity template are implemented; other providers and live database adapters are not. GitHub needs a real OAuth app and product-server callback for a live sign-in. No external account is required for local flows, uploaded spreadsheets, or uploaded SQLite copies.
 
 ## Read more
 

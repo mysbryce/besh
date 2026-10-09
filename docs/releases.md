@@ -31,7 +31,7 @@ A Git push stores commits remotely. It does not by itself publish a package, dep
 
 ## Automated checks and candidate artifacts
 
-[Check workflow](../.github/workflows/check.yml) runs on pull requests and pushes. Windows and Ubuntu use pinned Bun 1.3.14, frozen dependencies, release-policy checks, and `bun run check`. An Ubuntu job installs Playwright Chromium and runs the browser stories. Actions are pinned to commit hashes; checkout does not persist credentials. Repository permissions are `contents: read`.
+[Check workflow](../.github/workflows/check.yml) runs on pull requests and pushes. Windows and Ubuntu use pinned Bun 1.4.2, frozen dependencies, release-policy checks, and `bun run check`. An Ubuntu job installs Playwright Chromium and runs the browser stories. Actions are pinned to commit hashes; checkout does not persist credentials. Repository permissions are `contents: read`.
 
 Run the policy locally with:
 

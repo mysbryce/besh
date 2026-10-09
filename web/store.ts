@@ -62,6 +62,7 @@ type Studio = {
   method: Flow['method']
   path: string
   graphql: Flow['graphql']
+  websocket: Flow['websocket']
   contract: Flow['contract']
   revision: number
   publishedRevision: number | null
@@ -84,7 +85,10 @@ type Studio = {
   openCreated: (flow: SavedFlow) => void
   edit: (
     fields: Partial<
-      Pick<Studio, 'name' | 'path' | 'method' | 'graphql' | 'contract'>
+      Pick<
+        Studio,
+        'name' | 'path' | 'method' | 'graphql' | 'websocket' | 'contract'
+      >
     >,
   ) => void
   onNodesChange: (changes: NodeChange<CanvasNode>[]) => void
@@ -114,6 +118,7 @@ function editState(flow?: SavedFlow) {
     method: flow?.method ?? ('GET' as Flow['method']),
     path: flow?.path ?? '/hello',
     graphql: flow?.graphql,
+    websocket: flow?.websocket,
     contract: flow?.contract,
     revision: flow?.revision ?? 0,
     publishedRevision: flow?.publishedRevision ?? null,
@@ -348,7 +353,8 @@ export const useStudio = create<Studio>((set, get) => ({
       method: state.method,
       path: state.path,
       graphql: state.graphql,
-      contract: state.graphql ? undefined : state.contract,
+      websocket: state.websocket,
+      contract: state.graphql || state.websocket ? undefined : state.contract,
       nodes: state.nodes.map((node) => ({
         id: node.id,
         type: node.data.kind,
@@ -414,7 +420,7 @@ export const useStudio = create<Studio>((set, get) => ({
     set((current) => ({
       publishedRevision: flow.publishedRevision,
       flows: current.flows.map((item) => (item.id === flow.id ? flow : item)),
-      notice: `Published · ${flow.method} ${flow.graphql ? '/graphql' : '/run'}${flow.path}`,
+      notice: `Published · ${flow.websocket ? 'WebSocket' : flow.method} ${flow.websocket ? '/ws' : flow.graphql ? '/graphql' : '/run'}${flow.path}`,
       failed: false,
     }))
   },

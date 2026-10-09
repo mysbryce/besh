@@ -28,11 +28,11 @@ export async function databasePreviews({
     import { Database } from 'bun:sqlite'
     import { writeFileSync } from 'node:fs'
     const database = new Database(':memory:')
-    database.exec('CREATE TABLE customers (id INTEGER, name TEXT NOT NULL, city TEXT NOT NULL)')
+    database.run('CREATE TABLE customers (id INTEGER, name TEXT NOT NULL, city TEXT NOT NULL)')
     database.query('INSERT INTO customers VALUES (?, ?, ?)').run(1, 'Ada', 'London')
     database.query('INSERT INTO customers VALUES (?, ?, ?)').run(2, 'Grace', 'New York')
-    database.exec('CREATE TABLE empty_rows (id INTEGER, name TEXT)')
-    database.exec('CREATE TABLE flags (enabled BOOLEAN, label TEXT)')
+    database.run('CREATE TABLE empty_rows (id INTEGER, name TEXT)')
+    database.run('CREATE TABLE flags (enabled BOOLEAN, label TEXT)')
     database.query('INSERT INTO flags VALUES (?, ?)').run(1, 'Enabled flag')
     database.query('INSERT INTO flags VALUES (?, ?)').run(0, 'Disabled flag')
     writeFileSync(process.argv[1], database.serialize())

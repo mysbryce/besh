@@ -7,6 +7,7 @@ Desktop.ini
 
 .agents/
 .claude/
+skills-lock.json
 node_modules/
 dist/
 .cache/

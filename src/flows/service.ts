@@ -8,6 +8,7 @@ import type { dataSourceService } from '../data/sources'
 import { flowOpenapi } from './openapi'
 import type { productAuthService } from '../auth/product'
 import { decodedRoute, matchRoute, overlappingRoutes } from './routes'
+import { flowTransport, websocketRoutesOverlap } from './transport'
 import type { databaseConnectionService } from '../databases/service'
 import { clientCodeTargets } from './client-code-model'
 import { clientCodeSchema, flowClientCode } from './client-code'
@@ -110,6 +111,7 @@ export function flowService(
             method: published.method,
             path: published.path,
             graphql: Boolean(published.graphql),
+            transport: flowTransport(published),
           }
         : null,
     }
@@ -131,6 +133,7 @@ export function flowService(
           method: published.method,
           path: published.path,
           graphql: Boolean(published.graphql),
+          transport: flowTransport(published),
         },
       }
     }
@@ -145,10 +148,12 @@ export function flowService(
       candidates.some((row) => {
         const published = JSON.parse(row.published!) as Flow
         return (
-          Boolean(published.graphql) === Boolean(definition.graphql) &&
-          (definition.graphql
-            ? definition.path === published.path
-            : overlappingRoutes(definition.path, published.path))
+          flowTransport(published) === flowTransport(definition) &&
+          (flowTransport(definition) === 'websocket'
+            ? websocketRoutesOverlap(definition.path, published.path)
+            : flowTransport(definition) === 'graphql'
+              ? definition.path === published.path
+              : overlappingRoutes(definition.path, published.path))
         )
       })
     )
@@ -173,12 +178,18 @@ export function flowService(
     const row = get(id)
     if (selected === 'published' && !row.published)
       throw new ApiError(404, 'This API has no published release')
+    const flow = draft(
+      JSON.parse(selected === 'draft' ? row.definition : row.published!),
+    )
+    if (flowTransport(flow) === 'websocket')
+      throw new ApiError(
+        400,
+        'HTTP client examples are unavailable for WebSocket APIs',
+      )
     return {
       source: selected,
       revision: selected === 'draft' ? row.revision : row.published_revision!,
-      flow: draft(
-        JSON.parse(selected === 'draft' ? row.definition : row.published!),
-      ),
+      flow,
     }
   }
 
@@ -278,6 +289,15 @@ export function flowService(
   }
 
   return {
+    websocketDraft(id: string): RuntimeRelease {
+      const row = get(id)
+      return {
+        flowId: id,
+        revision: row.revision,
+        definition: draft(JSON.parse(row.definition)),
+      }
+    },
+    validateWebSocketDraft: valid,
     rowAccess(
       member: import('../workspace/store').Member,
       id: string,
@@ -385,6 +405,7 @@ export function flowService(
               method: definition.method,
               path: definition.path,
               graphql: Boolean(definition.graphql),
+              transport: flowTransport(definition),
             },
             current: row.revision === flow.published_revision,
           }
@@ -451,7 +472,7 @@ export function flowService(
         throw new ApiError(404, 'This API has no published release')
       const definition = selected === 'draft' ? row.definition : row.published!
       const flow = draft(JSON.parse(definition))
-      if (flow.graphql)
+      if (flowTransport(flow) !== 'rest')
         throw new ApiError(400, 'OpenAPI is available for REST APIs only')
       return flowOpenapi(
         flow,
@@ -571,6 +592,11 @@ export function flowService(
       )
       checkpoint()
       const definition = valid(saved)
+      if (flowTransport(definition) === 'websocket')
+        throw new ApiError(
+          400,
+          'Use the saved-draft WebSocket connection tester',
+        )
       if (definition.graphql)
         throw new ApiError(400, 'Use the GraphQL test endpoint')
       const result = await execute(
@@ -618,6 +644,11 @@ export function flowService(
       )
       checkpoint()
       const definition = valid(saved)
+      if (flowTransport(definition) === 'websocket')
+        throw new ApiError(
+          400,
+          'Use the saved-draft WebSocket connection tester',
+        )
       if (!definition.graphql)
         throw new ApiError(400, 'This API does not have a GraphQL schema')
       const result = await executeGraphql(
@@ -717,6 +748,76 @@ export function flowService(
       active()
       if (result.visited.length)
         audit(`runtime:${key.id}`, 'graphql.executed', release.flowId)
+      return result
+    },
+    async websocket(
+      release: RuntimeRelease,
+      body: unknown,
+      signal: AbortSignal,
+      authorize: () => RuntimeKey,
+    ) {
+      const principal = () =>
+        runtimeRowPrincipal(store, authorize(), release.definition)
+      const checkpoint = rowCheckpoint(
+        store,
+        release.definition,
+        () => {
+          active()
+          authorize()
+        },
+        principal,
+      )
+      checkpoint()
+      const result = await execute(
+        `runtime:${authorize().id}`,
+        release.flowId,
+        release.definition,
+        { body, query: {}, params: {} },
+        release.revision,
+        signal,
+        checkpoint,
+        principal,
+      )
+      checkpoint()
+      return result
+    },
+    async testWebSocket(
+      release: RuntimeRelease,
+      body: unknown,
+      signal: AbortSignal,
+      authorize: () => import('../workspace/store').Member,
+      tenantId: string | null,
+    ) {
+      const principal = () => {
+        const member = authorize()
+        return memberRowPrincipal(
+          store,
+          member,
+          release.definition,
+          member.role === 'owner' && tenantId !== null ? tenantId : undefined,
+        )
+      }
+      const checkpoint = rowCheckpoint(
+        store,
+        release.definition,
+        () => {
+          active()
+          authorize()
+        },
+        principal,
+      )
+      checkpoint()
+      const result = await execute(
+        authorize().id,
+        release.flowId,
+        release.definition,
+        { body, query: {}, params: {} },
+        release.revision,
+        signal,
+        checkpoint,
+        principal,
+      )
+      checkpoint()
       return result
     },
     close() {

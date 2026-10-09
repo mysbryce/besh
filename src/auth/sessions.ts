@@ -93,6 +93,18 @@ export function sessionService(store: Store, now = Date.now) {
 
   return {
     restore,
+    current(sessionId: string) {
+      const row = store
+        .query<SessionRow, [string]>(
+          'SELECT id, member_id, created_at, expires_at FROM sessions WHERE id = ?',
+        )
+        .get(sessionId)
+      if (!row || Date.parse(row.expires_at) <= now()) return null
+      const member = store.member(row.member_id)
+      return member
+        ? { member, sessionId: row.id, expiresAt: row.expires_at }
+        : null
+    },
     account(memberId: string) {
       const account = store
         .query<AccountRow, [string]>(

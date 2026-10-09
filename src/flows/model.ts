@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { contractSchema } from './contracts'
 import { validRoute, routeParameters } from './routes'
 import type { DatabaseReadConfig } from '../databases/model'
+import { websocketSchema } from '../websockets/schema'
 export type { ApiSchema, ApiContract } from './contracts'
 
 const position = z.object({ x: z.number().finite(), y: z.number().finite() })
@@ -21,6 +22,7 @@ export const flowSchema = z
     ]),
     path: z.string().max(160).refine(validRoute),
     graphql: z.object({ schema: z.string().min(1).max(16_384) }).optional(),
+    websocket: websocketSchema.optional(),
     contract: contractSchema.optional(),
     nodes: z
       .array(
@@ -116,6 +118,24 @@ export const flowSchema = z
       .max(128),
   })
   .superRefine((flow, context) => {
+    if (
+      flow.websocket &&
+      (flow.graphql || flow.contract || flow.method !== 'GET')
+    )
+      context.addIssue({
+        code: 'custom',
+        message:
+          'WebSocket APIs use GET upgrades and separate message rules, without GraphQL or REST rules',
+      })
+    if (
+      flow.websocket &&
+      !/^\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(flow.path)
+    )
+      context.addIssue({
+        code: 'custom',
+        message:
+          'WebSocket paths need ASCII literal segments, such as /v1/events, without parameters or empty segments',
+      })
     if (flow.graphql && routeParameters(flow.path).length)
       context.addIssue({
         code: 'custom',

@@ -19,6 +19,8 @@ import { flowService } from './flows/service'
 import { clientCodeTargets } from './flows/client-code-model'
 import { currentBackendCode } from './flows/backend-code'
 import { runtimeService } from './flows/runtime'
+import { websocketService } from './websockets/service'
+import { websocketLimits } from './websockets/protocol'
 import { backupService } from './workspace/backups'
 import { dataSourceService } from './data/sources'
 import { databaseConnectionService } from './databases/service'
@@ -142,6 +144,13 @@ export function createApp(options: AppOptions) {
         flows.run(key, release, path, input, signal),
       graphql: (key, release, input, signal) =>
         flows.graphql(key, release, input, signal),
+      websocket: (release) => websockets.options(release),
+      websocketNamespace: (request) => websockets.namespace(request),
+      websocketTicket: (release, _epoch, request, body) =>
+        websockets.mintPublished(release, request, body),
+      websocketHttp: (release, _epoch, request) =>
+        websockets.http(release, request),
+      publicationCommitted: () => websockets.publicationCommitted(),
     })
   } catch (error) {
     void databases.close()
@@ -149,6 +158,29 @@ export function createApp(options: AppOptions) {
     throw error
   }
   const flows = flowService(store, sources, productAuth, databases, runtime)
+  let websockets: ReturnType<typeof websocketService>
+  try {
+    websockets = websocketService(
+      store,
+      runtime,
+      (release, body, signal, authorize) =>
+        flows.websocket(release, body, signal, authorize),
+      {
+        sessions,
+        checkOrigin: (request) => browser.checkOrigin(request),
+        snapshot: (id) => flows.websocketDraft(id),
+        validate: (definition) => flows.validateWebSocketDraft(definition),
+        execute: (release, body, signal, authorize, tenantId) =>
+          flows.testWebSocket(release, body, signal, authorize, tenantId),
+      },
+    )
+  } catch (error) {
+    runtime.close()
+    flows.close()
+    void databases.close()
+    store.close()
+    throw error
+  }
   const backups = backupService(store, options.backupDir, (actor) => {
     const member = store.member(actor)
     if (!member) throw new ApiError(401, 'Authentication required')
@@ -188,6 +220,19 @@ export function createApp(options: AppOptions) {
     if (member.flowAccess.mode !== 'selected') return
     const path = new URL(request.url).pathname
     const read = request.method === 'GET' || request.method === 'HEAD'
+    const draftSocket = /^\/api\/flows\/([^/]+)\/ws\/test(-ticket)?$/.exec(path)
+    if (
+      draftSocket &&
+      ((request.method === 'POST' && draftSocket[2]) ||
+        (read && !draftSocket[2]))
+    ) {
+      let id = ''
+      try {
+        id = decodeURIComponent(draftSocket[1]!)
+      } catch {}
+      authorizeFlow(member, id, 'flows.test')
+      return
+    }
     if (
       read &&
       /^\/api\/dependencies\/(sources|database-connections|auth-connections)(\/[^/]+)?$/.test(
@@ -393,6 +438,11 @@ export function createApp(options: AppOptions) {
       return { member, session }
     })
     .get('/me', ({ member }) => member)
+    .post('/flows/:id/ws/test-ticket', ({ member, params, request, body }) => {
+      authorizeFlow(member, params.id, 'flows.test')
+      return websockets.mintDraft(params.id, request, body)
+    })
+    .ws('/flows/:id/ws/test', websockets.draftOptions())
     .get('/tenant-context', ({ member }) => tenants.context(member.id))
     .get('/tenants', ({ member }) => {
       allow(member, ['owner'])
@@ -1012,8 +1062,10 @@ export function createApp(options: AppOptions) {
       systemRouter: false,
       strictPath: true,
       precompile: true,
+      websocket: websocketLimits,
     })
       .onStop(() => {
+        websockets.beginShutdown()
         runtime.close()
         loadTests.close()
         updates.close()
@@ -1140,6 +1192,7 @@ export function createApp(options: AppOptions) {
   try {
     runtime.attach(buildApp)
   } catch (error) {
+    websockets.close()
     runtime.close()
     loadTests.close()
     updates.close()
@@ -1155,8 +1208,12 @@ export function createApp(options: AppOptions) {
     get app() {
       return runtime.app
     },
+    beginShutdown() {
+      websockets.beginShutdown()
+    },
     close() {
       if (storeClosed) return shutdown!
+      websockets.close()
       runtime.close()
       loadTests.close()
       updates.close()

@@ -47,9 +47,17 @@ if (server.setupRequired) {
   console.log(`First-run setup: ${base}/?setup=${setupKey}`)
 }
 
+let stopping = false
+
 const stop = async () => {
-  await server.app.stop()
-  await server.close()
+  if (stopping) return
+  stopping = true
+  server.beginShutdown()
+  try {
+    await server.app.stop()
+  } finally {
+    await server.close()
+  }
   process.exit(0)
 }
 

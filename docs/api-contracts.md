@@ -2,6 +2,8 @@
 
 API rules describe what a REST endpoint accepts and returns. Add them when callers need a stable, typed interface. Besh checks rules on the server for draft tests and published calls. Rules are optional; existing APIs without them keep their previous behavior. GraphQL uses its SDL schema instead.
 
+WebSocket uses separate flat **Received fields** and **Reply fields**, without a REST contract or GraphQL SDL in the same definition. Reviewed conversion of a supported REST read preserves typed row rules and moves its simple query filter to message input. See [WebSocket forms and conversion](websockets.md).
+
 ## Start with field rules
 
 Open a REST API in **API Studio**, then open **API rules**. Define path parameters, query parameters, a JSON request body, or the response. Path parameters come from the route and are always required and non-nullable. Other fields have a name, type, and required choice; body and response fields also offer an allow-null choice. Use custom type selectors and checkboxes. Nested objects, lists, and their item rules also use field forms.
@@ -55,7 +57,7 @@ Authorization: Bearer <workspace-member-token>
 
 Use `source=draft` for the saved draft. Omitting `source` chooses `published`; it never silently falls back to the draft. The document describes the selected revision's method and `/run/<path>` route, input/response rules, and required runtime bearer authentication. It does not contain runtime keys, request samples from actual callers, response-node literals, or spreadsheet rows.
 
-The document identifies its selection with `x-besh-source`, numeric `x-besh-revision`, and a string revision in `info.version`. A missing API or published release returns 404. An unsupported source or GraphQL selection returns 400. Missing or invalid member credentials return 401. A saved draft may have an incomplete graph: downloading its contract does not certify that the draft can execute or publish.
+The document identifies its selection with `x-besh-source`, numeric `x-besh-revision`, and a string revision in `info.version`. A missing API or published release returns 404. An unsupported source, GraphQL selection, or WebSocket selection returns 400. A saved WebSocket draft does not prevent exporting an older published REST release explicitly. Missing or invalid member credentials return 401. A saved draft may have an incomplete graph: downloading its contract does not certify that the draft can execute or publish.
 
 Declared query fields appear as standard OpenAPI parameters. Path segments such as `:id` become `{id}` with required `in: path` parameters; parameters without declared rules use a string schema. The operation also includes `x-besh-query-schema` to retain the full query-object rule, including whether undeclared query fields are rejected. A parameter list alone cannot express that object-wide policy; tools may ignore this Besh extension, while the runtime still enforces it.
 

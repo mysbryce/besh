@@ -6,6 +6,8 @@ Owners and custom members with runtime-key management permission can create, lis
 
 The normal API picker needs `flows.read`. A selected key manager without API reading instead uses **Shared API ID**, **Known published release**, and **Operation type**, with values reviewed by the owner. No private API lookup is made. Key-management permission still allows authorized inventory, replacement, and revocation; the management API can issue for a known published flow without API reading.
 
+WebSocket keys allow only **WebSocket messages** (`ws`) and require the current published `releaseRevision` for every manager, including all-mode owners. Following mode is unavailable for this transport. Native clients use the runtime bearer header on the exact `/ws/<path>` upgrade. Browsers use a short-lived, one-use subprotocol ticket issued through their product server; runtime keys stay private on that server. Workspace credentials and draft tickets cannot open a published socket. See [WebSocket credentials and tickets](websockets.md).
+
 ## Create and use a key
 
 1. Save, test, and publish your API in **API Studio**.
@@ -15,7 +17,7 @@ The normal API picker needs `flows.read`. A selected key manager without API rea
 5. Select **Create API key**. Copy the token and save it privately before acknowledging that you saved it.
 6. Configure the caller to send `Authorization: Bearer <runtime-key>` to the published endpoint.
 
-For unprotected APIs, under **Release access**, all-mode managers can keep **Follow published changes** or choose **Only this release**. Selected managers use **Only this release** and a live issuer binding. A pin captures the reviewed publication. Refresh does not silently move it to a newer revision; use **Use current release** to review that change. **Create release-pinned API key** confirms the API, route, **Only release N**, operations, and exact expiry before **Create pinned key**. The no-read form reviews supplied metadata instead of fetching the private route; after `409`, **Review supplied release** or an edited revision makes that review explicit.
+For unprotected HTTP APIs, under **Release access**, all-mode managers can keep **Follow published changes** or choose **Only this release**. Selected managers use **Only this release** and a live issuer binding. WebSocket APIs always require **Only this release**. A pin captures the reviewed publication. Refresh does not silently move it to a newer revision; use **Use current release** to review that change. **Create release-pinned API key** confirms the API, route, **Only release N**, operations, and exact expiry before **Create pinned key**. The no-read form reviews supplied metadata instead of fetching the private route; after `409`, **Review supplied release** or an edited revision makes that review explicit.
 
 For a REST API published at `/hello`:
 
@@ -26,13 +28,13 @@ curl 'http://127.0.0.1:3000/run/hello?name=Ada' \
 
 GraphQL uses the same header on `/graphql/<published-path>` with a POST JSON operation. See the [GraphQL guide](graphql.md) for query and mutation examples.
 
-Use the endpoint shown for the published API. For `/v1/items/:id`, substitute an encoded value for `:id`, such as `/run/v1/items/42`. Editing a draft's path or API type does not change its live endpoint. Keys follow the flow ID across publication and rollback by default, so review grants before changing live behavior. Separate `/v1` and `/v2` flows need separate keys; see [routes and release history](api-routes.md).
+Use the endpoint shown for the published API. For `/v1/items/:id`, substitute an encoded value for `:id`, such as `/run/v1/items/42`. Editing a draft's path or API type does not change its live endpoint. Following HTTP keys track the flow ID across publication and rollback, so review grants before changing live behavior. Separate `/v1` and `/v2` flows need separate keys; see [routes and release history](api-routes.md).
 
 ## Follow publications or pin a release
 
-A following key has `releaseRevision: null` and accepts the flow's current published behavior. Existing keys keep this default. A pinned key has a positive `releaseRevision` and accepts requests only while that exact revision is currently published. Issue a pin for the current publication; a stale expected revision returns `409` without issuing a key. This is not a way to serve archived releases at separate routes.
+A following HTTP key has `releaseRevision: null` and accepts the flow's current published behavior. Existing following keys retain that value; they cannot open a WebSocket endpoint. A pinned key has a positive `releaseRevision` and accepts requests only while that exact revision is currently published. Issue a pin for the current publication; a stale expected revision returns `409` without issuing a key. This is not a way to serve archived releases at separate routes.
 
-A valid pinned key becomes **dormant** when another revision is selected. At the current route it returns `403` before typed input validation or flow effects; an old route that is no longer published returns `404`. Rolling back to its exact revision can restore access if it remains unexpired/unrevoked and current issuer, tenant, and dependency authority still permits the call. Expired/revoked keys return `401` and cannot be revived by rollback. Requests already authorized may finish after publication changes.
+A valid pinned key becomes **dormant** when another revision is selected. At the current route it returns `403` before typed input validation or flow effects; an old route that is no longer published returns `404`. Rolling back to its exact revision can restore access if it remains unexpired/unrevoked and current issuer, tenant, and dependency authority still permits the call. Expired/revoked keys return `401` and cannot be revived by rollback. HTTP requests already authorized may finish after publication changes. WebSocket publication changes close affected old-revision connections after commit; exact rollback permits a fresh connection with the still-valid pin rather than reviving the closed one.
 
 Changing an active pin into a dormant one does not revoke it. Replacing a dormant key preserves its dormant pin; issuing a separate current-release or following key is a different decision. Rollback does not undo revocation, and expiry still applies while the key is dormant.
 
@@ -54,7 +56,7 @@ Keys marked **Managed by load testing** are pinned to their run's starting revis
 4. In **Save API key**, select **Copy API key**, privately save the new token, then select **I saved this API key**. It is shown once.
 5. Update each caller to use the new token, then check a request through the published endpoint.
 
-There is a gap between replacement and updating callers: new requests with the old token fail during that time. Requests already authenticated before replacement may finish. Replacement does not provide an overlap or grace period.
+There is a gap between replacement and updating callers: new requests with the old token fail during that time. HTTP requests already authenticated before replacement may finish. Existing WebSocket connections and unused tickets depend on the original current key; replacement denies further message results and closes old connections through current checks and the bounded idle sweep. Obtain a new browser ticket with the replacement key. Replacement does not provide an overlap or grace period, and cannot recall already queued/delivered bytes.
 
 For gradual handover, create a separate key with the required scope and expiration, update and check callers, then revoke the original. That is a manual sequence, separate from **Replace key**.
 

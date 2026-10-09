@@ -18,6 +18,8 @@ Playwright needs Node.js 22.22.1 or newer. Installed Chrome is detected at its s
 
 ## Inventory
 
+WebSocket previews cover reviewed protocol changes, flat received/reply field forms, canonical REST-read conversion, exact publication/artifact labels, required pinned `ws` callers, source-aware HTTP tools, and actual draft ticket/reply transport. Captures include readable rows, optional JSON, stale revision refresh, pending and dropped real mint responses, disconnect on edits, local oversized-message rejection, owner-reviewed or assigned tenant identity, read-only boundaries, and light/dark phone containment. Published WS is excluded from HTTP client exports/OpenAPI and k6 targets. External events and subscriptions remain planned. See [WebSocket APIs](websockets.md).
+
 Tenant protection adds exact-text registry creation/editing/retirement, member assignment, spreadsheet and complete SQLite table policies, first-protection backup acknowledgment, and explicit recovery after stale or unconfirmed saves. Captures include owner-reviewed draft/caller/load identities, non-owner assigned identities without a picker, original-tenant replacement, real protected REST/GraphQL and k6, historical cleanup, incomplete backup rejection, and light/dark/system phone views. These are resource-owned read policies, not arbitrary graph or field authorization. See [tenant rows](row-protection.md).
 
 Selected-API sharing adds all/selected modes, empty selections, compatible custom roles, confirmation/cancellation, role-expansion denials, current version/summary refresh, pending and lost saves, metadata retries, actual viewer session revocation/relogin, allowed REST/GraphQL exports, and hidden/private-read boundaries. Selected-empty views give owner-review guidance. Light/dark phone views contain the custom API controls and review. See [member sharing](roles.md).
@@ -53,9 +55,9 @@ Client-code states add all eight REST/GraphQL language choices, source revisions
 | Permissions          | Viewer studio, denied administration pages, editor controls, revoked token rejected                                                                                                                                                                       |
 | Phone layout         | Dashboard pages and login at 390px width, saved-API dropdown and selection, visible canvas, no document overflow, accessible sign-out                                                                                                                     |
 
-The verified walkthrough captured 619 screenshots on 2026-10-09, including all 13 dashboard pages at desktop and phone widths in light and dark appearance, plus tenant protection, selected API actions and dependency use, generated backend code, REST rules, OpenAPI downloads, client examples, workspace accounts/sessions, GitHub product login, API key replacement/release pins, k6 load tests, path parameters, release review/rollback, custom roles, update notices, and uploaded SQLite copies.
+The verified walkthrough captured 654 screenshots on 2026-10-09, including all 13 dashboard pages at desktop and phone widths in light and dark appearance, plus WebSocket request/reply, tenant protection, selected API actions and dependency use, generated backend code, REST rules, OpenAPI downloads, client examples, workspace accounts/sessions, GitHub product login, API key replacement/release pins, k6 load tests, path parameters, release review/rollback, custom roles, update notices, and uploaded SQLite copies.
 
-Gallery checks passed mouse/keyboard filtering, search, empty results, every image URL, phone overflow, and denial of private database/test-output paths. Light/dark/system appearance, reload, and OS preference behavior were verified separately. Desktop and phone screenshots were inspected, including the corrected input boundaries and settled theme controls.
+Gallery checks passed mouse/keyboard filtering, search, empty results, every image URL, phone overflow, and denial of private database/test-output paths. Light/dark/system appearance, reload, and OS preference behavior were verified separately. All 35 added WS originals were inspected, with the corrected published-URL label and both phone themes checked again after final recapture. Reply rows, custom fields, review/recovery controls, and masks remain readable and contained. The final walkthrough has 654 manifest records and 654 PNGs; exact browser/native results belong in [testing](testing.md).
 
 All 41 new selected-action states and 36 affected sharing states were inspected. Long phone forms were checked at their original pixel size. Sharing opens visibly after lower-row actions; member buttons and review controls stay contained. Key receipts remain masked, and historical or unknown release information is not presented as current authority.
 
@@ -101,6 +103,7 @@ Native browser confirmation dialogs are checked through their accept/cancel resu
 Ignore generated or private material:
 
 - Dependencies, build output, tool caches, coverage, Playwright reports, screenshots, logs, and TypeScript build state.
+- Local skill installation metadata, including `skills-lock.json`. The local file stays available while Git stops tracking it.
 - `.env` files, while keeping `.env.example` tracked.
 - Root workspace `/data/` and `/backups/` folders; SQLite databases and their WAL, SHM, and journal sidecars even outside `data/`. Anchored folder rules keep `src/data/` application modules tracked and formatted.
 - `besh-secrets.key`, the private product-login encryption key, wherever its default filename occurs. Keep any custom `BESH_SECRET_KEY_PATH` outside tracked source or add its exact private path to ignore rules.

@@ -21,6 +21,7 @@ import {
   type CurrentMember,
 } from './authorization'
 import type { Flow } from '../flows/model'
+import { flowTransport } from '../flows/transport'
 import type { TenantAssignment } from './tenant-model'
 import {
   memberRowPrincipal,
@@ -65,7 +66,7 @@ type RoleRow = {
 }
 type MemberRow = { id: string; name: string; role: BuiltInRole }
 
-export type RuntimePermission = 'rest' | 'query' | 'mutation'
+export type RuntimePermission = 'rest' | 'query' | 'mutation' | 'ws'
 
 export type RuntimeKey = {
   id: string
@@ -150,10 +151,10 @@ export function openStore(path: string, adminToken?: string) {
     statements.set(sql, statement)
     return statement
   }
-  db.exec(
+  db.run(
     'PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;',
   )
-  db.exec(`
+  db.run(`
     CREATE TABLE IF NOT EXISTS migrations (
       version INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
@@ -163,7 +164,7 @@ export function openStore(path: string, adminToken?: string) {
 
   db.transaction(() => {
     if (!query('SELECT version FROM migrations WHERE version = 1').get()) {
-      db.exec(`
+      db.run(`
         CREATE TABLE members (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
@@ -178,7 +179,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 2').get()) {
-      db.exec(`CREATE TABLE audit (
+      db.run(`CREATE TABLE audit (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         actor TEXT NOT NULL,
         action TEXT NOT NULL,
@@ -192,7 +193,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 3').get()) {
-      db.exec(`
+      db.run(`
         CREATE TABLE flows (
           id TEXT PRIMARY KEY,
           definition TEXT NOT NULL,
@@ -218,7 +219,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 4').get()) {
-      db.exec(
+      db.run(
         "CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL); INSERT INTO settings VALUES ('workspace', 'My workspace');",
       )
       query('INSERT INTO migrations VALUES (4, ?, ?)').run(
@@ -228,7 +229,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 5').get()) {
-      db.exec(`
+      db.run(`
         DROP INDEX published_route;
         CREATE UNIQUE INDEX published_route ON flows (
           (json_extract(published, '$.graphql') IS NOT NULL),
@@ -242,7 +243,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 6').get()) {
-      db.exec(`
+      db.run(`
         CREATE TABLE runtime_keys (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
@@ -261,7 +262,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 7').get()) {
-      db.exec(`
+      db.run(`
         CREATE TABLE data_sources (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
@@ -283,7 +284,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 8').get()) {
-      db.exec(`
+      db.run(`
         CREATE TABLE accounts (
           member_id TEXT PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
           email TEXT NOT NULL UNIQUE,
@@ -310,7 +311,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 9').get()) {
-      db.exec(`
+      db.run(`
         CREATE TABLE auth_connections (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
@@ -342,7 +343,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 10').get()) {
-      db.exec(`
+      db.run(`
         CREATE TABLE load_tests (
           id TEXT PRIMARY KEY,
           metadata TEXT NOT NULL,
@@ -359,7 +360,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 11').get()) {
-      db.exec(`
+      db.run(`
         CREATE TABLE workspace_roles (
           id TEXT PRIMARY KEY,
           name TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -381,7 +382,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 12').get()) {
-      db.exec(`CREATE TABLE database_connections (
+      db.run(`CREATE TABLE database_connections (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         bytes BLOB NOT NULL,
@@ -397,7 +398,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 13').get()) {
-      db.exec(`ALTER TABLE runtime_keys ADD COLUMN release_revision INTEGER
+      db.run(`ALTER TABLE runtime_keys ADD COLUMN release_revision INTEGER
         CHECK (release_revision IS NULL OR
           (typeof(release_revision) = 'integer' AND release_revision BETWEEN 1 AND 9007199254740991))`)
       query('INSERT INTO migrations VALUES (13, ?, ?)').run(
@@ -407,7 +408,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 14').get()) {
-      db.exec(`CREATE TABLE runtime_publication (
+      db.run(`CREATE TABLE runtime_publication (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         generation INTEGER NOT NULL CHECK (generation >= 0 AND generation <= 9007199254740991)
       );
@@ -429,7 +430,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 15').get()) {
-      db.exec(`CREATE TABLE member_flow_access (
+      db.run(`CREATE TABLE member_flow_access (
         member_id TEXT PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
         mode TEXT NOT NULL CHECK (mode IN ('all', 'selected')),
         version INTEGER NOT NULL CHECK (version > 0 AND version <= 9007199254740991)
@@ -447,7 +448,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 16').get()) {
-      db.exec(`CREATE TABLE member_source_use (
+      db.run(`CREATE TABLE member_source_use (
         member_id TEXT NOT NULL REFERENCES member_flow_access(member_id) ON DELETE CASCADE,
         resource_id TEXT NOT NULL REFERENCES data_sources(id), PRIMARY KEY (member_id, resource_id)
       );
@@ -471,7 +472,7 @@ export function openStore(path: string, adminToken?: string) {
     }
 
     if (!query('SELECT version FROM migrations WHERE version = 17').get()) {
-      db.exec(`
+      db.run(`
         CREATE TABLE tenants (
           id TEXT PRIMARY KEY, label TEXT NOT NULL, value TEXT NOT NULL COLLATE BINARY UNIQUE,
           state TEXT NOT NULL CHECK(state IN ('active', 'retired')),
@@ -515,6 +516,44 @@ export function openStore(path: string, adminToken?: string) {
       `)
       query('INSERT INTO migrations VALUES (17, ?, ?)').run(
         'trusted tenant identities and resource-owned row protection',
+        new Date().toISOString(),
+      )
+    }
+
+    if (!query('SELECT version FROM migrations WHERE version = 18').get()) {
+      db.run(`
+        DROP INDEX published_route;
+        CREATE UNIQUE INDEX published_route ON flows (
+          (CASE WHEN json_extract(published, '$.graphql') IS NOT NULL THEN 'graphql'
+            WHEN json_extract(published, '$.websocket') IS NOT NULL THEN 'websocket' ELSE 'rest' END),
+          json_extract(published, '$.method'), json_extract(published, '$.path')
+        ) WHERE published IS NOT NULL;
+        CREATE TABLE websocket_tickets (
+          ticket_hash TEXT PRIMARY KEY,
+          family TEXT NOT NULL CHECK(family IN ('published', 'draft')),
+          flow_id TEXT NOT NULL REFERENCES flows(id) ON DELETE CASCADE,
+          revision INTEGER NOT NULL CHECK(revision > 0 AND revision <= 9007199254740991),
+          origin TEXT NOT NULL,
+          proof_kind TEXT NOT NULL CHECK(proof_kind IN ('runtime', 'member-key', 'session')),
+          proof_key TEXT NOT NULL,
+          runtime_key_id TEXT REFERENCES runtime_keys(id),
+          member_id TEXT, member_key_hash TEXT, session_id TEXT,
+          tenant_id TEXT REFERENCES tenants(id),
+          expires_at INTEGER NOT NULL,
+          CHECK (
+            (family = 'published' AND proof_kind = 'runtime' AND runtime_key_id IS NOT NULL
+              AND member_id IS NULL AND member_key_hash IS NULL AND session_id IS NULL) OR
+            (family = 'draft' AND runtime_key_id IS NULL AND member_id IS NOT NULL AND (
+              (proof_kind = 'member-key' AND member_key_hash IS NOT NULL AND session_id IS NULL) OR
+              (proof_kind = 'session' AND member_key_hash IS NULL AND session_id IS NOT NULL)
+            ))
+          )
+        );
+        CREATE INDEX websocket_ticket_proof ON websocket_tickets(proof_key);
+        CREATE INDEX websocket_ticket_expiry ON websocket_tickets(expires_at);
+      `)
+      query('INSERT INTO migrations VALUES (18, ?, ?)').run(
+        'typed WebSocket routes and single-use handshake tickets',
         new Date().toISOString(),
       )
     }
@@ -764,6 +803,14 @@ export function openStore(path: string, adminToken?: string) {
         conflict ? 409 : 400,
         'Publish this API before issuing a runtime key',
       )
+    if (
+      flowTransport(JSON.parse(flow.published)) === 'websocket' &&
+      releaseRevision === null
+    )
+      throw new ApiError(
+        400,
+        'WebSocket keys require the current published release pin',
+      )
     validateRuntimePermissions(flow.published, permissions, conflict)
   }
 
@@ -772,14 +819,14 @@ export function openStore(path: string, adminToken?: string) {
     permissions: RuntimePermission[],
     conflict = false,
   ) {
-    const graphql = Boolean(JSON.parse(definition).graphql)
+    const transport = flowTransport(JSON.parse(definition))
     if (
       !permissions.length ||
       new Set(permissions).size !== permissions.length ||
       permissions.some((permission) =>
-        graphql
+        transport === 'graphql'
           ? !['query', 'mutation'].includes(permission)
-          : permission !== 'rest',
+          : permission !== (transport === 'websocket' ? 'ws' : 'rest'),
       )
     )
       throw new ApiError(
@@ -900,6 +947,7 @@ export function openStore(path: string, adminToken?: string) {
       if (
         key.issuerBinding === null &&
         key.tenantId === null &&
+        flowTransport(definition) !== 'websocket' &&
         !protectedShape({ db, query }, definition).required
       )
         return
@@ -1296,7 +1344,7 @@ export function openStore(path: string, adminToken?: string) {
           name: z.string().max(500),
           flowId: z.string().min(1).max(80),
           permissions: z
-            .array(z.enum(['rest', 'query', 'mutation']))
+            .array(z.enum(['rest', 'query', 'mutation', 'ws']))
             .min(1)
             .max(3),
           expiresAt: z.string().max(100),
@@ -1524,6 +1572,12 @@ export function openStore(path: string, adminToken?: string) {
       ).get(hashToken(token))
       return row ? resolveMember(row.id) : null
     },
+    memberKeyAuthority(memberId: string, keyHash: string): Member | null {
+      const row = query<{ id: string }, [string, string]>(
+        'SELECT id FROM members WHERE id = ? AND token_hash = ?',
+      ).get(memberId, keyHash)
+      return row ? resolveMember(row.id) : null
+    },
     authenticateRuntime(token: string): RuntimeKey | null {
       const row = query<RuntimeKeyRow, [string]>(
         'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action, tenant_id FROM runtime_keys WHERE token_hash = ?',
@@ -1537,6 +1591,22 @@ export function openStore(path: string, adminToken?: string) {
       )
         return null
 
+      return runtimeKey(row)
+    },
+    runtimeCredential(id: string): RuntimeKey | null {
+      let row: RuntimeKeyRow
+      try {
+        row = keyRow(id)
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) return null
+        throw error
+      }
+      if (
+        row.revoked_at ||
+        !Number.isFinite(Date.parse(row.expires_at)) ||
+        Date.parse(row.expires_at) <= Date.now()
+      )
+        return null
       return runtimeKey(row)
     },
     close() {

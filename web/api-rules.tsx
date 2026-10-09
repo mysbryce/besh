@@ -483,12 +483,13 @@ export function OpenApiDownload() {
   const saved = state.flows.find((flow) => flow.id === state.id)
   const available =
     source === 'draft'
-      ? !!saved && !saved.graphql
-      : !!saved?.publishedEndpoint && !saved.publishedEndpoint.graphql
+      ? !!saved && !saved.graphql && !saved.websocket
+      : !!saved?.publishedEndpoint &&
+        saved.publishedEndpoint.transport === 'rest'
 
   if (
-    state.graphql &&
-    (!saved?.publishedEndpoint || saved.publishedEndpoint.graphql)
+    (state.graphql || state.websocket) &&
+    (!saved?.publishedEndpoint || saved.publishedEndpoint.transport !== 'rest')
   )
     return null
 
@@ -553,7 +554,7 @@ export function OpenApiDownload() {
           : !available
             ? source === 'published' && !saved.publishedRevision
               ? 'Publish this API to download its release document.'
-              : 'This saved version uses GraphQL. OpenAPI documents describe REST APIs.'
+              : 'This saved version uses GraphQL or WebSocket. OpenAPI documents describe REST APIs.'
             : state.dirty
               ? 'Downloads use saved versions. Save your draft to include current edits.'
               : 'Choose a saved draft or an immutable published release. Published documents describe the live endpoint.'}

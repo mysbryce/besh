@@ -303,6 +303,7 @@ export function ClientCode() {
             disabled={state.busy}
             onValueChange={(value) => {
               invalidate()
+              setMetadata(null)
               setSource(value as ClientCodeSource)
             }}
             options={[

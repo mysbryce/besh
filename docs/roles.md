@@ -19,7 +19,7 @@ Built-in roles cannot be edited. Custom roles have no implied permissions: grant
 | ----------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `flows.read`                  | Read APIs                        | Read saved drafts, release history, OpenAPI, and generated client/backend code                    |
 | `flows.write`                 | Edit APIs                        | Save authorized drafts; creating APIs requires all-mode access                                    |
-| `flows.test`                  | Test drafts                      | Execute saved REST/GraphQL drafts, including configured data reads and product-login steps        |
+| `flows.test`                  | Test drafts                      | Execute saved REST/GraphQL drafts or ticket-authorized WebSocket draft messages                   |
 | `flows.publish`               | Publish and roll back            | Change live behavior by publishing or restoring a release                                         |
 | `sources.read`                | Read data sources                | Read source metadata and saved row previews                                                       |
 | `sources.write`               | Manage data sources              | Import, replace, refresh, and delete sources; changes can affect live API data                    |
@@ -39,6 +39,8 @@ Creating a draft from a spreadsheet needs both `sources.read` and `flows.write`.
 
 A key manager can list, replace, and revoke authorized runtime keys without **Read APIs**. API reading supplies the normal target picker; a selected key-only manager can instead enter a **Shared API ID** and owner-provided **Known published release** without fetching private API details. See [runtime keys](api-keys.md).
 
+WebSocket browser Studio testing requires **Read APIs** and **Test drafts**, a clean saved revision, current dependency USE, and tenant review. Native management clients with only `flows.test` may mint a draft ticket for an owner-provided API ID/revision without fetching its graph. Upgrade still requires that ticket's exact original member key and workspace Origin; cookie tickets retain the original live session and minting CSRF checks. Message/idle checks resolve current action/API/USE, proof, tenant, and resource policy. Workspace actions never replace the published `ws` caller grant and mandatory current release pin. See [WebSocket testing](websockets.md).
+
 ## Create and assign a custom role
 
 1. Open **Members** as the owner, then find **Custom roles**.
@@ -55,7 +57,7 @@ Roles carry a version. Editing or deleting uses the version you reviewed; a stal
 
 The server resolves the current role grants on every management request, including bearer-key and cookie requests. Changing a role's permission set revokes its members' browser sessions in the same transaction as the role change and audit events. Changing a member's role revokes that member's sessions. They can sign in again with their existing password or member key and receive current permissions.
 
-Member keys are not rotated by a role change. Their next request uses the new grants; a saved browser permission list cannot retain old access. Requests already authorized before a change may finish. Role creation/update/deletion and assignments produce audit events without credential values.
+Member keys are not rotated by a role change. Their next request uses the new grants; a saved browser permission list cannot retain old access. HTTP requests already authorized before a change may finish. WebSocket messages and idle sweeps recheck the original current proof and grants; authority loss ends the connection. Role creation/update/deletion and assignments produce audit events without credential values.
 
 Renaming a role without changing its permission set keeps its members' browser sessions. Custom members without **Read APIs** open **Account & sessions** on sign-in or reload. Pages show permission guidance when access is missing.
 
@@ -85,7 +87,7 @@ If current metadata cannot be loaded, saving stays blocked. If a save response i
 
 The member list shows **All APIs** or **Selected APIs · N**. An API-reading member with an empty selection sees **No APIs shared** in Studio and can ask the owner for access. Own account/session actions remain available; selected members cannot inspect another member's session, and unknown/foreign session IDs both return `404`.
 
-The owner updates access with the version they reviewed. Every accepted access update, even an identical choice, increments the version and commits with audit and affected browser-session revocation. Role assignment also increments that version while retaining compatible access. Compatible custom-role permission edits keep the version but apply normal grant-change session revocation. Existing member keys use current policy on their next request; already authorized requests may finish. Migrations 15 and 16 include selected APIs, dependency USE, and issuer bindings in complete backups; restoring an old snapshot can restore old sharing and session state.
+The owner updates access with the version they reviewed. Every accepted access update, even an identical choice, increments the version and commits with audit and affected browser-session revocation. Role assignment also increments that version while retaining compatible access. Compatible custom-role permission edits keep the version but apply normal grant-change session revocation. Existing member keys use current policy on their next request; already authorized HTTP requests may finish. WebSocket connections retain fresh original-proof and authority checks. Migrations 15 and 16 include selected APIs, dependency USE, and issuer bindings in complete backups; restoring an old snapshot can restore old sharing and session state.
 
 API reading includes graph literals and dependency references, so share exports deliberately. Selected access adds no row, field, product-identity, or tenant isolation. Existing unbound runtime keys retain unprotected behavior; keys issued by selected members carry live issuer authority as described below. See [API reference](api.md#selected-api-reading).
 

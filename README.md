@@ -2,13 +2,13 @@
 
 # Besh
 
-Build and publish APIs visually. Connect nodes, test drafts, and publish REST or GraphQL endpoints with scoped access and audit logs.
+Build and publish APIs visually. Connect nodes, test drafts, and publish REST, GraphQL, or WebSocket endpoints with scoped access and audit logs.
 
 Besh is an early local development preview. Remote databases, more login providers, plugins, and the AI operator remain planned.
 
 ## Start locally
 
-Install [Bun](https://bun.sh/docs/installation) 1.3.14 or newer, then run:
+Install [Bun](https://bun.sh/docs/installation) 1.4.2 or newer, then run:
 
 ```sh
 bun install --frozen-lockfile
@@ -28,6 +28,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 ## What works
 
 - Visual REST/GraphQL builder, typed inputs, OpenAPI, and beginner forms.
+- [Typed WebSocket replies](docs/websockets.md), browser draft testing, and one-use tickets.
 - [Generated backend routes](docs/runtime-code.md), saved drafts, release history, and rollback.
 - [Client code examples](docs/client-code.md) in eight targets.
 - Built-in k6 load testing with automatic setup and optional goals.

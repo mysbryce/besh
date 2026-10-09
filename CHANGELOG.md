@@ -4,6 +4,30 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.12.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Typed WebSocket request/reply APIs with exact generated routes, flat message/row forms, and reviewed conversion of supported REST reads.
+- Dedicated release-pinned WS callers, one-use browser tickets, and saved-draft connect/send/disconnect with current workspace proof and tenant review.
+- Bounded connection work, generic errors, readable replies, explicit stale-draft recovery, and native development-proxy support.
+- Migration 18, compiler-two WS modules, trusted compiler-one compatibility, and tested startup/backup reconstruction.
+
+### Security
+
+- Recheck original credentials, grants, issuer/API/USE, tenant assignment, and resource policy before frames and final replies; close changed policy/revision connections.
+- Atomically consume origin-bound tickets across peers, enforce ticket/connection quotas, reject URL query credentials, and preserve bearer precedence.
+- Count malformed attempts against message limits, reject conflicting ticket helper routes at publication/startup, and cancel native readers before shutdown.
+- Keep WS unavailable to HTTP examples, OpenAPI, and current k6 targets while preserving tools for a still-published REST release.
+
+### Removed
+
+- Local `skills-lock.json` tracking; skill installation metadata remains ignored on disk.
+
+### Changed
+
+- Upgrade the installed runtime and repository/CI pins to Bun 1.4.2; use SQLite `Database.run()` instead of its deprecated `exec()` alias.
+
 ## 0.11.0-alpha.0 — 2026-10-09
 
 ### Added

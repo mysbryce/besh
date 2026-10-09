@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Flow } from '../src/flows/model'
-import { api, type SavedFlow } from './lib/api'
+import { api, type SavedFlow, type PublishedEndpoint } from './lib/api'
+import { flowTransport, type FlowTransport } from '../src/flows/transport'
 import { useStudio } from './store'
 import { can } from '../src/workspace/permissions'
 import { Button } from './components/ui/button'
@@ -9,7 +10,7 @@ import { Badge } from './components/ui/badge'
 type Release = {
   revision: number
   createdAt: string
-  endpoint: { method: Flow['method']; path: string; graphql: boolean }
+  endpoint: PublishedEndpoint
   current: boolean
 }
 type Detail = {
@@ -19,8 +20,15 @@ type Detail = {
   current: boolean
 }
 
-function route(flow: { method: string; path: string; graphql?: unknown }) {
-  return `${flow.method} ${flow.graphql ? '/graphql' : '/run'}${flow.path}`
+function route(flow: {
+  method: string
+  path: string
+  graphql?: unknown
+  websocket?: unknown
+  transport?: FlowTransport
+}) {
+  const transport = flow.transport ?? flowTransport(flow)
+  return `${transport === 'websocket' ? 'WebSocket' : flow.method} ${transport === 'websocket' ? '/ws' : transport === 'graphql' ? '/graphql' : '/run'}${flow.path}`
 }
 
 export function ReleaseHistory() {

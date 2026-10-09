@@ -407,6 +407,7 @@ test('runtime keys follow published flow identity and reject a changed published
     method: 'GET',
     path: '/hello',
     graphql: false,
+    transport: 'rest',
   })
   await request(`/api/flows/${flow.id}/publish`, 'POST', { revision: 2 })
   expect(
@@ -427,6 +428,7 @@ test('runtime keys follow published flow identity and reject a changed published
     method: 'GET',
     path: '/moved',
     graphql: false,
+    transport: 'rest',
   })
   expect(
     (await request('/run/moved', 'GET', undefined, restKey.token)).status,
@@ -448,6 +450,7 @@ test('runtime keys follow published flow identity and reject a changed published
     method: 'POST',
     path: '/moved',
     graphql: true,
+    transport: 'graphql',
   })
   const operation = { query: '{ greet(name: "Ada") { name } }' }
   expect(
@@ -956,7 +959,7 @@ test('backups restore published flows and migration history survives restarts', 
     ).json()
     expect(
       migrations.map((migration: { version: number }) => migration.version),
-    ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17])
+    ).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18])
     expect(await (await request('/api/backups')).json()).toHaveLength(1)
   } finally {
     restored.close()

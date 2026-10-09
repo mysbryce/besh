@@ -88,10 +88,10 @@ test('runtime key issuance rejects an expiry that passes while waiting for a dat
     `import { Database } from 'bun:sqlite'
 
 const database = new Database(process.argv[2])
-database.exec('BEGIN IMMEDIATE')
+database.run('BEGIN IMMEDIATE')
 console.log('ready')
 await Bun.sleep(1600)
-database.exec('COMMIT')
+database.run('COMMIT')
 database.close()
 `,
   )

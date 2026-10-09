@@ -1,4 +1,5 @@
 import type { AnyElysia } from 'elysia'
+import type { AnyWSLocalHook } from 'elysia/ws/types'
 import {
   mkdtempSync,
   mkdirSync,
@@ -13,7 +14,13 @@ import { ApiError } from '../errors'
 import type { RuntimeKey, Store } from '../workspace/store'
 import type { Flow, FlowInput, FlowResult } from './model'
 import { decodedRoute, overlappingRoutes } from './routes'
-import { generateBackendCode, saveBackendCode } from './backend-code'
+import { flowTransport, websocketRoutesOverlap } from './transport'
+import { validateFlow } from './engine'
+import {
+  generateBackendCode,
+  saveBackendCode,
+  verifyBackendCode,
+} from './backend-code'
 import type { BackendCodeArtifact } from './backend-code-model'
 
 export type RuntimeRelease = {
@@ -23,6 +30,20 @@ export type RuntimeRelease = {
 }
 type Row = { id: string; published_revision: number; published: string }
 type Executors = {
+  websocket?: (release: RuntimeRelease, generation: number) => AnyWSLocalHook
+  websocketHttp?: (
+    release: RuntimeRelease,
+    generation: number,
+    request: Request,
+  ) => Response
+  websocketTicket?: (
+    release: RuntimeRelease,
+    generation: number,
+    request: Request,
+    body: unknown,
+  ) => Response | Promise<Response>
+  websocketNamespace?: (request: Request) => void
+  publicationCommitted?: () => void
   rest: (
     key: RuntimeKey,
     release: RuntimeRelease,
@@ -47,6 +68,7 @@ export function runtimeService(
   const directory = codeDir ?? mkdtempSync(join(tmpdir(), 'besh-runtime-code-'))
   let current!: AnyElysia
   let currentGeneration = -1
+  let currentReleases = new Map<string, RuntimeRelease>()
   let factory!: () => AnyElysia
   let closed = false
   let blocked = false
@@ -122,6 +144,29 @@ export function runtimeService(
   }
 
   const helpers = {
+    websocketHttp(release: RuntimeRelease, expected: number, request: Request) {
+      active()
+      if (!executors.websocketHttp)
+        throw new ApiError(503, 'WebSocket runtime is unavailable')
+      return executors.websocketHttp(release, expected, request)
+    },
+    websocket(release: RuntimeRelease, expected: number) {
+      active()
+      if (!executors.websocket)
+        throw new ApiError(503, 'WebSocket runtime is unavailable')
+      return executors.websocket(release, expected)
+    },
+    websocketTicket(
+      release: RuntimeRelease,
+      expected: number,
+      request: Request,
+      body: unknown,
+    ) {
+      active()
+      if (!executors.websocketTicket)
+        throw new ApiError(503, 'WebSocket runtime is unavailable')
+      return executors.websocketTicket(release, expected, request, body)
+    },
     async rest(
       release: RuntimeRelease,
       expected: number,
@@ -224,37 +269,33 @@ export function runtimeService(
             (other) =>
               other.endpoint.graphql === endpoint.graphql &&
               other.endpoint.method === endpoint.method &&
-              (endpoint.graphql
-                ? other.endpoint.path === endpoint.path
-                : overlappingRoutes(other.endpoint.path, endpoint.path)),
+              (endpoint.transport === 'websocket' &&
+              other.endpoint.transport === 'websocket'
+                ? websocketRoutesOverlap(other.endpoint.path, endpoint.path)
+                : endpoint.graphql
+                  ? other.endpoint.path === endpoint.path
+                  : overlappingRoutes(other.endpoint.path, endpoint.path)),
           )
       )
         throw new ApiError(503, 'Published runtime routes overlap')
     }
-    for (const artifact of artifacts) {
-      const saved = store
-        .query<
-          { source: string; sha256: string; definition_sha256: string },
-          [string, number, number]
-        >(
-          'SELECT source, sha256, definition_sha256 FROM backend_artifacts WHERE flow_id = ? AND revision = ? AND compiler_version = ?',
-        )
-        .get(artifact.flowId, artifact.revision, artifact.compilerVersion)
-      if (
-        saved &&
-        (saved.source !== artifact.code ||
-          saved.sha256 !== artifact.sha256 ||
-          saved.definition_sha256 !== artifact.definitionSha256)
-      )
-        throw new ApiError(
-          503,
-          'Published backend artifact failed integrity validation',
-        )
+    for (const [index, artifact] of artifacts.entries()) {
+      verifyBackendCode(store, artifact, JSON.parse(rows[index]!.published))
       register(app, artifact, epoch)
     }
     appGenerations.set(app, epoch)
     app.compile()
-    return { app, artifacts }
+    const releases = new Map(
+      rows.map((row) => [
+        row.id,
+        {
+          flowId: row.id,
+          revision: row.published_revision,
+          definition: validateFlow(JSON.parse(row.published)),
+        },
+      ]),
+    )
+    return { app, artifacts, releases }
   }
 
   function rows() {
@@ -293,7 +334,11 @@ export function runtimeService(
       commit() {
         current = built.app
         currentGeneration = epoch
+        currentReleases = built.releases
         blocked = false
+        try {
+          executors.publicationCommitted?.()
+        } catch {}
       },
       rollback() {
         if (attempted && native) {
@@ -310,7 +355,64 @@ export function runtimeService(
     }
   }
 
+  function refreshPublished() {
+    active()
+    if (blocked) throw new ApiError(503, 'Published runtime is unavailable')
+    if (generation() === currentGeneration) return
+    let stage: ReturnType<typeof replacement> | undefined
+    try {
+      const snapshot = store.db.transaction(() => ({
+        rows: rows(),
+        epoch: generation(),
+      }))()
+      stage = replacement(build(snapshot.rows, snapshot.epoch), snapshot.epoch)
+      stage.activate()
+      stage.commit()
+    } catch {
+      stage?.rollback()
+      blocked = true
+      throw new ApiError(503, 'Published runtime is unavailable')
+    }
+  }
+
+  function assertCurrent(release: RuntimeRelease) {
+    refreshPublished()
+    const selected = currentReleases.get(release.flowId)
+    if (
+      !selected ||
+      selected.revision !== release.revision ||
+      flowTransport(selected.definition) !== flowTransport(release.definition)
+    )
+      throw new ApiError(403, 'Published release changed')
+    return currentGeneration
+  }
+
   return {
+    refreshPublished,
+    currentPublished(flowId: string) {
+      return currentReleases.get(flowId) ?? null
+    },
+    assertCurrent,
+    readAdmission<T>(release: RuntimeRelease, authorize: () => T): T {
+      const expected = assertCurrent(release)
+      return store.db.transaction(() => {
+        active()
+        if (blocked || generation() !== expected)
+          throw new ApiError(
+            503,
+            'Published runtime changed. Retry this request.',
+          )
+        const selected = currentReleases.get(release.flowId)
+        if (
+          !selected ||
+          selected.revision !== release.revision ||
+          flowTransport(selected.definition) !==
+            flowTransport(release.definition)
+        )
+          throw new ApiError(403, 'Published release changed')
+        return authorize()
+      })()
+    },
     get app() {
       return current
     },
@@ -325,6 +427,7 @@ export function runtimeService(
               saveBackendCode(store, artifact)
             current = built.app
             currentGeneration = epoch
+            currentReleases = built.releases
           })
           .immediate()
       } catch {
@@ -352,39 +455,26 @@ export function runtimeService(
     },
     preflight(request: Request, app: AnyElysia) {
       const url = new URL(request.url)
+      const websocket = url.pathname.startsWith('/ws/')
       if (
+        !websocket &&
         !url.pathname.startsWith('/run/') &&
         !url.pathname.startsWith('/graphql/')
       )
         return
       // Namespace authentication also applies before the first publication.
-      if (!store.authenticateRuntime(token(request)))
+      if (websocket && executors.websocketNamespace)
+        executors.websocketNamespace(request)
+      else if (!store.authenticateRuntime(token(request)))
         throw new ApiError(401, 'Authentication required')
       active()
       if (blocked) throw new ApiError(503, 'Published runtime is unavailable')
       const canonical = decodedRoute(url.pathname)
         .map((segment) => encodeURIComponent(segment))
         .join('/')
-      const epoch = generation()
-      if (epoch !== currentGeneration) {
-        let stage: ReturnType<typeof replacement> | undefined
-        try {
-          const snapshot = store.db.transaction(() => ({
-            rows: rows(),
-            epoch: generation(),
-          }))()
-          stage = replacement(
-            build(snapshot.rows, snapshot.epoch),
-            snapshot.epoch,
-          )
-          stage.activate()
-          stage.commit()
-        } catch {
-          stage?.rollback()
-          blocked = true
-          throw new ApiError(503, 'Published runtime is unavailable')
-        }
-      }
+      if (websocket && canonical !== url.pathname)
+        throw new ApiError(404, 'Endpoint not found')
+      refreshPublished()
       if (
         canonical !== url.pathname ||
         app !== current ||

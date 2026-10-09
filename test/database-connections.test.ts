@@ -61,7 +61,7 @@ function sqlite(
 ) {
   const db = new Database(':memory:')
   try {
-    db.exec(sql)
+    db.run(sql)
     return new Uint8Array(db.serialize())
   } finally {
     db.close()

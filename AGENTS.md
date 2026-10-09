@@ -7,17 +7,19 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Use short, direct explanations. Honor the user's caveman communication preference. Keep code and documents clear and readable.
 - Treat repository evidence and user-provided vault notes as truth. Do not invent past decisions or integrations.
 - Vault unavailable for this project. Use repository docs for working context. Never access `D:\VAULT\__codex` directly. If vault notes are supplied later, propose linked Markdown updates for manual save.
-- Use Bun, Elysia, React, Zustand, Tailwind CSS, and shadcn/ui. Avoid adding frameworks without a concrete need.
+- Use Bun 1.4.2, Elysia, React, Zustand, Tailwind CSS, and shadcn/ui. Keep runtime and CI pins aligned. Avoid adding frameworks without a concrete need.
+- Use `Database.run()` for direct Bun SQLite SQL; `Database.exec()` is deprecated. Keep prepared statements parameterized and use their appropriate `run`, `get`, or `all` methods.
 - TypeScript/JavaScript style: no semicolons, single quotes, readable spacing, and blank lines between logical steps. Generated examples in other languages use their own valid syntax. Comment only important intent, constraints, and non-obvious behavior. Use Prettier; do not compress several statements onto one line.
 - Use custom styled, accessible controls for checkboxes, radio groups, and dropdowns. Do not expose browser-native widgets. Preserve keyboard interaction, labels, focus, and disabled states.
 - Support real GraphQL APIs alongside REST. Keep schema validation, execution limits, authentication, and draft/release separation at the server boundary.
+- WebSocket request/reply uses exact generated routes, flat typed messages, mandatory current pins and a dedicated `ws` grant. Preserve original-proof one-use browser tickets, policy-version admission, fresh frame/idle/final-send checks, bounded work and shutdown cancellation. Never imply subscriptions, WS HTTP client exports, or WS k6 support from basic replies.
 - Publication must generate canonical trusted backend modules and register actual runtime routes. Preserve atomic publication/rollback recovery, cross-process generation checks, runtime credentials/pins, bounded graph execution, and data/audit access. Never trust uploaded or modified generated JavaScript.
 - Keep copyable server-side REST/GraphQL examples for JavaScript Axios/Fetch, PHP cURL, shell cURL, Rust reqwest, Go net/http, Java HttpClient, and C++ libcurl. Default to the published release; make saved-draft selection explicit. Preserve typed input validation and source revisions, escape each language correctly, and document dependencies/run steps without claiming unobserved compilation.
 - Workspace sign-in uses email/password or member/owner keys. Social sign-in belongs to templates for generated product APIs, never the workspace panel.
 - Keep local setup easy. Provide a first-run wizard; do not require manual environment edits for the basic workflow.
 - Design common workflows for people who do not write code. Use labeled forms, selectors, examples, and data previews. Keep JSON and schema editors optional advanced tools.
 - Support light, dark, and system appearance. Keep text, controls, focus, and error states readable in both themes; respect reduced-motion settings. Persist appearance preferences only, never credentials.
-- Keep feature files together in shallow server folders: `src/auth/`, `src/data/`, `src/databases/`, `src/flows/`, `src/load-tests/`, `src/updates/`, and `src/workspace/`. Root server files compose/start the app or provide shared errors. Keep `web/` dashboard, `test/` backend tests, `e2e/` browser tests, and `docs/` documentation. Avoid empty folders and unnecessary barrel exports.
+- Keep feature files together in shallow server folders: `src/auth/`, `src/data/`, `src/databases/`, `src/flows/`, `src/load-tests/`, `src/updates/`, `src/websockets/`, and `src/workspace/`. Root server files compose/start the app or provide shared errors. Keep `web/` dashboard, `test/` backend tests, `e2e/` browser tests, and `docs/` documentation. Avoid empty folders and unnecessary barrel exports.
 - Read applicable local skills when requested. Current requested skills: `tdd`, `wait-what`, `handoff`.
 - Test first through agreed public interfaces. See `docs/testing.md` for approved scope. Work one failing test and implementation at a time.
 - Run relevant tests, type checks, build, and formatting before committing. Run browser tests for editor behavior changes.
@@ -25,6 +27,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Commit completed work with Conventional Commits, for example `feat(flows): publish validated API flows` or `fix(auth): reject expired credentials`.
 - Bump `package.json` for every completed change delivery and update `CHANGELOG.md` in the same tested commit. Follow `docs/releases.md`: fixes use patch, new features use minor, incomplete releases use `alpha`. Never bump to `1.0.0` or above without the maintainer's explicit confirmation.
 - Never commit secrets, generated data, dependencies, or build output. Never hide tests or this file in `.gitignore`.
+- Keep local skill installation metadata such as `skills-lock.json` out of Git while preserving the local file.
 - Preserve unrelated user edits. Do not force push, reset history, or publish without authorization.
 - Document what works, what remains planned, and exact checks run. Never claim an adapter works based only on a type definition or mock.
 

@@ -22,6 +22,7 @@ import {
 import { graphqlSchema } from '../flows/graphql'
 import { prepareInput } from '../flows/contracts'
 import { concreteRoute } from '../flows/routes'
+import { flowTransport } from '../flows/transport'
 import { memberRowPrincipal, protectedShape } from '../workspace/row-authority'
 import type {
   K6Runner,
@@ -306,6 +307,8 @@ export function loadTestService(
         )
         .all(...(selected ? [member!.id] : []))
         .filter((row) => {
+          if (flowTransport(JSON.parse(row.published)) === 'websocket')
+            return false
           if (!member) return true
           try {
             authorizeGraph(
@@ -416,6 +419,8 @@ export function loadTestService(
           const flow = JSON.parse(row.published) as Flow
           if (currentMember)
             authorizeGraph(currentMember(), row.id, 'load-tests.run', flow)
+          if (flowTransport(flow) === 'websocket')
+            throw new ApiError(400, 'WebSocket APIs cannot use HTTP load tests')
           const principal = memberRowPrincipal(
             store,
             currentMember ? currentMember() : store.member(actor)!,
