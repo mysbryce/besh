@@ -73,6 +73,8 @@
 - **Tenant identity**: an immutable exact text value approved by the owner, referenced by an ID rather than established by request fields.
 - **Tenant assignment**: a versioned owner-managed member-to-identity choice; changing it does not retarget previously issued credentials.
 - **Row policy**: a versioned server-owned source/copy protection setting outside flow JSON, requiring exact tenant predicates on supported API reads.
+- **API field policy**: a resource-wide all/selected rule for protected API projections and business filters, separate from a graph's selected output columns and sharing the row-policy version. Selected may share no fields; private tenant predicates and owner raw previews keep their separate boundaries.
+- **Dormant field selection**: a retained allowlist while a resource is unprotected; it is restored on protection rather than silently reset to all fields.
 - **Original-cell provenance**: preserved import-transport cell type/text used for authorization independently of normalized business output; public Sheets CSV does not establish underlying Google cell types.
 - **Execution principal**: private verified credential/assignment identity carried by the server outside editable input.
 - **Cleanup-only entry**: historical caller/job metadata available for authorized revoke/cancel without granting execution, replacement, or another identity.

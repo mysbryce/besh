@@ -161,8 +161,18 @@ test('database tenant activation requires a complete inspected text mapping and 
     version: 1,
     resourceVersion: 1,
     tables: [
-      { table: 'customers', column: null, textColumns: ['tenant', 'name'] },
-      { table: 'invoices', column: null, textColumns: ['tenant'] },
+      {
+        table: 'customers',
+        column: null,
+        textColumns: ['tenant', 'name'],
+        fields: { mode: 'all', columns: [] },
+      },
+      {
+        table: 'invoices',
+        column: null,
+        textColumns: ['tenant'],
+        fields: { mode: 'all', columns: [] },
+      },
     ],
   })
   const path = `/api/database-connections/${connection.id}/row-policy`

@@ -11,6 +11,7 @@ import { flowAccessPreviews } from './flow-access-preview'
 import { scopedActionsPreviews } from './scoped-actions-preview'
 import { tenantProtectionPreviews } from './tenant-protection-preview'
 import { websocketPreviews } from './websocket-preview'
+import { fieldAccessPreviews } from './field-access-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -4081,6 +4082,12 @@ test('preview every current page and its actions', async ({
   await scopedActionsPreviews({ page, owner, capture })
   await tenantProtectionPreviews({ page, owner, capture })
   await websocketPreviews({
+    page,
+    owner,
+    apiOrigin: new URL(page.url()).origin,
+    capture,
+  })
+  await fieldAccessPreviews({
     page,
     owner,
     apiOrigin: new URL(page.url()).origin,

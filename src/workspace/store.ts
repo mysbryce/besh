@@ -558,6 +558,31 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 19').get()) {
+      db.run(`
+        CREATE TABLE source_field_policies (
+          resource_id TEXT PRIMARY KEY REFERENCES data_sources(id) ON DELETE CASCADE,
+          mode TEXT NOT NULL CHECK(mode IN ('all', 'selected')),
+          columns TEXT NOT NULL CHECK(json_valid(columns) AND json_type(columns) = 'array')
+        );
+        INSERT INTO source_field_policies SELECT id, 'all', '[]' FROM data_sources;
+        CREATE TABLE database_table_field_policies (
+          resource_id TEXT NOT NULL REFERENCES database_connections(id) ON DELETE CASCADE,
+          table_name TEXT NOT NULL,
+          mode TEXT NOT NULL CHECK(mode IN ('all', 'selected')),
+          columns TEXT NOT NULL CHECK(json_valid(columns) AND json_type(columns) = 'array'),
+          PRIMARY KEY(resource_id, table_name)
+        );
+        INSERT INTO database_table_field_policies
+          SELECT database_connections.id, json_extract(value, '$.name'), 'all', '[]'
+          FROM database_connections, json_each(database_connections.metadata);
+      `)
+      query('INSERT INTO migrations VALUES (19, ?, ?)').run(
+        'resource-owned API field exposure policies',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,

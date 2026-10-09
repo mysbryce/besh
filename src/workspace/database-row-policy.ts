@@ -3,6 +3,11 @@ import { ApiError } from '../errors'
 import type { DatabaseTable } from '../databases/model'
 import type { Store } from './store'
 import type { DatabaseRowPolicy } from './tenant-model'
+import {
+  databaseFields,
+  fieldPolicySchema,
+  validateFieldSelection,
+} from './field-policy'
 
 const revision = z.number().int().positive().safe()
 const policySchema = z.discriminatedUnion('mode', [
@@ -22,6 +27,7 @@ const policySchema = z.discriminatedUnion('mode', [
             .object({
               table: z.string().min(1).max(128),
               column: z.string().min(1).max(64),
+              fields: fieldPolicySchema(32).optional(),
             })
             .strict(),
         )
@@ -67,6 +73,12 @@ export function databaseRowPolicyService(store: Store) {
           textColumns: table.columns
             .filter((column) => column.type === 'string')
             .map((column) => column.key),
+          fields: databaseFields(
+            store,
+            id,
+            table.name,
+            table.columns.map((column) => column.key),
+          ),
         })),
       }
     },
@@ -115,6 +127,33 @@ export function databaseRowPolicyService(store: Store) {
               400,
               'Choose an inspected text tenant column for every table',
             )
+          if (input.mode === 'tenant') {
+            const row = store
+              .query<{ metadata: string }, [string]>(
+                'SELECT metadata FROM database_connections WHERE id = ?',
+              )
+              .get(id)!
+            const metadata = JSON.parse(row.metadata) as DatabaseTable[]
+            for (const table of input.tables) {
+              if (!table.fields) continue
+              validateFieldSelection(
+                table.fields,
+                metadata
+                  .find((entry) => entry.name === table.table)!
+                  .columns.map((column) => column.key),
+              )
+              store
+                .query(
+                  'UPDATE database_table_field_policies SET mode = ?, columns = ? WHERE resource_id = ? AND table_name = ?',
+                )
+                .run(
+                  table.fields.mode,
+                  JSON.stringify(table.fields.columns),
+                  id,
+                  table.table,
+                )
+            }
+          }
           store
             .query('DELETE FROM database_tenant_columns WHERE resource_id = ?')
             .run(id)

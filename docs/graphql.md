@@ -14,7 +14,9 @@ Selected spreadsheet columns become fields on the row type; an optional filter b
 
 An API generated from an uploaded SQLite copy exposes `Query.rows` with selected column fields and optional typed equality input. Text becomes `String`, numeric data becomes `Float`, and boolean data becomes `Boolean`; inspected nullability determines each field's nullability. The graph reads one inspected table through a database node and returns its bounded row array.
 
-The saved original copy does not synchronize with its source database. A missing or null optional input leaves the generated read unfiltered up to its row limit. Caller filtering does not restrict access by identity; the runtime key authorizes the whole query operation. Besh adds no field/record/tenant policy. See [database copies](databases.md) for generation, grants, and limits.
+The saved original copy does not synchronize with its source database. For an unprotected copy, a missing or null optional input leaves the generated read unfiltered up to its row limit. Caller filtering does not establish identity; the runtime key authorizes the whole query operation. Separately configured resource policies protect supported tenant rows and allowed API fields. See [database copies](databases.md) for generation, grants, and limits.
+
+Protected source/SQLite queries use the narrow flat `Query.rows` shape. Every configured projection and business-filter field must be allowed, even when the query asks for fewer row fields or omits a filter argument. A denied graph stops before reading; field selection never bypasses its resource policy. The private tenant predicate still works with an excluded tenant column. Owner raw previews remain privileged, schema names remain structurally visible, and caller-specific GraphQL field grants are separate planned work. See [tenant rows and API fields](row-protection.md).
 
 ## GitHub product login
 

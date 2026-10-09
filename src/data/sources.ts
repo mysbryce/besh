@@ -1,4 +1,5 @@
 import { ApiError } from '../errors'
+import { assertSourceFields, sourceFields } from '../workspace/field-policy'
 import type { Store } from '../workspace/store'
 import { assertJsonLimit } from '../flows/engine'
 import { readExcel } from './spreadsheet-xlsx'
@@ -316,6 +317,16 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
               'Data source changed. Reload before replacing it.',
             )
           const oldColumns = metadata(previous).columns
+          const fields = sourceFields(store, previous.id)
+          if (
+            fields.columns.some(
+              (key) => !parsed.columns.some((column) => column.key === key),
+            )
+          )
+            throw new ApiError(
+              409,
+              'Replacement must preserve selected API field columns. Review the field policy first.',
+            )
           const policy = store
             .query<{ mode: string; tenant_column: string | null }, [string]>(
               'SELECT mode, tenant_column FROM source_row_policies WHERE resource_id = ?',
@@ -419,6 +430,10 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
             .query(
               "INSERT INTO source_row_policies VALUES (?, 'unprotected', NULL, 1)",
             )
+            .run(row.id)
+        if (!previous)
+          store
+            .query("INSERT INTO source_field_policies VALUES (?, 'all', '[]')")
             .run(row.id)
         store.audit(
           actor,
@@ -530,6 +545,7 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
       }
     },
     read(config: DataReadConfig, permit?: RowReadPermit) {
+      assertSourceFields(store, config)
       const row = get(config.sourceId)
       const columns = metadata(row).columns
       if (

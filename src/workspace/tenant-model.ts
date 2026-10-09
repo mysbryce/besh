@@ -10,11 +10,17 @@ export type Tenant = {
 
 export type TenantAssignment = { tenantId: string | null; version: number }
 
+export type FieldPolicy = {
+  mode: 'all' | 'selected'
+  columns: string[]
+}
+
 export type SourceRowPolicy = {
   mode: 'unprotected' | 'tenant'
   version: number
   resourceVersion: number
   column: string | null
+  fields: FieldPolicy
   provenance: {
     status: 'available' | 'requires-reimport'
     textColumns: string[]
@@ -25,7 +31,12 @@ export type DatabaseRowPolicy = {
   mode: 'unprotected' | 'tenant'
   version: number
   resourceVersion: number
-  tables: { table: string; column: string | null; textColumns: string[] }[]
+  tables: {
+    table: string
+    column: string | null
+    textColumns: string[]
+    fields: FieldPolicy
+  }[]
 }
 
 export type TenantContext = {

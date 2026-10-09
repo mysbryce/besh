@@ -4,6 +4,25 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.13.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Owner-managed API field allowlists for each protected spreadsheet source and SQLite table, with all/selected modes and an explicit empty selection.
+- Beginner field forms, full-name review, separate empty/widening acknowledgments, and retained settings through deprotection and recovery.
+- Migration 19 preserving existing all-field defaults, current field policies in backups, and unchanged compiler-two artifacts.
+
+### Security
+
+- Gate configured projections and business filters before effects for old releases, owner tests/callers, key management, rollback, and k6.
+- Recheck current policy after asynchronous HTTP reads and close changed-policy WS connections while canceling their native readers.
+- Preserve private tenant predicates, privileged owner raw data, and full backup boundaries; selected fields are never silently widened or redacted.
+
+### Fixed
+
+- Reject source replacement that removes retained selected keys, including dormant selections, before policy review becomes unavailable.
+- Hide field-denied load targets while retaining authorized historical cleanup and cancellation.
+
 ## 0.12.0-alpha.0 — 2026-10-09
 
 ### Added

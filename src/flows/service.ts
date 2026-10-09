@@ -13,6 +13,7 @@ import type { databaseConnectionService } from '../databases/service'
 import { clientCodeTargets } from './client-code-model'
 import { clientCodeSchema, flowClientCode } from './client-code'
 import type { RuntimeRelease, RuntimeService } from './runtime'
+import { assertGraphFields } from '../workspace/field-policy'
 import {
   authorizeFlow,
   authorizeGraph,
@@ -79,6 +80,7 @@ export function flowService(
   }
 
   function valid(value: unknown) {
+    assertGraphFields(store, draft(value), 403, true)
     try {
       const flow = validateFlow(value)
       if (flow.graphql) graphqlSchema(flow)
@@ -507,6 +509,7 @@ export function flowService(
         .transaction(() => {
           if (currentMember)
             authorizeGraph(currentMember(), id, 'flows.write', definition)
+          assertGraphFields(store, definition, 403, true)
           get(id)
           const change = query(
             'UPDATE flows SET definition = ?, revision = revision + 1 WHERE id = ? AND revision = ?',

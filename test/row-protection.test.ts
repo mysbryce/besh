@@ -86,6 +86,7 @@ test('new spreadsheet snapshots expose owner policy metadata from aligned origin
     version: 1,
     resourceVersion: 1,
     column: null,
+    fields: { mode: 'all', columns: [] },
     provenance: { status: 'available', textColumns: ['tenant', 'name'] },
   }
   expect(await policy.json()).toEqual(expected)
@@ -414,7 +415,12 @@ test('SQLite tenant equality overrides NOCASE and runs before projection and row
   )
   expect(policy.status).toBe(200)
   expect((await policy.json()).tables).toEqual([
-    { table: 'people', column: 'tenant', textColumns: ['tenant', 'name'] },
+    {
+      table: 'people',
+      column: 'tenant',
+      textColumns: ['tenant', 'name'],
+      fields: { mode: 'all', columns: [] },
+    },
   ])
   const result = await request(`/api/flows/${flow.id}/test`, 'POST', {
     body: null,

@@ -11,6 +11,7 @@ import { databaseProcesses } from './process'
 import { databaseApi } from './api'
 import type { Flow } from '../flows/model'
 import type { RowReadPermit } from '../workspace/row-authority'
+import { assertDatabaseFields } from '../workspace/field-policy'
 
 const versionSchema = z.number().int().positive().safe()
 const readFields = {
@@ -178,7 +179,14 @@ export function databaseConnectionService(store: Store) {
               "INSERT INTO database_row_policies VALUES (?, 'unprotected', 1)",
             )
             .run(id)
-          return present(row(id))
+          const connection = present(row(id))
+          for (const table of connection.tables)
+            store
+              .query(
+                "INSERT INTO database_table_field_policies VALUES (?, ?, 'all', '[]')",
+              )
+              .run(id, table.name)
+          return connection
         })
         .immediate()
     },
@@ -304,6 +312,7 @@ export function databaseConnectionService(store: Store) {
       permit?: RowReadPermit,
     ) {
       const { current, policy } = store.db.transaction(() => {
+        assertDatabaseFields(store, config)
         const current = row(config.connectionId)
         const table = readOptions(present(current), config)
         const policy = rowPolicy(config.connectionId, config.table)

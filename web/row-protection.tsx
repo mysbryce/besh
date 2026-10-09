@@ -3,6 +3,7 @@ import type {
   SourceRowPolicy,
   DatabaseRowPolicy,
   TenantContext,
+  FieldPolicy,
 } from '../src/workspace/tenant-model'
 import type { DatabaseConnection } from '../src/databases/model'
 import { Button } from './components/ui/button'
@@ -10,6 +11,11 @@ import { Checkbox } from './components/ui/checkbox'
 import { Select } from './components/ui/select'
 import { api, ApiError, type DataSource } from './lib/api'
 import { useStudio } from './store'
+import {
+  FieldPolicyEditor,
+  FieldPolicySummary,
+  fieldPolicyWidens,
+} from './field-policy'
 
 export function RowProtection() {
   const { member, token, sessionId, busy } = useStudio()
@@ -146,11 +152,20 @@ function ResourceRowProtectionEditor({
   const [context, setContext] = useState<TenantContext | null>(null)
   const [mode, setMode] = useState<SourceRowPolicy['mode']>('unprotected')
   const [column, setColumn] = useState('')
+  const [fields, setFields] = useState<FieldPolicy>({
+    mode: 'all',
+    columns: [],
+  })
   const [mappings, setMappings] = useState<Record<string, string>>({})
+  const [tableFields, setTableFields] = useState<Record<string, FieldPolicy>>(
+    {},
+  )
   const [known, setKnown] = useState(false)
   const [loading, setLoading] = useState(true)
   const [review, setReview] = useState(false)
   const [acknowledged, setAcknowledged] = useState(false)
+  const [fieldsAcknowledged, setFieldsAcknowledged] = useState(false)
+  const [wideningAcknowledged, setWideningAcknowledged] = useState(false)
   const [error, setError] = useState('')
   const active = useRef(false)
   const pending = useRef(false)
@@ -176,6 +191,8 @@ function ResourceRowProtectionEditor({
     setKnown(false)
     setReview(false)
     setAcknowledged(false)
+    setFieldsAcknowledged(false)
+    setWideningAcknowledged(false)
     try {
       const [latest, resources, security] = await Promise.all([
         api<SourceRowPolicy | DatabaseRowPolicy>(
@@ -198,6 +215,13 @@ function ResourceRowProtectionEditor({
       setContext(security)
       setMode(latest.mode)
       setColumn('column' in latest ? (latest.column ?? '') : '')
+      if ('fields' in latest) setFields(latest.fields)
+      if ('tables' in latest)
+        setTableFields(
+          Object.fromEntries(
+            latest.tables.map((table) => [table.table, table.fields]),
+          ),
+        )
       setMappings(
         'tables' in latest
           ? Object.fromEntries(
@@ -244,6 +268,37 @@ function ResourceRowProtectionEditor({
   const firstProtection = mode === 'tenant' && !context?.backupsOwnerOnly
   const deprotecting = mode === 'unprotected' && policy?.mode === 'tenant'
   const requiresAcknowledgment = firstProtection || deprotecting
+  const reviewedFields = policy
+    ? 'fields' in policy
+      ? [
+          {
+            label: source.name,
+            previous: policy.fields,
+            next: fields,
+            columns: 'columns' in resource ? resource.columns : [],
+          },
+        ]
+      : policy.tables.map((table) => ({
+          label: table.table,
+          previous: table.fields,
+          next: tableFields[table.table] ?? table.fields,
+          columns:
+            'tables' in resource
+              ? (resource.tables.find((record) => record.name === table.table)
+                  ?.columns ?? [])
+              : [],
+        }))
+    : []
+  const sharesNoFields =
+    mode === 'tenant' &&
+    reviewedFields.some(
+      ({ next }) => next.mode === 'selected' && !next.columns.length,
+    )
+  const widensFields =
+    mode === 'tenant' &&
+    reviewedFields.some(({ previous, next }) =>
+      fieldPolicyWidens(previous, next),
+    )
   const disabled = actor.busy || loading || !known
   const eligible =
     mode === 'unprotected' ||
@@ -265,7 +320,9 @@ function ResourceRowProtectionEditor({
       !review ||
       !policy ||
       !eligible ||
-      (requiresAcknowledgment && !acknowledged)
+      (requiresAcknowledgment && !acknowledged) ||
+      (sharesNoFields && !fieldsAcknowledged) ||
+      (widensFields && !wideningAcknowledged)
     )
       return
     pending.current = true
@@ -286,10 +343,11 @@ function ResourceRowProtectionEditor({
                       (table) => ({
                         table: table.table,
                         column: mappings[table.table],
+                        fields: tableFields[table.table] ?? table.fields,
                       }),
                     ),
                   }
-                : { column }
+                : { column, fields }
               : {}),
           },
         )
@@ -297,6 +355,13 @@ function ResourceRowProtectionEditor({
         setPolicy(latest)
         setMode(latest.mode)
         setColumn('column' in latest ? (latest.column ?? '') : '')
+        if ('fields' in latest) setFields(latest.fields)
+        if ('tables' in latest)
+          setTableFields(
+            Object.fromEntries(
+              latest.tables.map((table) => [table.table, table.fields]),
+            ),
+          )
         setMappings(
           'tables' in latest
             ? Object.fromEntries(
@@ -315,6 +380,8 @@ function ResourceRowProtectionEditor({
         )
         setReview(false)
         setAcknowledged(false)
+        setFieldsAcknowledged(false)
+        setWideningAcknowledged(false)
         setError('')
         actor.message('Row protection updated. Resource rows unchanged.')
       } catch (reason) {
@@ -322,6 +389,8 @@ function ResourceRowProtectionEditor({
         setKnown(false)
         setReview(false)
         setAcknowledged(false)
+        setFieldsAcknowledged(false)
+        setWideningAcknowledged(false)
         setError(
           reason instanceof ApiError && reason.status < 500
             ? `${reason.message} Refresh row policy and review before trying again.`
@@ -419,6 +488,12 @@ function ResourceRowProtectionEditor({
               and reimport it before enabling protection.
             </p>
           ) : null}
+          <FieldPolicyEditor
+            fields={fields}
+            columns={'columns' in resource ? resource.columns : []}
+            disabled={disabled || review}
+            onChange={setFields}
+          />
         </>
       ) : mode === 'tenant' && policy && 'tables' in policy ? (
         <>
@@ -428,35 +503,76 @@ function ResourceRowProtectionEditor({
             identities are ineligible; reimport a corrected copy when needed.
           </p>
           {policy.tables.map((table) => (
-            <label key={table.table}>
-              Tenant column for {table.table}
-              <Select
-                label={`Tenant column for ${table.table}`}
-                value={mappings[table.table] ?? ''}
-                disabled={disabled || review || !table.textColumns.length}
-                placeholder="Choose an eligible text column"
-                onValueChange={(value) =>
-                  setMappings((current) => ({
+            <div key={table.table} className="form-stack min-w-0">
+              <label>
+                Tenant column for {table.table}
+                <Select
+                  label={`Tenant column for ${table.table}`}
+                  value={mappings[table.table] ?? ''}
+                  disabled={disabled || review || !table.textColumns.length}
+                  placeholder="Choose an eligible text column"
+                  onValueChange={(value) =>
+                    setMappings((current) => ({
+                      ...current,
+                      [table.table]: value,
+                    }))
+                  }
+                  options={table.textColumns.map((key) => ({
+                    value: key,
+                    label: key,
+                  }))}
+                />
+                {!table.textColumns.length ? (
+                  <span className="form-error">
+                    No eligible text column in {table.table}. Reimport a
+                    corrected SQLite copy before protecting all tables.
+                  </span>
+                ) : null}
+              </label>
+              <FieldPolicyEditor
+                label={`API field access for ${table.table}`}
+                fields={tableFields[table.table] ?? table.fields}
+                columns={
+                  'tables' in resource
+                    ? (resource.tables.find(
+                        (record) => record.name === table.table,
+                      )?.columns ?? [])
+                    : []
+                }
+                disabled={disabled || review}
+                onChange={(next) =>
+                  setTableFields((current) => ({
                     ...current,
-                    [table.table]: value,
+                    [table.table]: next,
                   }))
                 }
-                options={table.textColumns.map((key) => ({
-                  value: key,
-                  label: key,
-                }))}
               />
-              {!table.textColumns.length ? (
-                <span className="form-error">
-                  No eligible text column in {table.table}. Reimport a corrected
-                  SQLite copy before protecting all tables.
-                </span>
-              ) : null}
-            </label>
+            </div>
           ))}
         </>
       ) : (
-        <p>Unprotected resources do not filter by tenant identity.</p>
+        <>
+          <p>Unprotected resources do not filter by tenant identity.</p>
+          {policy ? (
+            <section
+              className="form-stack min-w-0"
+              aria-label="Inactive API field selection"
+            >
+              <h3>Inactive API field selection</h3>
+              <p>
+                Saved field selections stay stored but do not restrict
+                unprotected reads. Re-enabling tenant protection restores them;
+                review field access before saving.
+              </p>
+              {reviewedFields.map(({ label, previous, columns }) => (
+                <div key={label} className="min-w-0">
+                  {database ? <h4 className="break-words">{label}</h4> : null}
+                  <FieldPolicySummary fields={previous} columns={columns} />
+                </div>
+              ))}
+            </section>
+          ) : null}
+        </>
       )}
       {review ? (
         <section
@@ -477,12 +593,26 @@ function ResourceRowProtectionEditor({
             {policy?.version}
           </p>
           {mode === 'tenant' ? (
-            <p>
-              Existing keys without a tenant identity lose protected access.
-              Unsupported API shapes stop; Besh does not rewrite their graphs.
-              Supported reads require one request, one protected read and a
-              response returning its data.
-            </p>
+            <>
+              {reviewedFields.map(({ label, next, columns }) => (
+                <div key={label} className="min-w-0">
+                  {database ? <h4 className="break-words">{label}</h4> : null}
+                  <FieldPolicySummary fields={next} columns={columns} />
+                </div>
+              ))}
+              <p>
+                Existing API projections and filters must use permitted fields.
+                A restricted field stops the whole read, including old pinned
+                releases and rollback. Besh does not redact replies or rewrite
+                API rules, GraphQL schemas or WebSocket message rules.
+              </p>
+              <p>
+                Existing keys without a tenant identity lose protected access.
+                Unsupported API shapes stop; Besh does not rewrite their graphs.
+                Supported reads require one request, one protected read and a
+                response returning its data.
+              </p>
+            </>
           ) : (
             <p>
               Removing row protection can expose all rows through delegated
@@ -523,12 +653,47 @@ function ResourceRowProtectionEditor({
               <span>I understand delegated access may expose all rows</span>
             </label>
           ) : null}
+          {sharesNoFields ? (
+            <label className="flex min-w-0 items-start gap-3">
+              <Checkbox
+                checked={fieldsAcknowledged}
+                disabled={actor.busy}
+                aria-label="I understand empty field selections block their API reads"
+                onCheckedChange={(checked) =>
+                  setFieldsAcknowledged(checked === true)
+                }
+              />
+              <span className="min-w-0 break-words">
+                I understand empty field selections block their API reads.
+                Protected reads using an empty selection stop until its field
+                access is reviewed again.
+              </span>
+            </label>
+          ) : null}
+          {widensFields ? (
+            <label className="flex min-w-0 items-start gap-3">
+              <Checkbox
+                checked={wideningAcknowledged}
+                disabled={actor.busy}
+                aria-label="I understand APIs may expose more fields"
+                onCheckedChange={(checked) =>
+                  setWideningAcknowledged(checked === true)
+                }
+              />
+              <span className="min-w-0 break-words">
+                I understand APIs may expose more fields. All fields also allows
+                future columns without another field review.
+              </span>
+            </label>
+          ) : null}
           <div className="title-actions">
             <Button
               disabled={
                 disabled ||
                 !eligible ||
-                (requiresAcknowledgment && !acknowledged)
+                (requiresAcknowledgment && !acknowledged) ||
+                (sharesNoFields && !fieldsAcknowledged) ||
+                (widensFields && !wideningAcknowledged)
               }
               onClick={() => void save()}
             >
@@ -540,6 +705,8 @@ function ResourceRowProtectionEditor({
               onClick={() => {
                 setReview(false)
                 setAcknowledged(false)
+                setFieldsAcknowledged(false)
+                setWideningAcknowledged(false)
               }}
             >
               Cancel row protection review
@@ -552,6 +719,8 @@ function ResourceRowProtectionEditor({
           onClick={() => {
             setReview(true)
             setAcknowledged(false)
+            setFieldsAcknowledged(false)
+            setWideningAcknowledged(false)
           }}
         >
           Review row protection

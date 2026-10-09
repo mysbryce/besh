@@ -2,6 +2,7 @@ import { ApiError } from '../errors'
 import type { Flow } from '../flows/model'
 import type { Member, Store, RuntimeKey } from './store'
 import { activeTenant } from './tenants'
+import { assertGraphFields } from './field-policy'
 import {
   buildSchema,
   isListType,
@@ -104,6 +105,7 @@ export function memberRowPrincipal(
 ): RowPrincipal | null {
   if (selector !== undefined && member.role !== 'owner')
     throw new ApiError(400, 'Only the owner may select a tenant for execution')
+  assertGraphFields(store, flow)
   const shape = protectedShape(store, flow)
   if (!shape.required) {
     if (selector !== undefined)
@@ -204,6 +206,7 @@ export function runtimeRowPrincipal(
   flow: Flow,
   status = 403,
 ): RowPrincipal | null {
+  assertGraphFields(store, flow, status)
   const shape = protectedShape(store, flow)
   if (shape.required && (!shape.supported || !key.tenantId))
     throw new ApiError(

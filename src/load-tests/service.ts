@@ -24,6 +24,7 @@ import { prepareInput } from '../flows/contracts'
 import { concreteRoute } from '../flows/routes'
 import { flowTransport } from '../flows/transport'
 import { memberRowPrincipal, protectedShape } from '../workspace/row-authority'
+import { assertGraphFields } from '../workspace/field-policy'
 import type {
   K6Runner,
   LoadTestRun,
@@ -309,8 +310,9 @@ export function loadTestService(
         .filter((row) => {
           if (flowTransport(JSON.parse(row.published)) === 'websocket')
             return false
-          if (!member) return true
           try {
+            assertGraphFields(store, JSON.parse(row.published) as Flow)
+            if (!member) return true
             authorizeGraph(
               member!,
               row.id,

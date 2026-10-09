@@ -5,6 +5,11 @@ import type { Store } from './store'
 import type { SourceRowPolicy } from './tenant-model'
 import { databaseRowPolicyService } from './database-row-policy'
 import { z } from 'zod'
+import {
+  fieldPolicySchema,
+  sourceFields,
+  validateFieldSelection,
+} from './field-policy'
 
 const revision = z.number().int().positive().max(Number.MAX_SAFE_INTEGER)
 const sourcePolicySchema = z.discriminatedUnion('mode', [
@@ -19,6 +24,7 @@ const sourcePolicySchema = z.discriminatedUnion('mode', [
     .object({
       mode: z.literal('tenant'),
       column: z.string().min(1).max(64),
+      fields: fieldPolicySchema(64).optional(),
       version: revision,
       resourceVersion: revision,
     })
@@ -56,6 +62,7 @@ export function rowPolicyService(store: Store) {
         version: row.policy_version,
         resourceVersion: row.version,
         column: row.tenant_column,
+        fields: sourceFields(store, id),
         provenance: {
           status: provenance ? 'available' : 'requires-reimport',
           textColumns: provenance ? textColumns(provenance) : [],
@@ -107,6 +114,24 @@ export function rowPolicyService(store: Store) {
               400,
               'Choose a column containing only safe original text or null cells',
             )
+          if (input.mode === 'tenant' && input.fields) {
+            const row = store
+              .query<{ columns: string }, [string]>(
+                'SELECT columns FROM data_sources WHERE id = ?',
+              )
+              .get(id)!
+            validateFieldSelection(
+              input.fields,
+              (JSON.parse(row.columns) as DataColumn[]).map(
+                (column) => column.key,
+              ),
+            )
+            store
+              .query(
+                'UPDATE source_field_policies SET mode = ?, columns = ? WHERE resource_id = ?',
+              )
+              .run(input.fields.mode, JSON.stringify(input.fields.columns), id)
+          }
           store
             .query(
               'UPDATE source_row_policies SET mode = ?, tenant_column = ?, version = version + 1 WHERE resource_id = ?',
