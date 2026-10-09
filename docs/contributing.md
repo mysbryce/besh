@@ -29,3 +29,11 @@ Keep single quotes, no semicolons, readable spacing, and blank lines between log
 Update affected documentation with exact checks and limitations. Commit finished work using Conventional Commits, such as `feat(auth): add scoped runtime API keys`. Preserve unrelated edits. Do not commit secrets, databases, backups, dependencies, build output, or preview artifacts; do not force push or publish without authorization.
 
 Report vulnerabilities through the private channel described in [security](../SECURITY.md). Follow the [code of conduct](../CODE_OF_CONDUCT.md).
+
+## GitHub workflow
+
+Use the bug or feature form when opening an issue. Describe the user outcome and use made-up data. The pull-request template asks for the change, checks and any remaining limits.
+
+Dependabot proposes Bun dependency and GitHub Action updates weekly, grouping minor/patch updates with small open-PR limits. Review and test proposals, then update the release version and changelog before completing a delivery. Bun runtime, CI pins and `@types/bun` are upgraded together manually. There is no automatic merge, publishing or fork-PR execution on the persistent Windows runner.
+
+The funding file names `mysbryce` for GitHub Sponsors. GitHub handles account eligibility and the hosted funding button; local configuration does not verify activation.

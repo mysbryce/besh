@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest a useful improvement to Besh.
+title: '[Feature]: '
+body:
+  - type: markdown
+    attributes:
+      value: Describe the user outcome. No code or technical design is required. Use made-up examples and omit private data.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What do you want to accomplish?
+      description: Who needs this, and what would it help them do?
+    validations:
+      required: true
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What happens today?
+      description: Explain the current steps, limitation, or workaround.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: Optional. Describe how you would like the workflow to change.

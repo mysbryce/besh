@@ -594,14 +594,16 @@ function Canvas() {
   )
 }
 
-export function Builder() {
+export function Builder({ onOpenData }: { onOpenData: () => void }) {
   const session = useStudio((state) => state.editorSession)
-  return <BuilderSession key={session} />
+  return <BuilderSession key={session} onOpenData={onOpenData} />
 }
 
-function BuilderSession() {
+function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
   const state = useStudio()
+  const [firstTaskChosen, setFirstTaskChosen] = useState(false)
   const transport = flowTransport(state)
+  const [apiTools, setApiTools] = useState(false)
   const [clientCode, setClientCode] = useState(false)
   const [generatedBackend, setGeneratedBackend] = useState(false)
   const [transportReview, setTransportReview] = useState<{
@@ -641,6 +643,13 @@ function BuilderSession() {
   )
   const [operationName, setOperationName] = useState('')
   const writable = can(state.member, 'flows.write')
+  const firstTask =
+    writable &&
+    state.member?.access.mode !== 'selected' &&
+    !state.id &&
+    !state.flows.length &&
+    !state.dirty &&
+    !firstTaskChosen
   const testable = can(state.member, 'flows.test')
   const tenantReview = useTenantReview(
     state.id,
@@ -900,6 +909,37 @@ function BuilderSession() {
           </Button>
         </div>
       </div>
+      {firstTask ? (
+        <section
+          className="load-test-card form-stack"
+          aria-label="Create your first API"
+        >
+          <h2>Create your first API</h2>
+          <p>
+            Start with your spreadsheet, or build a blank API using the request
+            and response below. Opening either path does not save or publish an
+            API. You choose when to create or save its draft.
+          </p>
+          <div className="title-actions">
+            {can(state.member, 'sources.read') &&
+            can(state.member, 'sources.write') ? (
+              <Button disabled={state.busy} onClick={onOpenData}>
+                Start with a spreadsheet
+              </Button>
+            ) : null}
+            <Button
+              variant="outline"
+              disabled={state.busy}
+              onClick={() => {
+                setFirstTaskChosen(true)
+                state.message('New draft. Give your API a name.')
+              }}
+            >
+              Build a blank API
+            </Button>
+          </div>
+        </section>
+      ) : null}
       {transportReview ? (
         <TransportReview
           target={transportReview.target}
@@ -1094,40 +1134,12 @@ function BuilderSession() {
       ) : (
         <ApiRules />
       )}
-      <OpenApiDownload />
       {transport === 'websocket' ? (
         <p className="field-help">
           HTTP OpenAPI, HTTP client examples and load tests do not support
           WebSocket APIs.
         </p>
       ) : null}
-      <Button
-        variant="outline"
-        aria-expanded={clientCode}
-        disabled={state.busy || !state.id || !can(state.member, 'flows.read')}
-        onClick={() => setClientCode(!clientCode)}
-      >
-        Use this API
-      </Button>
-      {clientCode && can(state.member, 'flows.read') ? (
-        <Suspense fallback={<p>Loading client examples…</p>}>
-          <ClientCode />
-        </Suspense>
-      ) : null}
-      <Button
-        variant="outline"
-        aria-expanded={generatedBackend}
-        disabled={state.busy || !state.id || !can(state.member, 'flows.read')}
-        onClick={() => setGeneratedBackend(!generatedBackend)}
-      >
-        Generated backend
-      </Button>
-      {generatedBackend && can(state.member, 'flows.read') ? (
-        <Suspense fallback={<p>Loading generated backend panel…</p>}>
-          <GeneratedBackend />
-        </Suspense>
-      ) : null}
-      <ReleaseHistory />
       <section className="editor-panel">
         <div className="editor-toolbar">
           <div>
@@ -1321,6 +1333,51 @@ function BuilderSession() {
           </div>
         </section>
       )}
+      <Button
+        variant="outline"
+        aria-expanded={apiTools}
+        aria-controls="api-tools"
+        disabled={state.busy}
+        onClick={() => setApiTools(!apiTools)}
+      >
+        API tools
+      </Button>
+      {apiTools ? (
+        <section id="api-tools" aria-label="API tools" className="form-stack">
+          <OpenApiDownload />
+          <Button
+            variant="outline"
+            aria-expanded={clientCode}
+            disabled={
+              state.busy || !state.id || !can(state.member, 'flows.read')
+            }
+            onClick={() => setClientCode(!clientCode)}
+          >
+            Use this API
+          </Button>
+          {clientCode && can(state.member, 'flows.read') ? (
+            <Suspense fallback={<p>Loading client examples…</p>}>
+              <ClientCode />
+            </Suspense>
+          ) : null}
+          <Button
+            variant="outline"
+            aria-expanded={generatedBackend}
+            disabled={
+              state.busy || !state.id || !can(state.member, 'flows.read')
+            }
+            onClick={() => setGeneratedBackend(!generatedBackend)}
+          >
+            Generated backend
+          </Button>
+          {generatedBackend && can(state.member, 'flows.read') ? (
+            <Suspense fallback={<p>Loading generated backend panel…</p>}>
+              <GeneratedBackend />
+            </Suspense>
+          ) : null}
+          <ReleaseHistory />
+        </section>
+      ) : null}
     </>
   )
 }

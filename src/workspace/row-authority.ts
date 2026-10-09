@@ -4,6 +4,7 @@ import type { Member, Store, RuntimeKey } from './store'
 import { activeTenant } from './tenants'
 import { assertGraphFields } from './field-policy'
 import { assertTenantGraphFields } from './tenant-field-policy'
+import { assertMemberGraphFields } from './member-field-policy'
 import { readGraph, mixedGraphqlShape } from '../flows/read-graph'
 import {
   buildSchema,
@@ -13,9 +14,14 @@ import {
   isLeafType,
 } from 'graphql'
 
-export type RowPrincipal = { tenantId: string; value: string }
+export type RowPrincipal = {
+  tenantId: string
+  value: string
+  memberId: string | null
+}
 export type RowReadPermit = {
   tenantId: string
+  memberId: string | null
   column: string
   value: string
   policyVersion: number
@@ -84,7 +90,7 @@ export function protectedShape(store: RowStore, flow: Flow) {
 }
 
 export function memberRowPrincipal(
-  store: RowStore,
+  store: PrincipalStore,
   member: Member,
   flow: Flow,
   selector?: string,
@@ -116,7 +122,11 @@ export function memberRowPrincipal(
   let principal: RowPrincipal
   try {
     const tenant = activeTenant(store.db, tenantId)
-    principal = { tenantId: tenant.id, value: tenant.value }
+    principal = {
+      tenantId: tenant.id,
+      value: tenant.value,
+      memberId: member.role === 'owner' ? null : member.id,
+    }
   } catch {
     throw new ApiError(
       member.role === 'owner' ? 400 : 403,
@@ -124,6 +134,7 @@ export function memberRowPrincipal(
     )
   }
   assertTenantGraphFields(store, flow, principal.tenantId)
+  assertMemberGraphFields(store, flow, principal.memberId)
   return principal
 }
 
@@ -151,6 +162,7 @@ export function sourceReadPermit(
     throw new ApiError(403, 'A trusted tenant identity is required')
   return {
     tenantId: principal.tenantId,
+    memberId: principal.memberId,
     column: policy.tenant_column!,
     value: principal.value,
     policyVersion: policy.version,
@@ -184,6 +196,7 @@ export function databaseReadPermit(
     throw new ApiError(503, 'Protected database tenant column is unavailable')
   return {
     tenantId: principal.tenantId,
+    memberId: principal.memberId,
     column: column.column_key,
     value: principal.value,
     policyVersion: policy.version,
@@ -217,7 +230,11 @@ export function runtimeRowPrincipal(
       )
         throw new Error('Issuer identity changed')
     }
-    principal = { tenantId: tenant.id, value: tenant.value }
+    principal = {
+      tenantId: tenant.id,
+      value: tenant.value,
+      memberId: key.issuerBinding?.memberId ?? null,
+    }
   } catch {
     throw new ApiError(
       status,
@@ -225,6 +242,7 @@ export function runtimeRowPrincipal(
     )
   }
   assertTenantGraphFields(store, flow, principal.tenantId, status)
+  assertMemberGraphFields(store, flow, principal.memberId, status)
   return principal
 }
 
@@ -288,7 +306,12 @@ export function rowCheckpoint(
     authorize()
     return store.db.transaction(() => {
       authorize()
-      return { policies: signature(), tenantId: principal()?.tenantId ?? null }
+      const subject = principal()
+      return {
+        policies: signature(),
+        tenantId: subject?.tenantId ?? null,
+        memberId: subject?.memberId ?? null,
+      }
     })()
   }
   const admitted = snapshot()
@@ -296,7 +319,8 @@ export function rowCheckpoint(
     const current = snapshot()
     if (
       current.policies !== admitted.policies ||
-      current.tenantId !== admitted.tenantId
+      current.tenantId !== admitted.tenantId ||
+      current.memberId !== admitted.memberId
     )
       throw new ApiError(
         403,

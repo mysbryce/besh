@@ -17,6 +17,10 @@ import {
   textColumns,
 } from './provenance'
 import type { RowReadPermit } from '../workspace/row-authority'
+import {
+  assertSourceMemberFields,
+  assertRetainedSourceMemberProfiles,
+} from '../workspace/member-field-policy'
 import type { Member } from '../workspace/store'
 import { assertRawResource } from '../workspace/raw-access'
 import { requirePermission } from '../errors'
@@ -327,6 +331,12 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
             oldColumns.map((column) => column.key),
             parsed.columns.map((column) => column.key),
           )
+          assertRetainedSourceMemberProfiles(
+            store,
+            previous.id,
+            oldColumns.map((column) => column.key),
+            parsed.columns.map((column) => column.key),
+          )
           const fields = sourceFields(store, previous.id)
           if (
             fields.columns.some(
@@ -557,6 +567,7 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
     read(config: DataReadConfig, permit?: RowReadPermit) {
       assertSourceFields(store, config)
       assertSourceTenantFields(store, config, permit?.tenantId)
+      assertSourceMemberFields(store, config, permit?.memberId)
       const row = get(config.sourceId)
       const columns = metadata(row).columns
       if (

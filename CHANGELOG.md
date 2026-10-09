@@ -4,6 +4,31 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.17.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Owner-reviewed member field profiles for protected spreadsheet and SQLite APIs, intersecting shared and tenant settings.
+- Configured-member summaries, complete table review, and explicit refresh after stale or unconfirmed saves.
+- GitHub Sponsors funding, weekly dependency proposals, and pull-request, bug and feature templates.
+
+### Changed
+
+- Guide new users toward a spreadsheet or blank API. Keep exports and release history under optional **API tools**.
+- Show plain field settings and current status first, with technical review values under **Review details**.
+- Bundle Google Sans Flex and Noto Sans Thai locally, with distinct text weights and more room for phone field reviews.
+
+### Security
+
+- Apply member field settings to the original authenticated member or key issuer, including existing releases, key replacement, WebSocket replies and load tests.
+- Reject stale role/access/assignment reviews, invalid stored profiles and removal of retained source fields. Preserve complete-table atomic saves and deleted-issuer denial.
+- Prevent non-owners from receiving another issuer's bound key through replacement while retaining authorized historical cleanup.
+
+### Fixed
+
+- Discard an older global-policy response after a newer member or tenant save; keep sibling reviews stale until refreshed.
+- Preserve explicit tenant recovery guidance after an uncertain save.
+
 ## 0.16.3-alpha.0 — 2026-10-09
 
 ### Fixed

@@ -23,6 +23,12 @@ const TenantFieldProfiles = lazy(() =>
   })),
 )
 
+const MemberFieldProfiles = lazy(() =>
+  import('./member-field-profiles').then((module) => ({
+    default: module.MemberFieldProfiles,
+  })),
+)
+
 export function RowProtection() {
   const { member, token, sessionId, busy } = useStudio()
   const [sources, setSources] = useState<DataSource[]>([])
@@ -169,13 +175,16 @@ function ResourceRowProtectionEditor({
   const [known, setKnown] = useState(false)
   const [loading, setLoading] = useState(true)
   const [review, setReview] = useState(false)
+  const [details, setDetails] = useState(false)
   const [acknowledged, setAcknowledged] = useState(false)
   const [fieldsAcknowledged, setFieldsAcknowledged] = useState(false)
   const [wideningAcknowledged, setWideningAcknowledged] = useState(false)
   const [error, setError] = useState('')
   const active = useRef(false)
   const [showTenantFields, setShowTenantFields] = useState(false)
+  const [showMemberFields, setShowMemberFields] = useState(false)
   const [profileInvalidation, setProfileInvalidation] = useState(0)
+  const [profilePolicyVersion, setProfilePolicyVersion] = useState(0)
   const pending = useRef(false)
   const request = useRef(0)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -426,12 +435,31 @@ function ResourceRowProtectionEditor({
         >
           Refresh row policy
         </Button>
+        <Button
+          variant="ghost"
+          aria-expanded={details}
+          disabled={actor.busy}
+          onClick={() => setDetails(!details)}
+        >
+          Review details
+        </Button>
       </div>
       <p className="field-help">
-        {known ? 'Reviewed' : 'Last reviewed'} resource version{' '}
-        {policy?.resourceVersion ?? resource.version} · Policy version{' '}
-        {policy?.version ?? 'unknown'}
+        {loading
+          ? 'Loading field settings'
+          : !known
+            ? 'Refresh needed'
+            : policy?.mode === 'tenant'
+              ? 'Current field settings'
+              : 'Inactive field settings'}
       </p>
+      {details ? (
+        <p className="field-help">
+          {known ? 'Reviewed' : 'Last reviewed'} resource version{' '}
+          {policy?.resourceVersion ?? resource.version} · Policy version{' '}
+          {policy?.version ?? 'unknown'}
+        </p>
+      ) : null}
       {loading ? <p role="status">Loading row policy…</p> : null}
       {error ? (
         <p role="alert" className="form-error">
@@ -597,18 +625,81 @@ function ResourceRowProtectionEditor({
           <TenantFieldProfiles
             resource={resource}
             database={database}
-            policyVersion={policy?.version ?? 0}
+            policyVersion={Math.max(policy?.version ?? 0, profilePolicyVersion)}
             policyInvalidation={profileInvalidation}
-            onSaved={() => {
+            onSaved={(version) => {
+              request.current++
+              setLoading(false)
+              setProfilePolicyVersion((previous) => Math.max(previous, version))
               setKnown(false)
               setReview(false)
               setError(
                 'Tenant API fields changed the shared policy version. Refresh row policy before reviewing global changes.',
               )
             }}
+            onUnconfirmed={() => {
+              request.current++
+              setLoading(false)
+              setProfileInvalidation((value) => value + 1)
+              setKnown(false)
+              setReview(false)
+              setError(
+                'Tenant API field save requires a fresh shared policy review. Refresh row policy before reviewing global changes.',
+              )
+            }}
           />
         </Suspense>
       ) : null}
+      {
+        <>
+          <Button
+            variant="outline"
+            disabled={actor.busy || loading || review}
+            onClick={() => setShowMemberFields((value) => !value)}
+          >
+            {showMemberFields
+              ? 'Close member API fields'
+              : 'Member-specific API fields'}
+          </Button>
+          {showMemberFields ? (
+            <Suspense
+              fallback={<p role="status">Opening member API fields…</p>}
+            >
+              <MemberFieldProfiles
+                resource={resource}
+                database={database}
+                policyVersion={Math.max(
+                  policy?.version ?? 0,
+                  profilePolicyVersion,
+                )}
+                policyInvalidation={profileInvalidation}
+                onSaved={(version) => {
+                  request.current++
+                  setLoading(false)
+                  setProfilePolicyVersion((previous) =>
+                    Math.max(previous, version),
+                  )
+                  setKnown(false)
+                  setReview(false)
+                  setError(
+                    'Member API fields changed the shared policy version. Refresh row policy before reviewing global changes.',
+                  )
+                }}
+                onUnconfirmed={() => {
+                  request.current++
+                  setLoading(false)
+                  setProfileInvalidation((value) => value + 1)
+                  setKnown(false)
+                  setReview(false)
+                  setError(
+                    'Member API field save requires a fresh shared policy review. Refresh row policy before reviewing global changes.',
+                  )
+                }}
+              />
+            </Suspense>
+          ) : null}
+        </>
+      }
       {review ? (
         <section
           className="load-test-card form-stack"
@@ -623,10 +714,14 @@ function ResourceRowProtectionEditor({
                     .map(([table, key]) => `${table}: ${key}`)
                     .join(' · ')
                 : `Tenant column: ${column}`
-              : 'Unprotected'}{' '}
-            · Resource version {policy?.resourceVersion} · Policy version{' '}
-            {policy?.version}
+              : 'Unprotected'}
           </p>
+          {details ? (
+            <p className="field-help">
+              Resource version {policy?.resourceVersion} · Policy version{' '}
+              {policy?.version}
+            </p>
+          ) : null}
           {mode === 'tenant' ? (
             <>
               {reviewedFields.map(({ label, next, columns }) => (

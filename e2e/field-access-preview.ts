@@ -764,6 +764,9 @@ export async function fieldAccessPreviews({
       exact: true,
     }),
   ).not.toBeChecked()
+  await friendlyEditor
+    .getByRole('button', { name: 'Review details', exact: true })
+    .click()
   await expect(friendlyEditor).toContainText('Policy version 3')
   await capture(
     'Tenant protection',

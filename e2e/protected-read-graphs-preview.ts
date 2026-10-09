@@ -1,3 +1,4 @@
+import { openApiTools } from './api-tools'
 import { expect, type Page } from '@playwright/test'
 import { spawnSync } from 'node:child_process'
 
@@ -1132,6 +1133,7 @@ export async function protectedReadGraphPreviews({
     colorScheme: 'light',
     reducedMotion: 'no-preference',
   })
+  await openApiTools(page)
   await page.getByRole('button', { name: 'Use this API', exact: true }).click()
   const examples = page.getByRole('region', {
     name: 'Use this API',

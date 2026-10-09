@@ -2,7 +2,11 @@
 
 Besh uses open-source dependencies. Their licenses remain in their installed packages and apply to their respective code.
 
-The bundled Manrope Latin variable font is copyright 2018 The Manrope Project Authors and uses the SIL Open Font License 1.1. See [font license](web/assets/Manrope-OFL.txt). The font is served locally; no external font service is used at runtime.
+The bundled Google Sans Flex Latin and Latin Extended variable fonts are copyright 2022 The Google Sans Flex Project Authors and use the SIL Open Font License 1.1. See the original [font license](web/assets/google-sans-flex-OFL.txt) and [trademark notice](web/assets/google-sans-flex-TRADEMARKS.txt). Google Sans Flex and related Google names are trademarks of Google LLC; use of the font does not imply Google affiliation or sponsorship.
+
+The bundled Noto Sans Thai variable font is copyright 2022 The Noto Project Authors and uses the SIL Open Font License 1.1. See its original [font license](web/assets/noto-sans-thai-OFL.txt).
+
+All three font subsets are served locally, with no external font request at runtime. The [font manifest](web/assets/font-manifest.json) records official download URLs, byte counts, SHA-256 hashes, and immutable upstream commits for the license notices.
 
 The button, badge, input, and textarea components in `web/components/ui/` were generated using [shadcn/ui](https://github.com/shadcn-ui/ui) and adapted for local utility imports and project formatting. The custom checkbox and select components use [Radix primitives](https://www.radix-ui.com/primitives). GraphQL execution uses [GraphQL.js](https://www.graphql-js.org/).
 

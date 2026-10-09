@@ -1,9 +1,39 @@
 import { readFileSync } from 'node:fs'
 
 const styles = readFileSync(new URL('./preview.css', import.meta.url), 'utf8')
-const font = readFileSync(
-  new URL('../web/assets/manrope.woff2', import.meta.url),
-).toString('base64')
+const fontFaces = [
+  {
+    family: 'Google Sans Flex',
+    file: 'google-sans-flex-latin-variable.woff2',
+    range:
+      'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD',
+  },
+  {
+    family: 'Google Sans Flex',
+    file: 'google-sans-flex-latin-ext-variable.woff2',
+    range:
+      'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF',
+  },
+  {
+    family: 'Noto Sans Thai',
+    file: 'noto-sans-thai-thai-variable.woff2',
+    range: 'U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC',
+  },
+]
+  .map((font) => {
+    const bytes = readFileSync(
+      new URL(`../web/assets/${font.file}`, import.meta.url),
+    ).toString('base64')
+    return `@font-face {
+      font-family: '${font.family}';
+      src: url('data:font/woff2;base64,${bytes}') format('woff2');
+      font-style: normal;
+      font-weight: 400 800;
+      font-display: swap;
+      unicode-range: ${font.range};
+    }`
+  })
+  .join('\n')
 const interactions = readFileSync(
   new URL('./preview-filter.js', import.meta.url),
   'utf8',
@@ -42,12 +72,7 @@ export function renderPreview(records: PreviewRecord[]) {
           ${appearance}
         </script>
         <style>
-          @font-face {
-            font-family: 'Manrope';
-            src: url('data:font/woff2;base64,${font}') format('woff2');
-            font-weight: 200 800;
-            font-display: swap;
-          }
+          ${fontFaces}
           ${styles}
         </style>
       </head>
@@ -148,9 +173,9 @@ export function renderPreview(records: PreviewRecord[]) {
         </main>
         <p id="empty">No previews match this filter.</p>
         <footer>
-          Planned integrations appear only on the roadmap. External databases,
-          additional login providers, WebSockets, custom plugins, and AI are not
-          functional preview pages yet.
+          Typed WebSocket request/reply works. Subscriptions, external
+          databases, additional login providers, custom plugins, and AI remain
+          on the roadmap.
         </footer>
         <script>
           ${interactions}

@@ -47,7 +47,11 @@ Use `bun run preview:all --no-serve` to capture without starting the gallery. Us
 
 ## Build your first API
 
-1. Select **+** beside **Your APIs**.
+An empty API Studio offers **Build a blank API** and, with source access, **Start with a spreadsheet**. Choose the spreadsheet path if your rows already live in CSV, Excel or a public Google Sheet. Import and inspect them, then explicitly create an API draft. Opening either path does not save or publish an API.
+
+For a blank API:
+
+1. Choose **Build a blank API**, or select **+** beside **Your APIs** for another API.
 2. Give your API a name, method, and path, such as `GET /hello`.
 3. The starter flow connects **HTTP request** to **JSON response**.
 4. Select the response node. Choose a status, add named fields, choose their types and values, then select **Apply configuration**. JSON editing is optional under **Advanced configuration**.
@@ -125,11 +129,11 @@ Limits: 64 nodes, 128 edges, no cycles, bounded JSON nesting, and 256 KiB flow/i
 
 ## Inspect published backend code
 
-**Publish** prepares the backend module and current runtime routes automatically; no manual backend coding or code-directory setting is needed. With API-read permission, open **Generated backend** to inspect/copy/download the current publication, review its requirements, and refresh after a revision conflict. The downloaded module uses Besh runtime services and contains configured flow values; it is not a standalone server. See [published backend code](runtime-code.md) for recovery and security boundaries.
+**Publish** prepares the backend module and current runtime routes automatically; no manual backend coding or code-directory setting is needed. With API-read permission, expand **API tools** below the canvas and test response, then open **Generated backend** to inspect/copy/download the current publication, review its requirements, and refresh after a revision conflict. The downloaded module uses Besh runtime services and contains configured flow values; it is not a standalone server. See [published backend code](runtime-code.md) for recovery and security boundaries.
 
 ## Copy client code
 
-In API Studio, open **Use this API** with flow-read permission. Keep **Published release** as the example source, choose a client target, fill its request inputs, and select **Generate example**. Copy or download the source and follow its dependency instructions. Examples use a separately issued runtime key through `BESH_RUNTIME_API_KEY` in your caller's server environment; no token is entered into the panel. Generation does not call the API. Explicit **Saved draft** examples require publication before runtime use. See [client code examples](client-code.md) for the eight targets, source/revision rules, and setup.
+In API Studio, expand **API tools** below the canvas and test response, then open **Use this API** with flow-read permission. Keep **Published release** as the example source, choose a client target, fill its request inputs, and select **Generate example**. Copy or download the source and follow its dependency instructions. Examples use a separately issued runtime key through `BESH_RUNTIME_API_KEY` in your caller's server environment; no token is entered into the panel. Generation does not call the API. Explicit **Saved draft** examples require publication before runtime use. See [client code examples](client-code.md) for the eight targets, source/revision rules, and setup.
 
 ## Load test a published API
 

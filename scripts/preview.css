@@ -35,7 +35,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font:
-    14px 'Manrope',
+    400 14px 'Google Sans Flex',
+    'Noto Sans Thai',
     'Segoe UI',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -89,7 +90,7 @@ header {
   border-radius: 999px;
   background: transparent;
   color: var(--foreground);
-  font-weight: 650;
+  font-weight: 500;
   font-size: 12px;
 }
 
@@ -147,7 +148,7 @@ h1 {
   max-width: 650px;
   margin: 0 auto 22px;
   font-size: clamp(40px, 5.4vw, 68px);
-  font-weight: 550;
+  font-weight: 700;
   line-height: 1.08;
   letter-spacing: -3px;
 }

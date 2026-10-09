@@ -1075,6 +1075,9 @@ export async function tenantFieldProfilePreviews({
     'A real replacement keeps all retained profile fields but advances the resource version. The queued review cannot silently overwrite the current profile.',
   )
   await refreshSourceProfile()
+  await profile
+    .getByRole('button', { name: 'Review details', exact: true })
+    .click()
   await expect(profile).toContainText('Reviewed resource version 2')
   await chooseSource('Use shared API fields')
   await reviewSource()

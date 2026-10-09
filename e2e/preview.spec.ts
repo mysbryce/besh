@@ -1,5 +1,6 @@
+import { openApiTools } from './api-tools'
 import { expect, test, type Locator } from '@playwright/test'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { PreviewRecord } from '../scripts/preview-report'
 import type { UpdateState } from '../src/updates/model'
@@ -15,6 +16,9 @@ import { fieldAccessPreviews } from './field-access-preview'
 import { keyRolloverPreviews } from './key-rollover-preview'
 import { tenantFieldProfilePreviews } from './tenant-field-profiles-preview'
 import { protectedReadGraphPreviews } from './protected-read-graphs-preview'
+import { memberFieldProfilePreviews } from './member-field-profiles-preview'
+import { studioFirstTaskPreviews } from './studio-first-task-preview'
+import { studioToolsPreviews } from './studio-tools-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -24,6 +28,8 @@ test('preview every current page and its actions', async ({
   const directory = process.env.BESH_PREVIEW_DIR!
   const setupKey = process.env.BESH_PREVIEW_SETUP_KEY!
   const records: PreviewRecord[] = []
+  const firstTaskRecords: PreviewRecord[] = []
+  let capturingFirstTask = false
   test.setTimeout(900_000)
   const errors: string[] = []
   mkdirSync(join(directory, 'images'), { recursive: true })
@@ -50,7 +56,7 @@ test('preview every current page and its actions', async ({
     for (const input of await page.locator('input[type="password"]').all()) {
       if (await input.inputValue()) passwordMasks.push(input)
     }
-    const image = `images/${String(records.length + 1).padStart(2, '0')}-${title
+    const image = `images/${capturingFirstTask ? `first-task-${firstTaskRecords.length + 1}` : String(records.length + 1).padStart(2, '0')}-${title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/-$/, '')}.png`
@@ -68,6 +74,10 @@ test('preview every current page and its actions', async ({
       ],
       maskColor: '#dfe4ec',
     })
+    if (capturingFirstTask) {
+      firstTaskRecords.push({ page: group, title, detail, image })
+      return
+    }
     records.push({ page: group, title, detail, image })
     writeFileSync(
       join(directory, 'manifest.json'),
@@ -222,6 +232,16 @@ test('preview every current page and its actions', async ({
   await page.getByLabel('I saved my owner key').check()
   await page.getByRole('button', { name: 'Enter studio' }).click()
   await expect(page.getByRole('heading', { name: /API Studio/ })).toBeVisible()
+  capturingFirstTask = true
+  await studioFirstTaskPreviews({
+    page,
+    owner,
+    apiOrigin: new URL(page.url()).origin,
+    capture,
+    signedIn: true,
+    importSpreadsheet: false,
+  })
+  capturingFirstTask = false
   await appearance('Dark')
   await capture(
     'Appearance',
@@ -1574,6 +1594,7 @@ test('preview every current page and its actions', async ({
 
   async function downloadOpenapi() {
     const pending = page.waitForEvent('download')
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Download OpenAPI', exact: true })
       .click()
@@ -1583,6 +1604,7 @@ test('preview every current page and its actions', async ({
     return JSON.parse(readFileSync(filename, 'utf8'))
   }
 
+  await openApiTools(page)
   await page.getByRole('combobox', { name: 'OpenAPI source' }).click()
   await capture(
     'OpenAPI',
@@ -3200,6 +3222,7 @@ test('preview every current page and its actions', async ({
   await notice('Draft saved')
   await page.getByRole('button', { name: 'Publish', exact: true }).click()
   await notice('Published')
+  await openApiTools(page)
   await page
     .getByRole('button', { name: 'Release history', exact: true })
     .click()
@@ -3382,6 +3405,7 @@ test('preview every current page and its actions', async ({
   ).json()
   await page.getByRole('button', { name: 'Sign out', exact: true }).click()
   await signIn(routePreviewViewer.token)
+  await openApiTools(page)
   await page
     .getByRole('button', { name: 'Release history', exact: true })
     .click()
@@ -4120,6 +4144,25 @@ test('preview every current page and its actions', async ({
     apiOrigin: new URL(page.url()).origin,
     capture,
   })
+  await memberFieldProfilePreviews({
+    page,
+    owner,
+    apiOrigin: new URL(page.url()).origin,
+    capture,
+  })
+  await studioToolsPreviews({ page, owner, capture })
+  for (const record of firstTaskRecords) {
+    const image = record.image.replace(
+      /images\/first-task-\d+-/,
+      `images/${String(records.length + 1).padStart(2, '0')}-`,
+    )
+    renameSync(join(directory, record.image), join(directory, image))
+    records.push({ ...record, image })
+  }
+  writeFileSync(
+    join(directory, 'manifest.json'),
+    JSON.stringify(records, null, 2),
+  )
   expect(errors).toEqual([])
 
   await context.clearPermissions()

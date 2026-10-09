@@ -1,0 +1,66 @@
+{
+  "cssSource": {
+    "url": "https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400..800&family=Noto+Sans+Thai:wght@400..800&display=swap",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "sha256": "9392085b832a41435d599c7728fcfb4445d0c2688a49c1d466eddb035b001035"
+  },
+  "assets": [
+    {
+      "file": "google-sans-flex-latin-variable.woff2",
+      "sourceUrl": "https://fonts.gstatic.com/s/googlesansflex/v23/t5sEIQcYNIWbFgDgAAzZ34auoVyXkJCOvp3SFWJbN5hF8Ju1x6sKCyp0l9sI40swNJwInycYAJzz0m7kJ4qFQOJBOjLvDSndo0SKMpKSTzwliVdHAy4bxTDHg_ugnAakp8ubq8BIo1pdkkXZj4j1dvKMDV8.woff2",
+      "bytes": 38436,
+      "sha256": "798674750022e97c68ed1ef6cbbf84ae8172d252deac20cd52916734f54e0cb4",
+      "family": "Google Sans Flex",
+      "subset": "latin",
+      "cssWeightRange": [400, 800],
+      "signature": "wOF2",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "file": "google-sans-flex-latin-ext-variable.woff2",
+      "sourceUrl": "https://fonts.gstatic.com/s/googlesansflex/v23/t5sEIQcYNIWbFgDgAAzZ34auoVyXkJCOvp3SFWJbN5hF8Ju1x6sKCyp0l9sI40swNJwInycYAJzz0m7kJ4qFQOJBOjLvDSndo0SKMpKSTzwliVdHAy4bxTDHg_ugnAakp8ubq8BIo1pdkkXZj4j1dvKCDV-fGA.woff2",
+      "bytes": 20120,
+      "sha256": "11aa7d27266608c6fcd76a7b742bd661fb9a8d572939ecbddcdc356117d544d9",
+      "family": "Google Sans Flex",
+      "subset": "latin-ext",
+      "cssWeightRange": [400, 800],
+      "signature": "wOF2",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    },
+    {
+      "file": "noto-sans-thai-thai-variable.woff2",
+      "sourceUrl": "https://fonts.gstatic.com/s/notosansthai/v29/iJWQBXeUZi_OHPqn4wq6hQ2_hbJ1xyN9wd43SofNWcdfKI2hX2g.woff2",
+      "bytes": 26924,
+      "sha256": "1f5a173641bbcb3ca4fb0a986858b6b07f8cd5dd2ed61236b40548c7a3c7292f",
+      "family": "Noto Sans Thai",
+      "subset": "thai",
+      "cssWeightRange": [400, 800],
+      "signature": "wOF2",
+      "unicodeRange": "U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC"
+    },
+    {
+      "file": "google-sans-flex-OFL.txt",
+      "sourceUrl": "https://raw.githubusercontent.com/googlefonts/googlesans-flex/4d56b419aef3d46a0f2f5b7e1e1891222b4b97c4/OFL.txt",
+      "bytes": 4397,
+      "sha256": "831b6e041705873c3e6efb18c4c96202bc41c8be42a456d3d26c47abf14816d0",
+      "upstreamRepository": "https://github.com/googlefonts/googlesans-flex",
+      "upstreamCommit": "4d56b419aef3d46a0f2f5b7e1e1891222b4b97c4"
+    },
+    {
+      "file": "google-sans-flex-TRADEMARKS.txt",
+      "sourceUrl": "https://raw.githubusercontent.com/googlefonts/googlesans-flex/4d56b419aef3d46a0f2f5b7e1e1891222b4b97c4/TRADEMARKS.txt",
+      "bytes": 1586,
+      "sha256": "d69ab689ed65aa0400665dee5be1a5e18b20573b666dbec397092da959c83757",
+      "upstreamRepository": "https://github.com/googlefonts/googlesans-flex",
+      "upstreamCommit": "4d56b419aef3d46a0f2f5b7e1e1891222b4b97c4"
+    },
+    {
+      "file": "noto-sans-thai-OFL.txt",
+      "sourceUrl": "https://raw.githubusercontent.com/google/fonts/62e55e586fc0c29d428ee47b7c359cd33143f93d/ofl/notosansthai/OFL.txt",
+      "bytes": 4380,
+      "sha256": "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0",
+      "upstreamRepository": "https://github.com/google/fonts",
+      "upstreamCommit": "62e55e586fc0c29d428ee47b7c359cd33143f93d"
+    }
+  ]
+}

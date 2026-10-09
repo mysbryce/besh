@@ -8,7 +8,7 @@ Expanded [protected read graphs](protected-read-graphs.md) accept at most one el
 
 ## Generate an example
 
-1. Save the API, then open **Use this API** in API Studio with **Read APIs** permission.
+1. Save the API, expand **API tools** below the canvas and test response, then open **Use this API** with **Read APIs** permission.
 2. Keep **Example source** as **Published release**, or explicitly select **Saved draft**. Review the displayed revision. Unsaved editor changes are excluded.
 3. Choose **Client language** and review its requirements. **Client base URL** defaults to the current origin; override it for your deployment origin or path prefix.
 4. Fill path/query/body values, or the GraphQL operation and typed variables. **Advanced request JSON** is optional. GET and HEAD examples omit the body.

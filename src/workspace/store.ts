@@ -655,6 +655,29 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 22').get()) {
+      db.run(`CREATE TABLE source_member_field_profiles (
+        resource_id TEXT NOT NULL REFERENCES data_sources(id) ON DELETE CASCADE,
+        member_id TEXT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        mode TEXT NOT NULL CHECK(mode = 'selected'),
+        columns TEXT NOT NULL CHECK(json_valid(columns) AND json_type(columns) = 'array'),
+        PRIMARY KEY(resource_id, member_id)
+      );
+      CREATE TABLE database_member_field_profiles (
+        resource_id TEXT NOT NULL,
+        table_name TEXT NOT NULL,
+        member_id TEXT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        mode TEXT NOT NULL CHECK(mode = 'selected'),
+        columns TEXT NOT NULL CHECK(json_valid(columns) AND json_type(columns) = 'array'),
+        PRIMARY KEY(resource_id, table_name, member_id),
+        FOREIGN KEY(resource_id, table_name) REFERENCES database_table_field_policies(resource_id, table_name) ON DELETE CASCADE
+      )`)
+      query('INSERT INTO migrations VALUES (22, ?, ?)').run(
+        'member-specific protected API field profiles',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -1541,7 +1564,7 @@ export function openStore(path: string, adminToken?: string) {
           )
           const graph = JSON.parse(published.published) as Flow
           const principal = memberRowPrincipal(
-            { db, query },
+            { db, query, member: resolveMember },
             member,
             graph,
             value.tenantId,
@@ -1582,8 +1605,16 @@ export function openStore(path: string, adminToken?: string) {
     ) {
       return db
         .transaction(() => {
+          const member = currentMember?.()
           const row = keyRow(id)
-          if (currentMember) assertKeyAccess(currentMember(), runtimeKey(row))
+          if (
+            member &&
+            member.role !== 'owner' &&
+            row.issuer_member_id !== null &&
+            row.issuer_member_id !== member.id
+          )
+            throw new ApiError(404, 'Runtime key not found')
+          if (member) assertKeyAccess(member, runtimeKey(row))
 
           // Load-test credentials stay private and expire with their owning job.
           if (

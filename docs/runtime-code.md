@@ -8,7 +8,7 @@ Publishing generates a trusted CommonJS (`.cjs`) module for the validated releas
 
 Members with **Read APIs** can inspect, copy, or download the current publication's backend module. Viewing code is a separate read action; it does not publish, execute a request, issue a credential, or select an archived release. Unsaved changes and saved drafts do not replace published code.
 
-1. In API Studio, open **Generated backend**. Review **Published release · revision N**.
+1. In API Studio, expand **API tools** below the canvas and test response, then open **Generated backend**. Review **Published release · revision N**.
 2. Review **Requirements** and the read-only **Generated backend code**. Expand **Release integrity** for **Code SHA-256** and **Definition SHA-256**.
 3. Select **Copy backend code** or **Download backend code**. The download uses the artifact's `.cjs` filename. There is no extra generation or deployment action.
 

@@ -1,3 +1,4 @@
+import { openApiTools } from './api-tools'
 import { expect, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
@@ -367,9 +368,11 @@ export async function websocketPreviews({
     'Converted saved draft keeps its published REST endpoint',
     'Explicit conversion saves canonical WebSocket message rules while the original REST release and response continue serving with its separate runtime key.',
   )
+  await openApiTools(page)
   await expect(
     page.getByRole('button', { name: 'Use this API', exact: true }),
   ).toBeEnabled()
+  await openApiTools(page)
   await page.getByRole('button', { name: 'Use this API', exact: true }).click()
   const examples = page.getByRole('region', {
     name: 'Use this API',
@@ -389,6 +392,7 @@ export async function websocketPreviews({
     .getByRole('option', { name: 'Published release · v1', exact: true })
     .click()
   const openApiDownload = page.waitForEvent('download')
+  await openApiTools(page)
   await page
     .getByRole('button', { name: 'Download OpenAPI', exact: true })
     .click()
@@ -435,6 +439,7 @@ export async function websocketPreviews({
   await expect(
     page.getByText('WebSocket · Published endpoint URL', { exact: true }),
   ).toBeVisible()
+  await openApiTools(page)
   await page
     .getByRole('button', { name: 'Generated backend', exact: true })
     .click()

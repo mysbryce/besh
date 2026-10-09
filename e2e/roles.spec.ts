@@ -1,3 +1,4 @@
+import { openApiTools } from './api-tools'
 import { expect, test } from '@playwright/test'
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -681,6 +682,7 @@ test('delegated operators manage keys and run tests without API read access', as
         })
       ).status(),
     ).toBe(200)
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Release history', exact: true })
       .click()

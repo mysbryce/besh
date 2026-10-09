@@ -10,6 +10,7 @@ import { flowAccessSchema, memberAccessSchema } from './workspace/access-input'
 import { dependencyService } from './workspace/dependencies'
 import { rowPolicyService } from './workspace/row-policy'
 import { tenantFieldPolicyService } from './workspace/tenant-field-policy'
+import { memberFieldPolicyService } from './workspace/member-field-policy'
 import { tenantService } from './workspace/tenants'
 import { assertRawResource } from './workspace/raw-access'
 import { authorizeFlow } from './workspace/authorization'
@@ -129,6 +130,7 @@ export function createApp(options: AppOptions) {
   const dependencies = dependencyService(store)
   const rowPolicies = rowPolicyService(store)
   const tenantFields = tenantFieldPolicyService(store)
+  const memberFields = memberFieldPolicyService(store)
   const tenants = tenantService(store)
   const sources = dataSourceService(store, options.sheetFetch)
   const databases = databaseConnectionService(store)
@@ -468,6 +470,27 @@ export function createApp(options: AppOptions) {
         allow(currentMember(request), ['owner']),
       )
     })
+    .get('/data-sources/:id/member-fields', ({ member, params }) => {
+      allow(member, ['owner'])
+      return memberFields.sourceSummary(params.id)
+    })
+    .get('/data-sources/:id/member-fields/:memberId', ({ member, params }) => {
+      allow(member, ['owner'])
+      return memberFields.source(params.id, params.memberId)
+    })
+    .put(
+      '/data-sources/:id/member-fields/:memberId',
+      ({ member, params, body, request }) => {
+        allow(member, ['owner'])
+        return memberFields.updateSource(
+          member.id,
+          params.id,
+          params.memberId,
+          body,
+          () => allow(currentMember(request), ['owner']),
+        )
+      },
+    )
     .get('/data-sources/:id/tenant-fields', ({ member, params }) => {
       allow(member, ['owner'])
       return tenantFields.sourceSummary(params.id)
@@ -499,6 +522,30 @@ export function createApp(options: AppOptions) {
         allow(member, ['owner'])
         return rowPolicies.updateSource(member.id, params.id, body, () =>
           allow(currentMember(request), ['owner']),
+        )
+      },
+    )
+    .get('/database-connections/:id/member-fields', ({ member, params }) => {
+      allow(member, ['owner'])
+      return memberFields.databaseSummary(params.id)
+    })
+    .get(
+      '/database-connections/:id/member-fields/:memberId',
+      ({ member, params }) => {
+        allow(member, ['owner'])
+        return memberFields.database(params.id, params.memberId)
+      },
+    )
+    .put(
+      '/database-connections/:id/member-fields/:memberId',
+      ({ member, params, body, request }) => {
+        allow(member, ['owner'])
+        return memberFields.updateDatabase(
+          member.id,
+          params.id,
+          params.memberId,
+          body,
+          () => allow(currentMember(request), ['owner']),
         )
       },
     )

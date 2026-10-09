@@ -34,7 +34,7 @@ Publication/rollback prepares canonical backend code and registers the selected 
 
 Release history lists immutable published revisions and identifies the current one. Owners, editors, viewers, and custom members with flow-read permission can inspect history and a release definition. Owners and custom members with publication permission can restore an earlier published revision.
 
-1. Save unfinished edits if needed, then open **Release history**.
+1. Save unfinished edits if needed, expand **API tools** below the canvas and test response, then open **Release history**.
 2. Select **Review release N** and inspect its method, path, API type, and step count. The management API also exposes the archived definition.
 3. Review current runtime keys and dependencies before restoring.
 4. Select **Roll back to release N**, then **Confirm rollback** with publication permission. The server checks that the current publication still matches the one you reviewed.

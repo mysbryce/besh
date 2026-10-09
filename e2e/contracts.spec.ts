@@ -1,3 +1,4 @@
+import { openApiTools } from './api-tools'
 import { expect, test } from '@playwright/test'
 import { spawn } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
@@ -60,6 +61,7 @@ test('REST API rules are optional and editable through labeled forms', async ({
       .getByRole('button', { name: 'Open workspace', exact: true })
       .click()
     await page.getByRole('button', { name: 'API rules', exact: true }).click()
+    await openApiTools(page)
     await expect(
       page.getByRole('button', { name: 'Download OpenAPI', exact: true }),
     ).toBeDisabled()
@@ -95,6 +97,7 @@ test('REST API rules are optional and editable through labeled forms', async ({
       .click()
     await page.getByRole('option', { name: /^Saved draft/ }).click()
     const downloadPromise = page.waitForEvent('download')
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Download OpenAPI', exact: true })
       .click()
@@ -240,6 +243,7 @@ test('REST API rules are optional and editable through labeled forms', async ({
     ).toBe(400)
 
     async function downloadDocument(source: 'draft' | 'published') {
+      await openApiTools(page)
       await page
         .getByRole('combobox', { name: 'OpenAPI source', exact: true })
         .click()
@@ -249,6 +253,7 @@ test('REST API rules are optional and editable through labeled forms', async ({
         })
         .click()
       const ready = page.waitForEvent('download')
+      await openApiTools(page)
       await page
         .getByRole('button', { name: 'Download OpenAPI', exact: true })
         .click()
@@ -390,6 +395,7 @@ test('REST API rules are optional and editable through labeled forms', async ({
     expect(await downloadDocument('published')).toEqual(published)
     await page.getByRole('button', { name: 'New API', exact: true }).click()
     await page.getByRole('button', { name: 'API rules', exact: true }).click()
+    await openApiTools(page)
     await expect(
       page.getByRole('checkbox', {
         name: 'Validate query parameters',

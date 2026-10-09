@@ -1,3 +1,4 @@
+import { openApiTools } from './api-tools'
 import { expect, test } from '@playwright/test'
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -90,6 +91,7 @@ test('publication provides read-only generated backend code for its actual live 
     await page
       .getByRole('button', { name: 'Open workspace', exact: true })
       .click()
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Generated backend', exact: true })
       .click()

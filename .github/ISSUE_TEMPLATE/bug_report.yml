@@ -1,0 +1,56 @@
+name: Bug report
+description: Report something that does not work as expected.
+title: '[Bug]: '
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Besh. Remove keys, cookies, passwords, private rows, and personal details from examples, logs, and screenshots.
+
+        Do not post security vulnerabilities or exploit details here. Follow the repository's SECURITY.md for private reporting options.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you click or run? Use a small example with made-up data.
+      placeholder: |
+        1. Open ...
+        2. Choose ...
+        3. Click ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What should have happened?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+      description: What happened instead? Include the visible error message.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Besh version
+      description: Use the version shown in Besh or package.json. Say unknown if unsure.
+      placeholder: 0.17.0-alpha.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, browser, and Bun version if known.
+      placeholder: Windows 11, Chrome, Bun 1.4.2
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or logs
+      description: Optional. Share only the relevant part, with credentials and private data removed.

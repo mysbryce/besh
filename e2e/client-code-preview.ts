@@ -1,3 +1,4 @@
+import { openApiTools } from './api-tools'
 import { expect, type Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
@@ -116,6 +117,7 @@ export async function clientCodePreviews({
   async function open(name: string) {
     await page.getByRole('button', { name: /^API Studio/ }).click()
     await page.locator('.api-list button').filter({ hasText: name }).click()
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Use this API', exact: true })
       .click()

@@ -1,3 +1,4 @@
+import { openApiTools } from './api-tools'
 import { expect, type Page, type Request } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
@@ -91,6 +92,7 @@ export async function generatedBackendPreviews({
   async function open(name: string) {
     await page.getByRole('button', { name: /^API Studio/ }).click()
     await page.locator('.api-list button').filter({ hasText: name }).click()
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Generated backend', exact: true })
       .click()
@@ -401,6 +403,7 @@ export async function generatedBackendPreviews({
     'Generated backend read loading',
     'A real artifact response is held during delivery. Loading replaces prior code and prevents duplicate reads.',
   )
+  await openApiTools(page)
   await page
     .getByRole('button', { name: 'Generated backend', exact: true })
     .click()

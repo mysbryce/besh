@@ -408,7 +408,7 @@ export function App() {
                   </p>
                 </div>
               ) : (
-                <Builder />
+                <Builder onOpenData={() => setPage('data')} />
               )
             ) : page === 'data' ? (
               <DataSources onOpenApi={() => setPage('builder')} />

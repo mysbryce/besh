@@ -13,6 +13,7 @@ import type { Flow } from '../flows/model'
 import type { RowReadPermit } from '../workspace/row-authority'
 import { assertDatabaseFields } from '../workspace/field-policy'
 import { assertDatabaseTenantFields } from '../workspace/tenant-field-policy'
+import { assertDatabaseMemberFields } from '../workspace/member-field-policy'
 
 const versionSchema = z.number().int().positive().safe()
 const readFields = {
@@ -315,6 +316,7 @@ export function databaseConnectionService(store: Store) {
       const { current, policy } = store.db.transaction(() => {
         assertDatabaseFields(store, config)
         assertDatabaseTenantFields(store, config, permit?.tenantId)
+        assertDatabaseMemberFields(store, config, permit?.memberId)
         const current = row(config.connectionId)
         const table = readOptions(present(current), config)
         const policy = rowPolicy(config.connectionId, config.table)
@@ -357,6 +359,7 @@ export function databaseConnectionService(store: Store) {
         )
           throw new ApiError(403, 'Row policy changed during this read')
         assertDatabaseTenantFields(store, config, permit?.tenantId)
+        assertDatabaseMemberFields(store, config, permit?.memberId)
       })()
       return result.rows
     },

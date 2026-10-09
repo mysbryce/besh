@@ -1,3 +1,4 @@
+import { openApiTools } from './api-tools'
 import { expect, type Page, type Request } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import type { Member, Role, SavedFlow } from '../web/lib/api'
@@ -433,6 +434,7 @@ export async function flowAccessPreviews({
     await expect(
       page.getByRole('button', { name: 'Test flow', exact: true }),
     ).toBeDisabled()
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Release history', exact: true })
       .click()
@@ -444,6 +446,7 @@ export async function flowAccessPreviews({
     ).toContainText(flow.name)
     if (!flow.graphql) {
       const download = page.waitForEvent('download')
+      await openApiTools(page)
       await page
         .getByRole('button', { name: 'Download OpenAPI', exact: true })
         .click()
@@ -453,6 +456,7 @@ export async function flowAccessPreviews({
         rest.path,
       )
     }
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Use this API', exact: true })
       .click()
@@ -467,6 +471,7 @@ export async function flowAccessPreviews({
       .getByRole('button', { name: 'Generate example', exact: true })
       .click()
     await expect(client.getByLabel('Generated client code')).toBeVisible()
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Generated backend', exact: true })
       .click()

@@ -1,6 +1,6 @@
 # Tenant row protection
 
-Implemented in 0.11 for the narrow read-only scope below: owner-approved identities and assignments, source/SQLite row policies, protected REST/GraphQL reads, caller identity/privacy, and backup guards. Runtime grants and dependency USE alone do not isolate tenants or rows; protection requires the separate resource policy. The 0.13 resource-wide field allowlist below extends those reads. Tenant-specific field profiles are implemented in 0.15. Exact public/native, browser, restoration, and capture evidence belongs in [testing](testing.md). Per-member field profiles, product sessions, mixed/social graphs, and multi-workspace isolation remain planned.
+Implemented in 0.11 for the narrow read-only scope below: owner-approved identities and assignments, source/SQLite row policies, protected REST/GraphQL reads, caller identity/privacy, and backup guards. Runtime grants and dependency USE alone do not isolate tenants or rows; protection requires the separate resource policy. The 0.13 resource-wide field allowlist below extends those reads. Tenant-specific field profiles are implemented in 0.15; member-specific fields are implemented in 0.17 below. Exact public/native, browser, restoration, and capture evidence belongs in [testing](testing.md). Joins, mixed protected/unprotected reads, social effects, product sessions and multi-workspace isolation remain planned.
 
 ## Owner setup
 
@@ -55,6 +55,20 @@ Graph save, publication, and rollback still validate global field access. A grap
 Profile saves review the shared policy version, resource version, and tenant version. A stale review returns `409`; invalid partial SQLite table reviews save nothing. Every accepted profile edit advances the shared resource policy version, even for a dormant profile. Pending reads fail final checks, and existing connections using that resource close, including other tenants still allowed by their own profiles. Fresh admission uses current policy; unrelated resources are unaffected. Raw owner previews and complete backups retain full data.
 
 Owner profile summaries identify retained configured tenants without returning a full field map or exact identity values. Source replacement/refresh rejects removing any retained selected key, including dormant resources and retired tenants, before saving rows or audit. Review that tenant's profile, or explicitly restore shared fields, then retry the replacement with current versions. This recovery does not activate protection or the identity. Migration 21 retains sparse selected profiles through restart and backup restoration without rewriting compiler 2. Dashboard, native restoration and delivery checks passed in 0.15; see [wire format](api.md#tenant-field-profiles) and [testing](testing.md).
+
+## Member field profiles
+
+Owners can open **Member-specific API fields** for a source or uploaded SQLite copy, then choose a **Workspace member**. Review the assigned tenant and each current field ceiling. **Use shared and tenant API fields** inherits those current policies; **Choose fields for this member** limits the member to checked columns. SQLite reviews every table independently and saves one complete table map. No JSON edits are needed.
+
+The panel shows shared API fields, tenant API fields, the member choice and fields currently allowed by those policies. Current, refresh-needed and inactive status stays visible. Open **Review details** only when you need the numeric review versions; hiding them does not weaken the server's checks.
+
+**Configured member choices** lists owner-visible names with stored selections, including dormant and selected-empty choices. Confirmed none means the other members inherit; unknown metadata asks for Refresh instead. The list follows the same reviewed resource/policy versions as the selected member.
+
+Choose **Review member API fields**, check **I reviewed the original member, assigned tenant, and field ceilings**, then **Confirm member API fields**. A selected empty list permits no protected reads of that table/source. A missing tenant assignment shows an unknown intersection; it does not mean all fields or an empty selection. Dormant choices remain editable while protection is off or the assigned tenant is retired.
+
+These fields follow the authenticated member during draft tests and the original issuing member for bound published keys. An owner replacing that key keeps its original member. Owner-independent keys follow global and tenant policies without a member selection. Field choices never grant missing API actions, API access or dependency USE. A forbidden configured projection or business filter stops the complete read; choosing fewer GraphQL reply fields cannot bypass it.
+
+Pending saves lock navigation and controls. After a stale or unconfirmed response, **Refresh member API fields** reads the current complete map before another review. It does not retry a possibly committed write. Accepted member changes also make global and tenant reviews stale because they share the resource policy version. Public authority, restoration, native lifecycle, complete browser and gallery checks passed in 0.17; exact evidence is tracked in [testing](testing.md).
 
 ## Trusted identity and reads
 

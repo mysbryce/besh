@@ -26,7 +26,7 @@
 .load-test-card p,
 .load-test-limits {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
@@ -198,6 +198,16 @@
   .load-test-card {
     padding: 18px;
   }
+  .tenant-field-profiles.load-test-card {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .tenant-field-profiles > .load-test-card {
+    padding: 12px;
+    border-radius: 16px;
+  }
   .load-test-settings,
   .load-test-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -264,11 +274,36 @@
 }
 
 @font-face {
-  font-family: 'Manrope';
-  src: url('./assets/manrope.woff2') format('woff2');
+  font-family: 'Google Sans Flex';
+  src: url('./assets/google-sans-flex-latin-variable.woff2') format('woff2');
   font-style: normal;
-  font-weight: 200 800;
+  font-weight: 400 800;
   font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Google Sans Flex';
+  src: url('./assets/google-sans-flex-latin-ext-variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Noto Sans Thai';
+  src: url('./assets/noto-sans-thai-thai-variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  unicode-range: U+02D7, U+0303, U+0331, U+0E01-0E5B, U+200C-200D, U+25CC;
 }
 
 @theme inline {
@@ -297,19 +332,35 @@ body {
   color: var(--text);
   background: var(--page);
   font-family:
-    'Manrope',
+    'Google Sans Flex',
+    'Noto Sans Thai',
     'Segoe UI',
     -apple-system,
     BlinkMacSystemFont,
     sans-serif;
   font-size: 14px;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
+}
+h1 {
+  font-weight: 700;
+}
+h2,
+h3 {
+  font-weight: 600;
 }
 button,
 input,
 select,
 textarea {
   font: inherit;
+}
+label,
+button,
+input,
+select,
+textarea {
+  font-weight: 500;
 }
 button,
 a {
@@ -399,7 +450,7 @@ select:focus-visible {
 }
 .welcome-copy h1 {
   font-size: clamp(40px, 4.2vw, 64px);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.12;
   letter-spacing: -2.8px;
   margin: 22px 0;
@@ -589,7 +640,7 @@ select:focus-visible {
 }
 .form-stack label {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .form-stack input {
   background: var(--surface);
@@ -602,7 +653,8 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 10px;
+  font-size: 14px;
+  font-weight: 400;
   color: var(--text-muted);
   line-height: 1.7;
 }
@@ -826,7 +878,7 @@ select[aria-hidden='true'] {
   align-items: center;
   gap: 11px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   text-align: left;
   border-radius: 999px;
   color: var(--text-muted);
@@ -1030,7 +1082,7 @@ select[aria-hidden='true'] {
   font-size: 32px;
   line-height: 1.25;
   letter-spacing: -1.3px;
-  font-weight: 600;
+  font-weight: 700;
   margin-top: 7px;
 }
 .page-title h1 [data-slot='badge'] {
@@ -1069,7 +1121,7 @@ select[aria-hidden='true'] {
   display: block;
   font-size: 9px;
   letter-spacing: 1.2px;
-  font-weight: 700;
+  font-weight: 500;
   color: var(--text-muted);
   margin-bottom: 10px;
 }
@@ -1092,7 +1144,7 @@ select[aria-hidden='true'] {
   border-radius: 12px;
   padding: 10px 12px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   min-height: 44px;
 }
 .path-field {
@@ -1169,7 +1221,7 @@ select[aria-hidden='true'] {
 }
 .openapi-download label {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .openapi-download p {
   flex-basis: 100%;
@@ -1195,7 +1247,7 @@ select[aria-hidden='true'] {
   display: grid;
   gap: 7px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .rule-schema .rule-check {
   display: flex;
@@ -1242,7 +1294,7 @@ select[aria-hidden='true'] {
   margin-top: 12px;
 }
 .graphql-schema label {
-  font-weight: 600;
+  font-weight: 500;
   font-size: 12px;
 }
 .graphql-inputs {
@@ -1657,7 +1709,7 @@ td code {
 .account-form p,
 .account-form small {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.7;
 }
 .session-heading {
@@ -1948,7 +2000,7 @@ td code {
   min-width: 44px;
   border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   transition:
     background 180ms ease,
     box-shadow 180ms ease,
@@ -2009,13 +2061,13 @@ td code {
   gap: 8px;
   min-width: 0;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
 }
 .simple-form .select-trigger,
 .field-row .select-trigger {
   width: 100%;
-  font-weight: 400;
+  font-weight: 500;
 }
 .field-row {
   display: flex;
@@ -2042,7 +2094,7 @@ td code {
 }
 .field-help {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
   line-height: 1.8;
 }
@@ -2199,7 +2251,7 @@ td code {
   gap: 9px;
   min-width: 0;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text);
 }
 .source-import-form input[type='file'] {
@@ -2336,7 +2388,7 @@ input[type='file']::file-selector-button {
   overflow-wrap: anywhere;
 }
 .permission-option small {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 400;
   color: var(--text-muted);
   line-height: 1.8;
@@ -2348,7 +2400,7 @@ input[type='file']::file-selector-button {
 .source-field-mapping {
   display: block;
   margin-top: 5px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--text-muted);
 }

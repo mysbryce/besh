@@ -27,12 +27,14 @@ export function TenantFieldProfiles({
   policyVersion,
   policyInvalidation,
   onSaved,
+  onUnconfirmed,
 }: {
   resource: DataSource | DatabaseConnection
   database: boolean
   policyVersion: number
   policyInvalidation: number
-  onSaved: () => void
+  onSaved: (version: number) => void
+  onUnconfirmed?: () => void
 }) {
   const actor = useStudio()
   const [tenants, setTenants] = useState<ApprovedTenant[]>([])
@@ -48,6 +50,7 @@ export function TenantFieldProfiles({
   const [known, setKnown] = useState(false)
   const [reviewedScope, setReviewedScope] = useState('')
   const [review, setReview] = useState(false)
+  const [details, setDetails] = useState(false)
   const [emptyAcknowledged, setEmptyAcknowledged] = useState(false)
   const [wideningAcknowledged, setWideningAcknowledged] = useState(false)
   const [resetAcknowledged, setResetAcknowledged] = useState(false)
@@ -228,7 +231,9 @@ export function TenantFieldProfiles({
     setReview(false)
     setLoading(false)
     setError(
-      'Shared policy needs a fresh tenant review. Refresh tenant API fields before reviewing.',
+      (previous) =>
+        previous ||
+        'Shared policy needs a fresh tenant review. Refresh tenant API fields before reviewing.',
     )
   }, [policyVersion, policyInvalidation, profile?.version])
 
@@ -351,7 +356,7 @@ export function TenantFieldProfiles({
         )
         setReview(false)
         setError('')
-        onSaved()
+        onSaved(latest.version)
         actor.message(
           'Tenant API fields updated. Tenant assignment and caller scope unchanged.',
         )
@@ -360,6 +365,7 @@ export function TenantFieldProfiles({
         setKnown(false)
         setSummaryKnown(false)
         setReview(false)
+        onUnconfirmed?.()
         setError(
           reason instanceof ApiError && reason.status < 500
             ? `${reason.message} Refresh tenant API fields and review before trying again.`
@@ -386,7 +392,24 @@ export function TenantFieldProfiles({
         >
           Refresh tenant API fields
         </Button>
+        <Button
+          variant="ghost"
+          aria-expanded={details}
+          disabled={actor.busy}
+          onClick={() => setDetails(!details)}
+        >
+          Review details
+        </Button>
       </div>
+      <p className="field-help">
+        {loading
+          ? 'Loading field settings'
+          : !summaryCurrent || (profile && !currentReview)
+            ? 'Refresh needed'
+            : profile && !profile.active
+              ? 'Inactive field settings'
+              : 'Current field settings'}
+      </p>
       <p>
         {resource.name}. A tenant choice can narrow the shared API fields; it
         cannot grant a field blocked by the shared policy. Tenant assignment and
@@ -425,10 +448,15 @@ export function TenantFieldProfiles({
           aria-label="Configured tenant choices"
         >
           <h3>Configured tenant choices</h3>
+          {details ? (
+            <p className="field-help">
+              {summaryCurrent ? 'Reviewed' : 'Last reviewed'} policy version{' '}
+              {summary.version}.
+            </p>
+          ) : null}
           <p className="field-help">
-            {summaryCurrent ? 'Reviewed' : 'Last reviewed'} policy version{' '}
-            {summary.version}. Only explicit selections are listed. Other
-            approved tenants use shared API fields.
+            Only explicit selections are listed. Other approved tenants use
+            shared API fields.
           </p>
           {summary.configuredTenantIds.length ? (
             summary.configuredTenantIds.map((id) => {
@@ -464,11 +492,13 @@ export function TenantFieldProfiles({
               visible; Refresh before reviewing another change.
             </p>
           ) : null}
-          <p className="field-help">
-            {currentReview ? 'Reviewed' : 'Last reviewed'} resource version{' '}
-            {profile.resourceVersion} · Policy version {profile.version} ·
-            Tenant version {profile.tenant.version}
-          </p>
+          {details ? (
+            <p className="field-help">
+              {currentReview ? 'Reviewed' : 'Last reviewed'} resource version{' '}
+              {profile.resourceVersion} · Policy version {profile.version} ·
+              Tenant version {profile.tenant.version}
+            </p>
+          ) : null}
           <p>
             {profile.tenant.label} ·{' '}
             {profile.tenant.state === 'active'
@@ -609,10 +639,14 @@ export function TenantFieldProfiles({
             >
               <h3>Review tenant API fields</h3>
               <p className="break-words">
-                {resource.name} · {profile.tenant.label} · Resource version{' '}
-                {profile.resourceVersion} · Policy version {profile.version} ·
-                Tenant version {profile.tenant.version}
+                {resource.name} · {profile.tenant.label}
               </p>
+              {details ? (
+                <p className="field-help">
+                  Resource version {profile.resourceVersion} · Policy version{' '}
+                  {profile.version} · Tenant version {profile.tenant.version}
+                </p>
+              ) : null}
               {reviewedTables.map((table) => (
                 <div key={table.table} className="form-stack min-w-0">
                   {database ? (

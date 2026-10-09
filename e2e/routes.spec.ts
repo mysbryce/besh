@@ -1,3 +1,4 @@
+import { openApiTools } from './api-tools'
 import { expect, test } from '@playwright/test'
 import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -150,6 +151,7 @@ test('versioned route forms and rollback preserve the edited draft', async ({
     await page.getByRole('button', { name: 'Publish', exact: true }).click()
     await expect(page.getByRole('status')).toContainText('Published')
     await page.getByLabel('API name', { exact: true }).fill('Unsaved name')
+    await openApiTools(page)
     await page
       .getByRole('button', { name: 'Release history', exact: true })
       .click()
@@ -330,6 +332,7 @@ test('versioned route forms and rollback preserve the edited draft', async ({
       await page
         .getByRole('button', { name: 'Open workspace', exact: true })
         .click()
+      await openApiTools(page)
       await page
         .getByRole('button', { name: 'Release history', exact: true })
         .click()
