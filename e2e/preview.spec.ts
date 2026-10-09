@@ -13,6 +13,7 @@ import { tenantProtectionPreviews } from './tenant-protection-preview'
 import { websocketPreviews } from './websocket-preview'
 import { fieldAccessPreviews } from './field-access-preview'
 import { keyRolloverPreviews } from './key-rollover-preview'
+import { tenantFieldProfilePreviews } from './tenant-field-profiles-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -22,7 +23,7 @@ test('preview every current page and its actions', async ({
   const directory = process.env.BESH_PREVIEW_DIR!
   const setupKey = process.env.BESH_PREVIEW_SETUP_KEY!
   const records: PreviewRecord[] = []
-  test.setTimeout(600_000)
+  test.setTimeout(900_000)
   const errors: string[] = []
   mkdirSync(join(directory, 'images'), { recursive: true })
   page.on('pageerror', (error) => errors.push(error.message))
@@ -4095,6 +4096,12 @@ test('preview every current page and its actions', async ({
     capture,
   })
   await keyRolloverPreviews({
+    page,
+    owner,
+    apiOrigin: new URL(page.url()).origin,
+    capture,
+  })
+  await tenantFieldProfilePreviews({
     page,
     owner,
     apiOrigin: new URL(page.url()).origin,

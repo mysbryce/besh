@@ -1,5 +1,9 @@
 import { ApiError } from '../errors'
 import { assertSourceFields, sourceFields } from '../workspace/field-policy'
+import {
+  assertRetainedSourceProfiles,
+  assertSourceTenantFields,
+} from '../workspace/tenant-field-policy'
 import type { Store } from '../workspace/store'
 import { assertJsonLimit } from '../flows/engine'
 import { readExcel } from './spreadsheet-xlsx'
@@ -317,6 +321,12 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
               'Data source changed. Reload before replacing it.',
             )
           const oldColumns = metadata(previous).columns
+          assertRetainedSourceProfiles(
+            store,
+            previous.id,
+            oldColumns.map((column) => column.key),
+            parsed.columns.map((column) => column.key),
+          )
           const fields = sourceFields(store, previous.id)
           if (
             fields.columns.some(
@@ -546,6 +556,7 @@ export function dataSourceService(store: Store, sheetFetch?: SheetFetch) {
     },
     read(config: DataReadConfig, permit?: RowReadPermit) {
       assertSourceFields(store, config)
+      assertSourceTenantFields(store, config, permit?.tenantId)
       const row = get(config.sourceId)
       const columns = metadata(row).columns
       if (

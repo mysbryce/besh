@@ -2,6 +2,14 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.15: tenant-specific API fields
+
+- Owner source-profile metadata and versioned dormant maintenance passed their public RED/GREEN slices. Missing/reset inheritance and selected fields intersect the current resource-global allowlist.
+- Current trusted tenant enforcement passed for original pinned source callers: restricted A denies while B retains the unchanged API, schema and artifact.
+- Complete-table SQLite review, configured summaries, retained dormant/retired source keys, malformed-profile denial and original caller/current-authority checks passed their public slices. Packaged migration/current restoration, observed-reader peer HTTP/WS and native k6 proofs passed.
+- Source/SQLite forms and explicit stale/lost-save recovery passed the final compatibility pair, including local global-policy invalidation and busy lazy initialization. All 312 backend cases, 24 corrected browser stories and the 775-state walkthrough passed. Original-image and gallery checks cover light/dark/system phone layouts. This is not broader product accounts, mixed graphs or multi-workspace authorization.
+- Core, browser and candidate workflows use the maintainer's self-hosted Windows x64 runner, PowerShell, pinned tools and serialized runs. Check runs on repository pushes or manual requests. Actual GitHub execution remains unobserved.
+
 ## Implemented in 0.14: coordinated key rollover
 
 - Strict optional overlap of at most five minutes, immediate replacement by default, unchanged original expiry/scope/pin/issuer/tenant, and fixed server deadlines.
@@ -9,7 +17,7 @@ This is the product plan. Planned features are not implementation claims.
 - Original WS ticket/connection and product-login proof boundaries, no deadline renewal on restart/restore, bounded adjacent checks and startup integrity review.
 - Beginner replacement options and readable handover metadata. Native, browser and refreshed light/dark/system phone checks passed; exact evidence belongs in [testing](testing.md).
 
-This does not add product sessions, caller-specific fields, public endpoints, provider support, or distributed availability.
+This does not add product sessions, per-member fields, public endpoints, provider support, or distributed availability.
 
 ## Implemented in 0.13: protected API field allowlists
 
@@ -18,7 +26,7 @@ This does not add product sessions, caller-specific fields, public endpoints, pr
 - Shared policy versions/CAS, retained omitted/dormant selections, safe source replacement, migration 19 default preservation, and unchanged compiler-two artifacts.
 - Beginner full-name field selection, reviewed empty/widening changes, explicit stale/lost-save recovery, and per-table scope. Backend/native, complete browser checks and fresh theme/phone captures passed; exact evidence belongs in [testing](testing.md).
 
-See [tenant rows and API fields](row-protection.md). Per-member/tenant field profiles, mixed protected graphs, product identity, and public endpoint policies remain separate work.
+See [tenant rows and API fields](row-protection.md). Tenant profiles extend this rule in 0.15 above. Per-member profiles, mixed protected graphs, product identity, and public endpoint policies remain separate work.
 
 ## Implemented in 0.12: typed WebSocket request/reply
 
@@ -142,13 +150,13 @@ Verification status and exact platform evidence belong in [testing](testing.md).
 - Beginner response/request/condition/data field forms with optional advanced JSON, generated GraphQL queries and optional schema editing, readable light/dark themes, and a mobile saved-API picker.
 - CSV/Excel imports and public Google Sheets snapshots, reviewed column mapping, generated REST/typed GraphQL drafts, bounded data reads, manual snapshot replacement/refresh, and referenced-source deletion protection.
 
-Current limits: one local workspace, literal or whole-segment parameterized REST paths, exact GraphQL paths, six node types, action roles with optional selected API actions and typed dependency USE, manual SQLite backups, read-only spreadsheet snapshots, and uploaded SQLite reads. Canonical tenant-protected reads and resource-wide allowed API fields are implemented; caller-specific field profiles, broader record authorization and resource-management sharing remain planned. Google Sheets supports public exports; private OAuth, spreadsheet write-back, live external database adapters, and SQL writes remain planned. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
+Current limits: one local workspace, literal or whole-segment parameterized REST paths, exact GraphQL paths, six node types, action roles with optional selected API actions and typed dependency USE, manual SQLite backups, read-only spreadsheet snapshots, and uploaded SQLite reads. Canonical tenant-protected reads and resource-wide allowed API fields are implemented; tenant-specific profiles are implemented in 0.15. Per-member profiles, broader record authorization and resource-management sharing remain planned. Google Sheets supports public exports; private OAuth, spreadsheet write-back, live external database adapters, and SQL writes remain planned. See [README](../README.md) for supported behavior and [testing](testing.md) for evidence.
 
 ## Milestone 2: identity and API contracts
 
 - Implemented: optional REST path/query/body/response rules, server input/output checks, typed path/query conversion, recursive field/item forms and limits, generated spreadsheet contracts, and separate saved-draft/published OpenAPI 3.1.1 downloads. GraphQL retains its existing SDL contract.
 - Implemented runtime-key replacement: authorized confirmation, one atomic winner, audit, unchanged name/flow/grants/exact expiration, one-time copy/save, and explicit lost-response recovery. Immediate replacement remains the default; optional overlap uses a fixed server deadline of at most five minutes and at most two eligible credentials per chain. Existing product login attempts and WS connections stay bound to their original key. General requests admitted before a cutoff may finish; explicit WS and product-login final checks still apply.
-- Implemented: resource-wide field allowlists for canonical protected reads, optional release pins, and coordinated key handover. Planned: public endpoint policy, caller-specific field profiles, and broader record authorization. Runtime grants authorize whole operations alongside separate resource policies; overlap does not renew lifetime or expand grants.
+- Implemented: resource-wide field allowlists for canonical protected reads, optional release pins, and coordinated key handover. Tenant-specific field profiles are implemented in 0.15 above. Planned: public endpoint policy, per-member profiles, and broader record authorization. Runtime grants authorize whole operations alongside separate resource policies; overlap does not renew lifetime or expand grants.
 - Implemented workspace accounts and cookie sessions: optional email/password or member/owner-key sign-in, fixed 12-hour expiry, session restoration, CSRF/origin checks, bounded persistent login throttling, own-account changes with fresh proof, metadata-only session listing, member-own/owner-all revocation, and a 20-session member limit. Bearer management clients remain compatible.
 - Implemented GitHub product identity template: permission-managed encrypted OAuth connections and draft generation, REST POST or typed GraphQL login mutation, ten-minute state/proof with S256 PKCE, one-use caller/flow/revision/connection binding, and normalized identity output. Product servers retain runtime keys and separate proof, handle their own callbacks, and create their own sessions. Controlled GitHub responses test the boundary; no live OAuth app round trip has been verified.
 - Planned product auth expansion: Discord, Facebook, Google, generic OIDC, product sessions/accounts, and reviewed identity linking. These do not change workspace sign-in.
@@ -183,7 +191,7 @@ Current limits: one local workspace, literal or whole-segment parameterized REST
 
 - Implemented: owner-only manual public GitHub release notices from a configured canonical repository URL, with versioned settings, optional prereleases, bounded checks, cached metadata, and a persistent cooldown. Live-provider evidence stays separate from controlled responses.
 - Verified update artifacts, compatibility checks, backup, migration and rollback.
-- Configured: PR/push validation and manual release-candidate artifacts with version/changelog/Conventional Commit checks. No automatic tagging, deployment, package publishing, or GitHub release. Hosted runs and an authorized publishing pipeline remain planned; changelog notes are written and reviewed, not generated automatically.
+- Configured: Windows self-hosted push/manual validation and manual release-candidate artifacts with version/changelog/Conventional Commit checks. Core and browser jobs run sequentially with pinned Node/Bun setup; both workflows serialize fixed-port runs. Actual GitHub execution and an authorized publishing pipeline remain unverified; changelog notes are written and reviewed, not generated automatically. See [releases](releases.md).
 - Worker isolation, queues, horizontal scaling and production observability.
 - Broader sustained/distributed load, penetration, recovery and tenant-isolation tests beyond current bounded local k6 runs.
 
@@ -195,7 +203,7 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-1. **Product authorization and shared resources.** Resource-global allowed fields and coordinated key handover are implemented above. Extend caller-specific field profiles, mixed resources and social effects separately. Caller headers/query/body and static projections never establish tenant identity or authorization. Add public endpoint policy and multi-workspace isolation separately. Add invitations/recovery and reviewed product accounts/sessions/linking only with a clear lifecycle. Keep whole-operation runtime grants distinct from the separate resource policies.
+1. **Product authorization and shared resources.** Extend bounded protected REST/GraphQL read graphs to multiple source/SQLite reads and input-only conditions. Preserve one trusted tenant, all-branch current authority, explicit flat reply contracts and last-read output; joins, social effects, public endpoints and broader WS graphs remain separate. Add per-member field profiles, multi-workspace isolation, invitations/recovery and reviewed product accounts/sessions/linking only with a clear lifecycle. Caller headers/query/body and static projections never establish tenant identity or authorization. Keep whole-operation runtime grants distinct from the separate resource policies.
 2. **Data connections and query tools.** Extend reviewed adapter capabilities and encrypted server-held credentials to PostgreSQL and MySQL/MariaDB; add MongoDB, Supabase, and Firebase with their own transaction, identity, query, and backup semantics. Add live SQLite connection/write capabilities separately from the uploaded-copy read adapter. Ship bounded parameterized read/write forms, pagination, previews, and explicit transactions one adapter at a time. Add migration dry runs, backup gates, restoration checks, and destructive-change review before schema changes. Private Sheets OAuth, write-back, and scheduled synchronization follow their connection/permission work.
 3. **Graph execution and extensions.** Add typed transformations, bounded outbound HTTP, explicit error/retry paths, and subflows with execution limits. Introduce a versioned declarative plugin manifest and SDK before uploaded code. Require a real isolated process/container, capability grants, integrity checks, and resource/network limits before enabling custom-code plugins. Verify each extension against its actual services.
 4. **Product providers and AI operator.** Verify GitHub with a real OAuth app, exact product callback, and private encryption-key backup. Add Discord, Facebook, Google, and generic OIDC individually with state/PKCE, redirect validation, and safe identity linking. Implement provider settings and capability discovery for Anthropic, OpenAI API, OpenRouter, Ollama/compatible endpoints, and a separate restricted Codex CLI process adapter. Add caller-scoped typed tools, durable proposals, budgets, redaction, cancellation, approvals, and adversarial tests. Do not infer live provider success from mocks or stored configuration.

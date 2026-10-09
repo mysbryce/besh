@@ -1,6 +1,6 @@
 # Tenant row protection
 
-Implemented in 0.11 for the narrow read-only scope below: owner-approved identities and assignments, source/SQLite row policies, protected REST/GraphQL reads, caller identity/privacy, and backup guards. Runtime grants and dependency USE alone do not isolate tenants or rows; protection requires the separate resource policy. The 0.13 resource-wide field allowlist below extends those reads. Exact public/native, browser, restoration, and capture evidence belongs in [testing](testing.md). Per-member/tenant field profiles, product sessions, mixed/social graphs, and multi-workspace isolation remain planned.
+Implemented in 0.11 for the narrow read-only scope below: owner-approved identities and assignments, source/SQLite row policies, protected REST/GraphQL reads, caller identity/privacy, and backup guards. Runtime grants and dependency USE alone do not isolate tenants or rows; protection requires the separate resource policy. The 0.13 resource-wide field allowlist below extends those reads. Tenant-specific field profiles are implemented in 0.15. Exact public/native, browser, restoration, and capture evidence belongs in [testing](testing.md). Per-member field profiles, product sessions, mixed/social graphs, and multi-workspace isolation remain planned.
 
 ## Owner setup
 
@@ -34,9 +34,25 @@ After narrowing, a draft that still names an excluded returned/filter column can
 
 Field updates use the same reviewed policy/resource versions, transaction, and audit as row protection. Omitted fields preserve their selection. Deprotection retains it dormant; reactivation with fields omitted restores that selection. Source replacement/refresh rejects removal of a retained selected key before committing, even while dormant, so policy review remains recoverable. Raw owner previews and complete backups retain the full resource. Existing structural grants still reveal column/schema names; an allowlist does not make those names secret.
 
-Migration 19 stores these policies without changing compiler 2 or rewriting releases. See [wire format](api.md#tenant-row-protection) and [testing](testing.md) for acceptance status. Broader field profiles, mixed graphs, product authorization, and multi-workspace isolation remain planned.
+Migration 19 stores these policies without changing compiler 2 or rewriting releases. See [wire format](api.md#tenant-row-protection) and [testing](testing.md) for acceptance status. Tenant profiles extend this policy in the next section; mixed graphs, product authorization, and multi-workspace isolation remain planned.
 
 Live field updates advance the same resource policy version. Asynchronous protected HTTP reads recheck before returning rows; WebSocket frame/idle/final checks end affected connections and cancel pending readers. A failed final check returns no rows. Restoring allowed fields can authorize the original unchanged graph and pin again, but closed sockets require a fresh connection. Neither rollback nor a pin freezes the field policy. Already queued/delivered bytes cannot be recalled; see [WebSocket recovery](websockets.md#current-authority-and-recovery).
+
+## Tenant field profiles
+
+Implemented in 0.15. In **Tenant-specific API fields**, the owner selects an **Approved tenant** label for a source or reviews every inspected SQLite table independently. **Use shared API fields** inherits current global access, including future columns allowed by that policy. **Choose fields for this tenant** narrows access to explicit inspected keys. Selected empty fields deny protected reads. A profile may retain inspected keys outside the global selection, but effective fields always intersect both policies. Schema names remain visible under existing structural grants.
+
+Review the **Shared API fields**, stored tenant setting, and currently usable or prospective fields before **Review tenant API fields** and **Confirm tenant API fields**. Empty selections, widening, and restoring shared fields each need their applicable acknowledgment. Saving locks the form and navigation. A stale or unconfirmed response keeps choices visible but requires **Refresh tenant API fields** before another review; refresh adopts current server metadata rather than retrying an uncertain write.
+
+The reviewed metadata contains the tenant's ID, label, state, and version, never its exact identity value or rows. `active` means the resource is protected and the tenant is active. Inactive `effectiveColumns` describes a prospective intersection, not protection for an unprotected API. Owners may maintain or reset profiles while a resource is unprotected or an identity is retired; saving a profile activates neither. Global-field edits, deprotection, and retirement retain the profile.
+
+Both returned columns and business-filter columns must pass the trusted tenant's current profile before protected reads, including tests and original pinned callers. Choosing fewer GraphQL reply fields cannot authorize a wider graph. The private mandatory tenant predicate may use an excluded key. Ordinary request fields cannot select a profile. Forbidden reads stop wholly rather than redacting results or rewriting graphs/contracts.
+
+Graph save, publication, and rollback still validate global field access. A graph globally allowed but denied for one tenant can remain saved and published for another tenant. Review and narrow its projection/filter to make it eligible for the restricted tenant, or deliberately widen that tenant's profile; review matching response rules separately.
+
+Profile saves review the shared policy version, resource version, and tenant version. A stale review returns `409`; invalid partial SQLite table reviews save nothing. Every accepted profile edit advances the shared resource policy version, even for a dormant profile. Pending reads fail final checks, and existing connections using that resource close, including other tenants still allowed by their own profiles. Fresh admission uses current policy; unrelated resources are unaffected. Raw owner previews and complete backups retain full data.
+
+Owner profile summaries identify retained configured tenants without returning a full field map or exact identity values. Source replacement/refresh rejects removing any retained selected key, including dormant resources and retired tenants, before saving rows or audit. Review that tenant's profile, or explicitly restore shared fields, then retry the replacement with current versions. This recovery does not activate protection or the identity. Migration 21 retains sparse selected profiles through restart and backup restoration without rewriting compiler 2. Complete dashboard and delivery validation remain pending; see [wire format](api.md#tenant-field-profiles) and [testing](testing.md).
 
 ## Trusted identity and reads
 

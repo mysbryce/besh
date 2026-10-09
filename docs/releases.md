@@ -31,7 +31,9 @@ A Git push stores commits remotely. It does not by itself publish a package, dep
 
 ## Automated checks and candidate artifacts
 
-[Check workflow](../.github/workflows/check.yml) runs on pull requests and pushes. Windows and Ubuntu use pinned Bun 1.4.2, frozen dependencies, release-policy checks, and `bun run check`. An Ubuntu job installs Playwright Chromium and runs the browser stories. Actions are pinned to commit hashes; checkout does not persist credentials. Repository permissions are `contents: read`.
+[Check workflow](../.github/workflows/check.yml) uses the maintainer's Windows x64 runner with `runs-on: [self-hosted, windows, x64]`. It runs on branch pushes in this repository or manual requests, checking out the event's exact commit. Both jobs admit only those events; pull requests do not trigger this workflow. A same-repository branch push runs checks before its PR review. Repository writers and manual-run actors remain trusted to execute host code. See [GitHub's runner labels](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/use-in-a-workflow).
+
+Keep the runner online and registered for this repository with those three labels, Git on `PATH`, and a current runner application supporting the pinned Node 24 actions. Each job uses Windows PowerShell and provisions Node 22.22.1 and Bun 1.4.2 with pinned actions; no manual Node/Bun setup is needed. Frozen dependencies, release-policy checks and `bun run check` run before the browser job installs Chromium and runs the stories. Browser checks wait for the core check. Both workflows share one concurrency group because the tests use fixed local ports; active runs are not canceled by newer requests. Checkout does not persist credentials, package-manager caching is disabled, and repository permissions remain `contents: read`.
 
 Run the policy locally with:
 
@@ -49,8 +51,8 @@ Without a comparison base, it checks the current package version and newest date
 
 With a base, the policy checks the Conventional Commit and requires a minor bump for `feat`. The version parser permits `alpha.N`, `beta.N`, and `rc.N` prereleases. It rejects `1.0.0` and above until explicit maintainer approval is reflected in a reviewed policy change. The check does not generate release notes or approve their contents.
 
-[Prepare release candidate](../.github/workflows/release-candidate.yml) is manual. Supply the exact `package.json` version. It runs policy, tests, types, build, formatting, and browser checks, then uploads a candidate artifact retained for 14 days. It does not create a tag, GitHub release, deployment, or package publication.
+[Prepare release candidate](../.github/workflows/release-candidate.yml) is manual and uses the same self-hosted Windows labels and tool setup. Supply the exact `package.json` version. It runs policy, tests, types, build, formatting, and browser checks, then uploads a candidate artifact retained for 14 days. It does not create a tag, GitHub release, deployment, or package publication.
 
 The bundle script, `bun scripts/release-bundle.ts`, requires a clean committed checkout and a built dashboard. It writes a fresh `.cache/release-candidate/` containing selected tracked source, docs, startup scripts/configuration, and dashboard build output. It excludes workspace databases, secrets, dependencies, and test output. `.besh-release.json` records the source commit/version and a SHA-256 file inventory. These hashes support content inspection; they are not a digital signature or proof of publisher authenticity. Review the candidate before any separately authorized publication.
 
-Workflow configuration is implemented. Hosted GitHub execution remains unverified until an actual run is observed; local checks alone do not prove hosted runners pass. See [testing](testing.md) for exact recorded evidence.
+Workflow configuration is implemented. An actual GitHub job on the registered self-hosted runner remains unverified until observed; local Windows checks and workflow lint alone do not prove that execution. See [testing](testing.md) for exact recorded evidence.

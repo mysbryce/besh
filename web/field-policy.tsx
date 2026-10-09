@@ -40,10 +40,10 @@ export function FieldPolicyEditor({
         ]}
       />
       <p className="field-help">
-        This selection applies to API reads of this source or table, including
-        owner tests. It does not create different grants for each tenant or
-        member. Names and schema remain visible under existing access grants;
-        owner raw previews remain full.
+        This is the shared ceiling for API reads of this source or table,
+        including owner tests. Tenant-specific choices can narrow it; member
+        action grants remain separate. Names and schema remain visible under
+        existing access grants; owner raw previews remain full.
       </p>
       {fields.mode === 'all' ? (
         <p>All fields includes future columns.</p>

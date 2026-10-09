@@ -7,7 +7,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [Getting started](getting-started.md): installation, first API, runtime keys, roles, configuration, recovery, project layout, and development commands.
 - [Workspace accounts and sessions](workspace-auth.md): key or email/password sign-in, account changes, session metadata, revocation, and recovery boundaries.
 - [Workspace roles and permissions](roles.md): built-in/custom roles, selected API actions, typed dependency USE, issuer bindings, member assignment, and current server checks.
-- [Tenant rows and API fields](row-protection.md): owner-assigned identity, protected read-only adapters, resource-wide allowed fields, credential privacy, and backup boundaries.
+- [Tenant rows and API fields](row-protection.md): owner-assigned identity, protected reads, shared fields, per-tenant choices, credential privacy, and backup boundaries.
 - [WebSocket APIs](websockets.md): typed request/reply forms, exact generated routes, browser/native authentication, current authority, connection bounds, and recovery.
 - [Runtime API keys](api-keys.md): create, use, pin, replace with optional overlap, revoke exact keys, save one-time tokens, and recover unconfirmed actions.
 - [Published backend code](runtime-code.md): generated modules, registered routes, source inspection, runtime checks, and recovery.

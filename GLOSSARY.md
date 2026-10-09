@@ -76,6 +76,8 @@
 - **Tenant assignment**: a versioned owner-managed member-to-identity choice; changing it does not retarget previously issued credentials.
 - **Row policy**: a versioned server-owned source/copy protection setting outside flow JSON, requiring exact tenant predicates on supported API reads.
 - **API field policy**: a resource-wide all/selected rule for protected API projections and business filters, separate from a graph's selected output columns and sharing the row-policy version. Selected may share no fields; private tenant predicates and owner raw previews keep their separate boundaries.
+- **Tenant field profile**: a tenant's inherited or selected fields intersecting the current resource-global allowlist; selected may share none. It uses the shared policy version and does not alter graphs, schemas or tenant assignment.
+- **Effective API fields**: inspected fields allowed by both the current global policy and tenant profile. On an inactive profile these are prospective fields; they do not imply protection is active.
 - **Dormant field selection**: a retained allowlist while a resource is unprotected; it is restored on protection rather than silently reset to all fields.
 - **Original-cell provenance**: preserved import-transport cell type/text used for authorization independently of normalized business output; public Sheets CSV does not establish underlying Google cell types.
 - **Execution principal**: private verified credential/assignment identity carried by the server outside editable input.

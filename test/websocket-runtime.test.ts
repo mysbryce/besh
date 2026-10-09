@@ -618,7 +618,7 @@ test('restart and downloaded backup reconstruction purge outstanding tickets whi
       (await (await call('/api/migrations')).json()).map(
         (item: { version: number }) => item.version,
       ),
-    ).toEqual(Array.from({ length: 20 }, (_, index) => index + 1))
+    ).toEqual(Array.from({ length: 21 }, (_, index) => index + 1))
     async function browser(receipt: typeof pending) {
       const socket = new NativeWebSocket(
         origin.replace(/^http/, 'ws') + receipt.path,

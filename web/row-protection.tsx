@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type {
   SourceRowPolicy,
   DatabaseRowPolicy,
@@ -16,6 +16,12 @@ import {
   FieldPolicySummary,
   fieldPolicyWidens,
 } from './field-policy'
+
+const TenantFieldProfiles = lazy(() =>
+  import('./tenant-field-profiles').then((module) => ({
+    default: module.TenantFieldProfiles,
+  })),
+)
 
 export function RowProtection() {
   const { member, token, sessionId, busy } = useStudio()
@@ -168,6 +174,8 @@ function ResourceRowProtectionEditor({
   const [wideningAcknowledged, setWideningAcknowledged] = useState(false)
   const [error, setError] = useState('')
   const active = useRef(false)
+  const [showTenantFields, setShowTenantFields] = useState(false)
+  const [profileInvalidation, setProfileInvalidation] = useState(0)
   const pending = useRef(false)
   const request = useRef(0)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -386,6 +394,7 @@ function ResourceRowProtectionEditor({
         actor.message('Row protection updated. Resource rows unchanged.')
       } catch (reason) {
         if (!current()) return
+        setProfileInvalidation((value) => value + 1)
         setKnown(false)
         setReview(false)
         setAcknowledged(false)
@@ -574,6 +583,32 @@ function ResourceRowProtectionEditor({
           ) : null}
         </>
       )}
+      <Button
+        variant="outline"
+        disabled={actor.busy || loading || review}
+        onClick={() => setShowTenantFields((value) => !value)}
+      >
+        {showTenantFields
+          ? 'Close tenant API fields'
+          : 'Tenant-specific API fields'}
+      </Button>
+      {showTenantFields ? (
+        <Suspense fallback={<p role="status">Opening tenant API fields…</p>}>
+          <TenantFieldProfiles
+            resource={resource}
+            database={database}
+            policyVersion={policy?.version ?? 0}
+            policyInvalidation={profileInvalidation}
+            onSaved={() => {
+              setKnown(false)
+              setReview(false)
+              setError(
+                'Tenant API fields changed the shared policy version. Refresh row policy before reviewing global changes.',
+              )
+            }}
+          />
+        </Suspense>
+      ) : null}
       {review ? (
         <section
           className="load-test-card form-stack"

@@ -18,6 +18,8 @@ The saved original copy does not synchronize with its source database. For an un
 
 Protected source/SQLite queries use the narrow flat `Query.rows` shape. Every configured projection and business-filter field must be allowed, even when the query asks for fewer row fields or omits a filter argument. A denied graph stops before reading; field selection never bypasses its resource policy. The private tenant predicate still works with an excluded tenant column. Owner raw previews remain privileged, schema names remain structurally visible, and caller-specific GraphQL field grants are separate planned work. See [tenant rows and API fields](row-protection.md).
 
+The 0.15 tenant-profile core intersects the current resource-global fields with the current trusted tenant's inherited/selected fields. This gates the canonical authored read without redacting replies or changing SDL. Original pinned SQLite query and native k6 cases passed; complete delivery validation remains in progress. Arbitrary GraphQL resolver/field grants remain separate planned work.
+
 ## GitHub product login
 
 In **Product login**, generate a GraphQL draft from a saved GitHub OAuth connection. It exposes `Mutation.login` with a `LoginAction` enum (`BEGIN` or `COMPLETE`), optional code/state/proof arguments, and a typed identity result. Login requires a mutation grant. Its static `Query.info` requires a query grant and does not run the social node. A selected OAuth mutation allows only one root call; ordinary GraphQL APIs retain their existing root budget.

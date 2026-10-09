@@ -630,6 +630,31 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 21').get()) {
+      db.run(`
+        CREATE TABLE source_tenant_field_profiles (
+          resource_id TEXT NOT NULL REFERENCES data_sources(id) ON DELETE CASCADE,
+          tenant_id TEXT NOT NULL REFERENCES tenants(id),
+          mode TEXT NOT NULL CHECK(mode = 'selected'),
+          columns TEXT NOT NULL CHECK(json_valid(columns) AND json_type(columns) = 'array'),
+          PRIMARY KEY(resource_id, tenant_id)
+        );
+        CREATE TABLE database_tenant_field_profiles (
+          resource_id TEXT NOT NULL,
+          table_name TEXT NOT NULL,
+          tenant_id TEXT NOT NULL REFERENCES tenants(id),
+          mode TEXT NOT NULL CHECK(mode = 'selected'),
+          columns TEXT NOT NULL CHECK(json_valid(columns) AND json_type(columns) = 'array'),
+          PRIMARY KEY(resource_id, table_name, tenant_id),
+          FOREIGN KEY(resource_id, table_name) REFERENCES database_table_field_policies(resource_id, table_name) ON DELETE CASCADE
+        );
+      `)
+      query('INSERT INTO migrations VALUES (21, ?, ?)').run(
+        'tenant-specific protected API field profiles',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,

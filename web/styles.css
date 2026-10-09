@@ -53,6 +53,37 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tenant-field-profiles .tenant-field-profile-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.tenant-field-profiles .tenant-field-profile-control .select-trigger {
+  width: 100%;
+}
+.tenant-field-profiles
+  .tenant-field-profile-control
+  .select-trigger
+  > span:first-child {
+  min-width: 0;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.tenant-field-profiles .tenant-field-review-actions {
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+.tenant-field-profiles .tenant-field-review-actions > button {
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .load-test-endpoint,
 .load-test-result-title,
 .load-test-actions {

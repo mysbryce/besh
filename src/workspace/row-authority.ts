@@ -3,6 +3,7 @@ import type { Flow } from '../flows/model'
 import type { Member, Store, RuntimeKey } from './store'
 import { activeTenant } from './tenants'
 import { assertGraphFields } from './field-policy'
+import { assertTenantGraphFields } from './tenant-field-policy'
 import {
   buildSchema,
   isListType,
@@ -13,6 +14,7 @@ import {
 
 export type RowPrincipal = { tenantId: string; value: string }
 export type RowReadPermit = {
+  tenantId: string
   column: string
   value: string
   policyVersion: number
@@ -127,15 +129,18 @@ export function memberRowPrincipal(
       member.role === 'owner' ? 400 : 403,
       'Choose an active tenant identity for this protected API',
     )
+  let principal: RowPrincipal
   try {
     const tenant = activeTenant(store.db, tenantId)
-    return { tenantId: tenant.id, value: tenant.value }
+    principal = { tenantId: tenant.id, value: tenant.value }
   } catch {
     throw new ApiError(
       member.role === 'owner' ? 400 : 403,
       'An active tenant identity is required',
     )
   }
+  assertTenantGraphFields(store, flow, principal.tenantId)
+  return principal
 }
 
 export function sourceReadPermit(
@@ -161,6 +166,7 @@ export function sourceReadPermit(
   if (!principal)
     throw new ApiError(403, 'A trusted tenant identity is required')
   return {
+    tenantId: principal.tenantId,
     column: policy.tenant_column!,
     value: principal.value,
     policyVersion: policy.version,
@@ -193,6 +199,7 @@ export function databaseReadPermit(
   if (!column)
     throw new ApiError(503, 'Protected database tenant column is unavailable')
   return {
+    tenantId: principal.tenantId,
     column: column.column_key,
     value: principal.value,
     policyVersion: policy.version,
@@ -214,6 +221,7 @@ export function runtimeRowPrincipal(
       'Runtime key does not authorize this protected API',
     )
   if (!key.tenantId) return null
+  let principal: RowPrincipal
   try {
     const tenant = activeTenant(store.db, key.tenantId)
     if (key.issuerBinding) {
@@ -225,13 +233,15 @@ export function runtimeRowPrincipal(
       )
         throw new Error('Issuer identity changed')
     }
-    return { tenantId: tenant.id, value: tenant.value }
+    principal = { tenantId: tenant.id, value: tenant.value }
   } catch {
     throw new ApiError(
       status,
       'Runtime key tenant identity is no longer authorized',
     )
   }
+  assertTenantGraphFields(store, flow, principal.tenantId, status)
+  return principal
 }
 
 export function rowCheckpoint(

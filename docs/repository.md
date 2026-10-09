@@ -2,7 +2,7 @@
 
 Suggested description:
 
-> Build REST and GraphQL APIs visually. Connect spreadsheets and SQLite, publish registered routes, and test with k6.
+> Build REST, GraphQL, and WebSocket APIs visually. Connect spreadsheets and SQLite, publish registered routes, and test HTTP APIs with k6.
 
 Suggested topics:
 
@@ -12,6 +12,8 @@ visual-programming
 no-code
 rest-api
 graphql
+websocket
+api-security
 bun
 elysia
 react

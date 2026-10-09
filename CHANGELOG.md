@@ -4,6 +4,32 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.15.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Tenant-specific API fields for protected spreadsheets and each uploaded SQLite table. Inherit shared fields or select a narrower set, including none.
+- Owner forms with complete table review, configured tenant labels, explicit empty/widening/reset approval, and light/dark/system phone layouts.
+- Migration 21 and backup-restored profiles, with shared policy/resource/tenant version checks and metadata-only audit.
+
+### Changed
+
+- Run core, browser and candidate workflows on the maintainer's self-hosted Windows x64 runner, with automatic pinned Node/Bun setup and serialized fixed-port jobs.
+- Run checks for repository branch pushes or manual requests, with immutable commit checkout and no pull-request event on the persistent host.
+
+### Security
+
+- Intersect current global fields with the original trusted tenant's profile before authored projections and business filters, including existing pinned REST/GraphQL callers, tests, key replacement, k6 and WebSockets.
+- Preserve dormant/retired selections and reject source replacement removing a retained key; reviewed reset activates neither protection nor a tenant.
+- Fail closed for malformed profiles. Shared resource changes withhold pending reads and close affected sockets; fresh admission checks the current profile.
+
+### Fixed
+
+- Mark lost or stale saves and failed metadata reads unknown, preserve local choices, and require explicit refresh before another review.
+- Keep independent panel closure available after confirmed saves and suppress false empty-state guidance when registry loading fails.
+- Invalidate open tenant reviews after accepted or unconfirmed global saves while preserving choices; defer only an initial never-started read until pending work ends.
+- Keep tenant selectors and confirmation actions inside their cards on desktop and phone, with complete labels and accessible hit targets.
+
 ## 0.14.0-alpha.0 — 2026-10-09
 
 ### Added
