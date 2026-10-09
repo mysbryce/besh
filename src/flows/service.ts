@@ -14,6 +14,7 @@ import { clientCodeTargets } from './client-code-model'
 import { clientCodeSchema, flowClientCode } from './client-code'
 import type { RuntimeRelease, RuntimeService } from './runtime'
 import { assertGraphFields } from '../workspace/field-policy'
+import { mixedReadGraph } from './read-graph'
 import {
   authorizeFlow,
   authorizeGraph,
@@ -90,7 +91,7 @@ export function flowService(
       if (!protectedShape(store, flow).supported)
         throw new ApiError(
           400,
-          'Protected APIs require one protected read between request and response',
+          'Protected APIs require a bounded protected read graph returning typed rows',
         )
       return flow
     } catch (error) {
@@ -371,14 +372,27 @@ export function flowService(
           'Provide a supported target, source revision, base URL, and bounded example input',
         )
       const selected = db
-        .transaction(() => codeSource(id, parsed.data.source))
+        .transaction(() => {
+          const selected = codeSource(id, parsed.data.source)
+          return {
+            ...selected,
+            mixedProtectedRead:
+              protectedShape(store, selected.flow).required &&
+              mixedReadGraph(selected.flow),
+          }
+        })
         .immediate()
       if (selected.revision !== parsed.data.revision)
         throw new ApiError(
           409,
           'Selected API revision changed. Reload before generating an example.',
         )
-      return flowClientCode(selected.flow, selected.source, parsed.data)
+      return flowClientCode(
+        selected.flow,
+        selected.source,
+        parsed.data,
+        selected.mixedProtectedRead,
+      )
     },
     list(selectedMemberId?: string) {
       const rows =
@@ -654,11 +668,8 @@ export function flowService(
         )
       if (!definition.graphql)
         throw new ApiError(400, 'This API does not have a GraphQL schema')
-      const result = await executeGraphql(
-        definition,
-        input,
-        undefined,
-        executionContext(
+      const result = await executeGraphql(definition, input, undefined, {
+        ...executionContext(
           actor,
           id,
           row.revision,
@@ -666,7 +677,10 @@ export function flowService(
           checkpoint,
           principal,
         ),
-      )
+        mixedProtectedRead:
+          protectedShape(store, definition).required &&
+          mixedReadGraph(definition),
+      })
       checkpoint()
       active()
       audit(actor, 'graphql.tested', id)
@@ -738,14 +752,19 @@ export function flowService(
         release.definition,
         input,
         key.permissions,
-        executionContext(
-          `runtime:${key.id}`,
-          release.flowId,
-          release.revision,
-          signal,
-          checkpoint,
-          () => runtimeRowPrincipal(store, key, release.definition),
-        ),
+        {
+          ...executionContext(
+            `runtime:${key.id}`,
+            release.flowId,
+            release.revision,
+            signal,
+            checkpoint,
+            () => runtimeRowPrincipal(store, key, release.definition),
+          ),
+          mixedProtectedRead:
+            protectedShape(store, release.definition).required &&
+            mixedReadGraph(release.definition),
+        },
       )
       checkpoint()
       active()

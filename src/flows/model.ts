@@ -175,6 +175,7 @@ export type FlowNode = Flow['nodes'][number]
 export type DataReadConfig = Extract<FlowNode, { type: 'data' }>['config']
 export type SocialConfig = Extract<FlowNode, { type: 'social' }>['config']
 export type FlowContext = {
+  mixedProtectedRead?: boolean
   readData?: (config: DataReadConfig) => unknown
   readDatabase?: (config: DatabaseReadConfig) => Promise<unknown>
   social?: (config: SocialConfig, input: { body: unknown }) => Promise<unknown>

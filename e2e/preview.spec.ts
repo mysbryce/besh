@@ -14,6 +14,7 @@ import { websocketPreviews } from './websocket-preview'
 import { fieldAccessPreviews } from './field-access-preview'
 import { keyRolloverPreviews } from './key-rollover-preview'
 import { tenantFieldProfilePreviews } from './tenant-field-profiles-preview'
+import { protectedReadGraphPreviews } from './protected-read-graphs-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -28,7 +29,12 @@ test('preview every current page and its actions', async ({
   mkdirSync(join(directory, 'images'), { recursive: true })
   page.on('pageerror', (error) => errors.push(error.message))
 
-  async function capture(group: string, title: string, detail: string) {
+  async function capture(
+    group: string,
+    title: string,
+    detail: string,
+    options?: { fullPage?: boolean },
+  ) {
     const dropdownOpen = (await page.getByRole('listbox').count()) > 0
     if (dropdownOpen) {
       await expect(page.getByRole('listbox')).toHaveCSS('opacity', '1')
@@ -38,7 +44,8 @@ test('preview every current page and its actions', async ({
         page.getByRole('combobox', { name: 'Appearance' }),
       ).toBeVisible()
     }
-    if (!dropdownOpen) await page.evaluate(() => window.scrollTo(0, 0))
+    if (!dropdownOpen && options?.fullPage !== false)
+      await page.evaluate(() => window.scrollTo(0, 0))
     const passwordMasks: Locator[] = []
     for (const input of await page.locator('input[type="password"]').all()) {
       if (await input.inputValue()) passwordMasks.push(input)
@@ -49,7 +56,7 @@ test('preview every current page and its actions', async ({
       .replace(/-$/, '')}.png`
     await page.screenshot({
       path: join(directory, image),
-      fullPage: !dropdownOpen,
+      fullPage: options?.fullPage ?? !dropdownOpen,
       animations: 'disabled',
       mask: [
         ...passwordMasks,
@@ -4102,6 +4109,12 @@ test('preview every current page and its actions', async ({
     capture,
   })
   await tenantFieldProfilePreviews({
+    page,
+    owner,
+    apiOrigin: new URL(page.url()).origin,
+    capture,
+  })
+  await protectedReadGraphPreviews({
     page,
     owner,
     apiOrigin: new URL(page.url()).origin,

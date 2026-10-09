@@ -4,6 +4,26 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.16.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Bounded protected REST/GraphQL graphs with up to four spreadsheet/SQLite reads, three input conditions and a last-read response.
+- Reviewed reply rules and GraphQL row-query forms with complete field labels and optional advanced editing.
+- Explicit flat reply contracts for expanded graphs, while preserving existing single-read behavior and WebSocket limits.
+
+### Security
+
+- Check every branch's current resource, issuer, tenant, USE and allowed fields before effects and final replies, including changes on an earlier resource during a later read.
+- Validate complete raw GraphQL row types, nullability and enums before field projection or scalar coercion.
+- Bound expanded GraphQL operations to one eligible rows response key before execution, client-code generation or load-test job creation; honor variables, directives and abstract fragments.
+
+### Fixed
+
+- Clear the previous response when admitting a new REST/GraphQL draft test, so a rejected request does not look like an earlier successful result.
+- Keep safe legacy input references and ordinary dollar-prefixed filter literals compatible.
+- Let Fit View contain larger graphs on narrow phone canvases.
+
 ## 0.15.0-alpha.0 — 2026-10-09
 
 ### Added

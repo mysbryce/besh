@@ -37,6 +37,8 @@
 - **Uploaded SQLite copy**: an immutable standalone product database upload saved inside the workspace backup; it is separate from Besh's control tables and does not synchronize with its original database.
 - **Database connection**: metadata identifying an uploaded SQLite copy, its version, and inspected tables/columns; currently no live external database credentials or address are used.
 - **Database node**: a bounded read of selected columns from one inspected SQLite table, with optional parameterized equality filtering; rows become `$data`.
+- **Protected read graph**: a bounded REST/GraphQL graph whose every branch uses authorized tenant-protected resources and compatible reply fields.
+- **Last-read reply**: rows from the final read on the chosen path; earlier reads are replaced rather than joined or combined.
 - **Read-only database engine**: a temporary separate SQLite engine reconstructed from saved original bytes for inspection or reads; it cannot write the uploaded copy.
 - **Plugin**: a versioned extension that adds nodes or integrations.
 - **Permission**: a named action a member may perform. Roles group permissions.

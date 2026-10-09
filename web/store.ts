@@ -389,6 +389,7 @@ export const useStudio = create<Studio>((set, get) => ({
   async test(body, query, params, tenantId) {
     const state = get()
     if (!state.id || state.dirty) throw new Error('Save draft before testing.')
+    set({ result: null })
     const result = await api<FlowResult>(
       `/api/flows/${state.id}/test`,
       state.token,
@@ -428,6 +429,7 @@ export const useStudio = create<Studio>((set, get) => ({
   async testGraphql(input, tenantId) {
     const state = get()
     if (!state.id || state.dirty) throw new Error('Save draft before testing.')
+    set({ result: null })
     const result = await api<FlowResult>(
       `/api/flows/${state.id}/graphql/test`,
       state.token,

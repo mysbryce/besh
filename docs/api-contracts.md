@@ -1,6 +1,6 @@
 # REST API rules and OpenAPI
 
-API rules describe what a REST endpoint accepts and returns. Add them when callers need a stable, typed interface. Besh checks rules on the server for draft tests and published calls. Rules are optional; existing APIs without them keep their previous behavior. GraphQL uses its SDL schema instead.
+API rules describe what a REST endpoint accepts and returns. Add them when callers need a stable, typed interface. Besh checks rules on the server for draft tests and published calls. Rules are optional for existing simple APIs. Expanded protected read graphs require explicit flat response rules; **Use last read fields** reviews every possible final read before applying draft rules. See [protected read graphs](protected-read-graphs.md). GraphQL uses its SDL schema instead.
 
 WebSocket uses separate flat **Received fields** and **Reply fields**, without a REST contract or GraphQL SDL in the same definition. Reviewed conversion of a supported REST read preserves typed row rules and moves its simple query filter to message input. See [WebSocket forms and conversion](websockets.md).
 

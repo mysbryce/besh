@@ -4,6 +4,8 @@ Besh generates server-side request examples for eight targets. Each example desc
 
 These targets support REST and GraphQL HTTP calls. Selecting a WebSocket source returns an explicit unsupported error; no HTTP example or browser runtime key is generated for it. A WebSocket draft with an older published REST release can still use **Published release** for that HTTP source. WebSocket callers use the separate [connection and ticket workflow](websockets.md).
 
+Expanded [protected read graphs](protected-read-graphs.md) accept at most one eligible GraphQL `rows` response key, including variable/directive/fragment decisions. Client generation checks that operation before rendering an example. Caller fields never select tenant identity or bypass an unchosen branch's policy.
+
 ## Generate an example
 
 1. Save the API, then open **Use this API** in API Studio with **Read APIs** permission.

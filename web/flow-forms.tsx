@@ -305,7 +305,10 @@ export function ResponseForm({
         />
       </label>
       {contents === 'data' ? (
-        <p>Return rows selected by the spreadsheet or SQLite data step.</p>
+        <p>
+          Return rows from the last executed spreadsheet or SQLite read. Earlier
+          rows are replaced, never joined.
+        </p>
       ) : contents === 'auth' ? (
         <p>
           Return the GitHub login result: authorization URL for BEGIN, or

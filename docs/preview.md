@@ -4,6 +4,8 @@ Run `bun run preview:all` from the project root. The command runs a real browser
 
 Each card describes the action or state being shown. Select a page group or search the descriptions. Open a screenshot for its full size. The action manifest is also available from the toolbar.
 
+Document overviews use full-page images. Desktop actions inside a bounded scrolling inspector use viewport images so their actual reviewed fields and buttons remain visible. Phone forms flow naturally in full-page images; tall reviews include separate upper, argument and confirmation states.
+
 ## Commands
 
 ```sh
@@ -14,13 +16,15 @@ bun run preview:all --open
 
 The second command captures only. The third serves the latest successful capture without rerunning tests. Set `BESH_PREVIEW_PORT` to change the gallery port. Press Ctrl+C to stop.
 
-Normal page captures scroll to the top before a full-page screenshot. Check an opening panel's focus and viewport position before calling the capture helper; a completed task does not restore that earlier scroll position. Open dropdown captures preserve the viewport. The complete artifact walkthrough has a fifteen-minute budget; individual operations retain their shorter limits.
+Full-page overviews scroll to the top before capture. Check an opening panel's focus and viewport position before calling the capture helper; a completed task does not restore that earlier scroll position. Focused inspector actions verify the reviewed control stays inside its panel before and after the actual screenshot. Open dropdown captures preserve the viewport. The complete artifact walkthrough has a fifteen-minute budget; individual operations retain their shorter limits.
 
 Inspect tall phone screenshots in lossless slices at their captured width when the viewer resizes the full image. Check dropdowns, selected text and confirmation buttons against their own cards on both phone and desktop; page-wide overflow checks alone can miss nested controls.
 
 Playwright needs Node.js 22.22.1 or newer. Installed Chrome is detected at its standard Windows location; otherwise install Chromium with `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome`.
 
 ## Inventory
+
+Protected read-graph previews add actual palette/handle branch authoring, reviewed last-read REST/GraphQL fields, simple body arguments and row-query forms. They exercise literal final results, nullable rows, untaken-branch denial/recovery with the original pin, metadata retry/pending/late responses, read-only controls, source-aware exports and desktop/phone appearance. Expanded graphs use Fit View; separate upper/argument/confirmation images expose tall reviews. See [protected read graphs](protected-read-graphs.md).
 
 Tenant-specific field previews add approved-tenant labels, inherited/selected source fields and complete SQLite table maps. They distinguish currently applied choices from inactive prospective fields, show configured tenants, and require reviewed empty/widening/reset saves. Captures exercise independent table selections, all three version conflicts, retired/dormant maintenance, accepted/lost global saves, deferred initial loading, explicit recovery and late-response navigation. Light/dark/system phone views retain full labels and confirmation actions inside their own cards. See [tenant field profiles](row-protection.md#tenant-field-profiles).
 
@@ -65,9 +69,11 @@ Client-code states add all eight REST/GraphQL language choices, source revisions
 | Permissions          | Viewer studio, denied administration pages, editor controls, revoked token rejected                                                                                                                                                                       |
 | Phone layout         | Dashboard pages and login at 390px width, saved-API dropdown and selection, visible canvas, no document overflow, accessible sign-out                                                                                                                     |
 
-The verified walkthrough captured 775 screenshots on 2026-10-09, including all 13 dashboard pages at desktop and phone widths in light and dark appearance, plus tenant-specific and shared API fields, WebSocket request/reply, tenant protection, selected API actions and dependency use, generated backend code, REST rules, OpenAPI downloads, client examples, workspace accounts/sessions, GitHub product login, API key replacement/release pins, k6 load tests, path parameters, release review/rollback, custom roles, update notices, and uploaded SQLite copies.
+The verified walkthrough captured 808 screenshots on 2026-10-09, including all 13 dashboard pages at desktop and phone widths in light and dark appearance, plus protected read graphs, tenant-specific and shared API fields, WebSocket request/reply, tenant protection, selected API actions and dependency use, generated backend code, REST rules, OpenAPI downloads, client examples, workspace accounts/sessions, GitHub product login, API key replacement/release pins, k6 load tests, path parameters, release review/rollback, custom roles, update notices, and uploaded SQLite copies.
 
-Gallery checks passed mouse/keyboard filtering, search, empty results, all 775 image URLs, phone overflow, and denial of private database/test-output paths. Light/dark/system appearance, reload, and OS preference behavior were verified separately. All 46 new tenant-profile originals and 40 affected legacy field-policy originals were inspected from the successful final run, with 60 additional lossless native-width sections. Complete labels, mode triggers and confirmation actions stay inside their own cards; no visual blocker remained. The current walkthrough has 775 manifest records and 775 PNGs; exact browser/native results belong in [testing](testing.md).
+Final gallery checks passed mouse/keyboard filtering, search, empty results, all 808 image URLs, phone overflow, and denial of private database/test-output paths. Light/dark/system appearance and reload were verified separately. All 33 new read-graph originals, 25 additional lossless native-width sections and 16 affected legacy originals were inspected from the final successful run. Denied tests show no earlier successful response; recovery shows actual current rows. The denial image's HTTP bytes match this refreshed artifact. Complete labels, mode triggers and confirmation actions stay inside their own cards; no visual blocker remained. The current walkthrough has 808 manifest records and 808 PNGs, retaining all preceding 775 identities; exact browser/native results belong in [testing](testing.md).
+
+The preceding tenant-profile delivery inspected all 46 then-new originals and 40 affected legacy field-policy originals with 60 lossless native-width sections. Later captures refresh those states rather than reusing the earlier images.
 
 All 40 added field states and affected policy/theme states were inspected. Original-pixel phone views preserve full human field labels, their normalized keys, independent table choices, empty/widening warnings, and explicit recovery. The legal 80-character unbroken header and Thai labels wrap without truncation in light/dark/system appearance. New captures contain no private row samples or caller credentials.
 

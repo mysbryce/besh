@@ -4,6 +4,7 @@ import type { Member, Store, RuntimeKey } from './store'
 import { activeTenant } from './tenants'
 import { assertGraphFields } from './field-policy'
 import { assertTenantGraphFields } from './tenant-field-policy'
+import { readGraph, mixedGraphqlShape } from '../flows/read-graph'
 import {
   buildSchema,
   isListType,
@@ -48,29 +49,11 @@ export function protectedReads(store: RowStore, flow: Flow) {
 export function protectedShape(store: RowStore, flow: Flow) {
   const reads = protectedReads(store, flow)
   if (!reads.length) return { required: false, supported: true }
-  const request = flow.nodes.find((node) => node.type === 'request')
-  const response = flow.nodes.find((node) => node.type === 'response')
-  const read = reads[0]!
+  const graph = readGraph(flow)
   let supported =
-    reads.length === 1 &&
-    flow.nodes.length === 3 &&
-    flow.edges.length === 2 &&
-    Boolean(request) &&
-    response?.type === 'response' &&
-    response.config.body === '$data' &&
-    response.config.status === 200 &&
-    flow.edges.some(
-      (edge) =>
-        edge.source === request!.id &&
-        edge.target === read.id &&
-        !edge.sourceHandle,
-    ) &&
-    flow.edges.some(
-      (edge) =>
-        edge.source === read.id &&
-        edge.target === response.id &&
-        !edge.sourceHandle,
-    )
+    graph.supported &&
+    reads.length === graph.reads.length &&
+    (!flow.websocket || !graph.mixed)
   if (supported && flow.graphql) {
     const schema = buildSchema(flow.graphql.schema)
     const fields = schema.getQueryType()?.getFields()
@@ -95,6 +78,7 @@ export function protectedShape(store: RowStore, flow: Flow) {
             ) && field.args.length === 0,
         )
     }
+    if (supported && graph.mixed) supported = mixedGraphqlShape(flow, schema)
   }
   return { required: true, supported }
 }
@@ -120,7 +104,7 @@ export function memberRowPrincipal(
   if (!shape.supported)
     throw new ApiError(
       400,
-      'Protected APIs require one protected read between request and response',
+      'Protected APIs require a bounded protected read graph returning typed rows',
     )
   const tenantId =
     member.role === 'owner' ? selector : member.tenantAssignment.tenantId

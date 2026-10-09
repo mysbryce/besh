@@ -2,6 +2,15 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.16: bounded protected read graphs
+
+- Up to four protected source/SQLite reads and three input-only conditions, with a single trusted tenant, every-path reads, all-branch authority and last-read output.
+- Explicit flat reply contracts and complete raw GraphQL row validation before projection/coercion. Eligible GraphQL root execution is bounded before effects, client-code rendering and load-job creation, including variables, directives and abstract fragments.
+- Reviewed beginner REST/GraphQL reply and input forms, explicit cancel/apply, structural metadata recovery and read-only boundaries. The actual five-node graph fits the phone canvas in light/dark/system appearance.
+- All 325 backend cases, 25 browser stories and the 808-state walkthrough passed. Native peer and actual k6 checks cover current authority on earlier and unchosen resources. Exact image/gallery evidence belongs in [testing](testing.md).
+
+See the [read-graph guide](protected-read-graphs.md). WebSocket graphs, joins, social effects and consistent cross-resource snapshots remain separate.
+
 ## Implemented in 0.15: tenant-specific API fields
 
 - Owner source-profile metadata and versioned dormant maintenance passed their public RED/GREEN slices. Missing/reset inheritance and selected fields intersect the current resource-global allowlist.
@@ -26,7 +35,7 @@ This does not add product sessions, per-member fields, public endpoints, provide
 - Shared policy versions/CAS, retained omitted/dormant selections, safe source replacement, migration 19 default preservation, and unchanged compiler-two artifacts.
 - Beginner full-name field selection, reviewed empty/widening changes, explicit stale/lost-save recovery, and per-table scope. Backend/native, complete browser checks and fresh theme/phone captures passed; exact evidence belongs in [testing](testing.md).
 
-See [tenant rows and API fields](row-protection.md). Tenant profiles extend this rule in 0.15 above. Per-member profiles, mixed protected graphs, product identity, and public endpoint policies remain separate work.
+See [tenant rows and API fields](row-protection.md). Tenant profiles extend this rule in 0.15, and bounded protected HTTP graphs in 0.16 above. Per-member profiles, product identity, and public endpoint policies remain separate work.
 
 ## Implemented in 0.12: typed WebSocket request/reply
 
@@ -203,7 +212,7 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-1. **Product authorization and shared resources.** Extend bounded protected REST/GraphQL read graphs to multiple source/SQLite reads and input-only conditions. Preserve one trusted tenant, all-branch current authority, explicit flat reply contracts and last-read output; joins, social effects, public endpoints and broader WS graphs remain separate. Add per-member field profiles, multi-workspace isolation, invitations/recovery and reviewed product accounts/sessions/linking only with a clear lifecycle. Caller headers/query/body and static projections never establish tenant identity or authorization. Keep whole-operation runtime grants distinct from the separate resource policies.
+1. **Product authorization and shared resources.** Add per-member fields intersecting current global and tenant policies. Preserve the original member subject through draft tests, runtime keys, replacement and k6; owner-independent callers need explicit scope. Review subject role/access/assignment versions, including separately changing custom-role versions; keep dormant maintenance recoverable and deny deleted issuers before inheritance. Non-owner replacement must not return another issuer's wider credential; scoped revocation remains available. Multi-workspace isolation, invitations/recovery and reviewed product accounts/sessions/linking need their own lifecycle. Joins, social effects, public endpoints and broader WS graphs stay separate. Caller fields and static projections never establish identity or authorization.
 2. **Data connections and query tools.** Extend reviewed adapter capabilities and encrypted server-held credentials to PostgreSQL and MySQL/MariaDB; add MongoDB, Supabase, and Firebase with their own transaction, identity, query, and backup semantics. Add live SQLite connection/write capabilities separately from the uploaded-copy read adapter. Ship bounded parameterized read/write forms, pagination, previews, and explicit transactions one adapter at a time. Add migration dry runs, backup gates, restoration checks, and destructive-change review before schema changes. Private Sheets OAuth, write-back, and scheduled synchronization follow their connection/permission work.
 3. **Graph execution and extensions.** Add typed transformations, bounded outbound HTTP, explicit error/retry paths, and subflows with execution limits. Introduce a versioned declarative plugin manifest and SDK before uploaded code. Require a real isolated process/container, capability grants, integrity checks, and resource/network limits before enabling custom-code plugins. Verify each extension against its actual services.
 4. **Product providers and AI operator.** Verify GitHub with a real OAuth app, exact product callback, and private encryption-key backup. Add Discord, Facebook, Google, and generic OIDC individually with state/PKCE, redirect validation, and safe identity linking. Implement provider settings and capability discovery for Anthropic, OpenAI API, OpenRouter, Ollama/compatible endpoints, and a separate restricted Codex CLI process adapter. Add caller-scoped typed tools, durable proposals, budgets, redaction, cancellation, approvals, and adversarial tests. Do not infer live provider success from mocks or stored configuration.

@@ -19,6 +19,8 @@ import { assertJsonLimit, executeFlow } from './engine'
 import type { Flow, FlowResult, FlowContext } from './model'
 import { ApiError } from '../errors'
 import type { RuntimePermission } from '../workspace/store'
+import { checkMixedGraphqlRows } from './read-graph'
+import { assertMixedReadOperation } from './graphql-operation'
 
 const requestSchema = z.object({
   query: z.string().min(1).max(16_384),
@@ -140,6 +142,13 @@ export async function executeGraphql(
         ? 1
         : 16,
     )
+    if (context.mixedProtectedRead)
+      assertMixedReadOperation(
+        schema,
+        document,
+        request.operationName,
+        request.variables ?? {},
+      )
   } catch (error) {
     return failure(
       error instanceof Error
@@ -157,6 +166,7 @@ export async function executeGraphql(
   const visited: string[] = []
   let resolutions = 0
   let estimatedBytes = 0
+  let invalidRows = false
   const result = await execute({
     schema,
     document,
@@ -196,6 +206,13 @@ export async function executeGraphql(
             throw new GraphQLError(`Flow returned HTTP ${run.status}`, {
               extensions: { code: 'FLOW_ERROR', status: run.status },
             })
+          if (
+            context.mixedProtectedRead &&
+            !checkMixedGraphqlRows(schema, run.body)
+          ) {
+            invalidRows = true
+            throw new GraphQLError('Response does not match GraphQL row rules')
+          }
           estimatedBytes += Buffer.byteLength(JSON.stringify(run.body)) * fields
           if (estimatedBytes > 262_144)
             throw new GraphQLError('GraphQL response budget exceeded', {
@@ -209,6 +226,15 @@ export async function executeGraphql(
         : undefined
     },
   })
+
+  if (invalidRows)
+    return {
+      status: 500,
+      body: {
+        errors: [{ message: 'Response does not match GraphQL row rules' }],
+      },
+      visited,
+    }
 
   const executed = Object.hasOwn(result, 'data')
   const body = JSON.parse(

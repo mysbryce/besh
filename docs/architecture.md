@@ -17,7 +17,7 @@ Goal: help teams build secure, documented APIs with a visual editor.
 
 ## Tenant row boundary — implemented in 0.11
 
-Implemented in 0.11, migration 17 adds registry/assignments, source original-cell provenance, source/SQLite policies, sticky backup state, and nullable key/job tenant IDs. Policies belong to resources rather than immutable graph JSON; compiled release pins cannot bypass later protection. A private execution principal uses the approved exact text identity, never a caller-supplied filter/header/variable. Protected graphs are restricted to request → one protected read → `$data` response, with narrow flat `Query.rows` GraphQL support.
+Implemented in 0.11, migration 17 adds registry/assignments, source original-cell provenance, source/SQLite policies, sticky backup state, and nullable key/job tenant IDs. Policies belong to resources rather than immutable graph JSON; compiled release pins cannot bypass later protection. A private execution principal uses the approved exact text identity, never a caller-supplied filter/header/variable. The original request → one protected read → `$data` response remains supported; the bounded HTTP extension is described below. WebSockets retain their separate single-read shape.
 
 Spreadsheet adapters compare preserved original TEXT independently of normalized business values; legacy snapshots require reviewed reimport/refresh. SQLite reads bind an explicit BINARY tenant predicate AND the business filter before projection/limits. Policy, resource version, assignment, issuer, and action/API/USE authority are rechecked around asynchronous reads and final results. Failed final authorization returns no protected REST/GraphQL rows.
 
@@ -53,7 +53,7 @@ Migration 19 stores resource-global field policies beside the existing source/SQ
 
 All configured projections and business-filter columns are checked before effects, including old compiled releases, owner tests/callers, key management, rollback, and k6 admission. Both adapters independently check the current field policy before materializing rows or starting SQL work. The private mandatory tenant predicate can use an excluded tenant column without granting its output or business-filter use. Existing asynchronous final checks withhold newly denied HTTP rows; the changed policy version closes existing WS connections and cancels readers. Outputs are not silently redacted and graph/REST/GraphQL contracts are not rewritten.
 
-Owner raw previews and full plaintext backups keep their existing privileges. Structural field names remain visible under existing grants. The resource-global rule is separate from tenant profiles below. Per-member profiles, arbitrary GraphQL resolver authorization, mixed protected graphs, product sessions, and multiple workspaces remain separate work. See [tenant rows and API fields](row-protection.md).
+Owner raw previews and full plaintext backups keep their existing privileges. Structural field names remain visible under existing grants. The resource-global rule is separate from tenant profiles below. Per-member profiles, arbitrary GraphQL resolver authorization, product sessions, and multiple workspaces remain separate work. See [tenant rows and API fields](row-protection.md).
 
 ## Tenant field profiles
 
@@ -62,6 +62,16 @@ Migration 21 adds selected source and SQLite-table profiles without backfilling 
 Owner source and complete-table SQLite review/write routes require current policy, resource and tenant versions. Accepted writes update the shared row-policy version and metadata-only audit atomically. The original request's owner proof is rechecked inside the acquired transaction. Profiles select no tenant value through request input: current assigned/reviewed identity and original runtime-key identity remain private execution authority.
 
 Canonical principal and adapter checks gate all authored projections and business filters before source rows or native SQLite work, including operations selecting fewer GraphQL fields. Graphs, schemas, artifacts and global save/publish/rollback validation remain unchanged. Shared versions conservatively invalidate all pending reads and sockets on the affected resource, including another tenant's connection; fresh admission resolves its current profile. Owner raw data and full backups keep their existing boundaries. Native migration/current-profile restoration, observed-reader peer, k6, corrected whole-browser and final capture checks passed. Exact evidence is tracked in [testing](testing.md).
+
+## Bounded protected read graphs
+
+The 0.16 HTTP extension permits one request, one status-200 `$data` response, up to four protected source/SQLite reads and three input-only conditions in a connected acyclic graph. Each path must read data. Path-sensitive analysis finds every possible last read; all terminal projections match the same explicit flat reply fields. Each read replaces `$data`, without joins, aliases or aggregation. WebSocket validation keeps its existing single-read limit. No control migration, graph compiler version or legacy defaults change.
+
+Every static branch checks current action/API/USE, original issuer, one trusted tenant and global/profile fields before effects. Whole-graph checkpoints surround asynchronous work and final replies, while each resource uses its own private row-read permit. A change to an earlier or unchosen resource can deny the final result. This is not a consistent snapshot across resources or recall of delivered bytes.
+
+Expanded REST replies require explicit nonnullable lists/objects, complete required scalar fields and no extra keys, bounded to 100 rows. Expanded `Query.rows` checks complete raw rows against SDL scalar, enum and nullability rules before requested-field projection or scalar coercion. A shared pure collector uses public GraphQL APIs, coerced variables, directives and concrete/abstract fragment membership to admit at most one eligible rows response key before runtime work, client-code rendering or load-job creation. Repeated fragments under one response key merge; `__typename` alone reads nothing. Existing syntactic budgets and legacy single-read behavior remain separate.
+
+Lazy beginner helpers read authorized structural catalogs, never data rows. Authors review terminal fields and scalar body arguments before explicitly replacing draft response rules/SDL, then build one labeled rows query. Scope changes invalidate review and discard late metadata; published definitions remain independent. Query/path/nested references are not silently remapped. See [protected read graphs](protected-read-graphs.md) and exact [verification](testing.md).
 
 ## Generated runtime
 

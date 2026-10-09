@@ -4,6 +4,8 @@ Load testing is a main Besh feature. Owners and custom members with load-test pe
 
 WebSocket publications are omitted from targets. Direct starts for them return an unsupported error without creating a job or temporary key. An API edited to a WebSocket draft remains eligible only while its current publication is supported HTTP. Dedicated WebSocket scripts, metrics, managed callers, and lifecycle/load acceptance remain planned; current k6 checks do not certify socket capacity. See [WebSocket scope](websockets.md).
 
+Expanded [protected read graphs](protected-read-graphs.md) check every branch's current tenant, issuer, USE and field access. Their GraphQL operation may select at most one eligible `rows` response key; invalid operations are rejected before creating a job or temporary caller. Narrowing an earlier resource can deny later requests without changing the publication or pin.
+
 ## First run
 
 1. Build, test, and publish an API.
@@ -62,7 +64,7 @@ Implemented in 0.10, selected access restricts targets/starts to authorized publ
 
 Resource API field policies also gate targets and starts, including owner runs. A release projecting or business-filtering an excluded field is omitted from targets; a direct start is denied before creating another job or temporary key. Existing authorized history remains readable for cleanup and cancellation. A changed field policy can deny requests in an active bounded run; it does not promise an instant cross-process kill.
 
-The 0.15 tenant-profile core also intersects these fields with the original trusted tenant's saved selection. Changing A's profile can deny its existing managed caller while B's unchanged profile continues to allow a compatible run. Owner-reviewed runs use the selected approved tenant's profile. A GraphQL operation selecting fewer fields still cannot bypass an excluded authored graph projection or business filter. Native checks passed; complete delivery validation remains in progress in [testing](testing.md).
+The 0.15 tenant-profile core also intersects these fields with the original trusted tenant's saved selection. Changing A's profile can deny its existing managed caller while B's unchanged profile continues to allow a compatible run. Owner-reviewed runs use the selected approved tenant's profile. A GraphQL operation selecting fewer fields still cannot bypass an excluded authored graph projection or business filter. Exact native and delivery checks belong in [testing](testing.md).
 
 Implemented in 0.11. A protected target reports `tenantRequired: true`. Under **Protected tenant rows**, the owner selects **Reviewed tenant** separately from request input. Non-owners see **Assigned tenant** with no picker; **Refresh tenant access** refreshes current authority. **Run load test** confirmation includes **Original tenant** alongside the route, virtual users, duration, and applicable live-write warning. Managed keys preserve that tenant, the original `load-tests.run` issuer, and the starting release pin. Saved jobs include nullable `tenantId`, not its exact value. Results/history retain the original identity instead of retargeting a run after reassignment. Owners can see a safe ID when its label is unavailable; non-owners resolve only their own current assigned label.
 

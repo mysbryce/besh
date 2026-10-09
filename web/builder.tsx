@@ -199,6 +199,14 @@ const GeneratedBackend = lazy(() =>
     default: module.GeneratedBackend,
   })),
 )
+const LastReadReply = lazy(() =>
+  import('./last-read-reply').then((module) => ({
+    default: module.LastReadReply,
+  })),
+)
+const RowsQuery = lazy(() =>
+  import('./rows-query').then((module) => ({ default: module.RowsQuery })),
+)
 const WebSocketForms = lazy(() =>
   import('./websocket-forms').then((module) => ({
     default: module.WebSocketForms,
@@ -326,6 +334,11 @@ function Inspector({ node }: { node: CanvasNode }) {
             message('Configuration applied. Save draft to keep changes.')
           }}
         />
+      ) : null}
+      {node.data.kind === 'response' && !websocket && !advanced && dataReply ? (
+        <Suspense fallback={<p>Opening reply rules…</p>}>
+          <LastReadReply responseId={node.id} />
+        </Suspense>
       ) : null}
       {node.data.kind === 'condition' &&
       !advanced &&
@@ -556,7 +569,7 @@ function Canvas() {
           deleteKeyCode={editable ? ['Backspace', 'Delete'] : null}
           fitView
           fitViewOptions={{ padding: 0.22 }}
-          minZoom={0.3}
+          minZoom={0.1}
           maxZoom={1.5}
           defaultEdgeOptions={{
             type: 'smoothstep',
@@ -1157,6 +1170,22 @@ function BuilderSession() {
               />
             ) : state.graphql ? (
               <div className="graphql-inputs">
+                {state.nodes.some(
+                  (node) =>
+                    node.data.kind === 'data' || node.data.kind === 'database',
+                ) ? (
+                  <Suspense fallback={<p>Opening rows query form…</p>}>
+                    <RowsQuery
+                      schema={state.graphql.schema}
+                      disabled={!testable || state.busy}
+                      onUse={(query) => {
+                        setOperation(query)
+                        setVariables('{}')
+                        setOperationName('')
+                      }}
+                    />
+                  </Suspense>
+                ) : null}
                 <label htmlFor="graphql-operation">Operation</label>
                 <Textarea
                   id="graphql-operation"

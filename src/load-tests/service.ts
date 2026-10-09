@@ -20,6 +20,8 @@ import {
   type SelectionSetNode,
 } from 'graphql'
 import { graphqlSchema } from '../flows/graphql'
+import { assertMixedReadOperation } from '../flows/graphql-operation'
+import { mixedReadGraph } from '../flows/read-graph'
 import { prepareInput } from '../flows/contracts'
 import { concreteRoute } from '../flows/routes'
 import { flowTransport } from '../flows/transport'
@@ -91,6 +93,7 @@ const startSchema = z
 function graphqlPermission(
   flow: Flow,
   request: LoadTestStart['request'],
+  mixedProtectedRead: boolean,
 ): RuntimePermission {
   const input = request?.graphql
   if (!input)
@@ -149,6 +152,13 @@ function graphqlPermission(
       }
     }
     walk(operation.selectionSet, 1)
+    if (mixedProtectedRead)
+      assertMixedReadOperation(
+        schema,
+        document,
+        input.operationName,
+        input.variables ?? {},
+      )
     return operation.operation
   } catch {
     throw new ApiError(
@@ -452,7 +462,11 @@ export function loadTestService(
               params: value.request?.params ?? {},
             })
           const permission: RuntimePermission = flow.graphql
-            ? graphqlPermission(flow, value.request)
+            ? graphqlPermission(
+                flow,
+                value.request,
+                protectedShape(store, flow).required && mixedReadGraph(flow),
+              )
             : 'rest'
           const query = new URLSearchParams(value.request?.query).toString()
           const path = flow.graphql

@@ -6,6 +6,7 @@ import { prepareInput } from './contracts'
 import { concreteRoute } from './routes'
 import { renderClientCode } from './client-code-renderers'
 import { graphqlSchema, operationLimits } from './graphql'
+import { assertMixedReadOperation } from './graphql-operation'
 import {
   getOperationAST,
   getVariableValues,
@@ -52,6 +53,7 @@ export function flowClientCode(
   flow: Flow,
   source: ClientCodeSource,
   value: z.infer<typeof clientCodeSchema>,
+  mixedProtectedRead = false,
 ): ClientCodeResult {
   const target = clientCodeTargets.find((item) => item.id === value.target)!
   const request = value.request ?? {}
@@ -115,6 +117,13 @@ export function flowClientCode(
           ? 1
           : 16,
       )
+      if (mixedProtectedRead)
+        assertMixedReadOperation(
+          schema,
+          document,
+          request.graphql.operationName,
+          request.graphql.variables ?? {},
+        )
       if (
         getVariableValues(
           schema,
