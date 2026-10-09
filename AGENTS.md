@@ -25,6 +25,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Read applicable local skills when requested. Current requested skills: `tdd`, `wait-what`, `handoff`.
 - Test first through agreed public interfaces. See `docs/testing.md` for approved scope. Work one failing test and implementation at a time.
 - Run relevant tests, type checks, build, and formatting before committing. Run browser tests for editor behavior changes.
+- Use focused browser stories during development and the complete suite before delivery. Normal E2E stories serve built dashboard assets through Bun with reduced motion; keep a motion-enabled builder and actual Vite proxy/watch coverage. Verify bundled Chromium used by CI. Preserve real same-origin authentication and native browser file uploads. Wait for owned delayed responses before removing handlers. Do not increase workers until shared ports, state, clipboard and native k6 jobs are isolated.
 - Keep page and action previews current when changing dashboard behavior. Run `bun run preview:all --no-serve` and inspect affected screenshots; keep generated previews out of Git.
 - Commit completed work with Conventional Commits, for example `feat(flows): publish validated API flows` or `fix(auth): reject expired credentials`.
 - Bump `package.json` for every completed change delivery and update `CHANGELOG.md` in the same tested commit. Follow `docs/releases.md`: fixes use patch, new features use minor, incomplete releases use `alpha`. Never bump to `1.0.0` or above without the maintainer's explicit confirmation.

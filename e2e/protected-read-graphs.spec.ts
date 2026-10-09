@@ -46,7 +46,11 @@ test('owner reviews the last protected read reply', async ({
       const url = new URL(route.request().url())
       if (!/^\/(api\/|auth\/|setup\/|health$)/.test(url.pathname))
         return route.continue()
-      await route.continue({ url: `${backend}${url.pathname}${url.search}` })
+      const response = await route.fetch({
+        url: `${backend}${url.pathname}${url.search}`,
+        maxRedirects: 0,
+      })
+      await route.fulfill({ response })
     })
     await page.goto('/', { timeout: 30_000 })
     let firstCapture = true

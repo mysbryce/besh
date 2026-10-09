@@ -4,6 +4,20 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.16.2-alpha.0 — 2026-10-09
+
+### Fixed
+
+- Keep browser-test authentication on its original origin when forwarding real backend responses, fixing bundled Chromium sign-in failures.
+- Wait for actual flow-test responses before reading dashboard results.
+- Send SQLite file uploads directly to their isolated dashboard/API origin and finish delayed responses before removing test handlers.
+- Resolve the development proxy's Vite executable from its installed package.
+
+### Changed
+
+- Run regular browser stories against built dashboard assets on Bun. Keep development proxy and ignored-document watch checks in the dedicated Vite story.
+- Use supported reduced motion for regular browser stories while retaining the motion-enabled visual builder journey. Preserve all browser scenarios and serial native k6 execution.
+
 ## 0.16.1-alpha.0 — 2026-10-09
 
 ### Fixed

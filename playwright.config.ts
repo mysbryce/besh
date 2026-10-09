@@ -14,26 +14,20 @@ export default defineConfig({
     viewport: { width: 1440, height: 1000 },
     baseURL: 'http://127.0.0.1:5179',
     trace: 'off',
+    reducedMotion: 'reduce',
     channel: process.env.PLAYWRIGHT_CHANNEL,
   },
-  webServer: [
-    {
-      command: 'bun src/index.ts',
-      url: 'http://127.0.0.1:4311/health',
-      env: {
-        PORT: '4311',
-        BESH_ADMIN_TOKEN: '',
-        BESH_SETUP_KEY: 'browser-test-setup-key-32-characters-long',
-        BESH_WEB_URL: 'http://127.0.0.1:5179',
-        BESH_DATABASE_PATH: join(directory, 'besh.sqlite'),
-        BESH_BACKUP_DIR: join(directory, 'backups'),
-        BESH_SECRET_KEY_PATH: join(directory, 'besh-secrets.key'),
-      },
+  webServer: {
+    command: 'bun src/index.ts',
+    url: 'http://127.0.0.1:5179/health',
+    env: {
+      PORT: '5179',
+      BESH_ADMIN_TOKEN: '',
+      BESH_SETUP_KEY: 'browser-test-setup-key-32-characters-long',
+      BESH_WEB_URL: 'http://127.0.0.1:5179',
+      BESH_DATABASE_PATH: join(directory, 'besh.sqlite'),
+      BESH_BACKUP_DIR: join(directory, 'backups'),
+      BESH_SECRET_KEY_PATH: join(directory, 'besh-secrets.key'),
     },
-    {
-      command: 'bunx vite --port 5179',
-      url: 'http://127.0.0.1:5179',
-      env: { BESH_API_URL: 'http://127.0.0.1:4311' },
-    },
-  ],
+  },
 })

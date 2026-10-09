@@ -1,9 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
 import { spawn } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
+import { createRequire } from 'node:module'
 
 type Receipt = { ticket: string; path: string; protocol: string }
 
@@ -115,12 +116,20 @@ test('development proxies carry actual published and original-cookie draft WebSo
         reject(new Error('Native proxy API launch failed'))
       })
     })
+    const vitePackagePath = createRequire(import.meta.url).resolve(
+      'vite/package.json',
+    )
+    const vitePackage = JSON.parse(readFileSync(vitePackagePath, 'utf8')) as {
+      bin: { vite: string }
+    }
     start(
-      process.execPath,
-      ['node_modules/vite/bin/vite.js', '--port', '5187'],
-      {
-        BESH_API_URL: origin,
-      },
+      'node',
+      [
+        resolve(dirname(vitePackagePath), vitePackage.bin.vite),
+        '--port',
+        '5187',
+      ],
+      { BESH_API_URL: origin },
     )
     await expect
       .poll(async () => {
@@ -216,6 +225,33 @@ test('development proxies carry actual published and original-cookie draft WebSo
       matched: true,
       protocol: 'besh.ws.v1',
     })
+    await page.reload()
+    await expect(
+      page.getByRole('heading', { name: /API Studio/ }),
+    ).toBeVisible()
+    const documentationPath = resolve('docs/repository.md')
+    const documentation = readFileSync(documentationPath, 'utf8')
+    const reloaded = page
+      .waitForEvent('framenavigated', {
+        predicate: (frame) => frame === page.mainFrame(),
+        timeout: 2000,
+      })
+      .then(
+        () => true,
+        () => false,
+      )
+    try {
+      writeFileSync(
+        documentationPath,
+        `${documentation}\nPreview watch probe.\n`,
+      )
+      expect(await reloaded).toBe(false)
+      await expect(
+        page.getByRole('heading', { name: /API Studio/ }),
+      ).toBeVisible()
+    } finally {
+      writeFileSync(documentationPath, documentation)
+    }
   } finally {
     await page.close()
     for (const child of children.reverse()) {

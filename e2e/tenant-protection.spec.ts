@@ -48,7 +48,11 @@ test('owner reviews exact tenant identity before row protection', async ({
         !/^\/(api\/|auth\/|setup\/|health$|run\/|graphql\/)/.test(url.pathname)
       )
         return route.continue()
-      await route.continue({ url: `${backend}${url.pathname}${url.search}` })
+      const response = await route.fetch({
+        url: `${backend}${url.pathname}${url.search}`,
+        maxRedirects: 0,
+      })
+      await route.fulfill({ response })
     })
     await page.goto('/', { timeout: 30_000 })
     await tenantProtectionPreviews({
@@ -58,6 +62,50 @@ test('owner reviews exact tenant identity before row protection', async ({
       capture: async () => {},
     })
     expect(browserErrors).toEqual([])
+  } catch (error) {
+    await test.info().attach('tenant-failure-semantics', {
+      contentType: 'application/json',
+      body: JSON.stringify(
+        await page.evaluate(() => {
+          const appearance = document.querySelector(
+            '[role="combobox"][aria-label="Appearance"]',
+          )
+          const ancestors = []
+          for (
+            let element = appearance;
+            element;
+            element = element.parentElement
+          ) {
+            const style = getComputedStyle(element)
+            ancestors.push({
+              tag: element.tagName,
+              className: element.className,
+              ariaHidden: element.getAttribute('aria-hidden'),
+              inert: element.hasAttribute('inert'),
+              display: style.display,
+              visibility: style.visibility,
+              bounds: element.getBoundingClientRect().toJSON(),
+            })
+          }
+          return {
+            viewport: { width: innerWidth, height: innerHeight },
+            appearancePresent: !!appearance,
+            navigationPresent: !!document.querySelector(
+              '[aria-label="Workspace navigation"]',
+            ),
+            focusedRole: document.activeElement?.getAttribute('role'),
+            ancestors,
+          }
+        }),
+      ),
+    })
+    await page.screenshot({
+      path: test.info().outputPath('tenant-failure-masked.png'),
+      fullPage: false,
+      animations: 'disabled',
+      mask: [page.locator('input, code, pre')],
+    })
+    throw error
   } finally {
     await page.close()
     server.kill()

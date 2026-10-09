@@ -59,7 +59,11 @@ test('owner shares selected read-only APIs with a viewer', async ({ page }) => {
         !/^\/(api\/|auth\/|setup\/|health$|run\/|graphql\/)/.test(url.pathname)
       )
         return route.continue()
-      await route.continue({ url: `${backend}${url.pathname}${url.search}` })
+      const response = await route.fetch({
+        url: `${backend}${url.pathname}${url.search}`,
+        maxRedirects: 0,
+      })
+      await route.fulfill({ response })
     })
     await page.goto('/')
     await flowAccessPreviews({

@@ -46,7 +46,7 @@ test('owners upload a read-only SQLite copy and preview real table rows', async 
       PORT: '4321',
       BESH_HOST: '127.0.0.1',
       BESH_ADMIN_TOKEN: token,
-      BESH_WEB_URL: 'http://127.0.0.1:5179',
+      BESH_WEB_URL: backend,
       BESH_DATABASE_PATH: join(directory, 'besh.sqlite'),
     },
     stdio: 'ignore',
@@ -66,15 +66,8 @@ test('owners upload a read-only SQLite copy and preview real table rows', async 
         }
       })
       .toBe(200)
-    await page.route('**/*', async (route) => {
-      const url = new URL(route.request().url())
-      if (
-        !/^\/(api\/|auth\/|setup\/|health$|run\/|graphql\/)/.test(url.pathname)
-      )
-        return route.continue()
-      await route.continue({ url: `${backend}${url.pathname}${url.search}` })
-    })
-    await page.goto('/')
+    // Browser file uploads must reach their real origin with the original bytes.
+    await page.goto(backend)
     await page.getByLabel('Workspace token').fill(token)
     await page
       .getByRole('button', { name: 'Open workspace', exact: true })
@@ -82,6 +75,10 @@ test('owners upload a read-only SQLite copy and preview real table rows', async 
     let releaseMetadata!: () => void
     const metadataGate = new Promise<void>((resolve) => {
       releaseMetadata = resolve
+    })
+    let confirmMetadata!: () => void
+    const metadataDelivered = new Promise<void>((resolve) => {
+      confirmMetadata = resolve
     })
     let initialList = true
     await page.route('**/api/database-connections', async (route) => {
@@ -93,6 +90,7 @@ test('owners upload a read-only SQLite copy and preview real table rows', async 
       })
       await metadataGate
       await route.fulfill({ response })
+      confirmMetadata()
     })
     await page
       .getByRole('button', { name: 'Database connections', exact: true })
@@ -117,6 +115,7 @@ test('owners upload a read-only SQLite copy and preview real table rows', async 
       page.getByRole('button', { name: 'Preview rows', exact: true }),
     ).toBeEnabled()
     releaseMetadata()
+    await metadataDelivered
     await page.unroute('**/api/database-connections')
     await expect(
       page.getByRole('combobox', { name: 'Table', exact: true }),

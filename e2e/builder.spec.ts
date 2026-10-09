@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
-import { readFileSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+
+test.use({ reducedMotion: 'no-preference' })
 
 test('build, move, save, test and publish a flow through the dashboard', async ({
   page,
@@ -79,26 +79,6 @@ test('build, move, save, test and publish a flow through the dashboard', async (
   await page.keyboard.press('Escape')
   await page.getByRole('combobox', { name: 'Appearance' }).click()
   await page.getByRole('option', { name: 'Light', exact: true }).click()
-  const documentationPath = resolve('docs/repository.md')
-  const documentation = readFileSync(documentationPath, 'utf8')
-  const reloaded = page
-    .waitForEvent('framenavigated', {
-      predicate: (frame) => frame === page.mainFrame(),
-      timeout: 2000,
-    })
-    .then(
-      () => true,
-      () => false,
-    )
-  try {
-    writeFileSync(documentationPath, `${documentation}\nPreview watch probe.\n`)
-    expect(await reloaded).toBe(false)
-    await expect(
-      page.getByRole('heading', { name: /API Studio/ }),
-    ).toBeVisible()
-  } finally {
-    writeFileSync(documentationPath, documentation)
-  }
   await page
     .getByRole('button', { name: 'Advanced test input', exact: true })
     .click()
@@ -414,9 +394,18 @@ test('build, move, save, test and publish a flow through the dashboard', async (
   await page
     .getByRole('checkbox', { name: 'Return available', exact: true })
     .uncheck()
+  const generatedResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname ===
+        `/api/data-sources/${products.id}/api` &&
+      response.request().method() === 'POST',
+  )
   await page
     .getByRole('button', { name: 'Create API from data', exact: true })
     .click()
+  const generated = await generatedResponse
+  expect(generated.status()).toBe(200)
+  const productsFlow = await generated.json()
   await expect(page.getByLabel('API name', { exact: true })).toHaveValue(
     'Products API',
   )
@@ -424,7 +413,18 @@ test('build, move, save, test and publish a flow through the dashboard', async (
     page.locator('.react-flow__node').filter({ hasText: 'Spreadsheet rows' }),
   ).toBeVisible()
   await expect(page.locator('.react-flow__edge')).toHaveCount(2)
+  const dataTestResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname ===
+        `/api/flows/${productsFlow.id}/test` &&
+      response.request().method() === 'POST',
+  )
   await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  const tested = await dataTestResponse
+  expect(tested.status()).toBe(200)
+  await expect(page.getByTestId('test-result')).toHaveText(
+    JSON.stringify(await tested.json(), null, 2),
+  )
   const dataTest = JSON.parse(await page.getByTestId('test-result').innerText())
   expect(dataTest.body).toEqual([
     { name: 'Tea', price: 12 },
@@ -451,7 +451,18 @@ test('build, move, save, test and publish a flow through the dashboard', async (
     .getByRole('button', { name: 'Apply configuration', exact: true })
     .click()
   await page.getByRole('button', { name: 'Save draft', exact: true }).click()
+  const limitedTestResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname ===
+        `/api/flows/${productsFlow.id}/test` &&
+      response.request().method() === 'POST',
+  )
   await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  const limited = await limitedTestResponse
+  expect(limited.status()).toBe(200)
+  await expect(page.getByTestId('test-result')).toHaveText(
+    JSON.stringify(await limited.json(), null, 2),
+  )
   expect(
     JSON.parse(await page.getByTestId('test-result').innerText()).body,
   ).toEqual([{ name: 'Tea', price: 12 }])

@@ -81,7 +81,11 @@ test('members generate saved API client examples without invoking the API', asyn
         !/^\/(api\/|auth\/|setup\/|health$|run\/|graphql\/)/.test(url.pathname)
       )
         return route.continue()
-      await route.continue({ url: `${backend}${url.pathname}${url.search}` })
+      const response = await route.fetch({
+        url: `${backend}${url.pathname}${url.search}`,
+        maxRedirects: 0,
+      })
+      await route.fulfill({ response })
     })
     await page.goto('/')
     await page.getByLabel('Workspace token').fill(owner)

@@ -19,11 +19,30 @@ Use real SQLite in temporary directories. Test through public routes or exported
 - `bun run preview:all --no-serve`: full page/action walkthrough with masked screenshots and an isolated demo workspace. See [preview inventory](preview.md).
 - `bun run format:check`: formatting.
 
-Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. Tests run against temporary SQLite databases on API ports `4311`–`4313`, `4315`–`4319`, `4321`, and `4323`–`4330`, and dashboard port `5179`. The production story serves the built dashboard and API together on port `4314`; the WS story uses built port `4329`. The retained WS proxy story uses its own ephemeral API listener and Vite port `5187`.
+During development, run the affected story rather than the whole browser suite:
+
+```sh
+bun run test:e2e e2e/client-code.spec.ts
+bun run test:e2e e2e/builder.spec.ts -g 'build, move'
+```
+
+The same command builds fresh assets before a focused run. Run the complete suite before delivery. CI still runs all stories; it does not exclude the slower permission, data, k6 or WebSocket journeys.
+
+Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. CI uses bundled Chromium. Normal stories use the built dashboard and Bun API at port `5179`, with temporary SQLite state and supported reduced motion. The builder explicitly keeps normal motion. Dedicated feature APIs use ports `4312`–`4313`, `4315`–`4319`, `4321`, and `4323`–`4330`. Native SQLite uploads use their own built origin at `4321`, production uses `4314`, and WS uses `4329`. The retained WS proxy story uses its own ephemeral API listener and Vite port `5187`, including the ignored-document watch check. Keep one worker while stories share ports, workspace setup, the OS clipboard or the native k6 lane.
 
 ## Verified on 2026-10-08–09
 
 Windows, Node 22.22.1, TypeScript 7.0.2, Playwright 1.64.0 with installed Chrome. Earlier deliveries used Bun 1.3.14; current runtime-migration checks use Bun 1.4.2.
+
+### Bundled Chromium and faster browser startup
+
+- Actual [CI run 37900521295](https://github.com/mysbryce/besh/actions/runs/37900521295) at commit `90104b5` passed Bun setup in both jobs and the complete core check. Its browser run reported 12 failures and 13 passes in 4.4 minutes: eleven failed after sign-in, and the builder parsed a waiting placeholder before its real response.
+- An isolated checkout reproduced the client-code failure with bundled Chromium `156.0.8078.4`. Redacted diagnostics observed `/auth/login` returning `200`, followed by `/api/flows` returning `401`. Forwarding the actual backend response with `route.fetch` and `fulfill` preserved the browser origin and passed the unchanged story in 30.4 seconds, including successful subsequent flow requests. No production authentication, cookie or origin rule changed. Ten affected forwarders use this real-response delivery with automatic redirects disabled; SQLite uses its real built origin instead.
+- Both builder parses now wait for their exact real flow-test response and rendered current JSON before asserting literal row values. The corrected builder/client-code pair passed in about 72 seconds with Vite startup, then in 48.2 seconds with built Bun-served assets. Individual built stories took 25.5 and 20.7 seconds. This focused comparison is not a full-suite speed claim; the failed CI duration is not a valid successful-suite baseline.
+- SQLite upload failed before file inspection through the test forwarding path. Continuing across ports instead lost session authorization. The story now loads its isolated built Bun origin directly, preserving the browser's original file request; all real uploads and permission scenarios passed in 36.0 seconds. A subsequently exposed held-response removal race was fixed by awaiting its actual fulfillment before removing that handler. Production SQLite, authentication and cookie rules are unchanged.
+- The isolated checkout resolved dependencies from its parent but the Vite story launched a nonexistent local CLI path. Resolving the installed package's declared executable passed the actual proxy/ticket/cookie WS and ignored-document watch story in 7.3 seconds. This local fixture gap is separate from the reported CI failures.
+- The tenant journey's missing Appearance control did not reproduce in its exact isolated rerun, which passed in 50.6 seconds. Failure-only masked screenshots and semantic geometry now preserve evidence before cleanup; no speculative product fix or retry was added. Trace review measured 217 clicks taking 29.28 seconds, including welcome-button actionability waits near one second despite login HTTP requests below 46 milliseconds. Supported reduced motion passed the client/tenant pair in 33.0 seconds. The builder retains normal motion; no CSS is injected to bypass behavior.
+- Final bundled-Chromium validation passed all 25 stories in 268.81 seconds (4.5 minutes), with zero failures, skips, retries or flaky results. It includes serial actual k6, native file uploads, production CSP, original-cookie draft and published WS, light/dark/system phone checks and the normal-motion builder. Types, fresh 2,450-module build, complete formatting, release policy and local documentation links passed. This is local acceptance; successful complete remote validation of `0.16.2` remains unobserved.
 
 ### Windows runner without symlink privileges
 
@@ -31,7 +50,7 @@ Windows, Node 22.22.1, TypeScript 7.0.2, Playwright 1.64.0 with installed Chrome
 - The local composite action downloads the exact official Windows x64 release into a fresh `RUNNER_TEMP` directory, verifies Bun `1.4.2`, and copies a regular `bunx.exe`. Both executables remain outside the user's Bun installation. Only the job's `GITHUB_PATH` file is updated; no administrator terminal, symlink, user/machine PATH edit or Windows policy change is required by the installer.
 - Actual downloads and native execution passed under PowerShell 7.6 and Windows PowerShell. The copied `bunx.exe` ran the existing local Prettier `3.9.9` with `--no-install`; inspection confirmed no reparse point and a UTF-8 job PATH entry without a BOM. These local checks ran as Administrator and do not prove execution under the maintainer's non-admin account.
 - Final Windows PowerShell native installation passed in 5.18 seconds. PowerShell parsing, composite YAML formatting, actionlint 1.7.12, type checks and the production build passed. The installer rejects line breaks, paths outside job temporary storage and reparse-point ancestry before adding its regular executables to the job PATH.
-- Successful complete GitHub execution with the corrected action remains unobserved. Start a new run from the fixed commit; rerunning the previous failed job retains its original commit. Earlier application/browser evidence below remains separate from this CI-only patch.
+- The corrected action passed both actual GitHub jobs, and the core check passed. The separate browser failure and subsequent local correction are recorded above. Complete remote success of the browser patch remains unobserved. Start a new run from its fixed commit; rerunning the previous failed job retains its original commit.
 
 ### Bounded protected read graphs
 

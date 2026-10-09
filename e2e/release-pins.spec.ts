@@ -45,7 +45,11 @@ test('release-pinned caller keys stay separate from keys following publication',
         !/^\/(api\/|auth\/|setup\/|health$|run\/|graphql\/)/.test(url.pathname)
       )
         return route.continue()
-      await route.continue({ url: `${backend}${url.pathname}${url.search}` })
+      const response = await route.fetch({
+        url: `${backend}${url.pathname}${url.search}`,
+        maxRedirects: 0,
+      })
+      await route.fulfill({ response })
     })
     await page.goto('/')
     await releasePinPreviews({
