@@ -4,6 +4,12 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.16.3-alpha.0 — 2026-10-09
+
+### Fixed
+
+- Wait for the API-key form to be ready before exercising its keyboard controls. Verify each permission change before creating the key.
+
 ## 0.16.2-alpha.0 — 2026-10-09
 
 ### Fixed

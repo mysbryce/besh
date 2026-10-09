@@ -2,11 +2,12 @@
 
 This is the product plan. Planned features are not implementation claims.
 
-## CI browser correction in 0.16.2
+## CI browser corrections in 0.16.2–0.16.3
 
 - Actual GitHub Bun setup and core checks passed on the non-admin Windows runner. Browser failures exposed changed-origin test authentication and early result parsing.
 - Built Bun-served browser stories, real-response forwarding, native same-origin SQLite uploads and awaited response delivery address those harness failures. Reduced motion speeds ordinary journeys; the builder retains normal animation. Real Vite WS/watch coverage and every existing scenario remain.
-- Complete local browser acceptance is recorded in [testing](testing.md). Remote validation of this patch requires a new run from its commit; it has not been observed.
+- The subsequent real run at `02d98a1` passed the core check and 24 browser stories. A builder timeout at key creation did not reproduce locally. Version 0.16.3 explicitly checks form readiness and each keyboard permission transition, preserving normal motion, runtime assertions and the original timeout.
+- Local browser acceptance is recorded in [testing](testing.md). Complete remote acceptance requires a successful run from the corrected commit; it has not been observed.
 
 ## Implemented in 0.16: bounded protected read graphs
 

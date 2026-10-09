@@ -911,15 +911,18 @@ test('build, move, save, test and publish a flow through the dashboard', async (
   await expect(
     page.getByRole('checkbox', { name: 'REST requests' }),
   ).toHaveCount(0)
-  await queryPermission.focus()
-  await page.keyboard.press('Space')
-  await expect(
-    page.getByRole('button', { name: 'Create API key', exact: true }),
-  ).toBeDisabled()
-  await page.keyboard.press('Space')
-  await page
-    .getByRole('button', { name: 'Create API key', exact: true })
-    .click()
+  const createQueryKey = page.getByRole('button', {
+    name: 'Create API key',
+    exact: true,
+  })
+  await expect(createQueryKey).toBeEnabled()
+  await queryPermission.press('Space')
+  await expect(queryPermission).not.toBeChecked()
+  await expect(createQueryKey).toBeDisabled()
+  await queryPermission.press('Space')
+  await expect(queryPermission).toBeChecked()
+  await expect(createQueryKey).toBeEnabled()
+  await createQueryKey.click()
   const queryToken = await page.getByLabel('New API key').inputValue()
   await page
     .getByRole('button', { name: 'I saved this API key', exact: true })
