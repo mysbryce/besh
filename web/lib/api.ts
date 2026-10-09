@@ -104,6 +104,9 @@ export type RuntimeKey = {
   } | null
   permissions: RuntimePermission[]
   expiresAt: string
+  acceptUntil: string
+  replacesKeyId: string | null
+  replacedByKeyId: string | null
   createdAt: string
   revokedAt: string | null
   managedBy?: 'load-test'

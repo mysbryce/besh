@@ -46,19 +46,25 @@ If required published API metadata fails to load, the normal picker blocks creat
 
 ## Replace an active or dormant key
 
-Replacement creates a new token and immediately revokes the old key in one database transaction. It preserves the old key's name, API, allowed operations, exact expiration, release pin or following mode, original issuer/action, and tenant identity. It does not renew the lifetime or add permissions.
+Runtime-key handover is implemented in 0.14. Replacement creates a new token with the old key's name, API, allowed operations, exact expiration, release pin or following mode, original issuer/action, and tenant identity. It does not renew lifetime or add permissions. The default is immediate replacement; an optional grace period permits a short reviewed handover.
+
+The replacement route accepts optional `graceSeconds`, an integer from 0 through 300, defaulting to 0. A positive value keeps the original credential eligible until a fixed deadline measured from replacement, subject to current authority and earlier explicit revocation. If the requested deadline exceeds the original expiration, the server rejects it rather than shortening it. At zero, the original is immediately revoked. Both changes commit atomically with their metadata-only audit events.
+
+Every key includes `replacesKeyId`, `replacedByKeyId`, and `acceptUntil`. The IDs are nullable; `acceptUntil` is ISO text and normally equals `expiresAt`. A replaced predecessor instead shows its fixed cutoff. Migration 20 stores unique normalized lineage and deadlines. Restart or restoration of a complete current backup does not restart a grace clock; an older snapshot can restore older security state.
 
 Keys marked **Managed by load testing** are pinned to their run's starting revision, revoked automatically, and cannot be replaced. Use **Cancel run** to stop the load job; manual key revocation ends its caller access. See [load testing](load-testing.md).
 
 1. Open **API keys** and find an unexpired, unrevoked key, including a dormant pin.
-2. Select **Replace key**. Review the confirmation: callers using the old token will lose access as soon as replacement succeeds.
+2. Select **Replace key**. Review the immediate default, or the requested bounded grace and original expiration before confirming a coordinated handover.
 3. Cancel to keep the current key, or confirm the replacement.
 4. In **Save API key**, select **Copy API key**, privately save the new token, then select **I saved this API key**. It is shown once.
 5. Update each caller to use the new token, then check a request through the published endpoint.
 
-There is a gap between replacement and updating callers: new requests with the old token fail during that time. HTTP requests already authenticated before replacement may finish. Existing WebSocket connections and unused tickets depend on the original current key; replacement denies further message results and closes old connections through current checks and the bounded idle sweep. Obtain a new browser ticket with the replacement key. Replacement does not provide an overlap or grace period, and cannot recall already queued/delivered bytes.
+With immediate replacement, old-token requests fail before callers have been updated. During positive grace, both credentials may work, but each still needs its current pin, issuer/action/API/USE, tenant, and resource authority. Temporary dormancy does not pause or extend the deadline. At or after the cutoff, original-key requests fail. Already admitted effects cannot be undone; fresh asynchronous/final checks can withhold results after authority loss. Queued/delivered bytes cannot be recalled.
 
-For gradual handover, create a separate key with the required scope and expiration, update and check callers, then revoke the original. That is a manual sequence, separate from **Replace key**.
+Existing WebSocket tickets and connections keep their original key ID. They may continue only within that key's window and current authority; frame/final checks and the bounded idle sweep close expired connections. A new ticket cannot outlive `acceptUntil`, and an unused ticket minted before rollover can become invalid earlier than its original receipt promised. Obtain successor tickets separately. Product-login attempts also retain `runtime:<keyId>` scope: use the predecessor only within its window, or start a new BEGIN with the successor.
+
+A replacement chain permits at most two eligible credentials. A predecessor with a successor cannot be replaced again. Replacing the successor returns `409` while its unrevoked predecessor's approved window is live, even if a pin, issuer, tenant, or field rule temporarily denies the predecessor. Explicitly revoke the predecessor or wait for the deadline before replacing the successor. Revoking either row affects only that exact key; it does not cascade to its neighbor. Separately creating another key remains an independent issuance decision.
 
 Revoked and expired keys cannot be replaced. A following key is checked against the current published API type, so a REST key cannot be replaced after its API becomes GraphQL. A pinned key is checked against its immutable pinned release, even while dormant; replacing it does not make it usable against a different current revision. Replacement never removes a pin or extends expiry. Create a separate key to change that choice. A draft-only edit changes neither check.
 
@@ -66,7 +72,7 @@ Two concurrent replacements of the same key cannot both succeed. One wins; the o
 
 ### If the response is lost
 
-Do not automatically retry replacement. The server may have committed it even if the caller did not receive the response. Refresh the key list and check whether the original is revoked and a replacement exists. Tokens cannot be retrieved from that list. If the replacement succeeded but its token was lost, revoke that replacement and create a new key, or replace the active replacement and save its returned token.
+Do not automatically retry replacement. The server may have committed it even if the caller did not receive the response. Refresh the key list and inspect `replacedByKeyId`, `replacesKeyId`, and `acceptUntil`; a predecessor in grace may still be unrevoked. Tokens cannot be retrieved from that list. If the successor token was lost, explicitly revoke the predecessor or wait for its fixed deadline, then replace the eligible successor and save its new token. Revoking the successor and separately creating a reviewed key is another recovery choice; it does not revoke the predecessor. Never treat a failed receipt as proof that replacement failed.
 
 The same one-time-token limit applies to a lost creation response. The dashboard reports **Could not confirm whether the API key was created. Refresh API keys to review the current list...** and disables creation until a successful explicit refresh. A committed secret cannot be retrieved. Revoke the created key or replace it while unexpired/unrevoked, including a dormant pin, if current issuer authority allows replacement. Review the current or supplied publication before a new pin after `409`.
 
@@ -74,7 +80,7 @@ The dashboard retains an issued token in memory until you acknowledge saving it.
 
 ## Revoke or let a key expire
 
-Use **Revoke** when a caller should stop using an API. Revocation keeps metadata for the key and stops subsequent requests immediately. It cannot undo effects already admitted; protected asynchronous reads also recheck authority before returning rows. Revoking an already revoked key is safe; it stays revoked.
+Use **Revoke** when a caller should stop using an API. Revocation keeps metadata for the exact key and stops its subsequent requests immediately, including during grace. It never revokes a linked predecessor or successor automatically. It cannot undo effects already admitted; asynchronous/final authority checks can withhold results. Revoking an already revoked key is safe; it stays revoked.
 
 Expiration is required. When the saved expiration arrives, subsequent requests fail even if no one revokes the key. To continue after expiry, create a new key. Replacement before expiry keeps the existing expiration rather than extending it.
 
@@ -104,7 +110,7 @@ Keep issued tokens private; lost creation/replacement responses still require re
 
 ## Product login attempts
 
-GitHub product login binds each BEGIN attempt to the runtime key that started it. A replacement key cannot complete an attempt started by the old key. After replacement, start a new login attempt with the new token. A completion request that already passed authentication may finish. Product accounts and sessions remain the product server's responsibility. See [GitHub product login](product-auth.md).
+GitHub product login binds each BEGIN attempt to the runtime key that started it. A replacement key cannot complete that original attempt. The original key can complete it only while its own acceptance window and current authority remain valid, including the final check after provider work. Start new attempts with the successor; proof does not transfer. Product accounts and sessions remain the product server's responsibility. See [GitHub product login](product-auth.md).
 
 ## Save secrets and restore backups
 

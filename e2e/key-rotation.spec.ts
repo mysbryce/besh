@@ -324,8 +324,9 @@ test('owner replaces a caller key once, saves its secret, and sees revoked histo
     loseReplacementResponse = true
     page.once('dialog', (dialog) => dialog.accept())
     const lostRow = page.getByRole('row', {
-      name: /Lost response caller.*Active/,
+      name: /Lost response caller/,
     })
+    await expect(lostRow).toContainText('Active')
     await lostRow
       .getByRole('button', { name: 'Replace key', exact: true })
       .click()
@@ -333,7 +334,12 @@ test('owner replaces a caller key once, saves its secret, and sees revoked histo
       'If the old key is revoked, create a new API key and update your caller',
     )
     await expect(saved).toHaveCount(0)
-    await expect(lostRow).toContainText('Active')
+    await expect(lostRow).toContainText(
+      'Replacement status unknown · Refresh required',
+    )
+    await expect(
+      lostRow.getByRole('button', { name: 'Replace key', exact: true }),
+    ).toBeDisabled()
     expect(replacements).toBe(3)
     expect(
       (
@@ -379,7 +385,7 @@ test('owner replaces a caller key once, saves its secret, and sees revoked histo
       ).status(),
     ).toBe(200)
     const incompatible = page.getByRole('row', {
-      name: /Production caller.*Active/,
+      name: /Production caller.*(?:Active|Replacement status unknown)/,
     })
     page.once('dialog', (dialog) => dialog.accept())
     await incompatible
@@ -388,7 +394,12 @@ test('owner replaces a caller key once, saves its secret, and sees revoked histo
     await expect(page.getByRole('alert')).toContainText(
       'Refresh API keys before trying again',
     )
-    await expect(incompatible).toContainText('Active')
+    await expect(incompatible).toContainText(
+      'Replacement status unknown · Refresh required',
+    )
+    await expect(
+      incompatible.getByRole('button', { name: 'Replace key', exact: true }),
+    ).toBeDisabled()
     await expect(saved).toHaveCount(0)
     expect(replacements).toBe(4)
 

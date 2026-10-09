@@ -27,6 +27,7 @@ import { can } from '../src/workspace/permissions'
 import { ManualPinnedKeyForm } from './runtime-key-manual'
 import { TenantReview, useTenantReview } from './tenant-review'
 import { useTenantContext } from './tenant-context'
+import { KeyReplacementOptions } from './key-replacement-options'
 
 const permissionLabels: Record<RuntimePermission, string> = {
   rest: 'REST requests',
@@ -92,6 +93,13 @@ export function RuntimeKeys() {
   const [error, setError] = useState('')
   const [manualReviewNeeded, setManualReviewNeeded] = useState(false)
   const [creationUnconfirmed, setCreationUnconfirmed] = useState(false)
+  const [replacementOptions, setReplacementOptions] =
+    useState<RuntimeKey | null>(null)
+  const [replacementUnconfirmed, setReplacementUnconfirmed] = useState(false)
+  const [deadlineReviewId, setDeadlineReviewId] = useState<string | null>(null)
+  const [issuedPredecessor, setIssuedPredecessor] = useState<RuntimeKey | null>(
+    null,
+  )
   const active = useRef(false)
   const dialog = useRef<HTMLDialogElement>(null)
   const cancel = useRef<HTMLButtonElement>(null)
@@ -182,6 +190,22 @@ export function RuntimeKeys() {
     if (records.status === 'fulfilled') {
       setKeys(records.value)
       setCreationUnconfirmed(false)
+      setReplacementUnconfirmed(false)
+      setDeadlineReviewId(null)
+      setIssuedPredecessor(
+        records.value.find((key) => key.id === issuedRecord?.replacesKeyId) ??
+          null,
+      )
+      setReplacementOptions((previous) =>
+        previous
+          ? (records.value.find(
+              (key) =>
+                key.id === previous.id &&
+                !key.revokedAt &&
+                !key.replacedByKeyId,
+            ) ?? null)
+          : null,
+      )
     }
     if (
       metadata.status === 'fulfilled' &&
@@ -223,6 +247,10 @@ export function RuntimeKeys() {
     setKeys([])
     setIssued('')
     setIssuedRecord(null)
+    setIssuedPredecessor(null)
+    setReplacementOptions(null)
+    setReplacementUnconfirmed(false)
+    setDeadlineReviewId(null)
     setReview(null)
     setError('')
 
@@ -303,7 +331,14 @@ export function RuntimeKeys() {
   function keyStatus(key: RuntimeKey) {
     if (key.revokedAt) return 'Revoked'
     if (Date.parse(key.expiresAt) <= Date.now()) return 'Expired'
+    if (replacementUnconfirmed)
+      return 'Replacement status unknown · Refresh required'
+    if (key.replacedByKeyId && Date.parse(key.acceptUntil) <= Date.now())
+      return 'Replaced · acceptance ended'
     if (key.cleanupOnly) return 'Cleanup only'
+    if (key.id === deadlineReviewId) return 'Retiring · deadline not reviewed'
+    if (key.replacedByKeyId)
+      return 'Retiring · current authority still required'
     const flow =
       readable && metadataKnown
         ? flows.find((flow) => flow.id === key.flowId)
@@ -332,6 +367,86 @@ export function RuntimeKeys() {
         if (!current()) return
         setError(reason instanceof Error ? reason.message : 'Request failed')
         throw reason
+      }
+    })
+  }
+
+  function replaceKey(key: RuntimeKey, graceSeconds = 0) {
+    if (
+      locked ||
+      replacementUnconfirmed ||
+      key.replacedByKeyId ||
+      !currentSession() ||
+      !Number.isInteger(graceSeconds) ||
+      graceSeconds < 0 ||
+      graceSeconds > 300
+    )
+      return
+    if (
+      !window.confirm(
+        `Replace API key ${key.name}? ${graceSeconds ? `The old key continues for up to ${graceSeconds} seconds, ending no later than its original expiry. Besh sets the fixed deadline when replacement is accepted. Both keys still require current authority.` : 'The old key stops working immediately.'} The new key keeps the same API, permissions, ${key.issuerBinding ? 'member link, ' : ''}and expiry. Release access: ${releaseLabel(key)}.${key.issuerBinding ? ` ${issuerLabel(key, member)}.` : ''} Permissions: ${key.permissions.map((permission) => permissionLabels[permission]).join(', ')}. Expires: ${new Date(key.expiresAt).toLocaleString()}.${keyStatus(key) === 'Dormant' ? ' This key remains dormant until its pinned release is current again.' : ''}${key.issuerBinding ? ' The original member must still have its required action, API access and dependency USE.' : ''}${key.tenantId ? ` ${tenantLabel(key)}. Replacement keeps this identity and cannot retarget it after member reassignment.` : ''} Key ID: ${key.id}. API ID: ${key.flowId}. Save the new key and update your caller.`,
+      )
+    )
+      return
+
+    perform(async (current) => {
+      let replacement: RuntimeKey & { token: string }
+      try {
+        replacement = await api<RuntimeKey & { token: string }>(
+          `/api/runtime-keys/${key.id}/rotate`,
+          token,
+          'POST',
+          graceSeconds ? { graceSeconds } : undefined,
+        )
+      } catch (reason) {
+        if (current()) setReplacementUnconfirmed(true)
+        const detail =
+          reason instanceof Error ? reason.message : 'Request failed'
+        throw new Error(
+          `${detail}. Could not confirm key replacement. Refresh API keys before trying again. If the old key is revoked, create a new API key and update your caller. A lost one-time secret cannot be recovered. Review linked records and explicitly replace or revoke the exact key; do not repeat replacement automatically.`,
+        )
+      }
+      if (!current()) return
+      const { token: secret, ...record } = replacement
+      setIssued(secret)
+      setIssuedRecord(record)
+      setIssuedPredecessor(null)
+      setDeadlineReviewId(key.id)
+      setReplacementOptions(null)
+      setKeys((records) => [
+        record,
+        ...records.map((previous) =>
+          previous.id === key.id
+            ? {
+                ...previous,
+                revokedAt: graceSeconds ? null : record.createdAt,
+                replacedByKeyId: record.id,
+              }
+            : previous,
+        ),
+      ])
+      message(
+        graceSeconds
+          ? 'API key replaced. Save the new key and update your caller during the approved overlap.'
+          : 'API key replaced. Update your caller now; the old key no longer works.',
+      )
+      try {
+        const records = await api<RuntimeKey[]>('/api/runtime-keys', token)
+        if (!current()) return
+        setKeys(records)
+        setDeadlineReviewId(null)
+        setIssuedPredecessor(
+          records.find((previous) => previous.id === key.id) ?? null,
+        )
+      } catch {
+        if (!current()) return
+        setReplacementUnconfirmed(true)
+        setKeys((records) =>
+          records.filter((previous) => previous.id !== key.id),
+        )
+        throw new Error(
+          'Replacement was accepted, but its old-key deadline could not be read. Save the new key now, then Refresh API keys to review current handover metadata. Do not repeat replacement.',
+        )
       }
     })
   }
@@ -372,6 +487,14 @@ export function RuntimeKeys() {
         Owner and member keys manage the workspace. API keys call published
         endpoints and cannot open the dashboard or edit drafts.
       </p>
+      {keys.some((key) => key.replacesKeyId || key.replacedByKeyId) ? (
+        <p className="credential-note">
+          Replacement does not renew expiry. Approved overlaps end at a fixed
+          server deadline, while both keys still require current authority.
+          Refresh to review current handover records and completed windows.
+          Revoking one exact key does not revoke other linked keys.
+        </p>
+      ) : null}
       {selectedAccess ? (
         <p className="credential-note">
           Selected API keys require a current-release pin and retain their
@@ -719,6 +842,32 @@ export function RuntimeKeys() {
                   : ''}
               </p>
             ) : null}
+            {issuedRecord?.replacesKeyId ? (
+              <p className="field-help" style={{ overflowWrap: 'anywhere' }}>
+                New key ID: {issuedRecord.id}
+                <br />
+                Replaces key ID: {issuedRecord.replacesKeyId}
+                {issuedPredecessor ? (
+                  <>
+                    <br />
+                    Old key accepted until:{' '}
+                    <time dateTime={issuedPredecessor.acceptUntil}>
+                      {issuedPredecessor.acceptUntil}
+                    </time>
+                    <br />
+                    {issuedPredecessor.revokedAt
+                      ? 'The old key is revoked. Its caller access has ended.'
+                      : 'The old key may continue only until this fixed deadline and while current authority permits it. Revoke that exact old key to end acceptance sooner.'}
+                  </>
+                ) : deadlineReviewId === issuedRecord.replacesKeyId ? (
+                  <>
+                    <br />
+                    Old-key deadline is awaiting current metadata. Save the new
+                    key now; Refresh API keys if the deadline cannot be read.
+                  </>
+                ) : null}
+              </p>
+            ) : null}
           </div>
           <Input aria-label="New API key" readOnly value={issued} />
           <Button
@@ -740,6 +889,31 @@ export function RuntimeKeys() {
             I saved this API key
           </Button>
         </div>
+      ) : null}
+      {replacementOptions ? (
+        <KeyReplacementOptions
+          key={replacementOptions.id}
+          record={replacementOptions}
+          disabled={locked || replacementUnconfirmed}
+          onCancel={() => setReplacementOptions(null)}
+          onReplace={(graceSeconds) =>
+            replaceKey(replacementOptions, graceSeconds)
+          }
+        >
+          <p>
+            {releaseLabel(replacementOptions)} ·{' '}
+            {replacementOptions.permissions
+              .map((permission) => permissionLabels[permission])
+              .join(', ')}
+            <br />
+            Original expiry:{' '}
+            {new Date(replacementOptions.expiresAt).toLocaleString()}
+            <br />
+            {issuerLabel(replacementOptions, member)}
+            <br />
+            {tenantLabel(replacementOptions)}
+          </p>
+        </KeyReplacementOptions>
       ) : null}
       <div className="data-table">
         <table>
@@ -773,6 +947,41 @@ export function RuntimeKeys() {
                   {key.managedBy === 'load-test' ? (
                     <Badge variant="outline">Managed by load testing</Badge>
                   ) : null}
+                  {key.replacesKeyId || key.replacedByKeyId ? (
+                    <p
+                      className="field-help"
+                      style={{ overflowWrap: 'anywhere' }}
+                    >
+                      Key ID: {key.id}
+                      <br />
+                      {key.replacesKeyId ? (
+                        <>
+                          Replaces: {key.replacesKeyId}
+                          <br />
+                        </>
+                      ) : null}
+                      {key.replacedByKeyId ? (
+                        <>
+                          Replaced by: {key.replacedByKeyId}
+                          <br />
+                          {key.id === deadlineReviewId ? (
+                            'Old-key deadline is awaiting current metadata.'
+                          ) : (
+                            <>
+                              Accepted until:{' '}
+                              <time dateTime={key.acceptUntil}>
+                                {key.acceptUntil}
+                              </time>
+                              <br />
+                              This fixed deadline does not bypass current
+                              authority. Revoke this exact key to end acceptance
+                              sooner.
+                            </>
+                          )}
+                        </>
+                      ) : null}
+                    </p>
+                  ) : null}
                 </td>
                 <td>
                   {(readable
@@ -796,63 +1005,27 @@ export function RuntimeKeys() {
                   {!key.managedBy &&
                   !key.cleanupOnly &&
                   !key.revokedAt &&
+                  !key.replacedByKeyId &&
                   Date.parse(key.expiresAt) > Date.now() ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={locked}
-                      onClick={() => {
-                        if (locked) return
-                        if (
-                          !window.confirm(
-                            `Replace API key ${key.name}? The old key stops working immediately. The new key keeps the same API, permissions, ${key.issuerBinding ? 'member link, ' : ''}and expiry. Release access: ${releaseLabel(key)}.${key.issuerBinding ? ` ${issuerLabel(key, member)}.` : ''} Permissions: ${key.permissions.map((permission) => permissionLabels[permission]).join(', ')}. Expires: ${new Date(key.expiresAt).toLocaleString()}.${keyStatus(key) === 'Dormant' ? ' This key remains dormant until its pinned release is current again.' : ''}${key.issuerBinding ? ' The original member must still have its required action, API access and dependency USE.' : ''}${key.tenantId ? ` ${tenantLabel(key)}. Replacement keeps this identity and cannot retarget it after member reassignment.` : ''} Save the new key and update your caller.`,
-                          )
-                        )
-                          return
-
-                        perform(async (current) => {
-                          let replacement: RuntimeKey & { token: string }
-
-                          try {
-                            replacement = await api<
-                              RuntimeKey & { token: string }
-                            >(
-                              `/api/runtime-keys/${key.id}/rotate`,
-                              token,
-                              'POST',
-                            )
-                          } catch (reason) {
-                            const detail =
-                              reason instanceof Error
-                                ? reason.message
-                                : 'Request failed'
-
-                            throw new Error(
-                              `${detail}. Could not confirm key replacement. Refresh API keys before trying again. If the old key is revoked, create a new API key and update your caller.`,
-                            )
-                          }
-                          if (!current()) return
-                          const { token: secret, ...record } = replacement
-
-                          setIssued(secret)
-                          setIssuedRecord(record)
-                          setKeys((records) => [
-                            record,
-                            ...records.map((previous) =>
-                              previous.id === key.id
-                                ? { ...previous, revokedAt: record.createdAt }
-                                : previous,
-                            ),
-                          ])
-                          message(
-                            'API key replaced. Update your caller now; the old key no longer works.',
-                          )
-                        })
-                      }}
-                    >
-                      <RefreshCw />
-                      Replace key
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={locked || replacementUnconfirmed}
+                        onClick={() => replaceKey(key)}
+                      >
+                        <RefreshCw />
+                        Replace key
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={locked || replacementUnconfirmed}
+                        onClick={() => setReplacementOptions(key)}
+                      >
+                        Replacement options
+                      </Button>
+                    </>
                   ) : null}
                   {!key.revokedAt ? (
                     <Button
@@ -865,7 +1038,7 @@ export function RuntimeKeys() {
                           !window.confirm(
                             key.managedBy === 'load-test'
                               ? 'Revoke this temporary load test key? Remaining requests from this run will be rejected.'
-                              : `Revoke API key ${key.name}? Existing callers will lose access.`,
+                              : `Revoke API key ${key.name}? Existing callers will lose access. Key ID: ${key.id}. API ID: ${key.flowId}.${key.replacesKeyId || key.replacedByKeyId ? ' Only this exact key is revoked. Other linked keys are not revoked.' : ''}`,
                           )
                         )
                           return

@@ -29,6 +29,7 @@ import {
   runtimeRowPrincipal,
 } from './row-authority'
 import { activeTenant } from './tenants'
+import { assertRolloverGraph, keyWindow } from './key-rollover'
 import {
   builtinPermissions,
   permissionCatalog,
@@ -75,6 +76,9 @@ export type RuntimeKey = {
   releaseRevision: number | null
   permissions: RuntimePermission[]
   expiresAt: string
+  acceptUntil: string
+  replacesKeyId: string | null
+  replacedByKeyId: string | null
   createdAt: string
   revokedAt: string | null
   issuerBinding: {
@@ -98,9 +102,34 @@ type RuntimeKeyRow = {
   issuer_member_id: string | null
   issuer_action: 'runtime-keys.manage' | 'load-tests.run' | null
   tenant_id: string | null
+  rollover_accept_until: string | null
+  replaces_key_id: string | null
+  replaced_by_key_id: string | null
+  rollover_created_at: string | null
+  rollover_grace_seconds: number | null
+  rollover_scope: string
+  predecessor_scope: string | null
+  successor_scope: string | null
+  successor_created_at: string | null
 }
 
+const runtimeKeyScope = (
+  table: string,
+) => `json_array(${table}.name, ${table}.flow_id, ${table}.permissions, ${table}.expires_at,
+  ${table}.release_revision, ${table}.issuer_member_id, ${table}.issuer_action, ${table}.tenant_id)`
+const runtimeKeyColumns = `runtime_keys.id, name, flow_id, release_revision, permissions, expires_at, runtime_keys.created_at, revoked_at,
+  issuer_member_id, issuer_action, tenant_id, incoming.previous_key_id AS replaces_key_id,
+  outgoing.next_key_id AS replaced_by_key_id, outgoing.accept_until AS rollover_accept_until,
+  outgoing.created_at AS rollover_created_at, outgoing.grace_seconds AS rollover_grace_seconds,
+  ${runtimeKeyScope('runtime_keys')} AS rollover_scope,
+  (SELECT ${runtimeKeyScope('previous')} FROM runtime_keys previous WHERE previous.id = incoming.previous_key_id) AS predecessor_scope,
+  (SELECT ${runtimeKeyScope('following')} FROM runtime_keys following WHERE following.id = outgoing.next_key_id) AS successor_scope,
+  (SELECT created_at FROM runtime_keys following WHERE following.id = outgoing.next_key_id) AS successor_created_at`
+const runtimeKeyJoins = `LEFT JOIN runtime_key_rollovers incoming ON incoming.next_key_id = runtime_keys.id
+  LEFT JOIN runtime_key_rollovers outgoing ON outgoing.previous_key_id = runtime_keys.id`
+
 function runtimeKey(row: RuntimeKeyRow): RuntimeKey {
+  const window = keyWindow(row)
   if (
     (row.issuer_member_id !== null || row.issuer_action !== null) &&
     (typeof row.issuer_member_id !== 'string' ||
@@ -118,6 +147,9 @@ function runtimeKey(row: RuntimeKeyRow): RuntimeKey {
     releaseRevision: row.release_revision,
     permissions: JSON.parse(row.permissions),
     expiresAt: row.expires_at,
+    acceptUntil: window.acceptUntil,
+    replacesKeyId: window.replacesKeyId,
+    replacedByKeyId: window.replacedByKeyId,
     createdAt: row.created_at,
     revokedAt: row.revoked_at,
     tenantId: row.tenant_id,
@@ -583,6 +615,21 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 20').get()) {
+      db.run(`CREATE TABLE runtime_key_rollovers (
+        previous_key_id TEXT PRIMARY KEY REFERENCES runtime_keys(id),
+        next_key_id TEXT NOT NULL UNIQUE REFERENCES runtime_keys(id),
+        created_at TEXT NOT NULL,
+        accept_until TEXT NOT NULL,
+        grace_seconds INTEGER NOT NULL CHECK(typeof(grace_seconds) = 'integer' AND grace_seconds BETWEEN 0 AND 300),
+        CHECK(previous_key_id != next_key_id)
+      )`)
+      query('INSERT INTO migrations VALUES (20, ?, ?)').run(
+        'coordinated runtime key rollover with fixed grace deadlines',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -613,6 +660,24 @@ export function openStore(path: string, adminToken?: string) {
       }
     }
   })()
+
+  try {
+    // Validate historical topology once; admission only checks indexed adjacent endpoints.
+    assertRolloverGraph(
+      query<{ previous_key_id: string; next_key_id: string }, []>(
+        'SELECT previous_key_id, next_key_id FROM runtime_key_rollovers',
+      ).all(),
+      query<
+        RuntimeKeyRow,
+        []
+      >(`SELECT ${runtimeKeyColumns} FROM runtime_keys ${runtimeKeyJoins}
+        WHERE incoming.previous_key_id IS NOT NULL OR outgoing.next_key_id IS NOT NULL`).all(),
+    )
+  } catch (error) {
+    for (const statement of statements.values()) statement.finalize()
+    db.close()
+    throw error
+  }
 
   const audit = (actor: string, action: string, resource: string) => {
     query(
@@ -881,7 +946,7 @@ export function openStore(path: string, adminToken?: string) {
 
   function keyRow(id: string) {
     const row = query<RuntimeKeyRow, [string]>(
-      'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action, tenant_id FROM runtime_keys WHERE id = ?',
+      `SELECT ${runtimeKeyColumns} FROM runtime_keys ${runtimeKeyJoins} WHERE runtime_keys.id = ?`,
     ).get(id)
     if (!row) throw new ApiError(404, 'Runtime key not found')
     return row
@@ -936,7 +1001,7 @@ export function openStore(path: string, adminToken?: string) {
 
   function keyCleanupOnly(member: Member | undefined, key: RuntimeKey) {
     if (!key.tenantId) return false
-    if (key.revokedAt || Date.parse(key.expiresAt) <= Date.now()) return true
+    if (key.revokedAt || Date.parse(key.acceptUntil) <= Date.now()) return true
     if (
       member &&
       member.role !== 'owner' &&
@@ -969,17 +1034,18 @@ export function openStore(path: string, adminToken?: string) {
       assertKeyAccess(member, runtimeKey(keyRow(id)))
     },
     checkRuntimeAuthority(key: RuntimeKey, definition: Flow) {
-      if (
-        key.issuerBinding === null &&
-        key.tenantId === null &&
-        flowTransport(definition) !== 'websocket' &&
-        !protectedShape({ db, query }, definition).required
-      )
-        return
       db.transaction(() => {
-        const current = runtimeKey(keyRow(key.id))
-        if (current.revokedAt || Date.parse(current.expiresAt) <= Date.now())
+        const row = keyRow(key.id)
+        if (!keyWindow(row).accepted)
           throw new ApiError(401, 'Authentication required')
+        const current = runtimeKey(row)
+        if (
+          current.issuerBinding === null &&
+          current.tenantId === null &&
+          flowTransport(definition) !== 'websocket' &&
+          !protectedShape({ db, query }, definition).required
+        )
+          return
         issuerAuthority(current, definition)
       })()
     },
@@ -1334,7 +1400,7 @@ export function openStore(path: string, adminToken?: string) {
     listRuntimeKeys(member?: Member) {
       const selected = member?.access.mode === 'selected'
       return query<RuntimeKeyRow & { managed: number }>(
-        `SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action, tenant_id, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys WHERE 1 = 1 ${selected ? 'AND issuer_member_id IS NOT NULL AND flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)' : ''} ${member && member.role !== 'owner' ? 'AND (tenant_id IS NULL OR issuer_member_id = ? OR (issuer_member_id IS NOT NULL AND tenant_id = ?))' : ''} ORDER BY rowid DESC`,
+        `SELECT ${runtimeKeyColumns}, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys ${runtimeKeyJoins} WHERE 1 = 1 ${selected ? 'AND issuer_member_id IS NOT NULL AND flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)' : ''} ${member && member.role !== 'owner' ? 'AND (tenant_id IS NULL OR issuer_member_id = ? OR (issuer_member_id IS NOT NULL AND tenant_id = ?))' : ''} ORDER BY runtime_keys.rowid DESC`,
       )
         .all(
           ...(selected ? [member!.id] : []),
@@ -1408,6 +1474,9 @@ export function openStore(path: string, adminToken?: string) {
         releaseRevision: value.releaseRevision ?? null,
         permissions: value.permissions,
         expiresAt: new Date(expiration).toISOString(),
+        acceptUntil: new Date(expiration).toISOString(),
+        replacesKeyId: null,
+        replacedByKeyId: null,
         createdAt: new Date(now).toISOString(),
         revokedAt: null,
         issuerBinding: null,
@@ -1480,7 +1549,12 @@ export function openStore(path: string, adminToken?: string) {
 
       return { ...key, token }
     },
-    rotateRuntimeKey(actor: string, id: string, currentMember?: CurrentMember) {
+    rotateRuntimeKey(
+      actor: string,
+      id: string,
+      currentMember?: CurrentMember,
+      graceSeconds = 0,
+    ) {
       return db
         .transaction(() => {
           const row = keyRow(id)
@@ -1492,6 +1566,17 @@ export function openStore(path: string, adminToken?: string) {
           )
             throw new ApiError(409, 'Load test keys are managed automatically')
 
+          if (row.replaced_by_key_id !== null)
+            throw new ApiError(409, 'This key already has a replacement')
+          if (
+            row.replaces_key_id !== null &&
+            keyWindow(keyRow(row.replaces_key_id)).accepted
+          )
+            throw new ApiError(
+              409,
+              'The previous key still has an approved overlap window. Revoke it explicitly or wait for its deadline.',
+            )
+
           const now = Date.now()
           if (
             row.revoked_at ||
@@ -1502,12 +1587,30 @@ export function openStore(path: string, adminToken?: string) {
               409,
               'Only active, unexpired runtime keys can be replaced',
             )
+          if (
+            !Number.isInteger(graceSeconds) ||
+            graceSeconds < 0 ||
+            graceSeconds > 300
+          )
+            throw new ApiError(
+              400,
+              'Choose a grace period from zero to 300 seconds',
+            )
+          const acceptUntil = now + graceSeconds * 1000
+          if (acceptUntil > Date.parse(row.expires_at))
+            throw new ApiError(
+              400,
+              'The requested grace period exceeds the original key expiration',
+            )
 
           const key: RuntimeKey = {
             ...runtimeKey(row),
             id: crypto.randomUUID(),
             createdAt: new Date(now).toISOString(),
             revokedAt: null,
+            replacesKeyId: id,
+            replacedByKeyId: null,
+            acceptUntil: row.expires_at,
           }
           const definition =
             key.releaseRevision === null
@@ -1559,12 +1662,23 @@ export function openStore(path: string, adminToken?: string) {
           }
           const token = `besh_${randomBytes(32).toString('base64url')}`
 
-          query('UPDATE runtime_keys SET revoked_at = ? WHERE id = ?').run(
-            key.createdAt,
-            id,
-          )
-          audit(actor, 'runtime-key.revoked', id)
+          if (graceSeconds === 0) {
+            query('UPDATE runtime_keys SET revoked_at = ? WHERE id = ?').run(
+              key.createdAt,
+              id,
+            )
+            audit(actor, 'runtime-key.revoked', id)
+          }
           insertRuntimeKey(actor, key, token)
+          query('INSERT INTO runtime_key_rollovers VALUES (?, ?, ?, ?, ?)').run(
+            id,
+            key.id,
+            key.createdAt,
+            new Date(acceptUntil).toISOString(),
+            graceSeconds,
+          )
+          if (graceSeconds > 0)
+            audit(actor, 'runtime-key.rollover-scheduled', id)
 
           return { ...key, token }
         })
@@ -1605,14 +1719,15 @@ export function openStore(path: string, adminToken?: string) {
     },
     authenticateRuntime(token: string): RuntimeKey | null {
       const row = query<RuntimeKeyRow, [string]>(
-        'SELECT id, name, flow_id, release_revision, permissions, expires_at, created_at, revoked_at, issuer_member_id, issuer_action, tenant_id FROM runtime_keys WHERE token_hash = ?',
+        `SELECT ${runtimeKeyColumns} FROM runtime_keys ${runtimeKeyJoins} WHERE token_hash = ?`,
       ).get(hashToken(token))
 
       if (
         !row ||
         row.revoked_at ||
         !Number.isFinite(Date.parse(row.expires_at)) ||
-        Date.parse(row.expires_at) <= Date.now()
+        Date.parse(row.expires_at) <= Date.now() ||
+        !keyWindow(row).accepted
       )
         return null
 
@@ -1629,7 +1744,8 @@ export function openStore(path: string, adminToken?: string) {
       if (
         row.revoked_at ||
         !Number.isFinite(Date.parse(row.expires_at)) ||
-        Date.parse(row.expires_at) <= Date.now()
+        Date.parse(row.expires_at) <= Date.now() ||
+        !keyWindow(row).accepted
       )
         return null
       return runtimeKey(row)

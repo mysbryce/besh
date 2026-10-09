@@ -9,7 +9,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [Workspace roles and permissions](roles.md): built-in/custom roles, selected API actions, typed dependency USE, issuer bindings, member assignment, and current server checks.
 - [Tenant rows and API fields](row-protection.md): owner-assigned identity, protected read-only adapters, resource-wide allowed fields, credential privacy, and backup boundaries.
 - [WebSocket APIs](websockets.md): typed request/reply forms, exact generated routes, browser/native authentication, current authority, connection bounds, and recovery.
-- [Runtime API keys](api-keys.md): create, use, pin, replace, revoke, review live issuer authority, save one-time tokens, and recover unconfirmed actions.
+- [Runtime API keys](api-keys.md): create, use, pin, replace with optional overlap, revoke exact keys, save one-time tokens, and recover unconfirmed actions.
 - [Published backend code](runtime-code.md): generated modules, registered routes, source inspection, runtime checks, and recovery.
 - [Client code examples](client-code.md): eight server-side targets, saved-source selection, typed inputs, dependencies, and copied-code limits.
 - [REST routes and release history](api-routes.md): path parameters, explicit version prefixes, overlapping routes, release inspection, and rollback boundaries.

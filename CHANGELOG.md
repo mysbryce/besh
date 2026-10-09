@@ -4,6 +4,26 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.14.0-alpha.0 — 2026-10-09
+
+### Added
+
+- Optional runtime-key handover with a fixed server deadline of up to five minutes; immediate replacement remains the default.
+- Beginner replacement options, explicit overlap review, full linked-key identifiers, and one-time replacement receipts.
+- Migration 20 and backup-restored rollover lineage, preserving each original expiry, grant, release pin, issuer, and tenant.
+
+### Security
+
+- Check both credentials independently against current authority and permit at most two eligible credentials in each rollover chain.
+- Bind WebSocket tickets, active connections, and product-login completion to their original credential and acceptance window.
+- Reject malformed or inconsistent lineage at startup and use bounded adjacent checks during requests; restore never renews a deadline.
+
+### Fixed
+
+- Require explicit inventory refresh after an unconfirmed replacement instead of displaying stale active status or retrying issuance.
+- Preserve a received one-time secret when the following metadata refresh fails, and revoke only the exact reviewed key.
+- Keep replacement timing and duration labels on separate readable rows on narrow screens.
+
 ## 0.13.0-alpha.0 — 2026-10-09
 
 ### Added

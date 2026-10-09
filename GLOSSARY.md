@@ -63,7 +63,9 @@
 - **Following key**: a runtime key with no release pin; it accepts the flow's current published revision.
 - **Release-pinned key**: a runtime key bound to one graph revision; it accepts that revision only while it is the current publication, without executing an archived release.
 - **Dormant key**: an unexpired, unrevoked pinned key whose revision is not currently published; selecting its exact revision again can restore caller access.
-- **Key replacement**: a key-management-authorized action that atomically revokes an active runtime key and issues a new key with the same name, flow, grants, release pin or following mode, issuer binding, tenant identity, and exact expiration; the new token appears once and there is no grace period.
+- **Key replacement**: an authorized atomic action issuing a new runtime credential with unchanged name, flow, grants, pin, issuer, tenant, and original expiration; the new token appears once. Immediate replacement is the default.
+- **Key overlap**: an explicitly approved fixed window of at most five minutes during which the original and replacement credentials may both pass their current authority checks; the deadline never renews on restart or restore.
+- **Rollover lineage**: the immutable previous/next key links for a replacement chain; a live previous window blocks another successor replacement until its deadline or explicit revocation.
 - **Runtime grant**: permission to invoke an entire REST request, GraphQL query/mutation, or WebSocket request/reply operation; it does not filter fields or records.
 - **Audit event**: a record of who performed an action, when, and on which resource.
 - **Migration**: a versioned change to a database schema.

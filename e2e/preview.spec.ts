@@ -12,6 +12,7 @@ import { scopedActionsPreviews } from './scoped-actions-preview'
 import { tenantProtectionPreviews } from './tenant-protection-preview'
 import { websocketPreviews } from './websocket-preview'
 import { fieldAccessPreviews } from './field-access-preview'
+import { keyRolloverPreviews } from './key-rollover-preview'
 
 test('preview every current page and its actions', async ({
   page,
@@ -4088,6 +4089,12 @@ test('preview every current page and its actions', async ({
     capture,
   })
   await fieldAccessPreviews({
+    page,
+    owner,
+    apiOrigin: new URL(page.url()).origin,
+    capture,
+  })
+  await keyRolloverPreviews({
     page,
     owner,
     apiOrigin: new URL(page.url()).origin,

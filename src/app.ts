@@ -1020,17 +1020,21 @@ export function createApp(options: AppOptions) {
     })
     .post('/runtime-keys/:id/rotate', ({ member, params, body, request }) => {
       requirePermission(member, 'runtime-keys.manage')
-      if (
-        body !== undefined &&
-        (body === null ||
-          typeof body !== 'object' ||
-          Array.isArray(body) ||
-          Object.keys(body).length > 0)
-      )
-        throw new ApiError(400, 'Replacement does not accept settings')
+      const settings = z
+        .object({ graceSeconds: z.number().int().min(0).max(300).default(0) })
+        .strict()
+        .safeParse(body === undefined ? {} : body)
+      if (!settings.success)
+        throw new ApiError(
+          400,
+          'Choose a whole-number handover time from 0 to 300 seconds',
+        )
 
-      return store.rotateRuntimeKey(member.id, params.id, () =>
-        currentMember(request),
+      return store.rotateRuntimeKey(
+        member.id,
+        params.id,
+        () => currentMember(request),
+        settings.data.graceSeconds,
       )
     })
     .get('/migrations', ({ member }) => {

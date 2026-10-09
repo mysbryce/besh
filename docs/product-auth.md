@@ -39,6 +39,8 @@ Built-in editors can generate and test a draft but cannot change provider creden
 
 Selected access requires connection **USE** for existing authorized APIs. Structural choices expose only connection identity/provider, not OAuth settings or secrets. USE permits the API's product-login step; it does not grant connection management, new draft generation, a product session, or tenant authorization. Issuer-bound runtime keys retain their original issuer/action during rotation and recheck authority before/after provider work and final results. See [selected actions and USE](roles.md#selected-api-actions-and-dependency-use); this does not add provider verification.
 
+Runtime-key handover is implemented in 0.14. Pending published attempts keep the original `runtime:<keyId>` scope; the successor cannot complete them. Positive grace permits the predecessor to complete its own attempt only before its fixed `acceptUntil` and original expiration, with current authority intact. A delayed exchange rechecks the original key before returning identity, so completing provider work does not authorize an identity after that window ends. Begin new attempts with the successor and discard expired original proofs; there is no proof transfer or automatic replay. See [key handover](api-keys.md#replace-an-active-or-dormant-key).
+
 The two actions use the same generated endpoint and the same runtime key:
 
 1. When the user selects GitHub login, your product server sends `BEGIN` to Besh.
@@ -127,7 +129,7 @@ The template does not return a GitHub access token or client secret, create a pr
 ## Security and lifecycle
 
 - BEGIN uses GitHub's authorization-code flow with S256 PKCE and the `read:user` scope. Besh fetches only fixed GitHub token/profile endpoints. An entire exchange has a five-second deadline, each provider response is limited to 64 KiB, and at most four exchanges run at once. See [GitHub's authorization guide](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps).
-- State and proof are stored as hashes. The PKCE verifier is encrypted. An attempt expires after ten minutes and is bound to its flow, revision, runtime key or draft-testing member, and connection version.
+- State and proof are stored as hashes. The PKCE verifier is encrypted. An attempt expires after ten minutes and is bound to its flow, revision, runtime key or draft-testing member, and connection version. A runtime attempt additionally requires that exact key's current credential window; its ten-minute receipt does not extend a replacement deadline or key expiration.
 - At most ten pending attempts exist for a credential and flow, with a thousand across the workspace. Flows allow one social node, and a selected OAuth mutation operation allows one login root call. Extra attempts or concurrent exchanges return 429; rejected graph/operation shapes cannot execute login.
 - A valid completion consumes its attempt before calling GitHub. Reuse, mismatched proof, expiry, changed connection, or a different key/revision fails. Provider errors return a generic failure without provider tokens or payloads.
 - Updating a connection increments its version and invalidates pending attempts. Published graphs keep immutable routes, rules, and connection references; they read current connection credentials. A connection used by a draft or release cannot be deleted.

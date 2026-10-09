@@ -31,6 +31,10 @@ The product server keeps its runtime key private and authorizes the recipient be
 2. Receive `{ ticket, expiresAt, revision, path, protocol: 'besh.ws.v1' }`. The opaque nonce expires within 30 seconds, or earlier with the original key. Only its hash is stored.
 3. Give the ticket to the authorized browser. Keep it in memory and offer subprotocols `besh.ws.v1` and `besh.ticket.<ticket>`. The response selects only `besh.ws.v1`.
 
+Runtime-key handover is implemented in 0.14. A positive replacement grace retains the original key only until its fixed `acceptUntil`, subject to earlier revocation and current pin/issuer/tenant/resource authority. A newly minted ticket expires no later than that cutoff. A ticket minted before replacement may have a later receipt expiry, but upgrade still rechecks the original key's current window and denies after the new cutoff. Neither a ticket nor a connected socket transfers to the successor key ID.
+
+Existing original-key sockets retain frame, asynchronous/final-send, and bounded idle-sweep checks. At or after their key's cutoff they stop and close, canceling pending readers; the grace clock is never extended by traffic or restart. Obtain a new ticket and connection with the successor. Revoking a key ends only that exact key's authority, not its linked neighbor. Queued/delivered bytes cannot be recalled. See [key handover and recovery](api-keys.md#replace-an-active-or-dormant-key).
+
 No token in the URL, query, fragment, storage, copied source, or audit payload. Upgrades reject query fields. Consumption is atomic in shared SQLite: one native peer wins; replay denies. Wrong Origin, wrong family/release, malformed/duplicate protocols, missing original proof, and invalid explicit Authorization deny. Explicit Authorization chooses bearer mode and never falls back to a ticket or cookie. A quota-denied attempt does not consume the ticket.
 
 A ticket delegates the original key's entire flow/tenant authority. It is not a product session or proof of the recipient's identity. A stolen unused ticket can win its race. Recipient authorization belongs to the product server; the broker must not distribute tickets publicly.

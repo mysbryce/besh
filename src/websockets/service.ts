@@ -350,7 +350,7 @@ export function websocketService(
           path: `/ws${release.definition.path}`,
           tenantId: key.tenantId,
           proof: { kind: 'runtime', keyId: key.id },
-          expiresAt: Date.parse(key.expiresAt),
+          expiresAt: Date.parse(key.acceptUntil),
           actor: `runtime:${key.id}`,
         }
       })
