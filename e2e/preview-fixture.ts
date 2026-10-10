@@ -40,6 +40,8 @@ export const test = base.extend<{ previewWorkspace: Workspace }>({
         ...process.env,
         PORT: String(port),
         BESH_WEB_URL: origin,
+        BESH_PREVIEW_GOOGLE_SOURCE:
+          story === 'management-data-source-google' ? '1' : '',
         BESH_ADMIN_TOKEN: story === 'core' ? '' : owner,
         BESH_SETUP_KEY: setupKey,
         BESH_DATABASE_PATH: join(directory, 'workspace', 'besh.sqlite'),

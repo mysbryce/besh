@@ -1,4 +1,24 @@
 const messages: Record<string, string> = {
+  'Delete data source': '删除数据源',
+  'Data sources used by a draft or published API cannot be deleted.':
+    '草稿 API 或当前已发布 API 使用的数据源无法删除。',
+  'Delete data source {source}? This cannot be undone.':
+    '删除数据源 {source}？此操作无法撤销。',
+  'Data source deleted.': '数据源已删除。',
+  'Google Sheets link': 'Google 表格链接',
+  'Import Google Sheet': '导入 Google 表格',
+  'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.':
+    '请将表格设为任何拥有链接的人都可查看。我们保存当前数据行；只有刷新已保存数据时才会导入更改。对于私密表格，请改为上传 Excel 或 CSV。',
+  'Open Google Sheet': '打开 Google 表格',
+  'Refresh saved data': '刷新已保存数据',
+  'This is a saved snapshot. Refresh imports changes from Google Sheets for APIs using this source.':
+    '这是已保存的数据快照。刷新会从 Google 表格导入更改，供使用此数据源的 API 读取。',
+  'Refresh saved data for {source}? APIs using this source will read the new Google Sheets snapshot.':
+    '刷新 {source} 的已保存数据？使用此数据源的 API 将读取新的 Google 表格快照。',
+  'Google Sheet refreshed. Your APIs now use the saved data.':
+    'Google 表格已刷新。您的 API 现在使用已保存的数据。',
+  'Manage data sources access is needed to import or change saved rows.':
+    '需要管理数据源权限才能导入或更改已保存的数据行。',
   'Replacement spreadsheet': '用于替换的电子表格',
   'Replace spreadsheet': '替换电子表格',
   'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':

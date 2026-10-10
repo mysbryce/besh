@@ -2,6 +2,10 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.20.5: saved-source provider and deletion languages
+
+Public Google Sheets import, manual refresh and source deletion add 13 trusted messages across all seven languages, with 637 aligned dictionary keys. Separate public RED/GREEN journeys preserve authored data, explicit confirmation, pending controls, current-language completion and current member grants. Actual saved snapshots, provider failure, current draft/publication deletion guards, successful deletion and metadata-only audit passed. Only external Google CSV bytes are simulated; private-sheet sign-in and native-speaker review remain separate. Local checks passed 361 backend cases, 6,368 assertions, all 51 browser cases, types, build and formatting. The complete gallery contains 1,120 images and 36 receipts; all 39 new originals and eight affected legacy originals passed review, with 25 lossless phone/panel sections. Exact-head and post-merge CI remain separate gates. See [languages](localization.md) and [testing](testing.md).
+
 ## Delivered in 0.19.0-alpha.0: portable Windows
 
 The [Windows portable prerelease](https://github.com/mysbryce/besh/releases/tag/v0.19.0-alpha.0) is public. PR #8 merged at `8e5ef68ced9f631d6eff7b5a005180bbee8745d8` after exact-head and main CI passed all three jobs. All seven uploaded assets were downloaded and matched staged SHA-256 hashes and byte counts; the downloaded portable ZIP's 689 payload files passed inventory verification. Final packaged CLI, offline notice export and real browser setup/sign-in/save/test/publish/runtime acceptance passed three cases and 779 assertions. See [release receipt](releases.md#portable-prerelease-delivery--0190-alpha0) and [testing](testing.md).
@@ -308,13 +312,13 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 ## Next Steps
 
-The maintainer approved the English [product film](product-video.md) and its README placement on 2026-10-10. Keep `marketing/` local and ignored; Git receives the final MP4 under `docs/assets`. Continue spreadsheet-provider refresh and deletion localization through their public journeys. The presentation does not execute the backend or certify production capacity.
+The maintainer-approved English [product film](product-video.md) and README link reached main through [PR #13](https://github.com/mysbryce/besh/pull/13), with all three head/main CI jobs passing. Keep `marketing/` local and ignored; Git receives the final MP4 under `docs/assets`. The presentation does not execute the backend or certify production capacity.
 
 Keep the requested [platform stages and public acceptance gates](platform-plan.md) linked to each new milestone. Media/CMS/Structs, adapter breadth, product providers and payments remain planned. No reference framework is installed by this plan.
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-Basic CSV-import, uploaded replacement and spreadsheet API-generation localization passed their public journeys and complete local delivery checks. Next translate provider refresh and deletion through separate public journeys, preserving explicit confirmation, saved snapshots and current grants. Advanced protection, number/date formatting and native-speaker review remain separate. Preserve portable platform/browser/notice limits; native load-test shutdown needs separate evidence before any process-drain claim.
+Basic CSV import, uploaded replacement, spreadsheet API generation, public Google Sheets refresh and source deletion passed their separate public language journeys and combined local delivery checks. Next translate source status/version/date and manual list refresh through a public journey. Advanced protection, broader number/date formatting and native-speaker review remain separate. Preserve portable platform/browser/notice limits; native load-test shutdown needs separate evidence before any process-drain claim.
 
 Continue data-source/database panels, backups and advanced sharing/protection languages through separate public journeys. Technical errors, remaining dynamic completion notices and native-speaker review remain separate. Basic Studio translation is complete in 0.18.4; member/role translation is complete in 0.18.3; account/session and update settings are complete in 0.18.2. Date/number formatting outside account/update screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
 

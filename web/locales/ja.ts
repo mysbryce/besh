@@ -1,4 +1,24 @@
 const messages: Record<string, string> = {
+  'Delete data source': 'データソースを削除',
+  'Data sources used by a draft or published API cannot be deleted.':
+    '下書きまたは現在公開中の API が使用しているデータソースは削除できません。',
+  'Delete data source {source}? This cannot be undone.':
+    'データソース {source} を削除しますか？この操作は元に戻せません。',
+  'Data source deleted.': 'データソースを削除しました。',
+  'Google Sheets link': 'Google スプレッドシートのリンク',
+  'Import Google Sheet': 'Google スプレッドシートをインポート',
+  'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.':
+    'リンクを知っている全員が閲覧できるようにシートを共有してください。現在の行を保存し、保存済みデータを更新したときだけ変更を取り込みます。非公開のシートは Excel または CSV をアップロードしてください。',
+  'Open Google Sheet': 'Google スプレッドシートを開く',
+  'Refresh saved data': '保存済みデータを更新',
+  'This is a saved snapshot. Refresh imports changes from Google Sheets for APIs using this source.':
+    'これは保存済みデータのスナップショットです。更新すると Google スプレッドシートの変更を取り込み、このデータソースを使用する API に反映します。',
+  'Refresh saved data for {source}? APIs using this source will read the new Google Sheets snapshot.':
+    '{source} の保存済みデータを更新しますか？このデータソースを使用する API は新しい Google スプレッドシートのスナップショットを読み取ります。',
+  'Google Sheet refreshed. Your APIs now use the saved data.':
+    'Google スプレッドシートを更新しました。API は保存済みデータを使用するようになりました。',
+  'Manage data sources access is needed to import or change saved rows.':
+    '保存済みの行をインポートまたは変更するには、データソースの管理権限が必要です。',
   'Replacement spreadsheet': '置き換え用スプレッドシート',
   'Replace spreadsheet': 'スプレッドシートを置き換え',
   'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':

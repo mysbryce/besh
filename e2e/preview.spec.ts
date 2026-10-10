@@ -40,6 +40,8 @@ import { studioWebsocketLocalePreviews } from './studio-websocket-locale-preview
 import { dataSourceImportLocalePreviews } from './data-source-locale-previews'
 import { dataSourceReplacementLocalePreviews } from './data-source-replacement-locale-previews'
 import { dataApiLocalePreviews } from './data-api-locale-previews'
+import { dataSourceGoogleLocalePreviews } from './data-source-google-locale-previews'
+import { dataSourceDeleteLocalePreviews } from './data-source-delete-locale-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
@@ -4273,6 +4275,8 @@ for (const story of previewStories) {
     story.id === 'management-studio-websocket' ||
     story.id === 'management-data-source-import' ||
     story.id === 'management-data-source-replacement' ||
+    story.id === 'management-data-source-google' ||
+    story.id === 'management-data-source-deletion' ||
     story.id === 'management-data-api-generation'
   )
     continue
@@ -4313,6 +4317,8 @@ for (const [story, locale, helper] of [
     dataSourceReplacementLocalePreviews,
   ],
   ['management-data-api-generation', 'en-US', dataApiLocalePreviews],
+  ['management-data-source-google', 'en-US', dataSourceGoogleLocalePreviews],
+  ['management-data-source-deletion', 'en-US', dataSourceDeleteLocalePreviews],
 ] as const) {
   test.describe(story, () => {
     test.use({ locale })

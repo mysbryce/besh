@@ -1,4 +1,24 @@
 const messages: Record<string, string> = {
+  'Delete data source': 'Excluir fonte de dados',
+  'Data sources used by a draft or published API cannot be deleted.':
+    'Fontes de dados usadas por um rascunho ou uma API atualmente publicada não podem ser excluídas.',
+  'Delete data source {source}? This cannot be undone.':
+    'Excluir a fonte de dados {source}? Esta ação não pode ser desfeita.',
+  'Data source deleted.': 'Fonte de dados excluída.',
+  'Google Sheets link': 'Link da Planilha Google',
+  'Import Google Sheet': 'Importar Planilha Google',
+  'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.':
+    'Compartilhe a planilha para que qualquer pessoa com o link possa vê-la. Salvamos as linhas atuais; alterações só são importadas quando você atualiza os dados salvos. Para uma planilha privada, envie Excel ou CSV.',
+  'Open Google Sheet': 'Abrir Planilha Google',
+  'Refresh saved data': 'Atualizar dados salvos',
+  'This is a saved snapshot. Refresh imports changes from Google Sheets for APIs using this source.':
+    'Esta é uma cópia salva dos dados. Atualizar importa alterações da Planilha Google para as APIs que usam esta fonte.',
+  'Refresh saved data for {source}? APIs using this source will read the new Google Sheets snapshot.':
+    'Atualizar os dados salvos de {source}? As APIs que usam esta fonte lerão a nova cópia da Planilha Google.',
+  'Google Sheet refreshed. Your APIs now use the saved data.':
+    'Planilha Google atualizada. Suas APIs agora usam os dados salvos.',
+  'Manage data sources access is needed to import or change saved rows.':
+    'É necessária permissão para gerenciar fontes de dados para importar ou alterar linhas salvas.',
   'Replacement spreadsheet': 'Planilha de substituição',
   'Replace spreadsheet': 'Substituir planilha',
   'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':

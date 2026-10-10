@@ -1,5 +1,6 @@
 import { resolve, sep } from 'node:path'
 import { createApp } from '../src/app'
+import { googleSourceFetch } from './google-source-server'
 
 const port = Number(process.env.PORT)
 const origin = `http://127.0.0.1:${port}`
@@ -19,6 +20,10 @@ const server = createApp({
   authOrigin: origin,
   k6BinaryPath: process.env.BESH_K6_PATH,
   k6CacheDir: process.env.BESH_K6_CACHE_DIR,
+  sheetFetch:
+    process.env.BESH_PREVIEW_GOOGLE_SOURCE === '1'
+      ? googleSourceFetch()
+      : undefined,
   // Preserve the existing preview's external-provider simulation. All Besh
   // authentication, routes, execution, storage and browser traffic are real.
   oauthFetch: async (url) => {
