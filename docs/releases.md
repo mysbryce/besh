@@ -4,13 +4,23 @@ Besh stays below `1.0.0` until the project is ready and the maintainer explicitl
 
 Every completed change delivery gets a new version in `package.json` and an entry in [CHANGELOG.md](../CHANGELOG.md), in the same tested commit. Work in progress does not need a version change after every edit.
 
-## Rich-text candidate verification — 0.23.0-alpha.0
+## Private HTML candidate verification — 0.24.0-alpha.0
+
+The fresh local browser command passes all 71 cases in 233.66 seconds. The promoted gallery contains 1,283 PNGs and 47 complete story receipts; scoped review links all 22 new and eight affected originals to their promoted SHA-256 values. Both earlier blank-iframe capture attempts remain recorded in [testing](testing.md#private-html-preview--active-024-work).
+
+The freshly compiled Windows candidate passes ten portable cases/1,103 assertions across eight files in 100.41 seconds, with a 100.51-second wrapper (`.cache/rich-text-html-portable.log`). Its actual copied-executable dashboard generates saved version-two, version-one and reviewed heading HTML through three real HTTP requests while retaining collection, entry and audit state. Default reconciliation verifies 713 original notice files, 276 components and 77 observed npm components, with no additional scopes or blockers; no original notice bytes are changed.
+
+Metadata records version `0.24.0-alpha.0`, Bun `1.4.2`, source base `d33c6bc` and `clean: false`, identifying the local working-tree candidate. Final core passes types, all 397 backend cases/8,426 assertions, production build and formatting. Actual source packaging and hosted delivery checks remain pending. No release tag or new public executable asset is published.
+
+## Structured rich-text delivery — 0.23.0-alpha.0
+
+[PR #20](https://github.com/mysbryce/besh/pull/20) merged reviewed head `a78f6186d18f16bfe0777fef0eb45ed4cb2d2989` by normal squash as main `d33c6bcfb43d72e6912f8de80649c5d572c4c909`. Both trees match `4d8bb1ec2392773a50af4e1ec687991268e50ce6`. [Exact-head CI 38088957758](https://github.com/mysbryce/besh/actions/runs/38088957758) and [main CI 38089328043](https://github.com/mysbryce/besh/actions/runs/38089328043) passed all three jobs. Local and remote delivery branches were deleted after successful main CI and matching-tree proof (`.cache/rich-text-delivery-proof.json`). This completes source delivery.
 
 The copied-executable asset-integrity RED found dashboard inventory metadata recorded before final CSS optimization. Recording final optimized files in `writeBundle` corrected the byte/hash mismatch; the public HTML probe uses `/`. Focused GREEN passed one case/57 assertions in 14.64 seconds (`.cache/rich-text-portable-inventory-green-2.log`); detailed RED/GREEN evidence is in [testing](testing.md#structured-rich-text--active-023-work).
 
 The exact original license/component binding for nested `zustand@4.5.7` is included in the 713-file/276-component notice inventory. Fresh reconciliation covers 77 observed npm components and appends 18 dashboard scopes, with no unmatched components or blocking inventory gaps; application changes only scopes and preserves all 31 new original license files and prior index entries. Stale dashboard chunk inventory was refused before the fresh reconciliation. The final executable was compiled afterward (`.cache/rich-text-final-portable-build.log`); its full suite passed ten cases/1,080 assertions across eight files in 108.11 seconds (`.cache/rich-text-final-portable.log`). The fresh complete browser command passed all 65 cases in 292.68 seconds (`.cache/rich-text-final-browser.log`).
 
-Executable metadata records version `0.23.0-alpha.0`, source base `3c527bb` and `clean: false`, identifying a local working-tree candidate. No tag, executable asset or release was published. Hosted exact-head/main CI and source delivery remain pending. These local receipts do not establish legal clearance or publisher signing.
+Historical executable metadata records version `0.23.0-alpha.0`, source base `3c527bb` and `clean: false`, identifying the tested local working-tree candidate. Source delivery did not publish a tag, executable asset or release; the public portable binary remains `0.19.0-alpha.0`. These local receipts do not establish legal clearance or publisher signing.
 
 ## Private collection delivery — 0.22.0-alpha.0
 

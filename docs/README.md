@@ -27,7 +27,8 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [Uploaded SQLite database copies](databases.md): bounded import, inspected tables/columns, read previews, generated APIs, permissions, and backup/recovery limits.
 - [Content model drafts](structs.md): owner-only visual Struct fields, nested groups/lists/choices, versioned saves, bounds and backup limits.
 - [Private collections and entries](collections.md): delivered immutable Struct binding, seven-language typed entry CRUD, version checks, paging and backup confidentiality.
-- [Structured rich text](rich-text.md): working version-one paragraph and version-two formatted contracts, bounds and separate planned HTML/publication gates.
+- [Structured rich text](rich-text.md): delivered version-one paragraph and version-two formatted contracts, bounds and separate HTML preview/publication gates.
+- [Private HTML preview](rich-text-html.md): reviewed saved-field selection, transient element settings, inactive preview, copied HTML and current acceptance limits.
 - [GitHub update notices](updates.md): owner-only manual release checks, saved repository/prerelease choices, cached results, and notice-only limits.
 - [Page and action previews](preview.md): capture commands, gallery inventory, masked credentials, data isolation, and Git ignore choices.
 - [Glossary](../GLOSSARY.md): workspace, draft, release, member identity, and caller credentials.

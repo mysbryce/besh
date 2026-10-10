@@ -35,6 +35,60 @@ test('compact navigation and menus preserve keyboard and phone access', async ({
   const closed = new Promise<void>((done) => server.once('close', () => done()))
   const errors: string[] = []
   page.on('pageerror', (error) => errors.push(error.message))
+  let roleReadStarted = false
+  let roleReadChecked = false
+  let roleReadError: unknown
+  let finishRoleRead!: () => void
+  const roleReadFinished = new Promise<void>((done) => {
+    finishRoleRead = done
+  })
+  const rolesURL = origin + '/api/roles'
+
+  await page.route(rolesURL, async (route) => {
+    if (roleReadStarted || route.request().method() !== 'GET') {
+      await route.continue()
+      return
+    }
+
+    roleReadStarted = true
+
+    try {
+      const response = await route.fetch()
+
+      try {
+        const role = page.getByRole('combobox', {
+          name: 'Member role',
+          exact: true,
+        })
+        await expect(role).toBeVisible()
+        expect(await role.isDisabled()).toBe(true)
+
+        await expect(
+          page.getByText('Loading permission choices…', { exact: true }),
+        ).toHaveCount(0)
+        await expect(
+          page.getByRole('button', {
+            name: 'Retry permission choices',
+            exact: true,
+          }),
+        ).toHaveCount(0)
+        expect(
+          await page
+            .getByRole('button', { name: 'New role', exact: true })
+            .isDisabled(),
+        ).toBe(true)
+
+        roleReadChecked = true
+      } catch (reason) {
+        roleReadError = reason
+      } finally {
+        await route.fulfill({ response })
+      }
+    } finally {
+      finishRoleRead()
+    }
+  })
+
   let captureNumber = 0
   const mask = () => [
     page.locator('input[type="password"]'),
@@ -91,6 +145,10 @@ test('compact navigation and menus preserve keyboard and phone access', async ({
         }
       },
     })
+    await roleReadFinished
+    if (roleReadError) throw roleReadError
+
+    expect(roleReadChecked).toBe(true)
     expect(errors).toEqual([])
   } catch (error) {
     await page
@@ -103,6 +161,8 @@ test('compact navigation and menus preserve keyboard and phone access', async ({
       .catch(() => {})
     throw error
   } finally {
+    if (roleReadStarted) await roleReadFinished
+    await page.unroute(rolesURL)
     await page.close()
     server.kill()
     await closed

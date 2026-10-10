@@ -41,7 +41,7 @@ export function RichTextFields({
       <h4>{label}</h4>
       <p className="field-help">
         {t(
-          'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.',
+          'Paragraph text only. Text is stored literally; preview saved HTML from Content.',
         )}
       </p>
       {value.paragraphs.length ? (

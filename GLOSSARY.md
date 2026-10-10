@@ -22,6 +22,9 @@
 - **Collection binding**: the exact Struct ID, revision and definition copied by the server when creating a collection; later model edits do not change it.
 - **Content entry**: a collection's typed JSON data object with its own saved version; updates replace complete content and stale updates or deletes cannot overwrite the current revision.
 - **Structured rich text**: bounded content stored as a typed AST under paired immutable schema/AST versions: literal paragraphs in version one, formatted blocks in version two. It is private entry data, not raw HTML, executable code or a published route.
+- **Private HTML preview**: owner-reviewed rendering of one exact saved rich-text entry version under its frozen Struct binding; it does not save content, persist settings or publish a runtime route. Copying retains the delivered snapshot rather than checking for a newer server revision.
+- **Renderer configuration hash**: SHA-256 of the normalized reviewed element settings, binding returned HTML to that configuration; it is not a credential, signature, publication pin or permission grant.
+- **Typed saved field path**: one to six declared field names and actual zero-based array indexes selecting a present rich-text value under the immutable collection model; it is not a dotted expression or a path inside the rich-text AST. Dashboard item labels start at one.
 - **Client code example**: generated request source for a selected saved draft or published revision, using an environment-based runtime-key placeholder; generating it does not call the API.
 - **Client code target**: one supported language and HTTP-client combination, with its own dependencies, filename, and escaping rules.
 - **OpenAPI document**: a downloadable description of one saved REST draft or published release, including its route, rules, and runtime-key authentication.

@@ -121,6 +121,9 @@ export async function navigationPreviews({
     { fullPage: false },
   )
   await navigation.getByRole('button', { name: 'Members', exact: true }).click()
+  await expect(
+    page.getByRole('button', { name: 'Edit ' + longRole, exact: true }),
+  ).toBeVisible()
   const role = page.getByRole('combobox', { name: 'Member role', exact: true })
   await expect(role).toBeEnabled()
   await compact(role)

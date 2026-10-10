@@ -45,6 +45,8 @@ export const previewStories = [
   { id: 'rich-text-blocks', count: 10, locks: [] },
   { id: 'rich-text-interactions', count: 7, locks: [] },
   { id: 'rich-text-locales', count: 13, locks: [] },
+  { id: 'rich-text-html', count: 18, locks: [] },
+  { id: 'rich-text-html-guards', count: 4, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']

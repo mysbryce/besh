@@ -1,4 +1,61 @@
 const messages: Record<string, string> = {
+  'Copy HTML': 'คัดลอก HTML',
+  'HTML copied': 'คัดลอก HTML แล้ว',
+  'Could not copy HTML. Select and copy the HTML source.':
+    'คัดลอก HTML ไม่ได้ เลือกและคัดลอกโค้ด HTML เอง',
+
+  'Advanced element settings': 'ตั้งค่าองค์ประกอบขั้นสูง',
+  Element: 'องค์ประกอบ',
+  'CSS classes': 'คลาส CSS',
+  'Title attribute': 'แอตทริบิวต์ title',
+  'Accessibility label': 'ป้ายกำกับสำหรับการเข้าถึง',
+  'Use fixed heading identifier': 'ใช้ตัวระบุหัวเรื่องแบบตายตัว',
+  Link: 'ลิงก์',
+  'List item': 'รายการ',
+  Divider: 'เส้นแบ่ง',
+  'Line break': 'ขึ้นบรรทัดใหม่',
+  Table: 'ตาราง',
+  'Table body': 'ส่วนเนื้อหาตาราง',
+  'Table row': 'แถวตาราง',
+  'Header cell': 'เซลล์หัวตาราง',
+  'Table cell': 'เซลล์ตาราง',
+  'The preview uses default styles. Custom classes need CSS in your client.':
+    'ตัวอย่างใช้รูปแบบเริ่มต้น คลาสที่กำหนดเองต้องมี CSS ในแอปของคุณ',
+  'Use up to 8 class names. Start with a letter or underscore; use letters, numbers, underscores or hyphens. Each name uses up to 64 characters.':
+    'ใช้ชื่อคลาสได้สูงสุด 8 ชื่อ เริ่มด้วยตัวอักษรภาษาอังกฤษหรือขีดล่าง ใช้ตัวอักษรภาษาอังกฤษ ตัวเลข ขีดล่าง หรือขีดกลาง แต่ละชื่อยาวได้สูงสุด 64 อักขระ',
+  'Title and accessibility labels use up to 160 UTF-8 bytes.':
+    'ชื่อและป้ายกำกับสำหรับการเข้าถึงยาวได้สูงสุด 160 ไบต์ UTF-8',
+  'Besh does not run x-data or load Alpine.js. Use this fixed identifier only with a trusted consumer that you have reviewed.':
+    'Besh ไม่รัน x-data หรือโหลด Alpine.js ใช้ตัวระบุแบบตายตัวนี้เฉพาะกับแอปที่นำไปใช้ซึ่งคุณตรวจสอบและเชื่อถือแล้ว',
+  'Check class names: up to 8 names, each 1 to 64 ASCII characters.':
+    'ตรวจสอบชื่อคลาส: สูงสุด 8 ชื่อ แต่ละชื่อใช้ 1 ถึง 64 อักขระ ASCII',
+  'Shorten the title or accessibility label to 160 UTF-8 bytes.':
+    'ลดความยาวชื่อหรือป้ายกำกับสำหรับการเข้าถึงให้ไม่เกิน 160 ไบต์ UTF-8',
+  'These settings are too large. Remove some settings.':
+    'การตั้งค่ามีขนาดใหญ่เกินไป ลบการตั้งค่าบางส่วน',
+
+  'Item {index}': 'รายการที่ {index}',
+
+  'Rich-text field': 'ฟิลด์ข้อความแบบจัดรูปแบบ',
+  'Generate HTML preview': 'สร้างตัวอย่าง HTML',
+  'HTML source': 'โค้ด HTML',
+  'Rendered HTML preview': 'ตัวอย่าง HTML ที่แสดงผล',
+  'Visual preview only. Links are inactive. HTML source is available below.':
+    'ใช้ดูตัวอย่างเท่านั้น ลิงก์เปิดไม่ได้ ดูโค้ด HTML ได้ด้านล่าง',
+  'HTML preview generated.': 'สร้างตัวอย่าง HTML แล้ว',
+  'Could not generate HTML preview.': 'สร้างตัวอย่าง HTML ไม่ได้',
+  'Could not verify this HTML preview. Generate it again.':
+    'ตรวจสอบตัวอย่าง HTML นี้ไม่ได้ สร้างตัวอย่างใหม่อีกครั้ง',
+  'Content entry changed. Reload before previewing.':
+    'รายการเนื้อหาเปลี่ยนแล้ว โหลดใหม่ก่อนดูตัวอย่าง',
+
+  'Preview HTML': 'ดูตัวอย่าง HTML',
+  'Private HTML preview': 'ตัวอย่าง HTML ส่วนตัว',
+  'Rich-text fields': 'ฟิลด์ข้อความแบบจัดรูปแบบ',
+  'Review the saved entry and fields. This does not save or publish content.':
+    'ตรวจสอบรายการและฟิลด์ที่บันทึกไว้ ขั้นตอนนี้ไม่บันทึกหรือเผยแพร่เนื้อหา',
+  'Close HTML preview': 'ปิดตัวอย่าง HTML',
+
   'This list item cannot be outdented safely.':
     'ไม่สามารถลดระดับรายการนี้ได้อย่างปลอดภัย',
 
@@ -78,8 +135,8 @@ const messages: Record<string, string> = {
   'Invalid formatted text.': 'ข้อความแบบจัดรูปแบบไม่ถูกต้อง',
 
   'Rich text': 'ข้อความแบบมีรูปแบบ',
-  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
-    'ใช้ได้เฉพาะข้อความในย่อหน้า ข้อความจะบันทึกตามที่พิมพ์ ยังจัดรูปแบบหรือแสดงผลเป็น HTML ไม่ได้',
+  'Paragraph text only. Text is stored literally; preview saved HTML from Content.':
+    'ใช้ได้เฉพาะข้อความในย่อหน้า ข้อความบันทึกตามที่พิมพ์ ดูตัวอย่าง HTML ของรายการที่บันทึกแล้วได้ในเมนูเนื้อหา',
   '{field} · Paragraph {index}': '{field} · ย่อหน้าที่ {index}',
   '{field} · Paragraph {paragraph} · Text {text}':
     '{field} · ย่อหน้าที่ {paragraph} · ข้อความที่ {text}',

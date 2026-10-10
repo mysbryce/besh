@@ -52,6 +52,8 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 
 - Private collections bind an immutable server-read snapshot of the exact reviewed saved Struct revision. Later model edits never change that binding. Collection and entry management starts owner-only; typed content preserves empty text, zero, false and optional absence without coercion or implicit defaults. Bound bytes, depth, values, lists, catalogs and entries. Entry replacement/deletion uses the current safe version; recheck the original management proof first inside acquired write transactions and commit metadata-only audit with effects. Read one entry page in a consistent database snapshot. Private management routes do not imply runtime publication, dependency USE, shared CMS access or confidentiality against existing authorized full-backup operators.
 
+- Private HTML preview rechecks the original owner proof, exact saved entry version and frozen typed field selection. Reject caller ASTs, bound trusted settings and escape output; preserve the inactive sandbox/CSP/inert wrapper. Copy only delivered reviewed HTML, never evaluate content or attribute expressions, and keep fixed consumer opt-in separate from persisted mappings or runtime publication.
+
 - Check authentication and permissions on the server for every management operation.
 - Keep member credentials limited to management and draft tests. Published APIs require a separate, unexpired runtime key scoped to the published flow and operation type. Never add a member-key bypass.
 - Derive endpoint permissions and displayed URLs from the published release, not an edited draft. Query/mutation grants do not replace future field or record authorization.

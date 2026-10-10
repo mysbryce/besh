@@ -3,7 +3,8 @@ import { ApiError } from '../errors'
 import type { StructField, StructSchema } from '../structs/model'
 import { parseRichTextDocument } from '../structs/rich-text'
 import { parseFormattedRichTextDocument } from '../structs/rich-text-formatted'
-import type { Store } from '../workspace/store'
+import { renderRichTextPreview } from '../structs/rich-text-render'
+import type { Member, Store } from '../workspace/store'
 import type { ContentEntry, ContentEntryPage, EntryData } from './model'
 import type { collectionService } from './service'
 
@@ -273,6 +274,153 @@ function entry(row: EntryRow, collectionId: string, fields: StructField[]) {
   return { ...metadata.data, data }
 }
 
+type FieldPath = (string | number)[]
+type PreviewInput = {
+  entryVersion: number
+  renderer: unknown
+} & (
+  | { selector: 'key'; fieldKey: string }
+  | { selector: 'path'; fieldPath: FieldPath }
+)
+
+function fieldKey(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length >= 1 &&
+    value.length <= 64 &&
+    /^[a-z]/.test(value) &&
+    !/[^a-z0-9_]/.test(value) &&
+    !reservedKeys.has(value)
+  )
+}
+
+function fieldPath(value: unknown): FieldPath | null {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 6) return null
+
+  const descriptors = Object.getOwnPropertyDescriptors(value)
+  if (Reflect.ownKeys(descriptors).length !== value.length + 1) return null
+
+  const path: FieldPath = []
+  for (let index = 0; index < value.length; index++) {
+    const descriptor = descriptors[String(index)]
+    if (!descriptor || !descriptor.enumerable || !('value' in descriptor))
+      return null
+
+    const segment: unknown = descriptor.value
+    if (fieldKey(segment)) {
+      path.push(segment)
+    } else if (
+      typeof segment === 'number' &&
+      Number.isSafeInteger(segment) &&
+      segment >= 0
+    ) {
+      path.push(segment)
+    } else {
+      return null
+    }
+  }
+
+  return path
+}
+
+function previewInput(value: unknown): PreviewInput | null {
+  if (!record(value)) return null
+
+  const descriptors = Object.getOwnPropertyDescriptors(value)
+  const keys = Reflect.ownKeys(descriptors)
+  if (
+    keys.length !== 3 ||
+    keys.some((key) => {
+      const descriptor = descriptors[key as string]
+      return (
+        typeof key !== 'string' ||
+        !['entryVersion', 'fieldKey', 'fieldPath', 'renderer'].includes(key) ||
+        !descriptor ||
+        !descriptor.enumerable ||
+        !('value' in descriptor)
+      )
+    })
+  )
+    return null
+
+  const hasKey = Object.hasOwn(descriptors, 'fieldKey')
+  const hasPath = Object.hasOwn(descriptors, 'fieldPath')
+  if (
+    !Object.hasOwn(descriptors, 'entryVersion') ||
+    !Object.hasOwn(descriptors, 'renderer') ||
+    hasKey === hasPath
+  )
+    return null
+
+  const entryVersion: unknown = descriptors.entryVersion!.value
+  if (
+    typeof entryVersion !== 'number' ||
+    !Number.isSafeInteger(entryVersion) ||
+    entryVersion < 1
+  )
+    return null
+
+  const renderer: unknown = descriptors.renderer!.value
+  if (hasKey) {
+    const selectedKey: unknown = descriptors.fieldKey!.value
+    if (!fieldKey(selectedKey)) return null
+
+    return { entryVersion, renderer, selector: 'key', fieldKey: selectedKey }
+  }
+
+  const selectedPath = fieldPath(descriptors.fieldPath!.value)
+  if (!selectedPath) return null
+
+  return { entryVersion, renderer, selector: 'path', fieldPath: selectedPath }
+}
+
+function previewField(
+  fields: StructField[],
+  savedData: EntryData,
+  path: readonly (string | number)[],
+) {
+  let schema: StructSchema = { type: 'object', fields }
+  let currentValue: unknown = savedData
+  let namedKey: string | undefined
+
+  for (const segment of path) {
+    if (schema.type === 'object') {
+      if (
+        typeof segment !== 'string' ||
+        !record(currentValue) ||
+        !Object.hasOwn(currentValue, segment)
+      )
+        return null
+
+      const declared: StructField | undefined = schema.fields.find(
+        (field) => field.key === segment,
+      )
+      if (!declared) return null
+
+      namedKey = declared.key
+      schema = declared.schema
+      currentValue = currentValue[segment]
+    } else if (schema.type === 'array') {
+      if (
+        typeof segment !== 'number' ||
+        !Array.isArray(currentValue) ||
+        segment >= currentValue.length ||
+        !Object.hasOwn(currentValue, segment)
+      )
+        return null
+
+      schema = schema.items
+      currentValue = currentValue[segment]
+    } else {
+      return null
+    }
+  }
+
+  if (!namedKey) return null
+
+  return { fieldKey: namedKey, schema, value: currentValue }
+}
+
 export function contentEntryService(
   store: Store,
   collections: Pick<ReturnType<typeof collectionService>, 'get'>,
@@ -315,6 +463,77 @@ export function contentEntryService(
       if (!row) throw new ApiError(404, 'Content entry not found')
 
       return entry(row, collectionId, collection.struct.fields)
+    },
+    preview(
+      actor: string,
+      collectionId: string,
+      entryId: string,
+      value: unknown,
+      authorize: () => Member,
+    ) {
+      return store.db
+        .transaction(() => {
+          const current = authorize()
+          if (current.id !== actor || current.role !== 'owner')
+            throw new ApiError(403, 'Owner access required')
+
+          const input = previewInput(value)
+          if (!input)
+            throw new ApiError(
+              400,
+              'Provide the current entry version and rich-text field',
+            )
+
+          const collection = collections.get(collectionId)
+          const saved = service.get(collectionId, entryId)
+          if (saved.version !== input.entryVersion)
+            throw new ApiError(
+              409,
+              'Content entry changed. Reload before previewing.',
+            )
+
+          const selected = previewField(
+            collection.struct.fields,
+            saved.data,
+            input.selector === 'key' ? [input.fieldKey] : input.fieldPath,
+          )
+          if (
+            !selected ||
+            selected.schema.type !== 'richText' ||
+            !(
+              (selected.schema.schemaVersion === 1 &&
+                selected.schema.astVersion === 1) ||
+              (selected.schema.schemaVersion === 2 &&
+                selected.schema.astVersion === 2)
+            )
+          )
+            throw new ApiError(400, 'Choose a saved rich-text field')
+
+          const document =
+            selected.schema.schemaVersion === 1
+              ? parseRichTextDocument(selected.value)
+              : parseFormattedRichTextDocument(selected.value)
+          if (!document) throw new ApiError(503, 'Content entry is unavailable')
+
+          const rendered = renderRichTextPreview(document, input.renderer)
+
+          return {
+            collectionId: collection.id,
+            collectionVersion: collection.version,
+            structId: collection.struct.id,
+            structVersion: collection.struct.version,
+            entryId: saved.id,
+            entryVersion: saved.version,
+            fieldKey: selected.fieldKey,
+            ...(input.selector === 'path'
+              ? { fieldPath: input.fieldPath }
+              : {}),
+            schemaVersion: selected.schema.schemaVersion,
+            astVersion: document.astVersion,
+            ...rendered,
+          }
+        })
+        .immediate()
     },
     create(
       actor: string,

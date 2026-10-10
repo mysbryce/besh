@@ -1,4 +1,61 @@
 const messages: Record<string, string> = {
+  'Copy HTML': 'Copy HTML',
+  'HTML copied': 'HTML copied',
+  'Could not copy HTML. Select and copy the HTML source.':
+    'Could not copy HTML. Select and copy the HTML source.',
+
+  'Advanced element settings': 'Advanced element settings',
+  Element: 'Element',
+  'CSS classes': 'CSS classes',
+  'Title attribute': 'Title attribute',
+  'Accessibility label': 'Accessibility label',
+  'Use fixed heading identifier': 'Use fixed heading identifier',
+  Link: 'Link',
+  'List item': 'List item',
+  Divider: 'Divider',
+  'Line break': 'Line break',
+  Table: 'Table',
+  'Table body': 'Table body',
+  'Table row': 'Table row',
+  'Header cell': 'Header cell',
+  'Table cell': 'Table cell',
+  'The preview uses default styles. Custom classes need CSS in your client.':
+    'The preview uses default styles. Custom classes need CSS in your client.',
+  'Use up to 8 class names. Start with a letter or underscore; use letters, numbers, underscores or hyphens. Each name uses up to 64 characters.':
+    'Use up to 8 class names. Start with a letter or underscore; use letters, numbers, underscores or hyphens. Each name uses up to 64 characters.',
+  'Title and accessibility labels use up to 160 UTF-8 bytes.':
+    'Title and accessibility labels use up to 160 UTF-8 bytes.',
+  'Besh does not run x-data or load Alpine.js. Use this fixed identifier only with a trusted consumer that you have reviewed.':
+    'Besh does not run x-data or load Alpine.js. Use this fixed identifier only with a trusted consumer that you have reviewed.',
+  'Check class names: up to 8 names, each 1 to 64 ASCII characters.':
+    'Check class names: up to 8 names, each 1 to 64 ASCII characters.',
+  'Shorten the title or accessibility label to 160 UTF-8 bytes.':
+    'Shorten the title or accessibility label to 160 UTF-8 bytes.',
+  'These settings are too large. Remove some settings.':
+    'These settings are too large. Remove some settings.',
+
+  'Item {index}': 'Item {index}',
+
+  'Rich-text field': 'Rich-text field',
+  'Generate HTML preview': 'Generate HTML preview',
+  'HTML source': 'HTML source',
+  'Rendered HTML preview': 'Rendered HTML preview',
+  'Visual preview only. Links are inactive. HTML source is available below.':
+    'Visual preview only. Links are inactive. HTML source is available below.',
+  'HTML preview generated.': 'HTML preview generated.',
+  'Could not generate HTML preview.': 'Could not generate HTML preview.',
+  'Could not verify this HTML preview. Generate it again.':
+    'Could not verify this HTML preview. Generate it again.',
+  'Content entry changed. Reload before previewing.':
+    'Content entry changed. Reload before previewing.',
+
+  'Preview HTML': 'Preview HTML',
+  'Private HTML preview': 'Private HTML preview',
+  'Rich-text fields': 'Rich-text fields',
+  'Review the saved entry and fields. This does not save or publish content.':
+    'Review the saved entry and fields. This does not save or publish content.',
+  'Close HTML preview': 'Close HTML preview',
+
   'This list item cannot be outdented safely.':
     'This list item cannot be outdented safely.',
 
@@ -78,8 +135,8 @@ const messages: Record<string, string> = {
   'Invalid formatted text.': 'Invalid formatted text.',
 
   'Rich text': 'Rich text',
-  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
-    'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.',
+  'Paragraph text only. Text is stored literally; preview saved HTML from Content.':
+    'Paragraph text only. Text is stored literally; preview saved HTML from Content.',
   '{field} · Paragraph {index}': '{field} · Paragraph {index}',
   '{field} · Paragraph {paragraph} · Text {text}':
     '{field} · Paragraph {paragraph} · Text {text}',
