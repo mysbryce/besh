@@ -711,6 +711,10 @@ export async function dataSourceGoogleLocalePreviews({
       .getByRole('button', { name: 'Open workspace', exact: true })
       .click()
     await expect(
+      page.getByRole('button', { name: 'Sign out', exact: true }),
+    ).toBeVisible()
+
+    await expect(
       page.getByRole('button', { name: 'Data sources', exact: true }),
     ).toHaveCount(0)
     await expect(page.locator('#google-sheet-link')).toHaveCount(0)

@@ -242,6 +242,10 @@ export async function dataSourceDeleteLocalePreviews({
     await page
       .getByRole('button', { name: 'Open workspace', exact: true })
       .click()
+
+    await expect(
+      page.getByRole('button', { name: 'Sign out', exact: true }),
+    ).toBeVisible()
   }
 
   async function saved(id: string) {

@@ -4,6 +4,14 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.5-alpha.1 — 2026-10-10
+
+### Fixed
+
+- Wait for completed workspace sign-in before saved-source permission and language assertions, preventing initial API loading from being mistaken for a language-change request.
+- Open the actual development Studio before creating short-lived WebSocket proofs, with bounded cold-compilation readiness; retain the current browser session and existing reload checks.
+- Warm the dashboard entry and Studio modules during Vite startup to reduce first-load transform waterfalls.
+
 ## 0.20.5-alpha.0 — 2026-10-10
 
 ### Fixed
