@@ -1,0 +1,45 @@
+/*
+** 2004 May 22
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** This file contains the VFS implementation for unix-like operating systems
+** include Linux, MacOSX, *BSD, QNX, VxWorks, AIX, HPUX, and others.
+**
+** There are actually several different VFS implementations in this file.
+** The differences are in the way that file locking is done.  The default
+** implementation uses Posix Advisory Locks.  Alternative implementations
+** use flock(), dot-files, various proprietary locking schemas, or simply
+** skip locking all together.
+**
+** This source file is organized into divisions where the logic for various
+** subfunctions is contained within the appropriate division.  PLEASE
+** KEEP THE STRUCTURE OF THIS FILE INTACT.  New code should be placed
+** in the correct division and should be clearly labelled.
+**
+** The layout of divisions is as follows:
+**
+**   *  General-purpose declarations and utility functions.
+**   *  Unique file ID logic used by VxWorks.
+**   *  Various locking primitive implementations (all except proxy locking):
+**      + for Posix Advisory Locks
+**      + for no-op locks
+**      + for dot-file locks
+**      + for flock() locking
+**      + for named semaphore locks (VxWorks only)
+**      + for AFP filesystem locks (MacOSX only)
+**   *  sqlite3_file methods not associated with locking.
+**   *  Definitions of sqlite3_io_methods objects for all locking
+**      methods plus "finder" functions for each locking method.
+**   *  sqlite3_vfs method implementations.
+**   *  Locking primitives for the proxy uber-locking-method. (MacOSX only)
+**   *  Definitions of sqlite3_vfs objects for all locking methods
+**      plus implementations of sqlite3_os_init() and sqlite3_os_end().
+*/

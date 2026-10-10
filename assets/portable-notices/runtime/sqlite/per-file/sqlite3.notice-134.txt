@@ -1,0 +1,17 @@
+/*
+** 2014 May 31
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** Low level access to the FTS index stored in the database file. The
+** routines in this file file implement all read and write access to the
+** %_data table. Other parts of the system access this functionality via
+** the interface defined in fts5Int.h.
+*/

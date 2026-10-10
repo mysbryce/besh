@@ -198,8 +198,23 @@
 
 ## Next Steps
 
+Protocol-guidance PR #7 merged at `08e4484` with head and main checks passing. Portable 0.19 acceptance now includes actual compiled setup, publication/restart, private-file permission denial, notice export and native first-use k6. Complete exact-head CI, normal merge and authorized prerelease assets before the parked CSV-language slice.
+
 1. Basic Studio PR #6 and its main checks passed at `2835504`. Deliver the tested protocol-guidance branch through normal exact-head checks/merge, then implement the requested Windows portable executable: double-click setup/browser, owned background start/status/stop, standalone dashboard/runtime and Ubuntu/macOS build instructions. Keep workspace data and the original private encryption key outside the executable. Prepared CSV-language drafts follow this delivery. The maintainer authorizes tested normal merges without another confirmation. Keep invitation, node-picker and isolated worker boundaries intact. Exact completed checks belong in [testing](testing.md); hosted artifact delivery and native platform behavior need their own evidence.
 2. After GitHub account/service capacity permits artifact uploads, rerun the candidate and inspect the actual downloaded inventory/digest. Local archive inspection does not prove remote delivery. See [releases](releases.md).
 3. Follow the [remaining roadmap](roadmap.md#next-steps): broader product authorization, external data/query/migration tools, graph extensions/plugins, verified product providers/AI tools, realtime event/subscription work, and operations/releases. None is completed by the WebSocket delivery.
 
 See [testing](testing.md), [architecture](architecture.md), and [roadmap](roadmap.md) for durable detail.
+
+## Portable decisions
+
+- Embed the production dashboard, Bun runtime and original notice bytes. Keep private workspace data beside the executable; never silently switch storage on failure.
+- Bun support is a minimum (`>=1.4.2`), separate from the reproducible 1.4.2 CI/release baseline. Record actual compiler revisions; a 1.4.3 artifact and full backend run passed.
+- Readability is a hard rule after context compaction too: blank lines separate small logical work groups. Both `AGENTS.md` and `AI_POLICY.md` retain it; portable whitespace grouping changed no nonblank source lines.
+- Use bounded private loopback controls and current owner-only directory/leaf permissions. Never kill a PID from stored records or erase unknown crash ownership.
+- Real lifecycle tests exposed Windows short/long aliases and inherited PowerShell module pollution. Verify positive filesystem identities and use absolute OS executable/module paths.
+- Concurrent-start and broadened-leaf public tests failed before fixes. Secure an empty staging directory before publishing ownership, and exclusive empty files before writing proofs.
+- Dispatch only the fixed trusted SQLite reader before app initialization. Keep its existing SQL, output, time and concurrency boundaries.
+- Offline license export initially missed Bun's directory-basename virtual path. Embedded-file inspection identified `portable-notices/`; byte-exact export passed afterward.
+- Bind actual normalized module inputs in embedded notices. Keep the final source commit and executable hash external to avoid a self-hash cycle. Exact provenance remains separate from completeness claims.
+- Real compiled first-use k6 failed before absolute PowerShell extraction. Positive native metrics, revoked managed keys and identical restarted summaries passed afterward. Network acceptance stays separate from offline CI; full native process drain remains unverified.

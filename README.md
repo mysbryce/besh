@@ -6,6 +6,8 @@ Build and publish APIs visually. Connect nodes, test drafts, and publish REST, G
 
 Besh is an early local development preview. Remote databases, more login providers, plugins, and the AI operator remain planned.
 
+The standalone launcher is being prepared for **0.19.0-alpha.0**, not yet released. See [portable Besh](docs/portable.md) for Windows double-click setup, background controls, storage and Ubuntu/macOS builds.
+
 ## Start locally
 
 Install [Bun](https://bun.sh/docs/installation) 1.4.2 or newer, then run:

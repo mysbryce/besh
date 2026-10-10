@@ -5,9 +5,12 @@ dist
 .cache/
 .vite/
 /data/
+/besh-data/
+.besh-instance/
 bun.lock
 coverage
 test-results
 playwright-report
 .preview
 /backups/
+/assets/portable-notices/

@@ -4,6 +4,23 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.19.0-alpha.0 — 2026-10-10
+
+### Added
+
+- Portable Windows executable with the production dashboard and Bun runtime embedded. Double-click starts an owned background workspace and opens first-run setup.
+- Explicit port/data-directory options and verified start, status, open, foreground run and stop commands. Keep workspace data beside the executable by default.
+- Trusted compiled SQLite reader dispatch, offline full notice export, source/build inventories and bounded portable packaging.
+- Serialized Windows artifact CI covering setup, browser publication, real SQLite, REST/GraphQL/WebSocket restart, concurrent starts and private-file permissions.
+- Ubuntu and macOS source build instructions with explicit platform verification limits.
+- Planned media/content/Struct tools, broader database and product-auth adapters, payment providers and measured generated-runtime budgets.
+
+### Fixed
+
+- Use the absolute Windows PowerShell executable and its archive module for first-use k6 extraction when Bun, Node and developer PATH entries are absent.
+- Accept Bun >= 1.4.2 instead of requiring one exact version; retain a reproducible minimum-version CI baseline and record actual build provenance.
+- Enforce blank lines between small logical code groups, including after context compaction, and improve portable module spacing.
+
 ## 0.18.5-alpha.0 — 2026-10-10
 
 ### Fixed

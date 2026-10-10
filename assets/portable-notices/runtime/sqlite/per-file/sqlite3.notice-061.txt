@@ -1,0 +1,20 @@
+/*
+** 2001 September 15
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** The code in this file implements the function that runs the
+** bytecode of a prepared statement.
+**
+** Various scripts scan this source file in order to generate HTML
+** documentation, headers files, or other derived files.  The formatting
+** of the code in this file is, therefore, important.  See other comments
+** in this file for details.  If in doubt, do not deviate from existing
+** commenting and indentation practices when changing or adding code.
+*/

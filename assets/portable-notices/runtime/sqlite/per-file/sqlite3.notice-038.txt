@@ -1,0 +1,27 @@
+/*
+** 2012 July 21
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** This file presents a simple cross-platform threading interface for
+** use internally by SQLite.
+**
+** A "thread" can be created using sqlite3ThreadCreate().  This thread
+** runs independently of its creator until it is joined using
+** sqlite3ThreadJoin(), at which point it terminates.
+**
+** Threads do not have to be real.  It could be that the work of the
+** "thread" is done by the main thread at either the sqlite3ThreadCreate()
+** or sqlite3ThreadJoin() call.  This is, in fact, what happens in
+** single threaded systems.  Nothing in SQLite requires multiple threads.
+** This interface exists so that applications that want to take advantage
+** of multiple cores can do so, while also allowing applications to stay
+** single-threaded if desired.
+*/

@@ -1,0 +1,18 @@
+/*
+** 2009 Oct 23
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** This file is part of the SQLite FTS3 extension module. Specifically,
+** this file contains code to insert, update and delete rows from FTS3
+** tables. It also contains code to merge FTS3 b-tree segments. Some
+** of the sub-routines used to merge segments are also used by the query
+** code in fts3.c.
+*/

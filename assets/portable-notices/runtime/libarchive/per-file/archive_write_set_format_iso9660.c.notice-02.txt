@@ -1,0 +1,10 @@
+/*
+	 * Usage  : copyright-file=<value>
+	 * Type   : string, max 37 bytes
+	 * Default: Not specified
+	 * COMPAT : mkisofs -copyright <value>
+	 *
+	 * Specifies Copyright Filename.
+	 * This file shall be described in the Root Directory
+	 * and containing a copyright statement.
+	 */

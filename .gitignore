@@ -19,6 +19,8 @@ dist/
 !.env.example
 
 /data/
+/besh-data/
+.besh-instance/
 /backups/
 besh-secrets.key
 *.sqlite

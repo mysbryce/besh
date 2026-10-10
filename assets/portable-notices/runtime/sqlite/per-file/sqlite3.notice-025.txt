@@ -1,0 +1,43 @@
+/*
+** 2007 August 14
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This file contains low-level memory allocation drivers for when
+** SQLite will use the standard C-library malloc/realloc/free interface
+** to obtain the memory it needs.
+**
+** This file contains implementations of the low-level memory allocation
+** routines specified in the sqlite3_mem_methods object.  The content of
+** this file is only used if SQLITE_SYSTEM_MALLOC is defined.  The
+** SQLITE_SYSTEM_MALLOC macro is defined automatically if neither the
+** SQLITE_MEMDEBUG nor the SQLITE_WIN32_MALLOC macros are defined.  The
+** default configuration is to use memory allocation routines in this
+** file.
+**
+** C-preprocessor macro summary:
+**
+**    HAVE_MALLOC_USABLE_SIZE     The configure script sets this symbol if
+**                                the malloc_usable_size() interface exists
+**                                on the target platform.  Or, this symbol
+**                                can be set manually, if desired.
+**                                If an equivalent interface exists by
+**                                a different name, using a separate -D
+**                                option to rename it.
+**
+**    SQLITE_WITHOUT_ZONEMALLOC   Some older macs lack support for the zone
+**                                memory allocator.  Set this symbol to enable
+**                                building on older macs.
+**
+**    SQLITE_WITHOUT_MSIZE        Set this symbol to disable the use of
+**                                _msize() on windows systems.  This might
+**                                be necessary when compiling for Delphi,
+**                                for example.
+*/

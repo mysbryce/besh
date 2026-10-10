@@ -1,0 +1,20 @@
+/*
+** 2001 September 15
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This is the implementation of the page cache subsystem or "pager".
+**
+** The pager is used to access a database disk file.  It implements
+** atomic commit and rollback through the use of a journal file that
+** is separate from the database file.  The pager also implements file
+** locking to prevent two processes from writing the same database
+** file simultaneously, or one process from reading the database while
+** another is writing.
+*/

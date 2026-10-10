@@ -9,7 +9,7 @@ import {
   stat,
 } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join, resolve, sep } from 'node:path'
+import { isAbsolute, join, resolve, sep } from 'node:path'
 import { z } from 'zod'
 import type { K6Runner } from './model'
 
@@ -175,14 +175,26 @@ async function extract(
   destination: string,
   signal: AbortSignal,
 ) {
+  const systemRoot = process.env.SystemRoot ?? process.env.SYSTEMROOT
+  if (process.platform === 'win32' && (!systemRoot || !isAbsolute(systemRoot)))
+    throw new Error('Windows system directory is unavailable')
+
   const command =
     process.platform === 'win32'
       ? [
-          'powershell.exe',
+          join(
+            systemRoot!,
+            'System32',
+            'WindowsPowerShell',
+            'v1.0',
+            'powershell.exe',
+          ),
           '-NoProfile',
           '-NonInteractive',
           '-Command',
-          'Expand-Archive -LiteralPath $env:BESH_K6_ARCHIVE -DestinationPath $env:BESH_K6_DESTINATION -ErrorAction Stop',
+          `$ErrorActionPreference = 'Stop'
+Import-Module (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/Modules/Microsoft.PowerShell.Archive/Microsoft.PowerShell.Archive.psd1')
+Microsoft.PowerShell.Archive\\Expand-Archive -LiteralPath $env:BESH_K6_ARCHIVE -DestinationPath $env:BESH_K6_DESTINATION -ErrorAction Stop`,
         ]
       : process.platform === 'darwin'
         ? ['/usr/bin/ditto', '-x', '-k', archive, destination]
@@ -194,6 +206,7 @@ async function extract(
       BESH_K6_ARCHIVE: archive,
       BESH_K6_DESTINATION: destination,
     }),
+    windowsHide: true,
     stdout: 'ignore',
     stderr: 'ignore',
   })

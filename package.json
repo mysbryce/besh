@@ -1,10 +1,12 @@
 {
   "name": "besh",
-  "version": "0.18.5-alpha.0",
+  "version": "0.19.0-alpha.0",
   "private": true,
   "type": "module",
   "license": "MIT",
-  "packageManager": "bun@1.4.2",
+  "engines": {
+    "bun": ">=1.4.2"
+  },
   "scripts": {
     "setup": "bun scripts/dev.ts",
     "dev": "bun scripts/dev.ts",
@@ -16,6 +18,9 @@
     "preview:all": "bun scripts/preview.ts",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
+    "build:portable": "bun scripts/build-portable.ts",
+    "package:portable": "bun scripts/package-portable.ts",
+    "test:portable": "bun test ./scripts/portable-smoke.test.ts ./scripts/portable-sqlite.test.ts ./scripts/portable-lifecycle.test.ts ./scripts/portable-concurrent-start.test.ts ./scripts/portable-leaf-acl.test.ts ./scripts/portable-publication.test.ts ./scripts/portable-licenses.test.ts ./scripts/portable-browser-ui.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "bun run typecheck && bun run test && bun run build && bun run format:check"

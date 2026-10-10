@@ -43,12 +43,14 @@ export function databaseProcesses() {
         const header = Buffer.alloc(4)
         header.writeUInt32LE(metadata.length)
         child = Bun.spawn(
-          [
-            process.execPath,
-            '--no-env-file',
-            '--no-install',
-            fileURLToPath(new URL('./worker.ts', import.meta.url)),
-          ],
+          Bun.isStandaloneExecutable
+            ? [process.execPath, '--besh-sqlite-reader']
+            : [
+                process.execPath,
+                '--no-env-file',
+                '--no-install',
+                fileURLToPath(new URL('./worker.ts', import.meta.url)),
+              ],
           {
             env: {
               ...(process.env.SystemRoot
@@ -59,6 +61,7 @@ export function databaseProcesses() {
             stdin: Buffer.concat([header, metadata, bytes]),
             stdout: 'pipe',
             stderr: 'ignore',
+            windowsHide: true,
           },
         )
         reader = (child.stdout as ReadableStream<Uint8Array>).getReader()

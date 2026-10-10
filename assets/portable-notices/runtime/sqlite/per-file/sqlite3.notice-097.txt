@@ -1,0 +1,20 @@
+/*
+** 2001-09-15
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This file contains SQLite's SQL parser.
+**
+** The canonical source code to this file ("parse.y") is a Lemon grammar
+** file that specifies the input grammar and actions to take while parsing.
+** That input file is processed by Lemon to generate a C-language
+** implementation of a parser for the given grammar.  You might be reading
+** this comment as part of the translated C-code.  Edits should be made
+** to the original parse.y sources.
+*/

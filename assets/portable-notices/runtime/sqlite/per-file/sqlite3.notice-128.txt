@@ -1,0 +1,54 @@
+/*
+** 2016-06-29
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This file implements a table-valued-function that
+** returns the values in a C-language array.
+** Examples:
+**
+**      SELECT * FROM carray($ptr,5)
+**
+** The query above returns 5 integers contained in a C-language array
+** at the address $ptr.  $ptr is a pointer to the array of integers.
+** The pointer value must be assigned to $ptr using the
+** sqlite3_bind_pointer() interface with a pointer type of "carray".
+** For example:
+**
+**    static int aX[] = { 53, 9, 17, 2231, 4, 99 };
+**    int i = sqlite3_bind_parameter_index(pStmt, "$ptr");
+**    sqlite3_bind_pointer(pStmt, i, aX, "carray", 0);
+**
+** There is an optional third parameter to determine the datatype of
+** the C-language array.  Allowed values of the third parameter are
+** 'int32', 'int64', 'double', 'char*', 'struct iovec'.  Example:
+**
+**      SELECT * FROM carray($ptr,10,'char*');
+**
+** The default value of the third parameter is 'int32'.
+**
+** HOW IT WORKS
+**
+** The carray "function" is really a virtual table with the
+** following schema:
+**
+**     CREATE TABLE carray(
+**       value,
+**       pointer HIDDEN,
+**       count HIDDEN,
+**       ctype TEXT HIDDEN
+**     );
+**
+** If the hidden columns "pointer" and "count" are unconstrained, then
+** the virtual table has no rows.  Otherwise, the virtual table interprets
+** the integer value of "pointer" as a pointer to the array and "count"
+** as the number of elements in the array.  The virtual table steps through
+** the array, element by element.
+*/

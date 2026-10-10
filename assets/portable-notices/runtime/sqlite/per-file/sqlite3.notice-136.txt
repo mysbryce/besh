@@ -1,0 +1,37 @@
+/*
+** 2015 May 08
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** This is an SQLite virtual table module implementing direct access to an
+** existing FTS5 index. The module may create several different types of
+** tables:
+**
+** col:
+**     CREATE TABLE vocab(term, col, doc, cnt, PRIMARY KEY(term, col));
+**
+**   One row for each term/column combination. The value of $doc is set to
+**   the number of fts5 rows that contain at least one instance of term
+**   $term within column $col. Field $cnt is set to the total number of
+**   instances of term $term in column $col (in any row of the fts5 table).
+**
+** row:
+**     CREATE TABLE vocab(term, doc, cnt, PRIMARY KEY(term));
+**
+**   One row for each term in the database. The value of $doc is set to
+**   the number of fts5 rows that contain at least one instance of term
+**   $term. Field $cnt is set to the total number of instances of term
+**   $term in the database.
+**
+** instance:
+**     CREATE TABLE vocab(term, doc, col, offset, PRIMARY KEY(<all-fields>));
+**
+**   One row for each term instance in the database.
+*/

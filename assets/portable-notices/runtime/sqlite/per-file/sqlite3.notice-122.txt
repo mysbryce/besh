@@ -1,0 +1,29 @@
+/*
+** 2007 May 6
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** $Id: icu.c,v 1.7 2007/12/13 21:54:11 drh Exp $
+**
+** This file implements an integration between the ICU library
+** ("International Components for Unicode", an open-source library
+** for handling unicode data) and SQLite. The integration uses
+** ICU to provide the following to SQLite:
+**
+**   * An implementation of the SQL regexp() function (and hence REGEXP
+**     operator) using the ICU uregex_XX() APIs.
+**
+**   * Implementations of the SQL scalar upper() and lower() functions
+**     for case mapping.
+**
+**   * Integration of ICU and SQLite collation sequences.
+**
+**   * An implementation of the LIKE operator that uses ICU to
+**     provide case-independent matching.
+*/

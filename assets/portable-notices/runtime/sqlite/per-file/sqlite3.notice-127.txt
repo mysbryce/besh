@@ -1,0 +1,38 @@
+/*
+** 2017-10-11
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** This file contains an implementation of the "sqlite_dbpage" virtual table.
+**
+** The sqlite_dbpage virtual table is used to read or write whole raw
+** pages of the database file.  The pager interface is used so that
+** uncommitted changes and changes recorded in the WAL file are correctly
+** retrieved.
+**
+** Usage example:
+**
+**    SELECT data FROM sqlite_dbpage('aux1') WHERE pgno=123;
+**
+** This is an eponymous virtual table so it does not need to be created before
+** use.  The optional argument to the sqlite_dbpage() table name is the
+** schema for the database file that is to be read.  The default schema is
+** "main".
+**
+** The data field of sqlite_dbpage table can be updated.  The new
+** value must be a BLOB which is the correct page size, otherwise the
+** update fails.  INSERT operations also work, and operate as if they
+** where REPLACE.  The size of the database can be extended by INSERT-ing
+** new pages on the end.
+**
+** Rows may not be deleted.  However, doing an INSERT to page number N
+** with NULL page data causes the N-th page and all subsequent pages to be
+** deleted and the database to be truncated.
+*/

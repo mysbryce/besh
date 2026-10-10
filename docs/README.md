@@ -4,6 +4,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 
 ## Use Besh
 
+- [Portable executable](portable.md): Windows background start/open/status/stop, storage, build targets, embedded notices and observed limits.
 - [Choose API steps](node-library.md): categories, search, favorites and explicit draft changes.
 - [Languages](localization.md): device selection, supported languages, preferences and current translation coverage.
 - [Getting started](getting-started.md): installation, first API, runtime keys, roles, configuration, recovery, project layout, and development commands.
@@ -30,11 +31,13 @@ Use this index for setup, supported API behavior, development checks, and planne
 
 ## Develop Besh
 
+- [Portable runtime source and rebuild](portable-runtime.md): bundled runtime provenance, notice inventory and rebuild requirements.
 - [Planned node plugins](plugins.md): proposed CommonJS/ZIP pattern, upload review and execution boundaries.
 - [Architecture](architecture.md): stack, management/runtime boundaries, publication, storage, and extension constraints.
 - [Design system](design.md): interface palette, typography, card/control styling, responsive layout, and motion rules.
 - [Testing](testing.md): approved public interfaces, commands, verification evidence, and limits.
 - [Roadmap](roadmap.md): implemented milestones, planned capabilities, completion gates, and next steps.
+- [Planned backend platform](platform-plan.md): Struct/schema forms, media/CMS, database adapters, product authentication, payments and measured runtime goals.
 - [Context and decisions](context.md): current user constraints, architecture choices, and resolved regressions.
 - [Repository presentation](repository.md): suggested public description and topics.
 - [Contributing](contributing.md): development workflow and contribution expectations.
