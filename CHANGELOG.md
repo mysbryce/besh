@@ -4,6 +4,12 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.17.2-alpha.0 — 2026-10-10
+
+### Changed
+
+- Pin GitHub Actions artifact uploads to v7.0.1. Preserve manual candidate preparation, read-only permissions, the reviewed bundle contents, and 14-day artifact retention.
+
 ## 0.17.1-alpha.0 — 2026-10-10
 
 ### Changed
