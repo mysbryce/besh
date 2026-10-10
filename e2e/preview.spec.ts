@@ -43,6 +43,7 @@ import { dataApiLocalePreviews } from './data-api-locale-previews'
 import { dataSourceGoogleLocalePreviews } from './data-source-google-locale-previews'
 import { dataSourceDeleteLocalePreviews } from './data-source-delete-locale-previews'
 import { dataSourceStatusLocalePreviews } from './data-source-status-locale-previews'
+import { databaseCatalogLocalePreviews } from './database-catalog-locale-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
@@ -4279,6 +4280,7 @@ for (const story of previewStories) {
     story.id === 'management-data-source-google' ||
     story.id === 'management-data-source-deletion' ||
     story.id === 'management-data-source-status' ||
+    story.id === 'database-catalog-locales' ||
     story.id === 'management-data-api-generation'
   )
     continue
@@ -4322,6 +4324,7 @@ for (const [story, locale, helper] of [
   ['management-data-source-google', 'en-US', dataSourceGoogleLocalePreviews],
   ['management-data-source-deletion', 'en-US', dataSourceDeleteLocalePreviews],
   ['management-data-source-status', 'en-US', dataSourceStatusLocalePreviews],
+  ['database-catalog-locales', 'en-US', databaseCatalogLocalePreviews],
 ] as const) {
   test.describe(story, () => {
     test.use({
@@ -4331,13 +4334,13 @@ for (const [story, locale, helper] of [
         : {}),
     })
     test(story, async ({ page, previewWorkspace }) => {
-      const { owner, origin } = previewWorkspace
+      const { owner, origin, directory } = previewWorkspace
       const errors: string[] = []
       page.on('pageerror', (error) => errors.push(error.message))
       const { capture, complete } = storyCapture(page, story)
       // Locale stories must observe the first signed-out render in their real
       // browser locale, before any sign-in or persisted appearance preference.
-      await helper({ page, owner, apiOrigin: origin, capture })
+      await helper({ page, owner, apiOrigin: origin, directory, capture })
       expect(errors).toEqual([])
       complete()
       await page.context().clearPermissions()

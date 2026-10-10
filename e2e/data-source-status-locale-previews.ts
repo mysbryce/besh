@@ -669,10 +669,12 @@ export async function dataSourceStatusLocalePreviews({
         exact: true,
       }),
     ).toBeEnabled()
-    expect(requests.slice(refreshRequestsBefore.length)).toEqual([
-      'GET /api/data-sources',
-      `GET /api/data-sources/${imported.id}`,
-    ])
+    await expect
+      .poll(() => requests.slice(refreshRequestsBefore.length))
+      .toEqual([
+        'GET /api/data-sources',
+        `GET /api/data-sources/${imported.id}`,
+      ])
 
     for (const [language, label] of choices) {
       await choose(language, label)

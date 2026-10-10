@@ -37,6 +37,7 @@ export const previewStories = [
   { id: 'management-data-source-google', count: 19, locks: [] },
   { id: 'management-data-source-deletion', count: 20, locks: [] },
   { id: 'management-data-source-status', count: 22, locks: [] },
+  { id: 'database-catalog-locales', count: 23, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']
@@ -50,4 +51,5 @@ export const sqlitePreviewStories = [
   'tenant-field-profiles',
   'protected-read-graphs',
   'member-field-profiles',
+  'database-catalog-locales',
 ] as const satisfies readonly PreviewStory[]

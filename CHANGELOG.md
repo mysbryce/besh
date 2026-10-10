@@ -4,6 +4,19 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.8-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Translate SQLite upload, saved-copy selection, loading, read-only/no-sync guidance, metadata and upload/catalog-refresh completion in all seven dashboard languages.
+- Preserve the chosen file, authored names, inspected table metadata and current permissions when changing language. Refresh connections reloads saved metadata; it does not synchronize the original database.
+
+### Changed
+
+- Add a real native SQLite browser journey and 23 page/action previews for staged uploads, pending delivery, saved catalogs and permission boundaries.
+- Wait for the complete observed source-refresh request sequence before asserting it; preserve the exact requests and existing browser budgets.
+- Record completed head/main validation for the preceding saved-source status delivery.
+
 ## 0.20.7-alpha.0 — 2026-10-10
 
 ### Fixed

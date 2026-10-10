@@ -1,4 +1,34 @@
 const messages: Record<string, string> = {
+  'READ A SAVED DATABASE COPY': '저장된 데이터베이스 복사본 읽기',
+  'Choose a SQLite copy, review its tables, then build a read API.':
+    'SQLite 복사본을 선택하고 테이블을 확인한 다음 읽기 API를 만드세요.',
+  'Refresh connections': '연결 목록 새로고침',
+  'SQLite uploaded copy · read-only': '업로드된 SQLite 복사본 · 읽기 전용',
+  'This is an uploaded read-only copy. Changes to your original database are not synced.':
+    '업로드된 읽기 전용 복사본입니다. 원본 데이터베이스의 변경 사항은 동기화되지 않습니다.',
+  'Upload an ordinary SQLite file up to 2 MiB. No database address, server credentials, or SQL is needed.':
+    '2 MiB 이하의 일반 SQLite 파일을 업로드하세요. 데이터베이스 주소, 서버 인증 정보 또는 SQL은 필요하지 않습니다.',
+  'Loading SQLite copies…': 'SQLite 복사본을 불러오는 중…',
+  'Upload a SQLite copy': 'SQLite 복사본 업로드',
+  'Manage database connections access is needed to upload, check, or delete copies.':
+    '복사본을 업로드, 확인 또는 삭제하려면 데이터베이스 연결 관리 권한이 필요합니다.',
+  'Connection name': '연결 이름',
+  'SQLite file': 'SQLite 파일',
+  'Upload read-only copy': '읽기 전용 복사본 업로드',
+  'Read database connections access is needed to list saved copies, preview rows, or choose API fields.':
+    '저장된 복사본 목록, 행 미리보기 또는 API 필드 선택에는 데이터베이스 연결 읽기 권한이 필요합니다.',
+  'No SQLite copies yet': '아직 SQLite 복사본이 없습니다',
+  'Upload a copy to review its ordinary tables and saved rows.':
+    '복사본을 업로드하여 일반 테이블과 저장된 행을 확인하세요.',
+  'Saved SQLite copies': '저장된 SQLite 복사본',
+  'Read-only · v{version}': '읽기 전용 · v{version}',
+  'Database connection': '데이터베이스 연결',
+  '{count} tables · {size} KiB saved copy. Published APIs read this copy.':
+    '테이블 {count}개 · 저장된 복사본 {size} KiB. 게시된 API는 이 복사본을 읽습니다.',
+  'SQLite copy uploaded. Review its table and returned columns.':
+    'SQLite 복사본을 업로드했습니다. 테이블과 반환할 열을 확인하세요.',
+  'Database connections refreshed.':
+    '데이터베이스 연결 목록을 새로고침했습니다.',
   'Loading data sources…': '데이터 소스를 불러오는 중…',
   'Read data sources access is needed to browse saved sources.':
     '저장된 데이터 소스를 보려면 데이터 소스 읽기 권한이 필요합니다.',

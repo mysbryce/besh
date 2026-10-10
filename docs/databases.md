@@ -21,6 +21,16 @@ Column names become safe API keys while the original column labels remain visibl
 
 Empty results are valid; try a different table or equality value. **Refresh connections** reloads current metadata. It does not refresh the uploaded data from its original source.
 
+## Upload and catalog languages
+
+The local `0.20.8-alpha.0` slice adds 21 messages for the upload form and saved-copy catalog in all seven dashboard languages. Full read-only/no-sync and 2 MiB guidance, loading/empty states, permission explanations, the saved-copy selector, version/table/size summary and upload/catalog-refresh notices are included. Connection and file names, original uploaded bytes, table/column names and types stay unchanged. Counts, versions and the current one-decimal KiB size display keep their existing representation.
+
+Changing language sends no database, source or flow request. **Refresh connections** is an explicit catalog GET followed by the selected copy's detail GET. It does not fetch the original database, replace its bytes or synchronize changes. Pending controls stay disabled; the completion notice uses the current language.
+
+Readers may browse metadata but cannot upload. Manage-only members may upload and see the returned metadata for that new copy, while general catalog, detail and row-preview requests remain denied. Selected API access does not grant raw-copy browsing. Existing server grants, native child-reader limits and upload validation remain unchanged.
+
+Query/row-preview forms, API generation, check/delete actions, raw errors and advanced policy panels remain separate translation work. The public RED/GREEN journey, complete local checks and scoped visual review passed; see [testing](testing.md) and [language coverage](localization.md). The next narrow language slice covers SQLite query and row-preview forms.
+
 ## Permissions
 
 - **Read database copies** (`database-connections.read`) reads connection/table metadata and selected row previews.

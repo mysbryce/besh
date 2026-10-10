@@ -1,4 +1,34 @@
 const messages: Record<string, string> = {
+  'READ A SAVED DATABASE COPY': 'LEIA UMA CÓPIA SALVA DO BANCO DE DADOS',
+  'Choose a SQLite copy, review its tables, then build a read API.':
+    'Escolha uma cópia SQLite, confira suas tabelas e crie uma API de leitura.',
+  'Refresh connections': 'Atualizar lista de conexões',
+  'SQLite uploaded copy · read-only': 'Cópia SQLite enviada · somente leitura',
+  'This is an uploaded read-only copy. Changes to your original database are not synced.':
+    'Esta é uma cópia enviada somente para leitura. Alterações no banco de dados original não são sincronizadas.',
+  'Upload an ordinary SQLite file up to 2 MiB. No database address, server credentials, or SQL is needed.':
+    'Envie um arquivo SQLite comum de até 2 MiB. Não é necessário endereço do banco de dados, credenciais do servidor ou SQL.',
+  'Loading SQLite copies…': 'Carregando cópias SQLite…',
+  'Upload a SQLite copy': 'Enviar uma cópia SQLite',
+  'Manage database connections access is needed to upload, check, or delete copies.':
+    'É necessária a permissão de gerenciamento de conexões de banco de dados para enviar, verificar ou excluir cópias.',
+  'Connection name': 'Nome da conexão',
+  'SQLite file': 'Arquivo SQLite',
+  'Upload read-only copy': 'Enviar cópia somente para leitura',
+  'Read database connections access is needed to list saved copies, preview rows, or choose API fields.':
+    'É necessária a permissão de leitura de conexões de banco de dados para listar cópias salvas, visualizar linhas ou escolher campos da API.',
+  'No SQLite copies yet': 'Ainda não há cópias SQLite',
+  'Upload a copy to review its ordinary tables and saved rows.':
+    'Envie uma cópia para conferir suas tabelas comuns e linhas salvas.',
+  'Saved SQLite copies': 'Cópias SQLite salvas',
+  'Read-only · v{version}': 'Somente leitura · v{version}',
+  'Database connection': 'Conexão de banco de dados',
+  '{count} tables · {size} KiB saved copy. Published APIs read this copy.':
+    '{count} tabelas · Cópia salva de {size} KiB. As APIs publicadas leem esta cópia.',
+  'SQLite copy uploaded. Review its table and returned columns.':
+    'Cópia SQLite enviada. Confira sua tabela e as colunas retornadas.',
+  'Database connections refreshed.':
+    'Lista de conexões de banco de dados atualizada.',
   'Loading data sources…': 'Carregando fontes de dados…',
   'Read data sources access is needed to browse saved sources.':
     'É necessária a permissão de leitura de fontes de dados para ver as fontes salvas.',

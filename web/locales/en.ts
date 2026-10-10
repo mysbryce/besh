@@ -1,4 +1,33 @@
 const messages: Record<string, string> = {
+  'READ A SAVED DATABASE COPY': 'READ A SAVED DATABASE COPY',
+  'Choose a SQLite copy, review its tables, then build a read API.':
+    'Choose a SQLite copy, review its tables, then build a read API.',
+  'Refresh connections': 'Refresh connections',
+  'SQLite uploaded copy · read-only': 'SQLite uploaded copy · read-only',
+  'This is an uploaded read-only copy. Changes to your original database are not synced.':
+    'This is an uploaded read-only copy. Changes to your original database are not synced.',
+  'Upload an ordinary SQLite file up to 2 MiB. No database address, server credentials, or SQL is needed.':
+    'Upload an ordinary SQLite file up to 2 MiB. No database address, server credentials, or SQL is needed.',
+  'Loading SQLite copies…': 'Loading SQLite copies…',
+  'Upload a SQLite copy': 'Upload a SQLite copy',
+  'Manage database connections access is needed to upload, check, or delete copies.':
+    'Manage database connections access is needed to upload, check, or delete copies.',
+  'Connection name': 'Connection name',
+  'SQLite file': 'SQLite file',
+  'Upload read-only copy': 'Upload read-only copy',
+  'Read database connections access is needed to list saved copies, preview rows, or choose API fields.':
+    'Read database connections access is needed to list saved copies, preview rows, or choose API fields.',
+  'No SQLite copies yet': 'No SQLite copies yet',
+  'Upload a copy to review its ordinary tables and saved rows.':
+    'Upload a copy to review its ordinary tables and saved rows.',
+  'Saved SQLite copies': 'Saved SQLite copies',
+  'Read-only · v{version}': 'Read-only · v{version}',
+  'Database connection': 'Database connection',
+  '{count} tables · {size} KiB saved copy. Published APIs read this copy.':
+    '{count} tables · {size} KiB saved copy. Published APIs read this copy.',
+  'SQLite copy uploaded. Review its table and returned columns.':
+    'SQLite copy uploaded. Review its table and returned columns.',
+  'Database connections refreshed.': 'Database connections refreshed.',
   'Loading data sources…': 'Loading data sources…',
   'Read data sources access is needed to browse saved sources.':
     'Read data sources access is needed to browse saved sources.',

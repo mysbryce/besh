@@ -6,6 +6,7 @@ import { Select } from './components/ui/select'
 import { Badge } from './components/ui/badge'
 import { api, authenticatedFetch, type SavedFlow } from './lib/api'
 import { useStudio } from './store'
+import { useTranslation } from './i18n'
 import { can, type Permission } from '../src/workspace/permissions'
 import type {
   DatabaseConnection,
@@ -152,6 +153,8 @@ function DatabaseApiForm({
 }
 
 export function DatabaseConnections({ onOpenApi }: { onOpenApi: () => void }) {
+  const { t } = useTranslation()
+
   const state = useStudio()
   const readable = can(state.member, 'database-connections.read')
   const manageable = can(state.member, 'database-connections.manage')
@@ -264,9 +267,13 @@ export function DatabaseConnections({ onOpenApi }: { onOpenApi: () => void }) {
     <>
       <div className="page-title">
         <div>
-          <div className="eyebrow">READ A SAVED DATABASE COPY</div>
-          <h1>Database connections</h1>
-          <p>Choose a SQLite copy, review its tables, then build a read API.</p>
+          <div className="eyebrow">{t('READ A SAVED DATABASE COPY')}</div>
+          <h1>{t('Database connections')}</h1>
+          <p>
+            {t(
+              'Choose a SQLite copy, review its tables, then build a read API.',
+            )}
+          </p>
         </div>
         <Button
           variant="outline"
@@ -274,20 +281,22 @@ export function DatabaseConnections({ onOpenApi }: { onOpenApi: () => void }) {
           onClick={() => setRefresh((value) => value + 1)}
         >
           <RefreshCw />
-          Refresh connections
+          {t('Refresh connections')}
         </Button>
       </div>
       <div className="product-login-guide">
         <Database />
         <div>
-          <strong>SQLite uploaded copy · read-only</strong>
+          <strong>{t('SQLite uploaded copy · read-only')}</strong>
           <p>
-            This is an uploaded read-only copy. Changes to your original
-            database are not synced.
+            {t(
+              'This is an uploaded read-only copy. Changes to your original database are not synced.',
+            )}
           </p>
           <p>
-            Upload an ordinary SQLite file up to 2 MiB. No database address,
-            server credentials, or SQL is needed.
+            {t(
+              'Upload an ordinary SQLite file up to 2 MiB. No database address, server credentials, or SQL is needed.',
+            )}
           </p>
         </div>
       </div>
@@ -297,48 +306,58 @@ export function DatabaseConnections({ onOpenApi }: { onOpenApi: () => void }) {
           stale action.
         </p>
       ) : null}
-      {loading ? <p>Loading SQLite copies…</p> : null}
+      {loading ? <p>{t('Loading SQLite copies…')}</p> : null}
       <section className="source-preview source-import">
         <div className="panel-heading">
-          <h2>Upload a SQLite copy</h2>
+          <h2>{t('Upload a SQLite copy')}</h2>
           <Upload size={20} />
         </div>
         {!manageable ? (
           <p className="field-help">
-            Manage database connections access is needed to upload, check, or
-            delete copies.
+            {t(
+              'Manage database connections access is needed to upload, check, or delete copies.',
+            )}
           </p>
         ) : null}
         <form
           className="source-import-form"
           onSubmit={(event) => {
             event.preventDefault()
+
             if (!file || !name.trim() || state.busy || !manageable) return
+
             if (file.size > 2 * 1024 * 1024) {
               setError('Choose a SQLite file no larger than 2 MiB.')
               return
             }
+
             perform('database-connections.manage', async () => {
               const body = new FormData()
               body.set('name', name.trim())
               body.set('file', file)
+
               const response = await authenticatedFetch(
                 '/api/database-connections',
                 state.token,
                 { method: 'POST', body },
               )
               const value = await response.json()
+
               if (!response.ok)
                 throw new Error(value.error ?? 'Could not upload SQLite copy.')
+
               if (!current('database-connections.manage')) return
+
               const connection = value as DatabaseConnection
               ++request.current
               setLoading(false)
               setConnections((items) => [connection, ...items])
               show(connection)
+
               setName('')
               setFile(null)
               if (fileInput.current) fileInput.current.value = ''
+
               state.message(
                 'SQLite copy uploaded. Review its table and returned columns.',
               )
@@ -346,9 +365,9 @@ export function DatabaseConnections({ onOpenApi }: { onOpenApi: () => void }) {
           }}
         >
           <label>
-            Connection name
+            {t('Connection name')}
             <Input
-              aria-label="Connection name"
+              aria-label={t('Connection name')}
               value={name}
               maxLength={80}
               disabled={state.busy || !manageable}
@@ -357,10 +376,10 @@ export function DatabaseConnections({ onOpenApi }: { onOpenApi: () => void }) {
             />
           </label>
           <label>
-            SQLite file
+            {t('SQLite file')}
             <Input
               ref={fileInput}
-              aria-label="SQLite file"
+              aria-label={t('SQLite file')}
               type="file"
               accept=".sqlite,.sqlite3,.db"
               disabled={state.busy || !manageable}
@@ -369,34 +388,39 @@ export function DatabaseConnections({ onOpenApi }: { onOpenApi: () => void }) {
           </label>
           <Button disabled={state.busy || !manageable || !file || !name.trim()}>
             <Upload />
-            Upload read-only copy
+            {t('Upload read-only copy')}
           </Button>
         </form>
       </section>
       {!readable ? (
         <p className="field-help">
-          Read database connections access is needed to list saved copies,
-          preview rows, or choose API fields.
+          {t(
+            'Read database connections access is needed to list saved copies, preview rows, or choose API fields.',
+          )}
         </p>
       ) : null}
       {readable && !loading && !connections.length ? (
         <section className="source-preview">
-          <h2>No SQLite copies yet</h2>
-          <p>Upload a copy to review its ordinary tables and saved rows.</p>
+          <h2>{t('No SQLite copies yet')}</h2>
+          <p>
+            {t('Upload a copy to review its ordinary tables and saved rows.')}
+          </p>
         </section>
       ) : null}
       {detail ? (
         <section className="source-preview">
           <div className="panel-heading">
-            <h2>Saved SQLite copies</h2>
-            <Badge variant="outline">Read-only · v{detail.version}</Badge>
+            <h2>{t('Saved SQLite copies')}</h2>
+            <Badge variant="outline">
+              {t('Read-only · v{version}', { version: detail.version })}
+            </Badge>
           </div>
           <div className="simple-form">
             {readable ? (
               <label>
-                Database connection
+                {t('Database connection')}
                 <Select
-                  label="Database connection"
+                  label={t('Database connection')}
                   value={detail.id}
                   disabled={state.busy || loading}
                   options={connections.map((item) => ({
@@ -423,8 +447,13 @@ export function DatabaseConnections({ onOpenApi }: { onOpenApi: () => void }) {
               <h3>{detail.name}</h3>
             )}
             <p className="field-help">
-              {detail.tables.length} tables · {(detail.bytes / 1024).toFixed(1)}{' '}
-              KiB saved copy. Published APIs read this copy.
+              {t(
+                '{count} tables · {size} KiB saved copy. Published APIs read this copy.',
+                {
+                  count: detail.tables.length,
+                  size: (detail.bytes / 1024).toFixed(1),
+                },
+              )}
             </p>
           </div>
           {readable ? (

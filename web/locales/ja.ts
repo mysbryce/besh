@@ -1,4 +1,34 @@
 const messages: Record<string, string> = {
+  'READ A SAVED DATABASE COPY': '保存済みデータベースコピーを読み取る',
+  'Choose a SQLite copy, review its tables, then build a read API.':
+    'SQLite のコピーを選び、テーブルを確認してから、読み取り API を作成します。',
+  'Refresh connections': '接続一覧を更新',
+  'SQLite uploaded copy · read-only':
+    'アップロード済み SQLite コピー · 読み取り専用',
+  'This is an uploaded read-only copy. Changes to your original database are not synced.':
+    'これはアップロードされた読み取り専用のコピーです。元のデータベースの変更は同期されません。',
+  'Upload an ordinary SQLite file up to 2 MiB. No database address, server credentials, or SQL is needed.':
+    '2 MiB 以下の通常の SQLite ファイルをアップロードします。データベースのアドレス、サーバーの認証情報、SQL は不要です。',
+  'Loading SQLite copies…': 'SQLite コピーを読み込み中…',
+  'Upload a SQLite copy': 'SQLite コピーをアップロード',
+  'Manage database connections access is needed to upload, check, or delete copies.':
+    'コピーのアップロード、確認、削除には、データベース接続の管理権限が必要です。',
+  'Connection name': '接続名',
+  'SQLite file': 'SQLite ファイル',
+  'Upload read-only copy': '読み取り専用コピーをアップロード',
+  'Read database connections access is needed to list saved copies, preview rows, or choose API fields.':
+    '保存済みコピーの一覧表示、行のプレビュー、API フィールドの選択には、データベース接続の閲覧権限が必要です。',
+  'No SQLite copies yet': 'SQLite コピーはまだありません',
+  'Upload a copy to review its ordinary tables and saved rows.':
+    'コピーをアップロードして、通常のテーブルと保存済みの行を確認します。',
+  'Saved SQLite copies': '保存済み SQLite コピー',
+  'Read-only · v{version}': '読み取り専用 · v{version}',
+  'Database connection': 'データベース接続',
+  '{count} tables · {size} KiB saved copy. Published APIs read this copy.':
+    '{count} テーブル · 保存済みコピー {size} KiB。公開済み API はこのコピーを読み取ります。',
+  'SQLite copy uploaded. Review its table and returned columns.':
+    'SQLite コピーをアップロードしました。テーブルと返す列を確認してください。',
+  'Database connections refreshed.': 'データベース接続一覧を更新しました。',
   'Loading data sources…': 'データソースを読み込み中…',
   'Read data sources access is needed to browse saved sources.':
     '保存済みデータソースを表示するには、データソースの閲覧権限が必要です。',
