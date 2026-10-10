@@ -4,6 +4,50 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.18.1-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Replace the gallery's text chevron with an aligned SVG icon.
+- Reduce desktop sidebar and custom dropdown spacing while retaining full labels and 44px phone targets.
+- Use rounded themed native scrollbars, preserving wheel, keyboard and system high-contrast behavior.
+- Make shared dropdown sizing apply consistently to member and runtime-key forms.
+- Wait for closing dropdowns to disappear before choosing a preview capture viewport.
+- Preserve opaque redaction alignment when native scrollbars are captured in full-page previews.
+
+### Changed
+
+- Capture actual scrollbars in previews and add compact navigation/menu states.
+- Document protected-main dependency updates, their patch history and the observed GitHub artifact storage-quota limitation.
+
+## 0.18.0-alpha.0 — 2026-10-10
+
+### Added
+
+- Private, one-use invitation links so existing workspace members can set their own email/password sign-in.
+- Owner invitation metadata, explicit reissue/revocation and a separate password setup page.
+- Categorized step picker with search, persistent favorites and translated built-in descriptions.
+- Device-based language selection and a custom selector for English, Thai, Mandarin Chinese, Russian, Japanese, Korean and Portuguese in the main workflows.
+- Planned plugin documentation with CommonJS exports, ZIP structure and an owner upload/review pattern.
+
+### Changed
+
+- Use compact desktop spacing while retaining mobile touch targets and light/dark/system appearance.
+- Run normal browser tests with four workers, retaining locks for shared ports, setup, clipboard and native k6 work.
+- Isolate preview workspaces and run real preview stories with four workers. Serialize shared clipboard and native k6 work.
+
+### Fixed
+
+- Recover stalled language loading with bounded English fallback and explicit retry.
+- Capture invitation links during language startup without losing the latest recipient or restoring private workspace data.
+- Keep Korean phone headings at word boundaries and show import guidance after an empty spreadsheet catalog loads.
+
+### Security
+
+- Hash stored invitation secrets, fix expiration at 24 hours and create accounts atomically without overwriting an existing account.
+- Recheck invitation eligibility after password hashing. Bound attempts and concurrent work; invalidate pending links after access changes or owner-key recovery.
+- Keep invitation secrets out of URL requests, browser storage, audit records and previews. Require explicit sign-out of an existing browser session before dashboard acceptance.
+
 ## 0.17.2-alpha.0 — 2026-10-10
 
 ### Changed

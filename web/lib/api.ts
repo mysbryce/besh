@@ -121,6 +121,7 @@ export type Member = {
   tenantAssignment: TenantAssignment
   roleId?: string
   roleName?: string
+  hasAccount?: boolean
 }
 export type Role = {
   id: string

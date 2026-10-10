@@ -157,8 +157,10 @@ export function renderPreview(records: PreviewRecord[]) {
                 aria-haspopup="listbox"
                 aria-expanded="false"
               >
-                <span id="group-label">All pages</span
-                ><span aria-hidden="true">⌄</span>
+                <span id="group-label">All pages</span>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="m7 10 5 5 5-5" />
+                </svg>
               </button>
               <div id="page-options" role="listbox" aria-label="Pages" hidden>
                 ${['', ...groups].map((group, index) => `<div id="page-option-${index}" role="option" aria-selected="${index === 0}" data-value="${escape(group)}">${escape(group || 'All pages')}</div>`).join('')}

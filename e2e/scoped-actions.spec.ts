@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { scopedActionsPreviews } from './scoped-actions-preview'
 
+test.describe.configure({ lock: 'native-k6' })
+
 test('selected API operator uses explicit dependencies and bound callers', async ({
   page,
 }) => {

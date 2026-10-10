@@ -162,6 +162,7 @@ export function sessionService(store: Store, now = Date.now) {
         store
           .query('DELETE FROM sessions WHERE member_id = ? AND id != ?')
           .run(member.id, sessionId ?? '')
+        store.invalidateInvitations(member.id, member.id)
         store.audit(member.id, 'account.updated', member.id)
       })()
       return { email: account.email }

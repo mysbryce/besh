@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { graphqlFlow, helloFlow } from '../test/fixtures'
 
+test.describe.configure({ lock: 'clipboard' })
+
 test('owner replaces a caller key once, saves its secret, and sees revoked history', async ({
   page,
   context,

@@ -13,6 +13,7 @@ import type {
 } from '../src/workspace/dependency-model'
 import { useStudio } from './store'
 import { canReadDependencyStructure } from './dependency-access'
+import { useTranslation } from './i18n'
 
 type ValueType =
   | 'text'
@@ -115,6 +116,7 @@ function FieldRows({
   references?: boolean
   textOnly?: boolean
 }) {
+  const { t } = useTranslation()
   function update(id: string, patch: Partial<FieldRow>) {
     onChange(rows.map((row) => (row.id === id ? { ...row, ...patch } : row)))
   }
@@ -124,9 +126,15 @@ function FieldRows({
       {rows.map((row, index) => (
         <div className="field-row" key={row.id}>
           <label>
-            {prefix} name {index + 1}
+            {t('{prefix} name {number}', {
+              prefix: t(prefix),
+              number: index + 1,
+            })}
             <Input
-              aria-label={`${prefix} name ${index + 1}`}
+              aria-label={t('{prefix} name {number}', {
+                prefix: t(prefix),
+                number: index + 1,
+              })}
               value={row.name}
               disabled={disabled}
               onChange={(event) => update(row.id, { name: event.target.value })}
@@ -134,9 +142,15 @@ function FieldRows({
           </label>
           {!textOnly ? (
             <label>
-              {prefix} type {index + 1}
+              {t('{prefix} type {number}', {
+                prefix: t(prefix),
+                number: index + 1,
+              })}
               <Select
-                label={`${prefix} type ${index + 1}`}
+                label={t('{prefix} type {number}', {
+                  prefix: t(prefix),
+                  number: index + 1,
+                })}
                 value={row.type}
                 disabled={disabled || row.type === 'nested'}
                 onValueChange={(type) =>
@@ -151,19 +165,19 @@ function FieldRows({
                   })
                 }
                 options={[
-                  { value: 'text', label: 'Text' },
-                  { value: 'number', label: 'Number' },
-                  { value: 'boolean', label: 'True or false' },
-                  { value: 'null', label: 'Empty value' },
+                  { value: 'text', label: t('Text') },
+                  { value: 'number', label: t('Number') },
+                  { value: 'boolean', label: t('True or false') },
+                  { value: 'null', label: t('Empty value') },
                   ...(references
                     ? [
-                        { value: 'body', label: 'From request body' },
-                        { value: 'query', label: 'From query parameter' },
-                        { value: 'params', label: 'From path parameter' },
+                        { value: 'body', label: t('From request body') },
+                        { value: 'query', label: t('From query parameter') },
+                        { value: 'params', label: t('From path parameter') },
                       ]
                     : []),
                   ...(row.type === 'nested'
-                    ? [{ value: 'nested', label: 'Nested data (preserved)' }]
+                    ? [{ value: 'nested', label: t('Nested data (preserved)') }]
                     : []),
                 ]}
               />
@@ -171,15 +185,21 @@ function FieldRows({
           ) : null}
           {row.type === 'boolean' ? (
             <label>
-              {prefix} value {index + 1}
+              {t('{prefix} value {number}', {
+                prefix: t(prefix),
+                number: index + 1,
+              })}
               <Select
-                label={`${prefix} value ${index + 1}`}
+                label={t('{prefix} value {number}', {
+                  prefix: t(prefix),
+                  number: index + 1,
+                })}
                 value={row.value}
                 disabled={disabled}
                 onValueChange={(value) => update(row.id, { value })}
                 options={[
-                  { value: 'true', label: 'True' },
-                  { value: 'false', label: 'False' },
+                  { value: 'true', label: t('True') },
+                  { value: 'false', label: t('False') },
                 ]}
               />
             </label>
@@ -193,11 +213,16 @@ function FieldRows({
               {row.type === 'body' ||
               row.type === 'query' ||
               row.type === 'params'
-                ? 'Input field'
-                : `${prefix} value`}{' '}
-              {index + 1}
+                ? `${t('Input field')} ${index + 1}`
+                : t('{prefix} value {number}', {
+                    prefix: t(prefix),
+                    number: index + 1,
+                  })}
               <Input
-                aria-label={`${prefix} value ${index + 1}`}
+                aria-label={t('{prefix} value {number}', {
+                  prefix: t(prefix),
+                  number: index + 1,
+                })}
                 value={row.value}
                 disabled={disabled}
                 onChange={(event) =>
@@ -216,7 +241,7 @@ function FieldRows({
           <Button
             type="button"
             variant="ghost"
-            aria-label={`Remove field ${index + 1}`}
+            aria-label={t('Remove field {number}', { number: index + 1 })}
             disabled={disabled}
             onClick={() => onChange(rows.filter((item) => item.id !== row.id))}
           >
@@ -236,7 +261,7 @@ function FieldRows({
         }
       >
         <Plus />
-        {addLabel}
+        {t(addLabel)}
       </Button>
     </div>
   )
@@ -253,6 +278,7 @@ export function ResponseForm({
   onApply: (config: { status: number; body: unknown }) => void
   onError: (message: string) => void
 }) {
+  const { t } = useTranslation()
   const [status, setStatus] = useState(String(config.status))
   const [rows, setRows] = useState(() => fieldRows(config.body))
   const [contents, setContents] = useState(
@@ -270,9 +296,9 @@ export function ResponseForm({
   return (
     <div className="simple-form">
       <label>
-        Response status
+        {t('Response status')}
         <Select
-          label="Response status"
+          label={t('Response status')}
           value={status}
           onValueChange={setStatus}
           disabled={disabled}
@@ -285,17 +311,22 @@ export function ResponseForm({
         />
       </label>
       <label>
-        Response contents
+        {t('Response contents')}
         <Select
-          label="Response contents"
+          label={t('Response contents')}
           value={contents}
           disabled={disabled}
           options={[
-            { value: 'fields', label: 'Response fields' },
-            { value: 'data', label: 'Rows from data step' },
-            { value: 'auth', label: 'GitHub login result' },
+            { value: 'fields', label: t('Response fields') },
+            { value: 'data', label: t('Rows from data step') },
+            { value: 'auth', label: t('GitHub login result') },
             ...(contents === 'structured'
-              ? [{ value: 'structured', label: 'Structured value (preserved)' }]
+              ? [
+                  {
+                    value: 'structured',
+                    label: t('Structured value (preserved)'),
+                  },
+                ]
               : []),
           ]}
           onValueChange={(value) => {
@@ -346,7 +377,7 @@ export function ResponseForm({
           }
         }}
       >
-        Apply configuration
+        {t('Apply configuration')}
       </Button>
     </div>
   )
@@ -365,6 +396,7 @@ export function SocialNodeForm({
   onApply: (config: { connectionId: string }) => void
   onError: (message: string) => void
 }) {
+  const { t } = useTranslation()
   const state = useStudio()
   const selectedAccess = state.member?.access.mode === 'selected'
   const [connections, setConnections] = useState<
@@ -408,9 +440,9 @@ export function SocialNodeForm({
   return (
     <div className="simple-form">
       <label>
-        GitHub connection
+        {t('GitHub connection')}
         <Select
-          label="GitHub connection"
+          label={t('GitHub connection')}
           value={selected}
           onValueChange={setSelected}
           options={connections.map((connection) => ({
@@ -418,7 +450,7 @@ export function SocialNodeForm({
             label: connection.name,
           }))}
           disabled={disabled || !connections.length}
-          placeholder="Choose a connection"
+          placeholder={t('Choose a connection')}
         />
       </label>
       <p className="field-help">
@@ -434,7 +466,7 @@ export function SocialNodeForm({
         }
         onClick={() => onApply({ connectionId: selected })}
       >
-        Apply configuration
+        {t('Apply configuration')}
       </Button>
     </div>
   )
@@ -451,6 +483,7 @@ export function ConditionForm({
   onApply: (config: { field: string; equals: unknown }) => void
   onError: (message: string) => void
 }) {
+  const { t } = useTranslation()
   const [source, setSource] = useState(
     config.field.startsWith('params.')
       ? 'params'
@@ -477,23 +510,23 @@ export function ConditionForm({
   return (
     <div className="simple-form">
       <label>
-        Input source
+        {t('Input source')}
         <Select
-          label="Input source"
+          label={t('Input source')}
           value={source}
           disabled={disabled}
           onValueChange={setSource}
           options={[
-            { value: 'body', label: 'Request body' },
-            { value: 'query', label: 'Query parameter' },
-            { value: 'params', label: 'Path parameter' },
+            { value: 'body', label: t('Request body') },
+            { value: 'query', label: t('Query parameter') },
+            { value: 'params', label: t('Path parameter') },
           ]}
         />
       </label>
       <label>
-        Input field
+        {t('Input field')}
         <Input
-          aria-label="Input field"
+          aria-label={t('Input field')}
           value={field}
           disabled={disabled}
           onChange={(event) => setField(event.target.value)}
@@ -501,19 +534,19 @@ export function ConditionForm({
         />
       </label>
       <label>
-        Comparison
+        {t('Comparison')}
         <Select
-          label="Comparison"
+          label={t('Comparison')}
           value="equals"
           disabled={disabled}
           onValueChange={() => {}}
-          options={[{ value: 'equals', label: 'Equals' }]}
+          options={[{ value: 'equals', label: t('Equals') }]}
         />
       </label>
       <label>
-        Expected type
+        {t('Expected type')}
         <Select
-          label="Expected type"
+          label={t('Expected type')}
           value={type}
           disabled={disabled}
           onValueChange={(next) => {
@@ -521,32 +554,32 @@ export function ConditionForm({
             setValue(next === 'boolean' ? 'true' : next === 'number' ? '0' : '')
           }}
           options={[
-            { value: 'text', label: 'Text' },
-            { value: 'number', label: 'Number' },
-            { value: 'boolean', label: 'True or false' },
-            { value: 'null', label: 'Empty value' },
+            { value: 'text', label: t('Text') },
+            { value: 'number', label: t('Number') },
+            { value: 'boolean', label: t('True or false') },
+            { value: 'null', label: t('Empty value') },
           ]}
         />
       </label>
       {type === 'boolean' ? (
         <label>
-          Expected value
+          {t('Expected value')}
           <Select
-            label="Expected value"
+            label={t('Expected value')}
             value={value}
             disabled={disabled}
             onValueChange={setValue}
             options={[
-              { value: 'true', label: 'True' },
-              { value: 'false', label: 'False' },
+              { value: 'true', label: t('True') },
+              { value: 'false', label: t('False') },
             ]}
           />
         </label>
       ) : type !== 'null' ? (
         <label>
-          Expected value
+          {t('Expected value')}
           <Input
-            aria-label="Expected value"
+            aria-label={t('Expected value')}
             value={value}
             disabled={disabled}
             onChange={(event) => setValue(event.target.value)}
@@ -576,7 +609,7 @@ export function ConditionForm({
           }
         }}
       >
-        Apply configuration
+        {t('Apply configuration')}
       </Button>
     </div>
   )
@@ -595,11 +628,13 @@ export function DataNodeForm({
   onApply: (config: DataReadConfig) => void
   onError: (message: string) => void
 }) {
+  const { t } = useTranslation()
   const state = useStudio()
   const selectedAccess = state.member?.access.mode === 'selected'
   const [sources, setSources] = useState<(DataSource | DependencySource)[]>([])
   const structuralOnly = selectedAccess || state.member?.role !== 'owner'
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
   const [sourceId, setSourceId] = useState(config.sourceId)
   const [columns, setColumns] = useState(config.columns)
   const [limit, setLimit] = useState(String(config.limit))
@@ -612,7 +647,10 @@ export function DataNodeForm({
   const [filterValue, setFilterValue] = useState(initialFilter.value)
 
   useEffect(() => {
-    if (!canReadDependencyStructure(state.member, 'sources.read')) return
+    if (!canReadDependencyStructure(state.member, 'sources.read')) {
+      setLoading(false)
+      return
+    }
     let active = true
     const sessionId = state.sessionId
     const memberId = state.member?.id
@@ -627,6 +665,7 @@ export function DataNodeForm({
       )
     }
     setError('')
+    setLoading(true)
     void api<(DataSource | DependencySource)[]>(
       structuralOnly ? '/api/dependencies/sources' : '/api/data-sources',
       token,
@@ -642,6 +681,9 @@ export function DataNodeForm({
               : 'Cannot load data sources.',
           )
       })
+      .finally(() => {
+        if (current()) setLoading(false)
+      })
     return () => {
       active = false
     }
@@ -656,11 +698,11 @@ export function DataNodeForm({
     <div className="simple-form">
       {error ? <p role="alert">{error}</p> : null}
       <label>
-        Data source
+        {t('Data source')}
         <Select
-          label="Data source"
+          label={t('Data source')}
           value={sourceId}
-          disabled={disabled || !sources.length}
+          disabled={disabled || loading || !sources.length}
           options={sources.map((item) => ({
             value: item.id,
             label: item.name,
@@ -675,20 +717,38 @@ export function DataNodeForm({
         />
       </label>
       <p>
-        {source
-          ? 'rowCount' in source
-            ? `${source.rowCount} saved rows. Published APIs read the latest saved snapshot.`
-            : selectedAccess
-              ? 'Structure only. Explicit USE allows this API to read the latest saved snapshot; it does not grant source previews.'
-              : 'Structure only. This form does not fetch rows. Protected resource previews and original files are owner-only; published reads use current tenant identity.'
-          : selectedAccess
-            ? 'No allowed source selected. Ask the owner to review source USE for your selected APIs.'
-            : 'Loading saved source details…'}
+        {!canReadDependencyStructure(state.member, 'sources.read')
+          ? t(
+              'Source access is required. Ask the owner to review your permissions and source USE.',
+            )
+          : error
+            ? t('Source details could not be loaded. Check the error above.')
+            : loading
+              ? t('Loading saved source details…')
+              : source
+                ? 'rowCount' in source
+                  ? `${source.rowCount} saved rows. Published APIs read the latest saved snapshot.`
+                  : selectedAccess
+                    ? 'Structure only. Explicit USE allows this API to read the latest saved snapshot; it does not grant source previews.'
+                    : 'Structure only. This form does not fetch rows. Protected resource previews and original files are owner-only; published reads use current tenant identity.'
+                : sources.length
+                  ? t('Choose a saved source to configure this step.')
+                  : selectedAccess
+                    ? t(
+                        'No allowed sources are available. Ask the owner to review source USE for your selected APIs.',
+                      )
+                    : state.member?.role === 'owner'
+                      ? t(
+                          'No saved sources are available. Import a spreadsheet in Data sources, then return to this step.',
+                        )
+                      : t(
+                          'No sources are available to this account. Ask the owner to provide a source.',
+                        )}
       </p>
       {source?.columns.map((item) => (
         <label key={item.key} className="permission-option">
           <Checkbox
-            aria-label={`Include ${item.label}`}
+            aria-label={t('Include {name}', { name: item.label })}
             checked={columns.includes(item.key)}
             disabled={disabled}
             onCheckedChange={(checked) =>
@@ -702,20 +762,20 @@ export function DataNodeForm({
           <span>
             {item.label}
             <small>
-              API field: {item.key} ·{' '}
+              {t('API field: {name}', { name: item.key })} ·{' '}
               {item.type === 'string'
-                ? 'Text'
+                ? t('Text')
                 : item.type === 'number'
-                  ? 'Number'
-                  : 'True or false'}
+                  ? t('Number')
+                  : t('True or false')}
             </small>
           </span>
         </label>
       ))}
       <label>
-        Maximum rows
+        {t('Maximum rows')}
         <Select
-          label="Maximum rows"
+          label={t('Maximum rows')}
           value={limit}
           disabled={disabled}
           onValueChange={setLimit}
@@ -727,19 +787,19 @@ export function DataNodeForm({
       </label>
       <label className="permission-option">
         <Checkbox
-          aria-label="Filter rows"
+          aria-label={t('Filter rows')}
           checked={filtered}
           disabled={disabled}
           onCheckedChange={(checked) => setFiltered(checked === true)}
         />
-        Match one column
+        {t('Match one column')}
       </label>
       {filtered ? (
         <>
           <label>
-            Match column
+            {t('Match column')}
             <Select
-              label="Match column"
+              label={t('Match column')}
               value={column}
               disabled={disabled}
               onValueChange={setColumn}
@@ -750,9 +810,9 @@ export function DataNodeForm({
             />
           </label>
           <label>
-            Match value type
+            {t('Match value type')}
             <Select
-              label="Match value type"
+              label={t('Match value type')}
               value={filterType}
               disabled={disabled}
               onValueChange={(value) => {
@@ -762,13 +822,13 @@ export function DataNodeForm({
                 )
               }}
               options={[
-                { value: 'text', label: 'Fixed text' },
-                { value: 'number', label: 'Fixed number' },
-                { value: 'boolean', label: 'True or false' },
-                { value: 'null', label: 'Empty value' },
-                { value: 'query', label: 'From query parameter' },
-                { value: 'params', label: 'From path parameter' },
-                { value: 'body', label: 'From request body' },
+                { value: 'text', label: t('Fixed text') },
+                { value: 'number', label: t('Fixed number') },
+                { value: 'boolean', label: t('True or false') },
+                { value: 'null', label: t('Empty value') },
+                { value: 'query', label: t('From query parameter') },
+                { value: 'params', label: t('From path parameter') },
+                { value: 'body', label: t('From request body') },
               ]}
             />
           </label>
@@ -776,13 +836,13 @@ export function DataNodeForm({
             <label>
               Match value
               <Select
-                label="Match value"
+                label={t('Match value')}
                 value={filterValue}
                 disabled={disabled}
                 onValueChange={setFilterValue}
                 options={[
-                  { value: 'true', label: 'True' },
-                  { value: 'false', label: 'False' },
+                  { value: 'true', label: t('True') },
+                  { value: 'false', label: t('False') },
                 ]}
               />
             </label>
@@ -791,10 +851,10 @@ export function DataNodeForm({
               {filterType === 'query' ||
               filterType === 'body' ||
               filterType === 'params'
-                ? 'Input field name'
-                : 'Match value'}
+                ? t('Input field name')
+                : t('Match value')}
               <Input
-                aria-label="Match value"
+                aria-label={t('Match value')}
                 value={filterValue}
                 disabled={disabled}
                 onChange={(event) => setFilterValue(event.target.value)}
@@ -805,7 +865,7 @@ export function DataNodeForm({
       ) : null}
       <Button
         variant="outline"
-        disabled={disabled || !source}
+        disabled={disabled || loading || !!error || !source}
         onClick={() => {
           try {
             if (!columns.length)
@@ -845,7 +905,7 @@ export function DataNodeForm({
           }
         }}
       >
-        Apply configuration
+        {t('Apply configuration')}
       </Button>
     </div>
   )
@@ -871,6 +931,7 @@ export function RequestForm({
   onChange: (input: string, error: string) => void
   includeBody?: boolean
 }) {
+  const { t } = useTranslation()
   const [initial] = useState(() => parseRequestInput(input))
   const [body, setBody] = useState(() => fieldRows(initial.body, false))
   const [query, setQuery] = useState(
@@ -917,25 +978,25 @@ export function RequestForm({
     <div className="simple-form">
       {names.length ? (
         <fieldset className="path-inputs">
-          <legend>Path parameters</legend>
+          <legend>{t('Path parameters')}</legend>
           <p>Replace each named part of the route with a concrete value.</p>
           {names.map((name) => (
             <label key={name}>
-              Path parameter {name}
+              {t('Path parameter {name}', { name })}
               <Input
-                aria-label={`Path parameter ${name}`}
+                aria-label={t('Path parameter {name}', { name })}
                 value={params[name] ?? ''}
                 disabled={disabled}
                 onChange={(event) =>
                   update(body, query, { ...params, [name]: event.target.value })
                 }
-                placeholder={`Value for :${name}`}
+                placeholder={t('Value for :{name}', { name })}
               />
             </label>
           ))}
         </fieldset>
       ) : null}
-      <h3>Query parameters</h3>
+      <h3>{t('Query parameters')}</h3>
       <p>
         Values sent in the endpoint address, such as a name or product code.
       </p>
@@ -948,7 +1009,7 @@ export function RequestForm({
         references={false}
         textOnly
       />
-      {includeBody ? <h3>Request body fields</h3> : null}
+      {includeBody ? <h3>{t('Request body fields')}</h3> : null}
       {includeBody && body ? (
         <FieldRows
           prefix="Body"

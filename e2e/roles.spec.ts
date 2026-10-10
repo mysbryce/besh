@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { helloFlow } from '../test/fixtures'
 
+test.describe.configure({ lock: 'native-k6' })
+
 test('owners manage custom roles and account-only members sign in safely', async ({
   page,
 }) => {

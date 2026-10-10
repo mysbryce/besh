@@ -4,8 +4,11 @@ Use this index for setup, supported API behavior, development checks, and planne
 
 ## Use Besh
 
+- [Choose API steps](node-library.md): categories, search, favorites and explicit draft changes.
+- [Languages](localization.md): device selection, supported languages, preferences and current translation coverage.
 - [Getting started](getting-started.md): installation, first API, runtime keys, roles, configuration, recovery, project layout, and development commands.
 - [Workspace accounts and sessions](workspace-auth.md): key or email/password sign-in, account changes, session metadata, revocation, and recovery boundaries.
+- [Workspace invitations](workspace-invitations.md): one-use sign-in links for existing members, private delivery, revocation and recovery.
 - [Workspace roles and permissions](roles.md): built-in/custom roles, selected API actions, typed dependency USE, issuer bindings, member assignment, and current server checks.
 - [Tenant rows and API fields](row-protection.md): owner-assigned identity, protected reads, shared fields, per-tenant choices, credential privacy, and backup boundaries.
 - [Protected read graphs](protected-read-graphs.md): bounded multiple reads, last-read replies, input conditions and all-branch authority.
@@ -27,6 +30,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 
 ## Develop Besh
 
+- [Planned node plugins](plugins.md): proposed CommonJS/ZIP pattern, upload review and execution boundaries.
 - [Architecture](architecture.md): stack, management/runtime boundaries, publication, storage, and extension constraints.
 - [Design system](design.md): interface palette, typography, card/control styling, responsive layout, and motion rules.
 - [Testing](testing.md): approved public interfaces, commands, verification evidence, and limits.

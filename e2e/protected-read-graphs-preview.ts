@@ -1,4 +1,5 @@
 import { openApiTools } from './api-tools'
+import { chooseNode } from './node-picker'
 import { expect, type Page } from '@playwright/test'
 import { spawnSync } from 'node:child_process'
 
@@ -529,7 +530,7 @@ export async function protectedReadGraphPreviews({
   await page
     .getByRole('button', { name: 'Apply configuration', exact: true })
     .click()
-  await page.getByRole('button', { name: 'Condition', exact: true }).click()
+  await chooseNode(page, 'Condition')
   await page
     .getByRole('combobox', { name: 'Input source', exact: true })
     .click()
@@ -959,6 +960,8 @@ export async function protectedReadGraphPreviews({
   async function assertControlsFit(region: import('@playwright/test').Locator) {
     const card = await region.boundingBox()
     expect(card).not.toBeNull()
+    const minimumHeight =
+      (await page.evaluate(() => innerWidth)) <= 1100 ? 44 : 32
     for (const control of await region
       .locator('button:not([role="checkbox"])')
       .all()) {
@@ -968,7 +971,7 @@ export async function protectedReadGraphPreviews({
       expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
         card!.x + card!.width,
       )
-      expect(bounds!.height).toBeGreaterThanOrEqual(44)
+      expect(bounds!.height).toBeGreaterThanOrEqual(minimumHeight)
       expect(
         await control.evaluate((element) => {
           const range = document.createRange()

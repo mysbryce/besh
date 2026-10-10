@@ -1,6 +1,7 @@
 # Besh glossary
 
 - **Workspace**: one team and its APIs, members, connections, and audit records.
+- **Workspace invitation**: an owner-issued, one-use link lasting 24 hours that lets an existing key-only member set email/password sign-in; it does not create membership, verify email ownership or change grants.
 - **Flow**: a saved graph that defines an API operation.
 - **Node**: one step in a flow, such as checking input or returning a response.
 - **Edge**: a connection that chooses which node runs next.

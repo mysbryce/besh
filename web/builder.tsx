@@ -43,6 +43,8 @@ import { webSocketReadRules } from './websocket-conversion'
 import { useStudio, type CanvasNode } from './store'
 import { runtimeEndpointUrl } from './lib/api'
 import { can } from '../src/workspace/permissions'
+import { useTranslation } from './i18n'
+import { nodeUnavailableReason } from './node-catalog'
 import { canReadDependencyStructure } from './dependency-access'
 import { TenantReview, useTenantReview } from './tenant-review'
 import { ReleaseHistory } from './release-history'
@@ -91,18 +93,23 @@ const nodeInfo = {
   },
 }
 
+const NodePicker = lazy(() =>
+  import('./node-picker').then((module) => ({ default: module.NodePicker })),
+)
+
 const FlowCard = memo(function FlowCard({
   data,
   selected,
 }: NodeProps<CanvasNode>) {
+  const { t } = useTranslation()
   const info = nodeInfo[data.kind]
   const websocket = useStudio((state) => flowTransport(state) === 'websocket')
   const label =
     websocket && data.kind === 'request'
-      ? 'Receive message'
+      ? t('nodes.wsRequest.label')
       : websocket && data.kind === 'response'
-        ? 'Send reply'
-        : info.label
+        ? t('nodes.wsResponse.label')
+        : t(`nodes.${data.kind}.label`)
   const Icon = info.icon
 
   return (
@@ -116,7 +123,7 @@ const FlowCard = memo(function FlowCard({
         </span>
         <div>
           <strong>{label}</strong>
-          <small>{info.description}</small>
+          <small>{t(info.description)}</small>
         </div>
         <span className="node-dot" />
       </div>
@@ -219,6 +226,7 @@ const WebSocketTest = lazy(() =>
 )
 
 function Inspector({ node }: { node: CanvasNode }) {
+  const { t } = useTranslation()
   const [advanced, setAdvanced] = useState(false)
   const [config, setConfig] = useState(
     JSON.stringify(node.data.config, null, 2),
@@ -258,15 +266,15 @@ function Inspector({ node }: { node: CanvasNode }) {
   return (
     <aside className="inspector">
       <div className="panel-heading">
-        <span>NODE SETTINGS</span>
+        <span>{t('NODE SETTINGS')}</span>
         <Badge variant="outline">{node.data.kind}</Badge>
       </div>
       <h3>
         {websocket && node.data.kind === 'response'
-          ? 'Send reply'
+          ? t('nodes.wsResponse.label')
           : websocket && node.data.kind === 'request'
-            ? 'Receive message'
-            : nodeInfo[node.data.kind].label}
+            ? t('nodes.wsRequest.label')
+            : t(`nodes.${node.data.kind}.label`)}
       </h3>
       <p>
         {node.data.kind === 'condition'
@@ -438,11 +446,11 @@ function Inspector({ node }: { node: CanvasNode }) {
         aria-expanded={advanced}
         onClick={() => setAdvanced(!advanced)}
       >
-        Advanced configuration
+        {t('Advanced configuration')}
       </Button>
       {advanced ? (
         <>
-          <label htmlFor="node-config">Node configuration</label>
+          <label htmlFor="node-config">{t('Node configuration')}</label>
           <Textarea
             id="node-config"
             value={config}
@@ -453,7 +461,7 @@ function Inspector({ node }: { node: CanvasNode }) {
             spellCheck={false}
           />
           <Button variant="outline" onClick={apply} disabled={readonly}>
-            Apply configuration
+            {t('Apply configuration')}
           </Button>
         </>
       ) : null}
@@ -464,13 +472,15 @@ function Inspector({ node }: { node: CanvasNode }) {
         onClick={() => remove([{ type: 'remove', id: node.id }])}
       >
         <Trash2 />
-        Remove node
+        {t('Remove node')}
       </Button>
     </aside>
   )
 }
 
 function Canvas() {
+  const { t } = useTranslation()
+  const [picker, setPicker] = useState(false)
   const {
     nodes,
     edges,
@@ -488,16 +498,11 @@ function Canvas() {
   const node = nodes.find((item) => item.id === selected)
   const editable = can(member, 'flows.write') && !busy
   function canAdd(kind: FlowNode['type']) {
-    if (!editable) return false
-    if (!websocket) return true
-    if (kind === 'condition' || kind === 'social') return false
-    if (kind === 'response')
-      return !nodes.some((item) => item.data.kind === 'response')
-    if (kind === 'data' || kind === 'database')
-      return !nodes.some(
-        (item) => item.data.kind === 'data' || item.data.kind === 'database',
-      )
-    return !nodes.some((item) => item.data.kind === 'request')
+    return !nodeUnavailableReason(kind, {
+      editable,
+      transport: websocket ? 'websocket' : 'rest',
+      nodeKinds: nodes.map((item) => item.data.kind),
+    })
   }
 
   return (
@@ -522,38 +527,31 @@ function Canvas() {
         }}
       >
         <div className="node-palette">
-          <span>ADD A STEP</span>
-          {(
-            ['condition', 'response', 'data', 'database', 'social'] as const
-          ).map((kind) => {
-            const Icon = nodeInfo[kind].icon
-            return (
-              <button
-                key={kind}
-                draggable={canAdd(kind)}
-                disabled={!canAdd(kind)}
-                onDragStart={(event) =>
-                  event.dataTransfer.setData('application/besh-node', kind)
-                }
-                onClick={() => addNode(kind)}
-              >
-                <Icon size={16} />
-                {kind === 'condition'
-                  ? 'Condition'
-                  : kind === 'response'
-                    ? 'Response'
-                    : nodeInfo[kind].label}
-                <Plus size={13} />
-              </button>
-            )
-          })}
-          {!nodes.some((item) => item.data.kind === 'request') ? (
-            <button disabled={!editable} onClick={() => addNode('request')}>
-              <Plus size={16} />
-              Request
-            </button>
-          ) : null}
+          <button
+            disabled={!editable}
+            onClick={() => setPicker(true)}
+            aria-haspopup="dialog"
+          >
+            <Plus size={16} />
+            {t('nodePicker.open')}
+          </button>
         </div>
+        {picker ? (
+          <Suspense fallback={null}>
+            <NodePicker
+              editable={editable}
+              pending={busy}
+              transport={websocket ? 'websocket' : 'rest'}
+              nodeKinds={nodes.map((item) => item.data.kind)}
+              onClose={() => setPicker(false)}
+              onChoose={(kind) => {
+                if (!canAdd(kind)) return
+                addNode(kind)
+                setPicker(false)
+              }}
+            />
+          </Suspense>
+        ) : null}
         <ReactFlow<CanvasNode>
           nodes={nodes}
           edges={edges}
@@ -600,6 +598,7 @@ export function Builder({ onOpenData }: { onOpenData: () => void }) {
 }
 
 function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
+  const { t } = useTranslation()
   const state = useStudio()
   const [firstTaskChosen, setFirstTaskChosen] = useState(false)
   const transport = flowTransport(state)
@@ -871,16 +870,16 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
     <>
       <div className="page-title">
         <div>
-          <div className="eyebrow">BUILD SOMETHING USEFUL</div>
+          <div className="eyebrow">{t('BUILD SOMETHING USEFUL')}</div>
           <h1>
-            API Studio{' '}
+            {t('API Studio')}{' '}
             <Badge variant="outline">
               {state.publishedRevision
                 ? `Live · v${state.publishedRevision}`
-                : 'Draft'}
+                : t('Draft')}
             </Badge>
           </h1>
-          <p>Connect the dots. Let your API do the work.</p>
+          <p>{t('Connect the dots. Let your API do the work.')}</p>
         </div>
         <div className="title-actions">
           <Button
@@ -893,7 +892,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             }
           >
             <Save />
-            Save draft
+            {t('Save draft')}
           </Button>
           <Button
             disabled={
@@ -905,16 +904,16 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             onClick={() => void state.task(state.publish)}
           >
             <Send />
-            Publish
+            {t('Publish')}
           </Button>
         </div>
       </div>
       {firstTask ? (
         <section
           className="load-test-card form-stack"
-          aria-label="Create your first API"
+          aria-label={t('Create your first API')}
         >
-          <h2>Create your first API</h2>
+          <h2>{t('Create your first API')}</h2>
           <p>
             Start with your spreadsheet, or build a blank API using the request
             and response below. Opening either path does not save or publish an
@@ -924,7 +923,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             {can(state.member, 'sources.read') &&
             can(state.member, 'sources.write') ? (
               <Button disabled={state.busy} onClick={onOpenData}>
-                Start with a spreadsheet
+                {t('Start with a spreadsheet')}
               </Button>
             ) : null}
             <Button
@@ -935,7 +934,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
                 state.message('New draft. Give your API a name.')
               }}
             >
-              Build a blank API
+              {t('Build a blank API')}
             </Button>
           </div>
         </section>
@@ -961,20 +960,20 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
       ) : null}
       <div className="endpoint-bar">
         <div className="api-name-field">
-          <label htmlFor="api-name">API NAME</label>
+          <label htmlFor="api-name">{t('API NAME')}</label>
           <Input
             id="api-name"
-            aria-label="API name"
+            aria-label={t('API name')}
             value={state.name}
             disabled={!writable || state.busy}
             onChange={(event) => state.edit({ name: event.target.value })}
           />
         </div>
         <div>
-          <label htmlFor="api-type">API TYPE</label>
+          <label htmlFor="api-type">{t('API TYPE')}</label>
           <Select
             id="api-type"
-            label="API type"
+            label={t('API type')}
             value={transport}
             disabled={!writable || state.busy}
             onValueChange={(value) => changeTransport(value as FlowTransport)}
@@ -986,10 +985,10 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
           />
         </div>
         <div>
-          <label htmlFor="api-method">METHOD</label>
+          <label htmlFor="api-method">{t('METHOD')}</label>
           <Select
             id="api-method"
-            label="HTTP method"
+            label={t('HTTP method')}
             value={state.method}
             disabled={!writable || state.busy || transport !== 'rest'}
             onValueChange={(value) => {
@@ -1020,7 +1019,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
           />
         </div>
         <div className="path-field">
-          <label htmlFor="api-path">ENDPOINT PATH</label>
+          <label htmlFor="api-path">{t('ENDPOINT PATH')}</label>
           <div>
             <span>
               {transport === 'websocket'
@@ -1031,7 +1030,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             </span>
             <Input
               id="api-path"
-              aria-label="Endpoint path"
+              aria-label={t('Endpoint path')}
               placeholder={
                 transport !== 'rest' ? '/v1/customers' : '/v1/customers/:id'
               }
@@ -1043,7 +1042,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
         </div>
         <div className="private-label">
           <ShieldCheck size={16} />
-          <span>API key protected</span>
+          <span>{t('API key protected')}</span>
         </div>
       </div>
       <p className="field-help">
@@ -1063,11 +1062,11 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             {publishedEndpoint.transport === 'websocket'
               ? 'WebSocket'
               : publishedEndpoint.method}{' '}
-            · Published endpoint URL
+            · {t('Published endpoint URL')}
           </label>
           <Input
             id="studio-endpoint-url"
-            aria-label="Published endpoint URL"
+            aria-label={t('Published endpoint URL')}
             readOnly
             value={runtimeEndpointUrl(publishedEndpoint)}
           />
@@ -1144,17 +1143,17 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
         <div className="editor-toolbar">
           <div>
             <span className="live-dot" />
-            <strong>Flow canvas</strong>
+            <strong>{t('Flow canvas')}</strong>
             <span className="muted">
               {state.nodes.length} nodes · {state.edges.length} connections
             </span>
           </div>
           <span className="draft-state">
             {state.dirty
-              ? 'Unsaved changes'
+              ? t('Unsaved changes')
               : state.id
                 ? `Saved · revision ${state.revision}`
-                : 'New draft'}
+                : t('New draft')}
           </span>
         </div>
         <ReactFlowProvider>
@@ -1169,7 +1168,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
         <section className="test-panel">
           <div className="test-request">
             <div className="panel-heading">
-              <strong>Try it out</strong>
+              <strong>{t('Try it out')}</strong>
               <span>
                 {state.graphql ? 'GRAPHQL OPERATION' : 'REQUEST DETAILS'}
               </span>
@@ -1307,16 +1306,16 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
               onClick={testFlow}
             >
               <Play />
-              Test flow
+              {t('Test flow')}
             </Button>
           </div>
           <div className="test-response">
             <div className="panel-heading">
-              <strong>Response</strong>
+              <strong>{t('Response')}</strong>
               {state.result ? (
                 <Badge variant="secondary">{state.result.status}</Badge>
               ) : (
-                <span>WAITING FOR A RUN</span>
+                <span>{t('WAITING FOR A RUN')}</span>
               )}
             </div>
             <pre data-testid="test-result">
@@ -1340,10 +1339,14 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
         disabled={state.busy}
         onClick={() => setApiTools(!apiTools)}
       >
-        API tools
+        {t('API tools')}
       </Button>
       {apiTools ? (
-        <section id="api-tools" aria-label="API tools" className="form-stack">
+        <section
+          id="api-tools"
+          aria-label={t('API tools')}
+          className="form-stack"
+        >
           <OpenApiDownload />
           <Button
             variant="outline"
@@ -1353,7 +1356,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             }
             onClick={() => setClientCode(!clientCode)}
           >
-            Use this API
+            {t('Use this API')}
           </Button>
           {clientCode && can(state.member, 'flows.read') ? (
             <Suspense fallback={<p>Loading client examples…</p>}>
@@ -1368,7 +1371,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             }
             onClick={() => setGeneratedBackend(!generatedBackend)}
           >
-            Generated backend
+            {t('Generated backend')}
           </Button>
           {generatedBackend && can(state.member, 'flows.read') ? (
             <Suspense fallback={<p>Loading generated backend panel…</p>}>

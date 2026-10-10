@@ -101,6 +101,20 @@ Updating an account requires a current password or that same member's valid key 
 
 Browser login requires the configured `BESH_WEB_URL` origin, or the request URL's exact origin when unset. Use HTTPS outside loopback; HTTP is allowed only for `localhost`, `127.0.0.1`, and `[::1]`. Reverse proxies must configure the public origin; forwarded headers are not trusted. Login limits persist across restarts: 10 invalid attempts per identity in five minutes, 100 total attempts in five minutes, and four concurrent verifications. A successful login clears its identity limit; exceeded limits return `429`. See [workspace accounts and sessions](workspace-auth.md).
 
+## Workspace invitations
+
+| Method | Path                        | Body / behavior                                                                                                                     |
+| ------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/invitations`          | Owner; active invitation metadata only                                                                                              |
+| POST   | `/api/invitations`          | Owner; exact `{ "memberId": "...", "email": "person@example.com" }`; fixed 24-hour link, replaces that member's previous invitation |
+| DELETE | `/api/invitations/:id`      | Owner; revoke that exact invitation, no body fields                                                                                 |
+| POST   | `/auth/invitations/preview` | Exact `{ "token": "..." }`, trusted browser `Origin`; read-only invitation review                                                   |
+| POST   | `/auth/invitations/accept`  | Exact `{ "token": "...", "password": "..." }`, trusted browser `Origin`; create the invited member's account once                   |
+
+Owner metadata contains `id`, `memberId`, `memberName`, `email`, `createdAt` and `expiresAt`. Only successful creation includes the raw `token`. Preview returns `workspaceName`, `memberName`, `email`, current `roleName`, current `accessMode` and `expiresAt`. Preview never consumes or extends the invitation. Acceptance returns `{ "ok": true, "email": "..." }`, without a cookie or automatic sign-in.
+
+Invitations are for existing non-owner members without an account. Their role, API scope, tenant and member key remain unchanged. Accepted accounts use the stored email and Argon2id hash; existing accounts are never overwritten. Acceptance ends the target member's older sessions. Access changes, account setup and owner-key recovery invalidate pending links. Public unavailable links return a generic `404`, malformed bodies `400`, unavailable emails `409` and throttled attempts `429`. Owner cookie writes use the normal CSRF checks. See [invitation links](workspace-invitations.md) for private delivery, limits and older-backup restoration.
+
 ## Workspace
 
 | Method | Path                                | Permission / body                                                                        |
@@ -120,7 +134,7 @@ Browser login requires the configured `BESH_WEB_URL` origin, or the request URL'
 | WS     | `/api/flows/:id/ws/test`            | Saved-draft ticket, exact original workspace proof and Origin                            |
 | POST   | `/api/flows/:id/publish`            | `flows.publish`; `{ "revision": 1 }`                                                     |
 | POST   | `/api/flows/:id/rollback`           | `flows.publish`; `{ "revision": 1, "publishedRevision": 3 }`; selects 1 if 3 is current  |
-| GET    | `/api/members`                      | Owner; member metadata without credential hashes or tokens                               |
+| GET    | `/api/members`                      | Owner; member metadata and `hasAccount`, without credential hashes or tokens             |
 | POST   | `/api/members`                      | Owner; name and `viewer`, `editor`, or `custom` role; custom requires `roleId`           |
 | PUT    | `/api/members/:id/role`             | Owner; `{ "role": "viewer" }` or `{ "role": "custom", "roleId": "..." }`                 |
 | PUT    | `/api/members/:id/flow-access`      | Owner; exact scope and expected version; see selected-API reading                        |

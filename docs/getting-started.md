@@ -39,7 +39,7 @@ Open `http://127.0.0.1:3000`, or its first-run setup link. The server binds to l
 bun run preview:all
 ```
 
-This runs the browser walkthrough in a separate demo workspace, captures every current page and its actions, and serves a searchable screenshot gallery at `http://127.0.0.1:4174`. Click a screenshot to see it full size. Setup, editor actions, error states, roles, members, audit, backups, and phone layouts are included. Keys are masked.
+This runs four isolated browser-story workers, captures current pages/actions, and serves a searchable screenshot gallery at `http://127.0.0.1:4174`. Click a screenshot to see it full size. Setup, editor actions, error states, roles, members, audit, backups, languages and phone layouts are included. Keys are masked.
 
 Installed Chrome is detected automatically on Windows. Otherwise, first run `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome`.
 
@@ -86,7 +86,7 @@ Invoke-RestMethod 'http://127.0.0.1:3000/run/hello?name=Ada' `
   -Headers @{ Authorization = "Bearer $beshToken" }
 ```
 
-Use **Condition** to choose an input source and field, then compare it with a typed value. Connect both `true` and `false` handles to a response path. **Try it out** has path, query, and body field rows; raw input stays available under **Advanced test input**. Drag nodes from the palette or use its buttons. Select nodes or edges and press Delete to remove them.
+Use **Add step** to search categories or choose a favorite. Choose **Condition** to select an input source and field, then compare it with a typed value. Connect both `true` and `false` handles to a response path. **Try it out** has path, query, and body field rows; raw input stays available under **Advanced test input**. Drag added nodes on the canvas. Select nodes or edges and press Delete to remove them. See [choose API steps](node-library.md).
 
 Input references replace a whole value and preserve JSON types. Supported roots are `$input.params`, `$input.body`, and `$input.query`; missing references become `null`, while route parameters must be supplied before execution. Arbitrary expressions and JavaScript are not executed.
 

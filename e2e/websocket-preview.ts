@@ -352,12 +352,20 @@ export async function websocketPreviews({
   await expect(
     inspector.getByLabel('Response status', { exact: true }),
   ).toHaveCount(0)
+  await canvas.getByRole('button', { name: 'Add step', exact: true }).click()
+  const stepPicker = page.getByRole('dialog', {
+    name: 'Choose a step',
+    exact: true,
+  })
   await expect(
-    canvas.getByRole('button', { name: 'Condition', exact: true }),
+    stepPicker.getByRole('button', { name: 'Add Condition', exact: true }),
   ).toBeDisabled()
   await expect(
-    canvas.getByRole('button', { name: 'GitHub login', exact: true }),
+    stepPicker.getByRole('button', { name: 'Add GitHub login', exact: true }),
   ).toBeDisabled()
+  await page
+    .getByRole('button', { name: 'Close step picker', exact: true })
+    .click()
   await capture(
     'WebSocket',
     'Canonical message reply controls',

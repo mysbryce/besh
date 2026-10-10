@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import {
   Copy,
   Download,
@@ -42,6 +42,10 @@ import type { Tenant } from '../src/workspace/tenant-model'
 import { TenantAssignmentEditor } from './tenant-assignment'
 import { useTenantContext } from './tenant-context'
 
+const Invitations = lazy(() =>
+  import('./invitations').then((module) => ({ default: module.Invitations })),
+)
+
 export function Operations({
   page,
 }: {
@@ -64,6 +68,7 @@ export function Operations({
   )
   const [sharingMember, setSharingMember] = useState<Member | null>(null)
   const [tenantMember, setTenantMember] = useState<Member | null>(null)
+  const [invitedMember, setInvitedMember] = useState<Member | null>(null)
   const [tenants, setTenants] = useState<Tenant[]>([])
   const [newTenantId, setNewTenantId] = useState('none')
   const [issued, setIssued] = useState('')
@@ -463,6 +468,15 @@ export function Operations({
               onClose={() => setTenantMember(null)}
             />
           ) : null}
+          {invitedMember ? (
+            <Suspense fallback={<p role="status">Opening invitations…</p>}>
+              <Invitations
+                key={`${invitedMember.id}:${member?.id}:${sessionId}`}
+                memberId={invitedMember.id}
+                onClose={() => setInvitedMember(null)}
+              />
+            </Suspense>
+          ) : null}
           <div className="data-table">
             <table>
               <thead>
@@ -491,6 +505,17 @@ export function Operations({
                       ) : null}
                     </td>
                     <td>
+                      {person.role !== 'owner' &&
+                      person.hasAccount === false ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={busy || loading || !!issued}
+                          onClick={() => setInvitedMember(person)}
+                        >
+                          Invite sign-in
+                        </Button>
+                      ) : null}
                       {person.role === 'owner' ? (
                         'Bootstrap owner'
                       ) : (

@@ -27,6 +27,8 @@ export async function tenantFieldProfilePreviews({
   async function assertReviewActionsFit(region: Locator) {
     const card = await region.boundingBox()
     expect(card).not.toBeNull()
+    const minimumHeight =
+      (await page.evaluate(() => innerWidth)) <= 1100 ? 44 : 32
     for (const button of await region.getByRole('button').all()) {
       const bounds = await button.boundingBox()
       expect(bounds).not.toBeNull()
@@ -34,7 +36,7 @@ export async function tenantFieldProfilePreviews({
       expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
         card!.x + card!.width,
       )
-      expect(bounds!.height).toBeGreaterThanOrEqual(44)
+      expect(bounds!.height).toBeGreaterThanOrEqual(minimumHeight)
       const textFits = await button.evaluate((element) => {
         const range = document.createRange()
         range.selectNodeContents(element)

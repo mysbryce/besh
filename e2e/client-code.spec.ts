@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { clientCodePreviews } from './client-code-preview'
 
+test.describe.configure({ lock: 'clipboard' })
+
 test('members generate saved API client examples without invoking the API', async ({
   page,
 }) => {

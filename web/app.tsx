@@ -29,6 +29,8 @@ import {
   type Permission,
 } from '../src/workspace/permissions'
 import { ThemeControl } from './theme'
+import { LanguageControl } from './language'
+import { useTranslation } from './i18n'
 import { GitHubIcon } from './components/github-icon'
 
 const Builder = lazy(() =>
@@ -68,6 +70,11 @@ const TenantProtection = lazy(() =>
     default: module.TenantProtection,
   })),
 )
+const InvitationAccept = lazy(() =>
+  import('./invitation-accept').then((module) => ({
+    default: module.InvitationAccept,
+  })),
+)
 
 type Setup = { required: boolean; name: string }
 type Page =
@@ -101,7 +108,22 @@ const navigation = [
   { id: 'roadmap', name: 'What’s next', icon: Box },
 ] as const
 
-export function App() {
+export function App({
+  invitationToken,
+  completeInvitationBootstrap,
+}: {
+  invitationToken?: string
+  completeInvitationBootstrap?: () => string | undefined
+}) {
+  const { t } = useTranslation()
+  const [invitation, setInvitation] = useState<{ token: string | null } | null>(
+    () => (invitationToken === undefined ? null : { token: invitationToken }),
+  )
+  const [invitationSignIn, setInvitationSignIn] = useState(false)
+  const [invitationBootstrapReady, setInvitationBootstrapReady] = useState(
+    !completeInvitationBootstrap,
+  )
+  const [invitationEntryError, setInvitationEntryError] = useState('')
   const [setup, setSetup] = useState<Setup | null>(null)
   const [setupError, setSetupError] = useState('')
   const [setupKey] = useState(
@@ -115,12 +137,19 @@ export function App() {
   }, [state.sessionId])
 
   useEffect(() => {
+    if (invitation || !invitationBootstrapReady) return
     let active = true
     if (setupKey) history.replaceState(null, '', location.pathname)
     api<Setup>('/setup/status')
       .then((value) => {
-        if (active) setSetup(value)
-        if (!value.required) void useStudio.getState().restoreSession()
+        if (!active) return
+        setSetup(value)
+        if (
+          !value.required &&
+          !invitationSignIn &&
+          !useStudio.getState().authReady
+        )
+          void useStudio.getState().restoreSession()
       })
       .catch((error: Error) => {
         if (active) setSetupError(error.message)
@@ -128,7 +157,39 @@ export function App() {
     return () => {
       active = false
     }
-  }, [setupKey])
+  }, [setupKey, invitation, invitationSignIn, invitationBootstrapReady])
+
+  useEffect(() => {
+    const openInvitation = () => {
+      const fragment = new URLSearchParams(location.hash.slice(1))
+      if (!fragment.has('invite')) return
+      const token = fragment.get('invite') ?? ''
+      history.replaceState(null, '', `${location.pathname}${location.search}`)
+      const current = useStudio.getState()
+      if (current.busy || (!invitation && !current.authReady)) {
+        const notice =
+          'Finish opening your workspace or the current action, then reopen the invitation link. Your draft was kept.'
+        setInvitationEntryError(notice)
+        current.message(notice, true)
+        return
+      }
+      if (
+        current.dirty &&
+        !window.confirm(
+          'Leave the editor to review this invitation? Your unsaved draft will be kept until you return or confirm sign-out.',
+        )
+      )
+        return
+      setInvitationEntryError('')
+      setInvitation({ token })
+    }
+    window.addEventListener('hashchange', openInvitation)
+    // Install the ordinary listener before ending the temporary startup capture.
+    const token = completeInvitationBootstrap?.()
+    if (token !== undefined) setInvitation({ token })
+    setInvitationBootstrapReady(true)
+    return () => window.removeEventListener('hashchange', openInvitation)
+  }, [invitation, completeInvitationBootstrap])
 
   useEffect(() => {
     if (!state.dirty && !state.busy) return
@@ -151,11 +212,44 @@ export function App() {
     return () => window.clearTimeout(timer)
   }, [state.expiresAt])
 
+  if (invitation)
+    return (
+      <Suspense
+        fallback={
+          <main className="loading-screen">
+            <p>Opening invitation…</p>
+          </main>
+        }
+      >
+        <InvitationAccept
+          token={invitation.token}
+          entryError={invitationEntryError}
+          onConsumed={() => setInvitation({ token: null })}
+          onReturn={() => setInvitation(null)}
+          onSignedOut={() => {
+            useStudio.getState().clearSession()
+            useStudio.setState({ authReady: true })
+          }}
+          onSignIn={() => {
+            if (
+              useStudio.getState().dirty &&
+              !window.confirm('Discard unsaved draft changes and open sign-in?')
+            )
+              return
+            useStudio.getState().clearSession()
+            useStudio.setState({ authReady: true })
+            setInvitationSignIn(true)
+            setInvitation(null)
+          }}
+        />
+      </Suspense>
+    )
+
   if (!setup || (!setup.required && !state.authReady))
     return (
       <main className="loading-screen">
         <span className="brand-icon">b</span>
-        <p>{setupError || 'Opening your workspace…'}</p>
+        <p>{setupError || invitationEntryError || 'Opening your workspace…'}</p>
         {setupError ? (
           <Button onClick={() => location.reload()}>Try again</Button>
         ) : null}
@@ -231,12 +325,12 @@ export function App() {
           </span>
           <div>
             <strong>{setup.name}</strong>
-            <small>Local workspace</small>
+            <small>{t('Local workspace')}</small>
           </div>
         </div>
         <div className="sidebar-scroll">
-          <span className="nav-label">WORKSPACE</span>
-          <nav aria-label="Workspace navigation">
+          <span className="nav-label">{t('WORKSPACE')}</span>
+          <nav aria-label={t('Workspace navigation')}>
             {navigation
               .filter(({ id }) => !selectedAccess || selectedPages.includes(id))
               .filter(
@@ -246,13 +340,13 @@ export function App() {
               .map(({ id, name, icon: Icon }) => (
                 <button
                   key={id}
-                  aria-label={name}
+                  aria-label={t(name)}
                   className={page === id ? 'active' : ''}
                   disabled={state.busy}
                   onClick={() => setPage(id)}
                 >
                   <Icon size={18} />
-                  {name}
+                  {t(name)}
                   {id === 'builder' ? (
                     <span className="nav-count">{state.flows.length}</span>
                   ) : null}
@@ -260,9 +354,9 @@ export function App() {
               ))}
           </nav>
           <div className="sidebar-api-heading">
-            <span className="nav-label">YOUR APIS</span>
+            <span className="nav-label">{t('YOUR APIS')}</span>
             <button
-              aria-label="New API"
+              aria-label={t('New API')}
               disabled={
                 selectedAccess ||
                 !can(state.member, 'flows.read') ||
@@ -313,12 +407,12 @@ export function App() {
         <div className="sidebar-bottom">
           <div className="sidebar-note">
             <GitBranch size={17} />
-            <strong>Small steps. Powerful APIs.</strong>
-            <p>Build a flow you can understand, test, and trust.</p>
+            <strong>{t('Small steps. Powerful APIs.')}</strong>
+            <p>{t('Build a flow you can understand, test, and trust.')}</p>
           </div>
           <button
             className="user-profile"
-            aria-label="Sign out"
+            aria-label={t('Sign out')}
             onClick={() => {
               if (
                 state.dirty &&
@@ -332,10 +426,14 @@ export function App() {
             <span className="user-avatar">{state.member.name.slice(0, 1)}</span>
             <span>
               <strong>{state.member.name}</strong>
-              <small>{memberRoleName(state.member)}</small>
+              <small>
+                {state.member.role === 'custom'
+                  ? memberRoleName(state.member)
+                  : t(memberRoleName(state.member))}
+              </small>
             </span>
             <LogOut size={16} />
-            <span className="sr-only">Sign out</span>
+            <span className="sr-only">{t('Sign out')}</span>
           </button>
         </div>
       </aside>
@@ -343,20 +441,23 @@ export function App() {
         <header className="topbar">
           <div>
             <LayoutGrid size={16} />
-            <span>Workspace</span>
+            <span>{t('Workspace')}</span>
             <span>/</span>
-            <strong>{navigation.find((item) => item.id === page)?.name}</strong>
+            <strong>
+              {t(navigation.find((item) => item.id === page)?.name ?? '')}
+            </strong>
           </div>
           <div>
+            <LanguageControl disabled={state.busy} />
             <ThemeControl />
             <Badge variant="outline">
               <span className="live-dot" />
-              Local workspace
+              {t('Local workspace')}
             </Badge>
             <Button
               variant="ghost"
               size="icon"
-              aria-label="Help & roadmap"
+              aria-label={t('Help & roadmap')}
               disabled={state.busy}
               onClick={() => setPage('roadmap')}
             >
@@ -378,11 +479,11 @@ export function App() {
           </Suspense>
         ) : null}
         <main className="main-content">
-          <Suspense fallback={<p>Opening studio…</p>}>
+          <Suspense fallback={<p>{t('Opening studio…')}</p>}>
             {forbidden ? (
               <div className="empty-panel">
                 <ShieldCheck />
-                <h1>{deniedTitle}</h1>
+                <h1>{t(deniedTitle)}</h1>
                 <p>
                   {page === 'members'
                     ? 'Only the owner can manage members and roles.'
@@ -401,7 +502,7 @@ export function App() {
               !state.flows.length ? (
                 <div className="empty-panel">
                   <ShieldCheck />
-                  <h1>No APIs shared</h1>
+                  <h1>{t('No APIs shared')}</h1>
                   <p>
                     Ask the workspace owner to review your selected API access.
                     You can still manage your own account and sessions.
@@ -434,10 +535,10 @@ export function App() {
           </Suspense>
         </main>
         <footer className={`statusbar ${state.failed ? 'error' : ''}`}>
-          <span role="status">{state.busy ? 'Working…' : state.notice}</span>
+          <span role="status">{t(state.busy ? 'Working…' : state.notice)}</span>
           <span>
             <ShieldCheck size={13} />
-            Drafts stay separate from published APIs
+            {t('Drafts stay separate from published APIs')}
           </span>
         </footer>
       </div>

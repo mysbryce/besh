@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { tenantFieldProfilePreviews } from './tenant-field-profiles-preview'
 
+test.describe.configure({ lock: 'port-4330' })
+
 test('owner reviews tenant-specific protected API fields', async ({
   page,
 }, testInfo) => {

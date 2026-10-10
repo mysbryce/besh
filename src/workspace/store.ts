@@ -678,6 +678,21 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 23').get()) {
+      db.run(`CREATE TABLE invitations (
+        id TEXT PRIMARY KEY,
+        member_id TEXT NOT NULL UNIQUE REFERENCES members(id) ON DELETE CASCADE,
+        email TEXT NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL
+      ); CREATE INDEX invitations_expiry ON invitations(expires_at)`)
+      query('INSERT INTO migrations VALUES (23, ?, ?)').run(
+        'one-time workspace member invitations',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -697,6 +712,20 @@ export function openStore(path: string, adminToken?: string) {
 
       if (previous?.token_hash !== hash) {
         query("DELETE FROM sessions WHERE member_id = 'owner'").run()
+        const pending = query<{ id: string }, []>(
+          'SELECT id FROM invitations',
+        ).all()
+        query('DELETE FROM invitations').run()
+        for (const invitation of pending) {
+          query(
+            'INSERT INTO audit (actor, action, resource, created_at) VALUES (?, ?, ?, ?)',
+          ).run(
+            'system',
+            'invitation.revoked',
+            invitation.id,
+            new Date().toISOString(),
+          )
+        }
         query(
           'INSERT INTO audit (actor, action, resource, created_at) VALUES (?, ?, ?, ?)',
         ).run(
@@ -916,6 +945,16 @@ export function openStore(path: string, adminToken?: string) {
     ).all(memberId)
     query('DELETE FROM sessions WHERE member_id = ?').run(memberId)
     for (const session of sessions) audit(actor, 'session.revoked', session.id)
+    invalidateInvitations(actor, memberId)
+  }
+
+  function invalidateInvitations(actor: string, memberId: string) {
+    const invitation = query<{ id: string }, [string]>(
+      'SELECT id FROM invitations WHERE member_id = ?',
+    ).get(memberId)
+    if (!invitation) return
+    query('DELETE FROM invitations WHERE id = ?').run(invitation.id)
+    audit(actor, 'invitation.revoked', invitation.id)
   }
 
   function validateRuntimeScope(
@@ -1077,6 +1116,7 @@ export function openStore(path: string, adminToken?: string) {
     query,
     audit,
     revokeMemberSessions: revokeSessions,
+    invalidateInvitations,
     member: resolveMember,
     assertKeyAccess(member: Member, id: string) {
       assertKeyAccess(member, runtimeKey(keyRow(id)))
@@ -1351,9 +1391,14 @@ export function openStore(path: string, adminToken?: string) {
       return { token, name }
     },
     listMembers() {
-      return query<{ id: string }, []>('SELECT id FROM members ORDER BY name')
+      return query<{ id: string; has_account: number }, []>(
+        'SELECT id, EXISTS(SELECT 1 FROM accounts WHERE member_id = members.id) AS has_account FROM members ORDER BY name',
+      )
         .all()
-        .map((row) => resolveMember(row.id)!)
+        .map((row) => ({
+          ...resolveMember(row.id)!,
+          hasAccount: Boolean(row.has_account),
+        }))
     },
     createMember(
       actor: string,

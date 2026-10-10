@@ -4,6 +4,8 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+test.describe.configure({ lock: 'port-4318' })
+
 test('owners save release settings and check notices without installing updates', async ({
   page,
 }) => {

@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { studioToolsPreviews } from './studio-tools-preview'
 
+test.describe.configure({ lock: 'port-4330' })
+
 test('optional API tools follow the actual save test publish workflow', async ({
   page,
 }, testInfo) => {

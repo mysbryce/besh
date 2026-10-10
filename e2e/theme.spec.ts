@@ -1,5 +1,7 @@
 import { expect, test, type Locator } from '@playwright/test'
 
+test.describe.configure({ lock: 'workspace-5179' })
+
 async function inputBorderContrast(input: Locator) {
   return input.evaluate((element) => {
     const luminance = (color: string) => {

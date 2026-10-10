@@ -17,12 +17,15 @@ Besh gives the flow editor most of the space. Navigation, setup, and workspace c
 - Phones use compact navigation and a custom saved-API picker. Tables scroll inside their own containers; the document must not overflow horizontally.
 - Setup uses example API cards as illustration. Examples are not workspace data or live execution results.
 - The preview gallery shares the palette and typography. Its header uses the Besh icon and wordmark.
+- Desktop gallery choices use compact spacing. Full labels wrap, and phone choices retain touch-friendly sizing.
 - Keep data previews inside scrollable tables. Show original spreadsheet headers and their API field names together.
 
 ## Interaction
 
 - Checkboxes and dropdowns use styled accessible components. Do not expose native checkbox, radio, or select widgets.
 - Keep visible focus, meaningful labels, keyboard selection, disabled states, and clear success/error feedback.
+- Custom dropdowns center a 16px chevron and selection indicator. Full translated and authored labels wrap; multiline controls grow rather than clip their text. Radix scroll buttons preserve keyboard and wheel navigation through long menus.
+- Normal themes use slim, rounded native scrollbars. Chromium uses WebKit scrollbar styling; other engines use the standard thin-scrollbar fallback. Forced-colors mode keeps operating-system scrollbars. Do not replace native scrolling with JavaScript.
 - Small entrance and hover transitions provide feedback. Respect `prefers-reduced-motion`; keep graph editing stable.
 - Keys appear once in memory. Keep copy and acknowledgement actions close to the key, and mask credentials in previews.
 - Appearance offers Light, Dark, and System. Save only the appearance preference in local storage; apply it before the dashboard paints and follow operating-system changes in System mode. Workspace sign-in uses an HttpOnly cookie; passwords and member keys are not stored in local storage.
@@ -36,5 +39,9 @@ Besh gives the flow editor most of the space. Navigation, setup, and workspace c
 - Load testing starts with a published API and small defaults. Hide load settings and request JSON until requested; show labeled request/variable forms. Confirm repeated live requests, allow leaving an active run, restore history after reload, and explain metrics without claiming production capacity. Mark temporary keys as managed and hide their replacement action.
 
 ## Review
+
+Desktop layouts above 1100px use compact cards, form gaps and 32px primary actions. Sidebar rows and custom dropdowns use a 36px minimum with shorter radii; longer labels may make a row taller. Shared dropdown size variables keep member, API key and load-test forms consistent without overriding the existing 32px endpoint controls. At 1100px and below, sidebar and dropdown controls retain a 44px minimum. Do not apply desktop sizing to phone confirmations. The step picker uses a searchable modal with clear category and favorite states, contained keyboard focus and explicit selection. Appearance and language controls wrap within the phone header.
+
+Keep translations readable at native phone widths. Korean welcome headings break at word boundaries rather than splitting their final syllable. Authored data stays untouched; see [language coverage](localization.md).
 
 Run the [browser checks](testing.md) and [preview walkthrough](preview.md) after interface changes. Inspect setup, studio, data sources, workspace controls, custom dropdowns, and phone layouts in both appearances. Preserve behavior when changing visual structure.

@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { studioFirstTaskPreviews } from './studio-first-task-preview'
 
+test.describe.configure({ lock: 'port-4330' })
+
 test('empty studio offers permitted first tasks without autosave', async ({
   page,
 }, testInfo) => {

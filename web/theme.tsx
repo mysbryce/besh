@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { lazy, Suspense } from 'react'
+import { useTranslation } from './i18n'
 
 const Select = lazy(() =>
   import('./components/ui/select').then((module) => ({
@@ -56,22 +57,23 @@ system.addEventListener('change', () => {
 })
 
 export function ThemeControl() {
+  const { t } = useTranslation()
   const appearance = useAppearance((state) => state.appearance)
   const choose = useAppearance((state) => state.choose)
 
   return (
     <div className="theme-control">
-      <label htmlFor="appearance">Appearance</label>
+      <label htmlFor="appearance">{t('Appearance')}</label>
       <Suspense fallback={<span className="theme-loading">{appearance}</span>}>
         <Select
           id="appearance"
-          label="Appearance"
+          label={t('Appearance')}
           value={appearance}
           onValueChange={(value) => choose(value as Appearance)}
           options={[
-            { value: 'light', label: 'Light' },
-            { value: 'dark', label: 'Dark' },
-            { value: 'system', label: 'System' },
+            { value: 'light', label: t('Light') },
+            { value: 'dark', label: t('Dark') },
+            { value: 'system', label: t('System') },
           ]}
         />
       </Suspense>
