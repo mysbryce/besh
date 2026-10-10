@@ -6,7 +6,7 @@ Build and publish APIs visually. Connect nodes, test drafts, and publish REST, G
 
 Besh is an early local development preview. Remote databases, more login providers, plugins, and the AI operator remain planned.
 
-The standalone launcher is being prepared for **0.19.0-alpha.0**, not yet released. See [portable Besh](docs/portable.md) for Windows double-click setup, background controls, storage and Ubuntu/macOS builds.
+[Download Windows portable 0.19.0-alpha.0](https://github.com/mysbryce/besh/releases/download/v0.19.0-alpha.0/besh-0.19.0-alpha.0-windows-x64.exe), with no Bun installation required. See [ZIP and checksums](https://github.com/mysbryce/besh/releases/tag/v0.19.0-alpha.0) and [portable instructions](docs/portable.md).
 
 ## Start locally
 

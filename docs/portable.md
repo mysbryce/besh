@@ -1,6 +1,6 @@
 # Portable Besh
 
-Use the standalone launcher to run Besh without a developer setup. Choose the matching Windows asset from [GitHub releases](https://github.com/mysbryce/besh/releases), or build it from source below.
+Use the standalone launcher to run Besh without a developer setup. Download the Windows EXE or ZIP from the published [0.19.0-alpha.0 prerelease](https://github.com/mysbryce/besh/releases/tag/v0.19.0-alpha.0), or build from source below. The source-only 0.19.1-alpha.0 documentation patch does not replace that executable.
 
 ## Start on Windows
 
@@ -111,6 +111,8 @@ Observed Windows artifact tests cover a copied executable alone in a path contai
 
 A real browser also completed first-run setup, key sign-in, explicit draft save/test/publication and a pinned runtime call, with seven masked screenshots, locally served fonts, CSP checks and denied private-file requests. Public compiled REST, GraphQL and WebSocket publication/restart journeys passed. A separate first-use k6 network journey produced positive native metrics, revoked its managed key, and preserved the same summary after restart.
 
-The default Windows browser opener still needs manual desktop verification. Native Linux/macOS execution remains pending. Release artifacts are verified separately from source checks. These tests do not establish that every external integration works in a compiled artifact or that shutdown joins every native load-test process.
+All seven published assets were downloaded and matched staged hashes/bytes; the portable ZIP's 689 payload files passed inventory verification. Its final packaged executable passed three public CLI/offline-notice/browser cases and 779 assertions in 21.56 seconds. See [release receipt](releases.md#portable-prerelease-delivery--0190-alpha0).
+
+The default Windows browser opener still needs manual desktop verification. Native Linux/macOS execution remains pending. These tests do not establish every external integration, full native load-test process joining, publisher signing or modified-runtime relinking. Notice byte checks do not certify complete native attribution; see [material limits](portable-runtime.md#verification-and-material-limits).
 
 The dashboard and runtime are bundled, but Besh is not entirely offline: first-use k6 provisioning downloads a pinned, checksum-verified official binary unless it is already cached. Google Sheets, product OAuth, and update checks also need their respective services. The optional first-use k6 network test is separate from ordinary CI.

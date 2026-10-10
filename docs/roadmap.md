@@ -2,17 +2,21 @@
 
 This is the product plan. Planned features are not implementation claims.
 
-## Current work: portable Windows delivery
+## Delivered in 0.19.0-alpha.0: portable Windows
 
-The standalone launcher is implemented for the planned **0.19.0-alpha.0**, which is not released yet. Windows public artifact journeys have passed for the embedded production shell, compiled SQLite uploads/reads, default background launch/reopen/status/stop, concurrent starts, and explicit private-file ACL denial. A real browser passed setup, key sign-in, explicit draft save/test/publication and a pinned runtime call, with seven masked screenshots, local fonts, CSP and private-file denial checks. Compiled REST/GraphQL/WebSocket publication and restart journeys passed. The optional first-use k6 network journey passed with positive native metrics, managed-key revocation and unchanged summary after restart. Storage defaults to executable-adjacent `besh-data`; uncertain ownership and unwritable storage fail without choosing another workspace. See [portable usage](portable.md).
+The [Windows portable prerelease](https://github.com/mysbryce/besh/releases/tag/v0.19.0-alpha.0) is public. PR #8 merged at `8e5ef68ced9f631d6eff7b5a005180bbee8745d8` after exact-head and main CI passed all three jobs. All seven uploaded assets were downloaded and matched staged SHA-256 hashes and byte counts; the downloaded portable ZIP's 689 payload files passed inventory verification. Final packaged CLI, offline notice export and real browser setup/sign-in/save/test/publish/runtime acceptance passed three cases and 779 assertions. See [release receipt](releases.md#portable-prerelease-delivery--0190-alpha0) and [testing](testing.md).
 
-Complete final acceptance before delivery. Default OS browser handoff, native Linux/macOS execution, broader compiled external integration coverage and full native load-test shutdown remain separate from those observed checks. Five build targets and Ubuntu/macOS instructions are documented, but are not native-platform verification. Release assets remain unpublished. Prepared CSV-language journeys remain parked drafts.
+The earlier compiled SQLite, background lifecycle, concurrent-start, private-file ACL, REST/GraphQL/WebSocket restart and optional first-use k6 journeys also passed. Default OS browser handoff, native Linux/macOS execution, broader external integration coverage, full native load-test shutdown, signing and complete notice reconciliation remain separate. Five build targets and Ubuntu/macOS instructions are documented, not native-platform verification. See [portable usage](portable.md) and [runtime notice limits](portable-runtime.md#verification-and-material-limits).
+
+## Next work: CSV languages
+
+The source-only **0.19.1-alpha.0** documentation patch records the completed 0.19.0 delivery; it does not replace or relabel the published executable. Next start one failing public CSV-import language test, then its narrow implementation. Prepared CSV journeys remain drafts until that slice is tested.
 
 ## Planned platform milestone
 
 The requested [backend platform plan](platform-plan.md) covers a non-developer Struct/schema builder, media folders/tags and bounded image/video jobs, CMS publication, product database adapters, social authentication, payments, and measured published-backend size/performance. These remain **planned, not implemented**. Payload/Strapi, DBX, Better Auth and payment-provider references inform the plan without adding their frameworks or inheriting their compatibility claims.
 
-Portable acceptance remains current work. After that delivery, select one public RED/GREEN slice at a time from the staged plan; real database/provider acceptance, migration safety and current authorization remain gates.
+Portable delivery is complete. CSV-import localization is next; select later platform slices one public RED/GREEN journey at a time. Real database/provider acceptance, migration safety and current authorization remain gates.
 
 ## Implemented in 0.18.5: protocol guidance languages
 
@@ -290,11 +294,11 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 ## Next Steps
 
-Keep the requested [platform stages and public acceptance gates](platform-plan.md) linked to each new milestone. Media/CMS/Structs, adapter breadth, product providers and payments remain planned while portable delivery finishes. No reference framework is installed by this plan.
+Keep the requested [platform stages and public acceptance gates](platform-plan.md) linked to each new milestone. Media/CMS/Structs, adapter breadth, product providers and payments remain planned. No reference framework is installed by this plan.
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-Finish portable **0.19.0-alpha.0** acceptance and documentation with the actual compiled artifact. Preserve embedded dashboard/notices, trusted SQLite children, external private workspace data, conservative ownership checks and user background controls. Verify native load-test shutdown separately before claiming process drain; keep the passing optional first-use k6 network test separate from ordinary CI. Record platform/browser limits and reviewed notice/source provenance before any authorized release-asset publication. CSV/data-source languages follow; prepared drafts are not implemented behavior.
+Begin the basic CSV-import language slice: seven language choices preserve authored names, headers/types/rows and cause no automatic source/flow action; explicit import persists real data and completion uses the current language. Prove allowed-reader/selected-viewer boundaries and phone containment through the public browser/API journey. Keep provider refresh, API generation, protection and number/date formatting outside that slice. Preserve portable platform/browser/notice limits; native load-test shutdown needs separate evidence before any process-drain claim.
 
 Continue data-source/database panels, backups and advanced sharing/protection languages through separate public journeys. Technical errors, dynamic completion notices and native-speaker review remain separate. Basic Studio translation is complete in 0.18.4; member/role translation is complete in 0.18.3; account/session and update settings are complete in 0.18.2. Date/number formatting outside account/update screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
 

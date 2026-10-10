@@ -1,6 +1,6 @@
 # Planned backend platform
 
-**PLANNED — not implemented.** This records the requested media library, CMS, visual Struct/schema builder, small published backend, payments, database breadth and product authentication. It selects no new framework or adapter. Portable acceptance remains current work; see [roadmap](roadmap.md). Bun support starts at **1.4.2**; a pinned CI/release baseline is separate from that minimum.
+**PLANNED — not implemented.** This records the requested media library, CMS, visual Struct/schema builder, small published backend, payments, database breadth and product authentication. It selects no new framework or adapter. Portable Windows delivery is complete; see [roadmap](roadmap.md) for the next slice. Bun support starts at **1.4.2**; a pinned CI/release baseline is separate from that minimum.
 
 ## 1. Visual Struct and content foundation
 

@@ -51,6 +51,18 @@ Account/update language PR #4 merged as `0.18.2-alpha.0`. [Main run 38021228538]
 
 Member/role language [PR #5](https://github.com/mysbryce/besh/pull/5) merged normally as `0.18.3-alpha.0` after [head run 38024237654](https://github.com/mysbryce/besh/actions/runs/38024237654) passed at `51c812d`: 361 backend cases and all 42 browser cases. The resulting [main run 38024532880](https://github.com/mysbryce/besh/actions/runs/38024532880) at `50495bd` passed both jobs before local Studio work resumed. The normal match-head squash preserved repository rules and did not publish a tag, package or deployment.
 
+## Portable prerelease delivery — 0.19.0-alpha.0
+
+The authorized [v0.19.0-alpha.0 prerelease](https://github.com/mysbryce/besh/releases/tag/v0.19.0-alpha.0) is public. [PR #8](https://github.com/mysbryce/besh/pull/8) merged at source commit `8e5ef68ced9f631d6eff7b5a005180bbee8745d8`. [Exact-head CI 38033615060](https://github.com/mysbryce/besh/actions/runs/38033615060) and [main CI 38033984171](https://github.com/mysbryce/besh/actions/runs/38033984171) passed all three jobs: core, browser and portable.
+
+All seven release assets were downloaded back and matched their staged byte counts and SHA-256 hashes: Windows EXE/portable ZIP, Besh source ZIP, portable manifest, Bun/libarchive source archives and checksums. The downloaded portable ZIP passed its complete 689-file payload inventory. The executable is 91,558,912 bytes; the portable ZIP is 45,160,663 bytes. Local receipt: `.cache/portable-delivery-proof.json`; clean main checkout: `.cache/portable-main-8e5ef68`.
+
+The final packaged executable passed public CLI, offline license export and real browser setup → key sign-in → save/test/publish → runtime invocation: three cases, 779 assertions, 21.56 seconds. Actual setup and dark phone originals were inspected. This verifies those packaged bytes, not just source tests. See [test evidence](testing.md#portable-release-receipt--0190-alpha0).
+
+[Tag-push CI 38034487284](https://github.com/mysbryce/besh/actions/runs/38034487284) subsequently passed all three jobs at the same source commit. The **0.19.1-alpha.0** change is a source-only documentation patch, not a new portable asset or a replacement for the published 0.19.0 release.
+
+Hash comparison proves delivered-byte consistency, not publisher signing. Default desktop browser opening, native Linux/macOS execution, full native k6 drain and modified-runtime relinking remain unverified. Embedded notice byte coverage does not resolve every native source/attribution mapping; see [material limits](portable-runtime.md#verification-and-material-limits). Those limits remain visible after publication.
+
 ## Automated checks and candidate artifacts
 
 Protocol-language [PR #7](https://github.com/mysbryce/besh/pull/7) merged as `0.18.5-alpha.0` after [head run 38029443242](https://github.com/mysbryce/besh/actions/runs/38029443242) passed at `239403a`. The resulting [main run 38029705349](https://github.com/mysbryce/besh/actions/runs/38029705349) at `08e4484` also passed before local portable work resumed: 361 backend and 46 browser cases.

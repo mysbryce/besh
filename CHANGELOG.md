@@ -4,6 +4,13 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.19.1-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Link the published Windows portable prerelease from the README and record verified release downloads.
+- Mark portable delivery complete and retain explicit limits and the next data-source language work.
+
 ## 0.19.0-alpha.0 — 2026-10-10
 
 ### Added
