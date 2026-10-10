@@ -200,11 +200,11 @@
 
 ## Next Steps
 
-Protocol-guidance PR #7 merged at `08e4484` with head and main checks passing. Portable 0.19 acceptance now includes actual compiled setup, publication/restart, private-file permission denial, notice export and native first-use k6. Complete exact-head CI, normal merge and authorized prerelease assets before the parked CSV-language slice.
+Spreadsheet API-generation languages, [PR #12](https://github.com/mysbryce/besh/pull/12), merged as `0.20.2-alpha.0` at `0b100e4`. All three exact-head and post-merge jobs passed. The public Windows portable remains `0.19.0-alpha.0`; newer source versions do not imply a new executable release.
 
-1. Basic Studio PR #6 and its main checks passed at `2835504`. Deliver the tested protocol-guidance branch through normal exact-head checks/merge, then implement the requested Windows portable executable: double-click setup/browser, owned background start/status/stop, standalone dashboard/runtime and Ubuntu/macOS build instructions. Keep workspace data and the original private encryption key outside the executable. Prepared CSV-language drafts follow this delivery. The maintainer authorizes tested normal merges without another confirmation. Keep invitation, node-picker and isolated worker boundaries intact. Exact completed checks belong in [testing](testing.md); hosted artifact delivery and native platform behavior need their own evidence.
-2. After GitHub account/service capacity permits artifact uploads, rerun the candidate and inspect the actual downloaded inventory/digest. Local archive inspection does not prove remote delivery. See [releases](releases.md).
-3. Follow the [remaining roadmap](roadmap.md#next-steps): broader product authorization, external data/query/migration tools, graph extensions/plugins, verified product providers/AI tools, realtime event/subscription work, and operations/releases. None is completed by the WebSocket delivery.
+1. The maintainer approved the final English 60-second [product film](product-video.md) on 2026-10-10 and requested its README link. Include the approved tracked MP4 in the normal tested repository delivery; keep editable marketing files ignored.
+2. Continue provider refresh and deletion localization through separate public journeys, preserving confirmations, snapshots and current grants. See [current roadmap](roadmap.md#next-steps) for advanced protection and remaining language work.
+3. Follow the [remaining roadmap](roadmap.md#next-steps): external data/query/migration tools, graph extensions/plugins, verified product providers/AI tools, realtime events/subscriptions, media/CMS/payments and operations. Keep implemented behavior distinct from planned integrations.
 
 See [testing](testing.md), [architecture](architecture.md), and [roadmap](roadmap.md) for durable detail.
 
@@ -220,3 +220,13 @@ See [testing](testing.md), [architecture](architecture.md), and [roadmap](roadma
 - Offline license export initially missed Bun's directory-basename virtual path. Embedded-file inspection identified `portable-notices/`; byte-exact export passed afterward.
 - Bind actual normalized module inputs in embedded notices. Keep the final source commit and executable hash external to avoid a self-hash cycle. Exact provenance remains separate from completeness claims.
 - Real compiled first-use k6 failed before absolute PowerShell extraction. Positive native metrics, revoked managed keys and identical restarted summaries passed afterward. Network acceptance stays separate from offline CI; full native process drain remains unverified.
+
+## Product presentation decisions
+
+- Create an original English product film with local Remotion tooling. Keep `marketing/` ignored and preserve it on the maintainer's machine; Git receives only the final MP4 under `docs/assets`, alongside normal project documentation. A fresh clone does not contain the editable movie project.
+- The maintainer requires simulated React/SVG interface elements. Cursor clicks must visibly open controls, change selections, connect nodes and advance explicit save, test and publish actions. Screenshot swaps do not satisfy this video requirement.
+- Use deterministic frame state and an original score. Interface demonstrations illustrate current capabilities; they do not run a live backend or establish measured production performance.
+- Keep animation brisk: short cursor travel and text/panel entrances, with readable result holds. Use a more energetic original score and cute synthesized boops synchronized to actual clicks, deletes and connection drops.
+- Vary the composition across the film: centered typography, full-frame workspace, camera detail shots, prominent response/release cards and an external phone viewport. A permanent left narration column beside a right preview does not satisfy the maintainer's design direction.
+- Keep interaction feedback local and brief: clicked controls and affected results bounce with a focus ring; connection handles and completed lines pulse to show which nodes are linked. Preserve readable text and fixed port geometry.
+- Present a local MP4 preview first. The maintainer approved the final cut and requested README placement on 2026-10-10; future revisions still require design review.

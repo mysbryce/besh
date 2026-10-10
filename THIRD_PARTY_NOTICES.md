@@ -2,6 +2,8 @@
 
 Besh uses open-source dependencies. Their licenses remain in their installed packages and apply to their respective code.
 
+The [product film](docs/product-video.md) was rendered locally with Remotion 4.0.534 under its [separate versioned license](https://github.com/remotion-dev/remotion/blob/v4.0.534/LICENSE.md). Renderer code and dependencies are not shipped with Besh. The film uses an original synthesized soundtrack and the same Google Sans Flex and Noto Sans Thai fonts whose notices appear below.
+
 The bundled Google Sans Flex Latin and Latin Extended variable fonts are copyright 2022 The Google Sans Flex Project Authors and use the SIL Open Font License 1.1. See the original [font license](web/assets/google-sans-flex-OFL.txt) and [trademark notice](web/assets/google-sans-flex-TRADEMARKS.txt). Google Sans Flex and related Google names are trademarks of Google LLC; use of the font does not imply Google affiliation or sponsorship.
 
 The bundled Noto Sans Thai variable font is copyright 2022 The Noto Project Authors and uses the SIL Open Font License 1.1. See its original [font license](web/assets/noto-sans-thai-OFL.txt).

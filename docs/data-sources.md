@@ -34,6 +34,20 @@ New REST drafts include [API rules](api-contracts.md) for their selected columns
 
 Optional equality filters compare one spreadsheet column to a caller-supplied input. If the optional caller value is omitted, the API returns all eligible rows up to its configured limit. Search filters are not authorization: callers can omit or change them. Runtime reads project only selected columns; they do not grant field-level identity rules or record-level ownership checks. Choose projected columns and caller credentials accordingly.
 
+### Filter with request values
+
+In API Studio, select **Spreadsheet rows**, choose the column to match, then choose a query, body or path input for the filter value. Apply the configuration, save and test the draft before publishing.
+
+| Input        | Example caller request                                | Filter value         |
+| ------------ | ----------------------------------------------------- | -------------------- |
+| Query string | `GET /run/products?name=Tea`                          | `$input.query.name`  |
+| JSON body    | `POST /run/products/search` with `{ "name": "Tea" }`  | `$input.body.name`   |
+| URL path     | `GET /run/products/Tea` for a `/products/:name` route | `$input.params.name` |
+
+When enabled, the generated REST filter uses a query input. Body and path examples require an explicit Studio change to the method, route and matching [API rules](api-contracts.md). GET and HEAD cannot declare body rules. Declare numeric/boolean query or path inputs with the matching type; JSON body values retain their JSON type. Make the input required if omission must fail instead of returning all eligible rows. GraphQL uses typed arguments through `$input.body`, not REST path parameters.
+
+Each read supports one equality filter and selected output columns. Range, substring, multiple combined business filters, joins and arbitrary SQL are not implemented. Filtering reads the saved snapshot; it does not query Google or Excel on each API call. [Uploaded SQLite reads](databases.md) expose the same three request-input choices through their database-node form.
+
 ## Limits
 
 - CSV/Excel uploads and Google exports: at most 2 MiB; the actual upload listener caps the multipart request at 3 MiB.

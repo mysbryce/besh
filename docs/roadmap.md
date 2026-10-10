@@ -308,6 +308,8 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 ## Next Steps
 
+The maintainer approved the English [product film](product-video.md) and its README placement on 2026-10-10. Keep `marketing/` local and ignored; Git receives the final MP4 under `docs/assets`. Continue spreadsheet-provider refresh and deletion localization through their public journeys. The presentation does not execute the backend or certify production capacity.
+
 Keep the requested [platform stages and public acceptance gates](platform-plan.md) linked to each new milestone. Media/CMS/Structs, adapter breadth, product providers and payments remain planned. No reference framework is installed by this plan.
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.

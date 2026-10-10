@@ -35,6 +35,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [Planned node plugins](plugins.md): proposed CommonJS/ZIP pattern, upload review and execution boundaries.
 - [Architecture](architecture.md): stack, management/runtime boundaries, publication, storage, and extension constraints.
 - [Design system](design.md): interface palette, typography, card/control styling, responsive layout, and motion rules.
+- [Product video](product-video.md): final English MP4, asset provenance and verification.
 - [Testing](testing.md): approved public interfaces, commands, verification evidence, and limits.
 - [Roadmap](roadmap.md): implemented milestones, planned capabilities, completion gates, and next steps.
 - [Planned backend platform](platform-plan.md): Struct/schema forms, media/CMS, database adapters, product authentication, payments and measured runtime goals.

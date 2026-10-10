@@ -4,6 +4,23 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.4-alpha.0 — 2026-10-10
+
+### Changed
+
+- Link the maintainer-approved 60-second product film from the README, with its final MP4 retained in Git and editable marketing files ignored.
+- Record design approval and resume the next spreadsheet-provider localization journey.
+
+## 0.20.3-alpha.0 — 2026-10-10
+
+### Changed
+
+- Add a final English product-film MP4 with animated React/SVG interface demonstrations and an original instrumental score.
+- Keep local Remotion tooling and editable marketing files out of Git and product dependencies; document the delivered video's provenance and decoded verification.
+- Use brisk interface animation, an energetic original soundtrack and frame-synchronized interaction boops; document existing query/body/path data filters.
+- Vary film compositions with centered typography, full-frame interfaces, camera detail shots, prominent results and an external phone viewport preview.
+- Add brief target bounces, focus rings and connector landing pulses so each demonstrated interaction makes its affected control, node or result clear.
+
 ## 0.20.2-alpha.0 — 2026-10-10
 
 ### Fixed
