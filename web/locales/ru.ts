@@ -1,4 +1,9 @@
 const messages: Record<string, string> = {
+  'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
+    'Используйте точный путь, например /v1/messages. Сообщения WebSocket передают входные значения; именованные параметры пути не поддерживаются.',
+  'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.':
+    'Используйте точный путь, например /v1/customers. Аргументы GraphQL передают входные значения.',
+  'GRAPHQL OPERATION': 'ОПЕРАЦИЯ GRAPHQL',
   'Live · v{version}': 'Опубликовано · v{version}',
   'Saved · revision {revision}': 'Сохранено · ревизия {revision}',
   '{nodes} nodes · {connections} connections':

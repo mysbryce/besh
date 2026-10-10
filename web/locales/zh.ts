@@ -1,4 +1,9 @@
 const messages: Record<string, string> = {
+  'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
+    '使用精确路径，例如 /v1/messages。WebSocket 消息用于传递输入值；不支持具名路径参数。',
+  'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.':
+    '使用精确路径，例如 /v1/customers。GraphQL 参数用于传递输入值。',
+  'GRAPHQL OPERATION': 'GRAPHQL 操作',
   'Live · v{version}': '已上线 · v{version}',
   'Saved · revision {revision}': '已保存 · 修订版 {revision}',
   '{nodes} nodes · {connections} connections':

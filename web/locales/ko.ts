@@ -710,6 +710,11 @@ const messages: Record<string, string> = {
   '// Save your draft, then run a test.\n// Your response will appear here.':
     '// 초안을 저장한 다음 테스트를 실행하세요.\n// 응답이 여기에 표시됩니다.',
   'Discard unsaved draft changes?': '저장하지 않은 초안 변경 사항을 버릴까요?',
+  'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.':
+    '/v1/customers와 같은 정확한 경로를 사용하세요. 입력 값은 GraphQL 인수로 전달합니다.',
+  'GRAPHQL OPERATION': 'GRAPHQL 작업',
+  'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
+    '/v1/messages와 같은 정확한 경로를 사용하세요. 입력 값은 WebSocket 메시지로 전달하며 이름이 있는 경로 매개변수는 지원하지 않습니다.',
 }
 
 export default messages

@@ -4,6 +4,19 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.18.5-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Translate GraphQL and WebSocket route guidance and the GraphQL test heading in all seven dashboard languages.
+- Keep authored schemas, queries, message fields and replies unchanged when choosing a language.
+- Measure settled phone dropdowns at CSS-pixel precision while retaining their required 44px minimum.
+- Keep menu preview masks outside unrelated options and use Fit View before selecting generated nodes in a narrowed canvas.
+
+### Changed
+
+- Add actual GraphQL and WebSocket draft-test language journeys, including explicit protocol changes and dark phone previews.
+
 ## 0.18.4-alpha.0 — 2026-10-10
 
 ### Fixed

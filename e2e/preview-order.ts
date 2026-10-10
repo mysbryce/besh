@@ -29,6 +29,8 @@ export const previewStories = [
   { id: 'management-members', count: 15, locks: [] },
   { id: 'management-studio-first-task', count: 7, locks: [] },
   { id: 'management-studio-draft', count: 13, locks: [] },
+  { id: 'management-studio-graphql', count: 8, locks: [] },
+  { id: 'management-studio-websocket', count: 8, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']

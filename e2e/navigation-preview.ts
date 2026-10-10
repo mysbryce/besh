@@ -4,13 +4,21 @@ type Capture = (
   group: string,
   title: string,
   detail: string,
-  options?: { fullPage?: boolean },
+  options?: { fullPage?: boolean; region?: 'listbox' },
 ) => Promise<void>
 
 async function compact(control: Locator) {
   const bounds = await control.boundingBox()
   expect(bounds).not.toBeNull()
   expect(Math.round(bounds!.height * 100) / 100).toBeLessThanOrEqual(36)
+}
+
+async function phoneTarget(control: Locator) {
+  await expect(control).toHaveCSS('min-height', '44px')
+  const bounds = await control.boundingBox()
+  expect(bounds).not.toBeNull()
+  // Chromium's border coordinates can differ by a fraction of a CSS pixel.
+  expect(Math.round(bounds!.height * 100) / 100).toBeGreaterThanOrEqual(44)
 }
 
 async function contained(page: Page) {
@@ -26,6 +34,10 @@ async function contained(page: Page) {
   expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(
     page.viewportSize()!.width,
   )
+  expect(Math.round(bounds!.y * 100) / 100).toBeGreaterThanOrEqual(0)
+  expect(
+    Math.round((bounds!.y + bounds!.height) * 100) / 100,
+  ).toBeLessThanOrEqual(page.viewportSize()!.height)
 }
 
 export async function navigationPreviews({
@@ -112,7 +124,7 @@ export async function navigationPreviews({
     'Navigation',
     'Compact dark role menu with many choices',
     'Actual owner-created roles exercise the dropdown scroll controls without changing a member.',
-    { fullPage: false },
+    { fullPage: false, region: 'listbox' },
   )
   await page.getByRole('listbox').hover()
   await page.mouse.wheel(0, 600)
@@ -124,7 +136,7 @@ export async function navigationPreviews({
     'Navigation',
     'Complete long role label at the end of a menu',
     'Keyboard and wheel navigation reach the final role; its full label wraps instead of clipping.',
-    { fullPage: false },
+    { fullPage: false, region: 'listbox' },
   )
   await page.keyboard.press('Enter')
   await expect(role).toHaveText(longRoleLabel)
@@ -152,8 +164,9 @@ export async function navigationPreviews({
     await page.getByRole('option', { name: theme, exact: true }).click()
     await appearance.click()
     const option = page.getByRole('option', { name: theme, exact: true })
-    expect((await appearance.boundingBox())!.height).toBeGreaterThanOrEqual(44)
-    expect((await option.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+    await expect(page.getByRole('listbox')).toHaveCSS('opacity', '1')
+    await phoneTarget(appearance)
+    await phoneTarget(option)
     await contained(page)
     await capture(
       'Navigation',
@@ -177,7 +190,7 @@ export async function navigationPreviews({
     'Navigation',
     'Phone long role choice without clipping',
     'The full authored role name remains within its custom menu on a native 390px phone.',
-    { fullPage: false },
+    { fullPage: false, region: 'listbox' },
   )
   await page.keyboard.press('Escape')
   await language.click()

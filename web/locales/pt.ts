@@ -718,6 +718,11 @@ const messages: Record<string, string> = {
     '// Salve o rascunho e execute um teste.\n// Sua resposta aparecerá aqui.',
   'Discard unsaved draft changes?':
     'Descartar as alterações não salvas do rascunho?',
+  'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.':
+    'Use um caminho exato, como /v1/customers. Os argumentos GraphQL transportam os valores de entrada.',
+  'GRAPHQL OPERATION': 'OPERAÇÃO GRAPHQL',
+  'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
+    'Use um caminho exato, como /v1/messages. As mensagens WebSocket transportam os valores de entrada; parâmetros de caminho nomeados não são suportados.',
 }
 
 export default messages

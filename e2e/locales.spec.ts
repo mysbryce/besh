@@ -18,6 +18,8 @@ import {
 } from './team-locale-previews'
 import { studioFirstTaskLocalePreviews } from './studio-locale-previews'
 import { studioDraftLocalePreviews } from './studio-draft-locale-previews'
+import { studioGraphqlLocalePreviews } from './studio-graphql-locale-previews'
+import { studioWebsocketLocalePreviews } from './studio-websocket-locale-previews'
 
 const test = base.extend<{ workspace: { origin: string; owner: string } }>({
   workspace: async ({ page }, use) => {
@@ -77,6 +79,58 @@ function masked(page: Page) {
     page.locator('[data-private]'),
   ]
 }
+
+test('WebSocket Studio guidance follows language without extra tickets or messages', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let number = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+  await studioWebsocketLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title) => {
+      await page.screenshot({
+        path: info.outputPath(
+          `${++number}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: true,
+        style: 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+  expect(errors).toEqual([])
+})
+
+test('GraphQL Studio guidance follows language without rewriting its draft contract', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let number = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+  await studioGraphqlLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title) => {
+      await page.screenshot({
+        path: info.outputPath(
+          `${++number}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: true,
+        style: 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+  expect(errors).toEqual([])
+})
 
 test('first Studio guidance follows language without saving or widening permissions', async ({
   page,
