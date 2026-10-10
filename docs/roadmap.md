@@ -2,6 +2,10 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.18.4: basic Studio languages
+
+First-task and basic Save/Test/Publish guidance support all seven languages after separate public RED/GREEN slices. They preserve unsaved defaults, authored values and permission-limited shortcuts; actual saves, draft tests and publication still require explicit actions. All 44 browser cases and the 1008-image walkthrough passed. Protocol-specific guidance, advanced editors and other management panels remain next.
+
 ## Implemented in 0.18.3: member and role languages
 
 - Basic member/role forms, all permission descriptions, initial API/dependency choices and confirmations support all seven languages.
@@ -272,7 +276,7 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-Next translate remaining Studio guidance, data-source/database panels, backups and advanced sharing/protection panels, then technical errors and native-speaker review. Basic member/role translation is complete in 0.18.3; account/session and update settings are complete in 0.18.2. Date/number formatting outside account/update screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
+Next translate protocol-specific Studio guidance, data-source/database panels, backups and advanced sharing/protection panels through separate public journeys. Technical errors, dynamic completion notices and native-speaker review remain separate. Basic Studio translation is complete in 0.18.4; member/role translation is complete in 0.18.3; account/session and update settings are complete in 0.18.2. Date/number formatting outside account/update screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
 
 1. **Product authorization and shared resources.** Preserve member-field intersections and the narrow workspace invitation lifecycle. Next add reviewed product accounts/sessions/linking, workspace email verification/recovery, resource-management sharing and multi-workspace isolation through separate lifecycles. Joins, social effects, public endpoints and broader WS graphs remain separate. Caller fields and static projections never establish identity or authorization.
 2. **Data connections and query tools.** Extend reviewed adapter capabilities and encrypted server-held credentials to PostgreSQL and MySQL/MariaDB; add MongoDB, Supabase, and Firebase with their own transaction, identity, query, and backup semantics. Add live SQLite connection/write capabilities separately from the uploaded-copy read adapter. Ship bounded parameterized read/write forms, pagination, previews, and explicit transactions one adapter at a time. Add migration dry runs, backup gates, restoration checks, and destructive-change review before schema changes. Private Sheets OAuth, write-back, and scheduled synchronization follow their connection/permission work.

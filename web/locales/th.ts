@@ -1,4 +1,21 @@
 const messages: Record<string, string> = {
+  'Live · v{version}': 'ใช้งานจริง · v{version}',
+  'Saved · revision {revision}': 'บันทึกแล้ว · ฉบับแก้ไข {revision}',
+  '{nodes} nodes · {connections} connections':
+    '{nodes} ขั้นตอน · {connections} การเชื่อมต่อ',
+  'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.':
+    'ใช้ /v1/customers/:id สำหรับเส้นทางที่ระบุเวอร์ชันและมีพารามิเตอร์ในเส้นทาง แต่ละ :name ต้องเป็นหนึ่งส่วนเต็มของเส้นทาง',
+  'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.':
+    'คีย์เจ้าของและสมาชิกใช้จัดการฉบับร่าง สร้างคีย์ API ในหน้าคีย์ API เพื่อเรียกปลายทางที่เผยแพร่แล้ว',
+  'REQUEST DETAILS': 'รายละเอียดคำขอ',
+  '// Save your draft, then run a test.\n// Your response will appear here.':
+    '// บันทึกฉบับร่าง แล้วรันทดสอบ\n// คำตอบของคุณจะแสดงที่นี่',
+  'Discard unsaved draft changes?':
+    'ละทิ้งการเปลี่ยนแปลงฉบับร่างที่ยังไม่ได้บันทึกหรือไม่?',
+  'Start with your spreadsheet, or build a blank API using the request and response below. Opening either path does not save or publish an API. You choose when to create or save its draft.':
+    'เริ่มจากสเปรดชีตของคุณ หรือสร้าง API เปล่าโดยใช้คำขอและคำตอบด้านล่าง การเปิดเส้นทางใดก็ตามจะไม่บันทึกหรือเผยแพร่ API คุณเลือกเองว่าจะสร้างหรือบันทึกฉบับร่างเมื่อใด',
+  'Your next idea starts here.': 'ไอเดียถัดไปของคุณเริ่มที่นี่',
+  'Create your first API.': 'สร้าง API แรกของคุณ',
   'Your team': 'ทีมของคุณ',
   'WORKSPACE CONTROL': 'การควบคุมพื้นที่ทำงาน',
   'Member keys manage the workspace. Use API keys for published endpoint callers.':

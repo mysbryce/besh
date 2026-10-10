@@ -697,6 +697,22 @@ const messages: Record<string, string> = {
     'データソースへのアクセスが必要です。権限とデータソース USE 権限を所有者に確認してもらってください。',
   'No sources are available to this account. Ask the owner to provide a source.':
     'このアカウントで利用できるデータソースはありません。所有者にデータソースの提供を依頼してください。',
+  'Start with your spreadsheet, or build a blank API using the request and response below. Opening either path does not save or publish an API. You choose when to create or save its draft.':
+    'スプレッドシートから始めるか、下のリクエストとレスポンスを使って空の API を作成します。どちらを開いても API は保存・公開されません。下書きを作成・保存するタイミングは自分で選べます。',
+  'Your next idea starts here.': '次のアイデアはここから始まります。',
+  'Create your first API.': '最初の API を作成しましょう。',
+  'Live · v{version}': '公開中 · v{version}',
+  'Saved · revision {revision}': '保存済み · リビジョン {revision}',
+  '{nodes} nodes · {connections} connections':
+    'ノード {nodes} 個 · 接続 {connections} 本',
+  'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.':
+    'バージョン付きでパスパラメーターを使うルートには /v1/customers/:id を指定します。各 :name はルートの 1 セグメント全体を占めます。',
+  'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.':
+    'オーナーキーとメンバーキーは下書きの管理に使います。公開済みエンドポイントを呼び出すには「API キー」で API キーを作成してください。',
+  'REQUEST DETAILS': 'リクエストの詳細',
+  '// Save your draft, then run a test.\n// Your response will appear here.':
+    '// 下書きを保存してからテストを実行してください。\n// レスポンスはここに表示されます。',
+  'Discard unsaved draft changes?': '未保存の下書きの変更を破棄しますか？',
 }
 
 export default messages

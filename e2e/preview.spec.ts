@@ -33,6 +33,8 @@ import {
   memberLocalePreviews,
   roleLocalePreviews,
 } from './team-locale-previews'
+import { studioFirstTaskLocalePreviews } from './studio-locale-previews'
+import { studioDraftLocalePreviews } from './studio-draft-locale-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
@@ -4258,7 +4260,9 @@ for (const story of previewStories) {
     story.id === 'management-account' ||
     story.id === 'management-updates' ||
     story.id === 'management-roles' ||
-    story.id === 'management-members'
+    story.id === 'management-members' ||
+    story.id === 'management-studio-first-task' ||
+    story.id === 'management-studio-draft'
   )
     continue
   const helper = featureHelpers[story.id]
@@ -4288,6 +4292,8 @@ for (const [story, locale, helper] of [
   ['management-updates', 'en-US', updateLocalePreviews],
   ['management-roles', 'en-US', roleLocalePreviews],
   ['management-members', 'en-US', memberLocalePreviews],
+  ['management-studio-first-task', 'en-US', studioFirstTaskLocalePreviews],
+  ['management-studio-draft', 'en-US', studioDraftLocalePreviews],
 ] as const) {
   test.describe(story, () => {
     test.use({ locale })

@@ -16,6 +16,8 @@ import {
   memberLocalePreviews,
   roleLocalePreviews,
 } from './team-locale-previews'
+import { studioFirstTaskLocalePreviews } from './studio-locale-previews'
+import { studioDraftLocalePreviews } from './studio-draft-locale-previews'
 
 const test = base.extend<{ workspace: { origin: string; owner: string } }>({
   workspace: async ({ page }, use) => {
@@ -75,6 +77,58 @@ function masked(page: Page) {
     page.locator('[data-private]'),
   ]
 }
+
+test('first Studio guidance follows language without saving or widening permissions', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let number = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+  await studioFirstTaskLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title) => {
+      await page.screenshot({
+        path: info.outputPath(
+          `${++number}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: true,
+        style: 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+  expect(errors).toEqual([])
+})
+
+test('Studio draft guidance follows language with explicit save test and publication', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let number = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+  await studioDraftLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title) => {
+      await page.screenshot({
+        path: info.outputPath(
+          `${++number}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: true,
+        style: 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+  expect(errors).toEqual([])
+})
 
 test('role guidance follows language while authored names and grants stay unchanged', async ({
   page,

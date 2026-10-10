@@ -701,6 +701,23 @@ const messages: Record<string, string> = {
     'É necessário ter acesso às fontes. Peça ao proprietário para revisar suas permissões e as permissões USE das fontes.',
   'No sources are available to this account. Ask the owner to provide a source.':
     'Não há fontes disponíveis para esta conta. Peça ao proprietário para fornecer uma fonte.',
+  'Start with your spreadsheet, or build a blank API using the request and response below. Opening either path does not save or publish an API. You choose when to create or save its draft.':
+    'Comece com sua planilha ou crie uma API em branco usando a solicitação e a resposta abaixo. Abrir qualquer opção não salva nem publica uma API. Você escolhe quando criar ou salvar o rascunho.',
+  'Your next idea starts here.': 'Sua próxima ideia começa aqui.',
+  'Create your first API.': 'Crie sua primeira API.',
+  'Live · v{version}': 'Em produção · v{version}',
+  'Saved · revision {revision}': 'Salvo · revisão {revision}',
+  '{nodes} nodes · {connections} connections':
+    'Nós: {nodes} · Conexões: {connections}',
+  'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.':
+    'Use /v1/customers/:id para uma rota com versão e parâmetro de caminho. Cada :name ocupa um segmento inteiro da rota.',
+  'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.':
+    'As chaves do proprietário e dos membros gerenciam rascunhos. Crie uma chave de API em Chaves de API para chamar um endpoint publicado.',
+  'REQUEST DETAILS': 'DETALHES DA SOLICITAÇÃO',
+  '// Save your draft, then run a test.\n// Your response will appear here.':
+    '// Salve o rascunho e execute um teste.\n// Sua resposta aparecerá aqui.',
+  'Discard unsaved draft changes?':
+    'Descartar as alterações não salvas do rascunho?',
 }
 
 export default messages

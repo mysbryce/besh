@@ -4,6 +4,17 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.18.4-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Translate the first API guidance, REST draft help, save/publication status and discard confirmation in all seven dashboard languages.
+- Keep authored names, routes and response values unchanged when choosing a language; saving, testing and publication remain explicit actions.
+
+### Changed
+
+- Add real first-task and save/test/publish language journeys, with light/dark phone previews and unchanged permission boundaries.
+
 ## 0.18.3-alpha.0 — 2026-10-10
 
 ### Fixed

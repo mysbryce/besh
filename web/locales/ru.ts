@@ -1,4 +1,21 @@
 const messages: Record<string, string> = {
+  'Live · v{version}': 'Опубликовано · v{version}',
+  'Saved · revision {revision}': 'Сохранено · ревизия {revision}',
+  '{nodes} nodes · {connections} connections':
+    'Узлы: {nodes} · Соединения: {connections}',
+  'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.':
+    'Используйте /v1/customers/:id для маршрута с версией и параметром пути. Каждый :name должен занимать целый сегмент маршрута.',
+  'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.':
+    'Ключи владельца и участников управляют черновиками. Создайте ключ API в разделе «Ключи API», чтобы вызывать опубликованный эндпоинт.',
+  'REQUEST DETAILS': 'ДАННЫЕ ЗАПРОСА',
+  '// Save your draft, then run a test.\n// Your response will appear here.':
+    '// Сохраните черновик, затем запустите тест.\n// Здесь появится ваш ответ.',
+  'Discard unsaved draft changes?':
+    'Отменить несохранённые изменения черновика?',
+  'Start with your spreadsheet, or build a blank API using the request and response below. Opening either path does not save or publish an API. You choose when to create or save its draft.':
+    'Начните со своей таблицы или создайте пустой API с запросом и ответом ниже. Открытие любого варианта не сохраняет и не публикует API. Вы сами выбираете, когда создать или сохранить черновик.',
+  'Your next idea starts here.': 'Ваша следующая идея начинается здесь.',
+  'Create your first API.': 'Создайте первый API.',
   'Your team': 'Ваша команда',
   'WORKSPACE CONTROL': 'УПРАВЛЕНИЕ РАБОЧИМ ПРОСТРАНСТВОМ',
   'Member keys manage the workspace. Use API keys for published endpoint callers.':

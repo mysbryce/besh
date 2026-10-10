@@ -694,6 +694,22 @@ const messages: Record<string, string> = {
     '데이터 소스 접근 권한이 필요합니다. 소유자에게 권한과 데이터 소스 USE 권한을 확인해 달라고 요청하세요.',
   'No sources are available to this account. Ask the owner to provide a source.':
     '이 계정에서 사용할 수 있는 데이터 소스가 없습니다. 소유자에게 데이터 소스를 제공해 달라고 요청하세요.',
+  'Start with your spreadsheet, or build a blank API using the request and response below. Opening either path does not save or publish an API. You choose when to create or save its draft.':
+    '스프레드시트로 시작하거나 아래의 요청과 응답으로 빈 API를 만드세요. 어느 경로를 열어도 API가 저장되거나 게시되지 않습니다. 초안을 만들거나 저장할 시점은 직접 선택합니다.',
+  'Your next idea starts here.': '다음 아이디어는 여기서 시작됩니다.',
+  'Create your first API.': '첫 API를 만드세요.',
+  'Live · v{version}': '게시됨 · v{version}',
+  'Saved · revision {revision}': '저장됨 · 리비전 {revision}',
+  '{nodes} nodes · {connections} connections':
+    '노드 {nodes}개 · 연결 {connections}개',
+  'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.':
+    '버전과 경로 매개변수가 있는 경로에는 /v1/customers/:id를 사용하세요. 각 :name은 경로의 한 구간 전체를 차지해야 합니다.',
+  'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.':
+    '소유자 키와 멤버 키는 초안을 관리합니다. 게시된 엔드포인트를 호출하려면 API 키 페이지에서 API 키를 만드세요.',
+  'REQUEST DETAILS': '요청 세부 정보',
+  '// Save your draft, then run a test.\n// Your response will appear here.':
+    '// 초안을 저장한 다음 테스트를 실행하세요.\n// 응답이 여기에 표시됩니다.',
+  'Discard unsaved draft changes?': '저장하지 않은 초안 변경 사항을 버릴까요?',
 }
 
 export default messages
