@@ -33,6 +33,8 @@ import type { SheetFetch } from './data/google-sheets'
 import { productAuthService, type OAuthFetch } from './auth/product'
 import { invitationService } from './auth/invitations'
 import { structService } from './structs/service'
+import { collectionService } from './collections/service'
+import { contentEntryService } from './collections/entries'
 import { timingSafeEqual } from 'node:crypto'
 import {
   sessionService,
@@ -131,6 +133,8 @@ export function createApp(options: AppOptions) {
   const sessions = sessionService(store, options.now)
   const invitations = invitationService(store, options.now)
   const structs = structService(store)
+  const collections = collectionService(store)
+  const entries = contentEntryService(store, collections)
   const dependencies = dependencyService(store)
   const rowPolicies = rowPolicyService(store)
   const tenantFields = tenantFieldPolicyService(store)
@@ -446,6 +450,52 @@ export function createApp(options: AppOptions) {
       return { member, session }
     })
     .get('/me', ({ member }) => member)
+    .get('/collections', ({ member }) => {
+      allow(member, ['owner'])
+      return collections.list()
+    })
+    .get('/collections/:id', ({ member, params }) => {
+      allow(member, ['owner'])
+      return collections.get(params.id)
+    })
+    .post('/collections', ({ member, body, request }) => {
+      allow(member, ['owner'])
+      return collections.create(member.id, body, () =>
+        allow(currentMember(request), ['owner']),
+      )
+    })
+    .get('/collections/:id/entries', ({ member, params, request }) => {
+      allow(member, ['owner'])
+      return entries.list(params.id, new URL(request.url).searchParams)
+    })
+    .post('/collections/:id/entries', ({ member, params, body, request }) => {
+      allow(member, ['owner'])
+      return entries.create(member.id, params.id, body, () =>
+        allow(currentMember(request), ['owner']),
+      )
+    })
+    .get('/collections/:id/entries/:entryId', ({ member, params }) => {
+      allow(member, ['owner'])
+      return entries.get(params.id, params.entryId)
+    })
+    .put(
+      '/collections/:id/entries/:entryId',
+      ({ member, params, body, request }) => {
+        allow(member, ['owner'])
+        return entries.update(member.id, params.id, params.entryId, body, () =>
+          allow(currentMember(request), ['owner']),
+        )
+      },
+    )
+    .delete(
+      '/collections/:id/entries/:entryId',
+      ({ member, params, body, request }) => {
+        allow(member, ['owner'])
+        return entries.remove(member.id, params.id, params.entryId, body, () =>
+          allow(currentMember(request), ['owner']),
+        )
+      },
+    )
     .get('/structs', ({ member }) => {
       allow(member, ['owner'])
       return structs.list()

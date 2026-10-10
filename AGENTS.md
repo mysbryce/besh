@@ -28,7 +28,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Use the primary browser language on initialization, with English fallback and an explicit persisted override. Translate interface labels, never authored API names, fields, data or contracts. Keep locale dictionaries aligned and load non-English dictionaries on demand.
 - Keep step selection in the categorized searchable picker. Preserve keyboard focus, mobile touch targets, feature/permission guards and explicit saving/publication. Uploaded CJS/ZIP plugins remain planned until their archive and real isolation boundary are implemented.
 - Use locally served Google Sans Flex and Noto Sans Thai with clear body, label, subheading and heading weights. Keep code monospace. Make technical details optional while keeping current state, errors, next actions and important review warnings visible.
-- Keep feature files together in shallow server folders: `src/auth/`, `src/data/`, `src/databases/`, `src/flows/`, `src/load-tests/`, `src/structs/`, `src/updates/`, `src/websockets/`, and `src/workspace/`. Root server files compose/start the app or provide shared errors. Keep `web/` dashboard, `test/` backend tests, `e2e/` browser tests, and `docs/` documentation. Avoid empty folders and unnecessary barrel exports.
+- Keep feature files together in shallow server folders: `src/auth/`, `src/collections/`, `src/data/`, `src/databases/`, `src/flows/`, `src/load-tests/`, `src/structs/`, `src/updates/`, `src/websockets/`, and `src/workspace/`. Root server files compose/start the app or provide shared errors. Keep `web/` dashboard, `test/` backend tests, `e2e/` browser tests, and `docs/` documentation. Avoid empty folders and unnecessary barrel exports.
 - Read applicable local skills when requested. Current requested skills: `tdd`, `wait-what`, `handoff`.
 - Test first through agreed public interfaces. See `docs/testing.md` for approved scope. Work one failing test and implementation at a time.
 - Run relevant tests, type checks, build, and formatting before committing. Run browser tests for editor behavior changes.
@@ -48,6 +48,8 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Document what works, what remains planned, and exact checks run. Never claim an adapter works based only on a type definition or mock.
 
 ## Security rules
+
+- Private collections bind an immutable server-read snapshot of the exact reviewed saved Struct revision. Later model edits never change that binding. Collection and entry management starts owner-only; typed content preserves empty text, zero, false and optional absence without coercion or implicit defaults. Bound bytes, depth, values, lists, catalogs and entries. Entry replacement/deletion uses the current safe version; recheck the original management proof first inside acquired write transactions and commit metadata-only audit with effects. Read one entry page in a consistent database snapshot. Private management routes do not imply runtime publication, dependency USE, shared CMS access or confidentiality against existing authorized full-backup operators.
 
 - Check authentication and permissions on the server for every management operation.
 - Keep member credentials limited to management and draft tests. Published APIs require a separate, unexpired runtime key scoped to the published flow and operation type. Never add a member-key bypass.

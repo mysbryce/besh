@@ -1,4 +1,89 @@
 const messages: Record<string, string> = {
+  'View content model': '查看内容模型',
+  'Hide content model': '隐藏内容模型',
+
+  Content: '内容',
+  'Create private collections from saved content models. This does not publish content or an API.':
+    '从已保存的内容模型创建私有集合。这不会发布内容或 API。',
+  'Choose a collection': '选择集合',
+  'New collection': '新建集合',
+  'Loading collections…': '正在加载集合…',
+  'No collections yet': '还没有集合',
+  'Private collection': '私有集合',
+  'Collection name': '集合名称',
+  'Content model': '内容模型',
+  'Save a content model in Content models first, then refresh this catalog.':
+    '先在“内容模型”中保存模型，再刷新此列表。',
+  'Review the saved model revision before creating. Later model edits do not change this collection.':
+    '创建前请查看已保存的模型版本。之后的模型修改不会改变此集合。',
+  'Create collection': '创建集合',
+  'Review current content model': '查看当前内容模型',
+  'Saved content model': '已保存的内容模型',
+  'Content model revision {version}': '内容模型版本 {version}',
+  Required: '必填',
+  Optional: '可选',
+  'List item type': '列表项类型',
+  'Discard unsaved collection changes?': '放弃未保存的集合更改？',
+  'Could not load collections.': '无法加载集合。',
+  'Content model ready for review.': '内容模型已准备好供查看。',
+  'Collection loaded.': '集合已加载。',
+  'Could not load collection.': '无法加载集合。',
+  'Private collection created.': '私有集合已创建。',
+  'Could not create collection.': '无法创建集合。',
+  'Discard unsaved entry changes?': '放弃未保存的条目更改？',
+
+  'Check the value for {field}.': '检查 {field} 的值。',
+  'Enter a finite number for {field}.': '为 {field} 输入有限数值。',
+  'Choose a value for {field}.': '为 {field} 选择一个值。',
+  'Include the required field {field}.': '包含必填字段 {field}。',
+  'This entry is too large. Shorten text or remove list items.':
+    '此条目过大。请缩短文本或删除列表项。',
+  'Include {field}': '包含 {field}',
+  'Choose a value': '选择一个值',
+  '{field} item {index}': '{field} 项 {index}',
+  'Remove {field} item {index}': '删除 {field} 项 {index}',
+  'Empty list': '空列表',
+  'Add item to {field}': '向 {field} 添加项',
+
+  'Could not load entries.': '无法加载条目。',
+  'New entry': '新建条目',
+  'Entry loaded.': '条目已加载。',
+  'Could not load entry.': '无法加载条目。',
+  'Private entry created.': '私有条目已创建。',
+  'Could not create entry.': '无法创建条目。',
+  Entries: '条目',
+  'Refresh entries': '刷新条目',
+  'Loading entries…': '正在加载条目…',
+  'Revision {version}': '版本 {version}',
+  'No entries yet': '还没有条目',
+  'Previous entries': '上一页条目',
+  '{total} saved entries': '已保存 {total} 个条目',
+  'Next entries': '下一页条目',
+  'Saved entry': '已保存的条目',
+  'Entry revision {version}': '条目版本 {version}',
+  'Optional fields are omitted unless included. Empty text, zero, false, empty groups and empty lists are allowed when they match this model.':
+    '可选字段只有选中包含后才会保存。符合此模型时，允许空文本、零、假、空分组和空列表。',
+
+  'Create entry': '创建条目',
+  'Edit entry': '编辑条目',
+  'Reload entry': '重新加载条目',
+  'Save entry': '保存条目',
+  'Entry saved.': '条目已保存。',
+  'Could not save entry.': '无法保存条目。',
+
+  'Delete entry': '删除条目',
+  'Delete this saved entry? This permanently removes its saved content and discards any unsaved entry changes.':
+    '删除此已保存的条目？这将永久删除其已保存的内容，并放弃条目中所有未保存的更改。',
+  'Entry deleted.': '条目已删除。',
+  'Could not delete entry.': '无法删除条目。',
+
+  'Struct draft changed. Review before creating.':
+    'Struct 草稿已更改。请在创建前重新查看。',
+  'Content entry changed. Reload before saving.':
+    '内容条目已更改。请在保存前重新加载。',
+  'Content entry changed. Reload before deleting.':
+    '内容条目已更改。请在删除前重新加载。',
+
   'Content models': '内容模型',
   'Define record fields with forms. This draft does not publish content or an API.':
     '通过表单定义记录字段。此草稿不会发布内容或 API。',

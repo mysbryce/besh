@@ -4,6 +4,22 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.22.0-alpha.0 — 2026-10-11
+
+### Added
+
+- Owner-managed private collections bound to an exact server-read saved content model. Later model edits leave their field contracts unchanged.
+- Typed entry forms for text, numbers, booleans, groups, lists and choices, with explicit optional fields, bounded paging, versioned editing and confirmed deletion.
+- Strict entry validation, atomic metadata audit, concurrent-change protection and tested migration, restart and downloaded-backup restoration.
+- Seven-language content forms and 35 page/action previews for typed entries, compact model inspection, conflicts and light/dark phone controls.
+
+### Changed
+
+- Preserve unsaved content on conflicts and require explicit reload before retrying an edit or deletion.
+- Clear resolved catalog errors after successful refresh while retaining unresolved edit conflicts.
+- Collapse saved model details behind View/Hide controls while keeping the full review visible during collection creation.
+- Keep full workspace backup permissions separate from owner-only content management. Shared CMS access, rich text and generated content runtime publication remain planned.
+
 ## 0.21.0-alpha.0 — 2026-10-11
 
 ### Added

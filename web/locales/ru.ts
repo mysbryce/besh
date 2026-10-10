@@ -1,4 +1,91 @@
 const messages: Record<string, string> = {
+  'View content model': 'Посмотреть модель контента',
+  'Hide content model': 'Скрыть модель контента',
+
+  Content: 'Контент',
+  'Create private collections from saved content models. This does not publish content or an API.':
+    'Создавайте частные коллекции из сохранённых моделей содержимого. Это не публикует содержимое или API.',
+  'Choose a collection': 'Выберите коллекцию',
+  'New collection': 'Новая коллекция',
+  'Loading collections…': 'Загрузка коллекций…',
+  'No collections yet': 'Коллекций пока нет',
+  'Private collection': 'Частная коллекция',
+  'Collection name': 'Название коллекции',
+  'Content model': 'Модель содержимого',
+  'Save a content model in Content models first, then refresh this catalog.':
+    'Сначала сохраните модель в разделе «Модели содержимого», затем обновите этот список.',
+  'Review the saved model revision before creating. Later model edits do not change this collection.':
+    'Перед созданием проверьте сохранённую версию модели. Последующие изменения модели не изменят эту коллекцию.',
+  'Create collection': 'Создать коллекцию',
+  'Review current content model': 'Проверить текущую модель содержимого',
+  'Saved content model': 'Сохранённая модель содержимого',
+  'Content model revision {version}': 'Версия модели содержимого {version}',
+  Required: 'Обязательное',
+  Optional: 'Необязательное',
+  'List item type': 'Тип элемента списка',
+  'Discard unsaved collection changes?':
+    'Отменить несохранённые изменения коллекции?',
+  'Could not load collections.': 'Не удалось загрузить коллекции.',
+  'Content model ready for review.': 'Модель содержимого готова к проверке.',
+  'Collection loaded.': 'Коллекция загружена.',
+  'Could not load collection.': 'Не удалось загрузить коллекцию.',
+  'Private collection created.': 'Частная коллекция создана.',
+  'Could not create collection.': 'Не удалось создать коллекцию.',
+  'Discard unsaved entry changes?': 'Отменить несохранённые изменения записи?',
+
+  'Check the value for {field}.': 'Проверьте значение поля {field}.',
+  'Enter a finite number for {field}.':
+    'Введите конечное число для поля {field}.',
+  'Choose a value for {field}.': 'Выберите значение поля {field}.',
+  'Include the required field {field}.': 'Включите обязательное поле {field}.',
+  'This entry is too large. Shorten text or remove list items.':
+    'Запись слишком большая. Сократите текст или удалите элементы списка.',
+  'Include {field}': 'Включить {field}',
+  'Choose a value': 'Выберите значение',
+  '{field} item {index}': '{field}, элемент {index}',
+  'Remove {field} item {index}': 'Удалить {field}, элемент {index}',
+  'Empty list': 'Пустой список',
+  'Add item to {field}': 'Добавить элемент в {field}',
+
+  'Could not load entries.': 'Не удалось загрузить записи.',
+  'New entry': 'Новая запись',
+  'Entry loaded.': 'Запись загружена.',
+  'Could not load entry.': 'Не удалось загрузить запись.',
+  'Private entry created.': 'Частная запись создана.',
+  'Could not create entry.': 'Не удалось создать запись.',
+  Entries: 'Записи',
+  'Refresh entries': 'Обновить записи',
+  'Loading entries…': 'Загрузка записей…',
+  'Revision {version}': 'Версия {version}',
+  'No entries yet': 'Записей пока нет',
+  'Previous entries': 'Предыдущие записи',
+  '{total} saved entries': 'Сохранённых записей: {total}',
+  'Next entries': 'Следующие записи',
+  'Saved entry': 'Сохранённая запись',
+  'Entry revision {version}': 'Версия записи {version}',
+  'Optional fields are omitted unless included. Empty text, zero, false, empty groups and empty lists are allowed when they match this model.':
+    'Необязательные поля отсутствуют, пока вы их не включите. Пустой текст, ноль, ложь, пустые группы и списки допустимы, если соответствуют этой модели.',
+
+  'Create entry': 'Создать запись',
+  'Edit entry': 'Редактировать запись',
+  'Reload entry': 'Загрузить запись заново',
+  'Save entry': 'Сохранить запись',
+  'Entry saved.': 'Запись сохранена.',
+  'Could not save entry.': 'Не удалось сохранить запись.',
+
+  'Delete entry': 'Удалить запись',
+  'Delete this saved entry? This permanently removes its saved content and discards any unsaved entry changes.':
+    'Удалить эту сохранённую запись? Это навсегда удалит её сохранённое содержимое и отменит все несохранённые изменения записи.',
+  'Entry deleted.': 'Запись удалена.',
+  'Could not delete entry.': 'Не удалось удалить запись.',
+
+  'Struct draft changed. Review before creating.':
+    'Черновик Struct изменился. Проверьте его перед созданием.',
+  'Content entry changed. Reload before saving.':
+    'Запись содержимого изменилась. Загрузите её заново перед сохранением.',
+  'Content entry changed. Reload before deleting.':
+    'Запись содержимого изменилась. Загрузите её заново перед удалением.',
+
   'Content models': 'Модели содержимого',
   'Define record fields with forms. This draft does not publish content or an API.':
     'Определяйте поля записей через формы. Этот черновик не публикует содержимое или API.',

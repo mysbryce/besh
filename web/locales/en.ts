@@ -1,4 +1,89 @@
 const messages: Record<string, string> = {
+  'View content model': 'View content model',
+  'Hide content model': 'Hide content model',
+
+  Content: 'Content',
+  'Create private collections from saved content models. This does not publish content or an API.':
+    'Create private collections from saved content models. This does not publish content or an API.',
+  'Choose a collection': 'Choose a collection',
+  'New collection': 'New collection',
+  'Loading collections…': 'Loading collections…',
+  'No collections yet': 'No collections yet',
+  'Private collection': 'Private collection',
+  'Collection name': 'Collection name',
+  'Content model': 'Content model',
+  'Save a content model in Content models first, then refresh this catalog.':
+    'Save a content model in Content models first, then refresh this catalog.',
+  'Review the saved model revision before creating. Later model edits do not change this collection.':
+    'Review the saved model revision before creating. Later model edits do not change this collection.',
+  'Create collection': 'Create collection',
+  'Review current content model': 'Review current content model',
+  'Saved content model': 'Saved content model',
+  'Content model revision {version}': 'Content model revision {version}',
+  Required: 'Required',
+  Optional: 'Optional',
+  'List item type': 'List item type',
+  'Discard unsaved collection changes?': 'Discard unsaved collection changes?',
+  'Could not load collections.': 'Could not load collections.',
+  'Content model ready for review.': 'Content model ready for review.',
+  'Collection loaded.': 'Collection loaded.',
+  'Could not load collection.': 'Could not load collection.',
+  'Private collection created.': 'Private collection created.',
+  'Could not create collection.': 'Could not create collection.',
+  'Discard unsaved entry changes?': 'Discard unsaved entry changes?',
+
+  'Check the value for {field}.': 'Check the value for {field}.',
+  'Enter a finite number for {field}.': 'Enter a finite number for {field}.',
+  'Choose a value for {field}.': 'Choose a value for {field}.',
+  'Include the required field {field}.': 'Include the required field {field}.',
+  'This entry is too large. Shorten text or remove list items.':
+    'This entry is too large. Shorten text or remove list items.',
+  'Include {field}': 'Include {field}',
+  'Choose a value': 'Choose a value',
+  '{field} item {index}': '{field} item {index}',
+  'Remove {field} item {index}': 'Remove {field} item {index}',
+  'Empty list': 'Empty list',
+  'Add item to {field}': 'Add item to {field}',
+
+  'Could not load entries.': 'Could not load entries.',
+  'New entry': 'New entry',
+  'Entry loaded.': 'Entry loaded.',
+  'Could not load entry.': 'Could not load entry.',
+  'Private entry created.': 'Private entry created.',
+  'Could not create entry.': 'Could not create entry.',
+  Entries: 'Entries',
+  'Refresh entries': 'Refresh entries',
+  'Loading entries…': 'Loading entries…',
+  'Revision {version}': 'Revision {version}',
+  'No entries yet': 'No entries yet',
+  'Previous entries': 'Previous entries',
+  '{total} saved entries': '{total} saved entries',
+  'Next entries': 'Next entries',
+  'Saved entry': 'Saved entry',
+  'Entry revision {version}': 'Entry revision {version}',
+  'Optional fields are omitted unless included. Empty text, zero, false, empty groups and empty lists are allowed when they match this model.':
+    'Optional fields are omitted unless included. Empty text, zero, false, empty groups and empty lists are allowed when they match this model.',
+
+  'Create entry': 'Create entry',
+  'Edit entry': 'Edit entry',
+  'Reload entry': 'Reload entry',
+  'Save entry': 'Save entry',
+  'Entry saved.': 'Entry saved.',
+  'Could not save entry.': 'Could not save entry.',
+
+  'Delete entry': 'Delete entry',
+  'Delete this saved entry? This permanently removes its saved content and discards any unsaved entry changes.':
+    'Delete this saved entry? This permanently removes its saved content and discards any unsaved entry changes.',
+  'Entry deleted.': 'Entry deleted.',
+  'Could not delete entry.': 'Could not delete entry.',
+
+  'Struct draft changed. Review before creating.':
+    'Struct draft changed. Review before creating.',
+  'Content entry changed. Reload before saving.':
+    'Content entry changed. Reload before saving.',
+  'Content entry changed. Reload before deleting.':
+    'Content entry changed. Reload before deleting.',
+
   'Content models': 'Content models',
   'Define record fields with forms. This draft does not publish content or an API.':
     'Define record fields with forms. This draft does not publish content or an API.',

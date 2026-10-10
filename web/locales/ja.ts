@@ -1,4 +1,92 @@
 const messages: Record<string, string> = {
+  'View content model': 'コンテンツモデルを表示',
+  'Hide content model': 'コンテンツモデルを非表示',
+
+  Content: 'コンテンツ',
+  'Create private collections from saved content models. This does not publish content or an API.':
+    '保存済みのコンテンツモデルから非公開コレクションを作成します。コンテンツや API は公開されません。',
+  'Choose a collection': 'コレクションを選択',
+  'New collection': '新しいコレクション',
+  'Loading collections…': 'コレクションを読み込み中…',
+  'No collections yet': 'コレクションはまだありません',
+  'Private collection': '非公開コレクション',
+  'Collection name': 'コレクション名',
+  'Content model': 'コンテンツモデル',
+  'Save a content model in Content models first, then refresh this catalog.':
+    '先に「コンテンツモデル」でモデルを保存してから、この一覧を更新してください。',
+  'Review the saved model revision before creating. Later model edits do not change this collection.':
+    '作成前に保存済みモデルのバージョンを確認してください。その後のモデルの編集は、このコレクションを変更しません。',
+  'Create collection': 'コレクションを作成',
+  'Review current content model': '現在のコンテンツモデルを確認',
+  'Saved content model': '保存済みコンテンツモデル',
+  'Content model revision {version}': 'コンテンツモデルのバージョン {version}',
+  Required: '必須',
+  Optional: '任意',
+  'List item type': 'リストの項目の型',
+  'Discard unsaved collection changes?':
+    '未保存のコレクションの変更を破棄しますか？',
+  'Could not load collections.': 'コレクションを読み込めませんでした。',
+  'Content model ready for review.': 'コンテンツモデルを確認できます。',
+  'Collection loaded.': 'コレクションを読み込みました。',
+  'Could not load collection.': 'コレクションを読み込めませんでした。',
+  'Private collection created.': '非公開コレクションを作成しました。',
+  'Could not create collection.': 'コレクションを作成できませんでした。',
+  'Discard unsaved entry changes?': '未保存の項目の変更を破棄しますか？',
+
+  'Check the value for {field}.': '{field} の値を確認してください。',
+  'Enter a finite number for {field}.':
+    '{field} に有限の数値を入力してください。',
+  'Choose a value for {field}.': '{field} の値を選択してください。',
+  'Include the required field {field}.':
+    '必須フィールド {field} を含めてください。',
+  'This entry is too large. Shorten text or remove list items.':
+    'この項目は大きすぎます。テキストを短くするか、リストの項目を削除してください。',
+  'Include {field}': '{field} を含める',
+  'Choose a value': '値を選択',
+  '{field} item {index}': '{field} の項目 {index}',
+  'Remove {field} item {index}': '{field} の項目 {index} を削除',
+  'Empty list': '空のリスト',
+  'Add item to {field}': '{field} に項目を追加',
+
+  'Could not load entries.': '項目を読み込めませんでした。',
+  'New entry': '新しい項目',
+  'Entry loaded.': '項目を読み込みました。',
+  'Could not load entry.': '項目を読み込めませんでした。',
+  'Private entry created.': '非公開の項目を作成しました。',
+  'Could not create entry.': '項目を作成できませんでした。',
+  Entries: '項目',
+  'Refresh entries': '項目一覧を更新',
+  'Loading entries…': '項目を読み込み中…',
+  'Revision {version}': 'バージョン {version}',
+  'No entries yet': '項目はまだありません',
+  'Previous entries': '前の項目',
+  '{total} saved entries': '保存済みの項目 {total} 件',
+  'Next entries': '次の項目',
+  'Saved entry': '保存済みの項目',
+  'Entry revision {version}': '項目のバージョン {version}',
+  'Optional fields are omitted unless included. Empty text, zero, false, empty groups and empty lists are allowed when they match this model.':
+    '任意フィールドは、含めると選択しない限り省略されます。このモデルに合う場合、空のテキスト、ゼロ、偽、空のグループやリストを使用できます。',
+
+  'Create entry': '項目を作成',
+  'Edit entry': '項目を編集',
+  'Reload entry': '項目を再読み込み',
+  'Save entry': '項目を保存',
+  'Entry saved.': '項目を保存しました。',
+  'Could not save entry.': '項目を保存できませんでした。',
+
+  'Delete entry': '項目を削除',
+  'Delete this saved entry? This permanently removes its saved content and discards any unsaved entry changes.':
+    'この保存済みの項目を削除しますか？保存済みの内容は完全に削除され、項目の未保存の変更も破棄されます。',
+  'Entry deleted.': '項目を削除しました。',
+  'Could not delete entry.': '項目を削除できませんでした。',
+
+  'Struct draft changed. Review before creating.':
+    'Struct の下書きが変更されました。作成前に確認してください。',
+  'Content entry changed. Reload before saving.':
+    'コンテンツの項目が変更されました。保存前に再読み込みしてください。',
+  'Content entry changed. Reload before deleting.':
+    'コンテンツの項目が変更されました。削除前に再読み込みしてください。',
+
   'Content models': 'コンテンツモデル',
   'Define record fields with forms. This draft does not publish content or an API.':
     'フォームでレコードのフィールドを定義します。この下書きはコンテンツや API を公開しません。',

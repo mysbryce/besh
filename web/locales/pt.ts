@@ -1,4 +1,91 @@
 const messages: Record<string, string> = {
+  'View content model': 'Ver modelo de conteúdo',
+  'Hide content model': 'Ocultar modelo de conteúdo',
+
+  Content: 'Conteúdo',
+  'Create private collections from saved content models. This does not publish content or an API.':
+    'Crie coleções privadas a partir de modelos de conteúdo salvos. Isso não publica conteúdo nem uma API.',
+  'Choose a collection': 'Escolha uma coleção',
+  'New collection': 'Nova coleção',
+  'Loading collections…': 'Carregando coleções…',
+  'No collections yet': 'Ainda não há coleções',
+  'Private collection': 'Coleção privada',
+  'Collection name': 'Nome da coleção',
+  'Content model': 'Modelo de conteúdo',
+  'Save a content model in Content models first, then refresh this catalog.':
+    'Primeiro salve um modelo em Modelos de conteúdo, depois atualize esta lista.',
+  'Review the saved model revision before creating. Later model edits do not change this collection.':
+    'Confira a versão salva do modelo antes de criar. Edições posteriores do modelo não alteram esta coleção.',
+  'Create collection': 'Criar coleção',
+  'Review current content model': 'Revisar modelo de conteúdo atual',
+  'Saved content model': 'Modelo de conteúdo salvo',
+  'Content model revision {version}': 'Versão do modelo de conteúdo {version}',
+  Required: 'Obrigatório',
+  Optional: 'Opcional',
+  'List item type': 'Tipo de item da lista',
+  'Discard unsaved collection changes?':
+    'Descartar alterações não salvas da coleção?',
+  'Could not load collections.': 'Não foi possível carregar as coleções.',
+  'Content model ready for review.': 'Modelo de conteúdo pronto para revisão.',
+  'Collection loaded.': 'Coleção carregada.',
+  'Could not load collection.': 'Não foi possível carregar a coleção.',
+  'Private collection created.': 'Coleção privada criada.',
+  'Could not create collection.': 'Não foi possível criar a coleção.',
+  'Discard unsaved entry changes?':
+    'Descartar alterações não salvas da entrada?',
+
+  'Check the value for {field}.': 'Confira o valor de {field}.',
+  'Enter a finite number for {field}.': 'Digite um número finito para {field}.',
+  'Choose a value for {field}.': 'Escolha um valor para {field}.',
+  'Include the required field {field}.': 'Inclua o campo obrigatório {field}.',
+  'This entry is too large. Shorten text or remove list items.':
+    'Esta entrada é muito grande. Encurte o texto ou remova itens da lista.',
+  'Include {field}': 'Incluir {field}',
+  'Choose a value': 'Escolha um valor',
+  '{field} item {index}': '{field} item {index}',
+  'Remove {field} item {index}': 'Remover {field} item {index}',
+  'Empty list': 'Lista vazia',
+  'Add item to {field}': 'Adicionar item a {field}',
+
+  'Could not load entries.': 'Não foi possível carregar as entradas.',
+  'New entry': 'Nova entrada',
+  'Entry loaded.': 'Entrada carregada.',
+  'Could not load entry.': 'Não foi possível carregar a entrada.',
+  'Private entry created.': 'Entrada privada criada.',
+  'Could not create entry.': 'Não foi possível criar a entrada.',
+  Entries: 'Entradas',
+  'Refresh entries': 'Atualizar entradas',
+  'Loading entries…': 'Carregando entradas…',
+  'Revision {version}': 'Versão {version}',
+  'No entries yet': 'Ainda não há entradas',
+  'Previous entries': 'Entradas anteriores',
+  '{total} saved entries': '{total} entradas salvas',
+  'Next entries': 'Próximas entradas',
+  'Saved entry': 'Entrada salva',
+  'Entry revision {version}': 'Versão da entrada {version}',
+  'Optional fields are omitted unless included. Empty text, zero, false, empty groups and empty lists are allowed when they match this model.':
+    'Campos opcionais são omitidos, a menos que sejam incluídos. Texto vazio, zero, falso, grupos vazios e listas vazias são permitidos quando correspondem a este modelo.',
+
+  'Create entry': 'Criar entrada',
+  'Edit entry': 'Editar entrada',
+  'Reload entry': 'Recarregar entrada',
+  'Save entry': 'Salvar entrada',
+  'Entry saved.': 'Entrada salva.',
+  'Could not save entry.': 'Não foi possível salvar a entrada.',
+
+  'Delete entry': 'Excluir entrada',
+  'Delete this saved entry? This permanently removes its saved content and discards any unsaved entry changes.':
+    'Excluir esta entrada salva? Isso remove permanentemente seu conteúdo salvo e descarta todas as alterações não salvas da entrada.',
+  'Entry deleted.': 'Entrada excluída.',
+  'Could not delete entry.': 'Não foi possível excluir a entrada.',
+
+  'Struct draft changed. Review before creating.':
+    'O rascunho do Struct mudou. Revise antes de criar.',
+  'Content entry changed. Reload before saving.':
+    'A entrada de conteúdo mudou. Recarregue antes de salvar.',
+  'Content entry changed. Reload before deleting.':
+    'A entrada de conteúdo mudou. Recarregue antes de excluir.',
+
   'Content models': 'Modelos de conteúdo',
   'Define record fields with forms. This draft does not publish content or an API.':
     'Defina os campos dos registros com formulários. Este rascunho não publica conteúdo nem uma API.',

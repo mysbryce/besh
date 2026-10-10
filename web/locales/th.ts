@@ -1,4 +1,92 @@
 const messages: Record<string, string> = {
+  'View content model': 'ดูโมเดลเนื้อหา',
+  'Hide content model': 'ซ่อนโมเดลเนื้อหา',
+
+  Content: 'เนื้อหา',
+  'Create private collections from saved content models. This does not publish content or an API.':
+    'สร้างคอลเลกชันส่วนตัวจากโมเดลเนื้อหาที่บันทึกไว้ ยังไม่เผยแพร่เนื้อหาหรือ API',
+  'Choose a collection': 'เลือกคอลเลกชัน',
+  'New collection': 'คอลเลกชันใหม่',
+  'Loading collections…': 'กำลังโหลดคอลเลกชัน…',
+  'No collections yet': 'ยังไม่มีคอลเลกชัน',
+  'Private collection': 'คอลเลกชันส่วนตัว',
+  'Collection name': 'ชื่อคอลเลกชัน',
+  'Content model': 'โมเดลเนื้อหา',
+  'Save a content model in Content models first, then refresh this catalog.':
+    'บันทึกโมเดลในหน้าโมเดลเนื้อหาก่อน แล้วรีเฟรชรายการนี้',
+  'Review the saved model revision before creating. Later model edits do not change this collection.':
+    'ตรวจสอบเวอร์ชันโมเดลที่บันทึกไว้ก่อนสร้าง การแก้ไขโมเดลภายหลังจะไม่เปลี่ยนคอลเลกชันนี้',
+  'Create collection': 'สร้างคอลเลกชัน',
+  'Review current content model': 'ตรวจสอบโมเดลเนื้อหาปัจจุบัน',
+  'Saved content model': 'โมเดลเนื้อหาที่บันทึกไว้',
+  'Content model revision {version}': 'โมเดลเนื้อหาเวอร์ชัน {version}',
+  Required: 'จำเป็น',
+  Optional: 'ไม่บังคับ',
+  'List item type': 'ชนิดรายการในลิสต์',
+  'Discard unsaved collection changes?':
+    'ละทิ้งการเปลี่ยนแปลงคอลเลกชันที่ยังไม่ได้บันทึกหรือไม่?',
+  'Could not load collections.': 'โหลดคอลเลกชันไม่สำเร็จ',
+  'Content model ready for review.': 'โมเดลเนื้อหาพร้อมให้ตรวจสอบ',
+  'Collection loaded.': 'โหลดคอลเลกชันแล้ว',
+  'Could not load collection.': 'โหลดคอลเลกชันไม่สำเร็จ',
+  'Private collection created.': 'สร้างคอลเลกชันส่วนตัวแล้ว',
+  'Could not create collection.': 'สร้างคอลเลกชันไม่สำเร็จ',
+  'Discard unsaved entry changes?':
+    'ละทิ้งการเปลี่ยนแปลงรายการที่ยังไม่ได้บันทึกหรือไม่?',
+
+  'Check the value for {field}.': 'ตรวจสอบค่าของ {field}',
+  'Enter a finite number for {field}.':
+    'กรอกตัวเลขที่ไม่เป็นอนันต์สำหรับ {field}',
+  'Choose a value for {field}.': 'เลือกค่าของ {field}',
+  'Include the required field {field}.': 'รวมฟิลด์ที่จำเป็น {field}',
+  'This entry is too large. Shorten text or remove list items.':
+    'รายการนี้ใหญ่เกินไป ลดข้อความหรือลบรายการในลิสต์',
+  'Include {field}': 'รวม {field}',
+  'Choose a value': 'เลือกค่า',
+  '{field} item {index}': '{field} รายการที่ {index}',
+  'Remove {field} item {index}': 'ลบ {field} รายการที่ {index}',
+  'Empty list': 'ลิสต์ว่าง',
+  'Add item to {field}': 'เพิ่มรายการใน {field}',
+
+  'Could not load entries.': 'โหลดรายการไม่สำเร็จ',
+  'New entry': 'รายการใหม่',
+  'Entry loaded.': 'โหลดรายการแล้ว',
+  'Could not load entry.': 'โหลดรายการไม่สำเร็จ',
+  'Private entry created.': 'สร้างรายการส่วนตัวแล้ว',
+  'Could not create entry.': 'สร้างรายการไม่สำเร็จ',
+  Entries: 'รายการ',
+  'Refresh entries': 'รีเฟรชรายการ',
+  'Loading entries…': 'กำลังโหลดรายการ…',
+  'Revision {version}': 'เวอร์ชัน {version}',
+  'No entries yet': 'ยังไม่มีรายการ',
+  'Previous entries': 'รายการก่อนหน้า',
+  '{total} saved entries': 'บันทึกไว้ {total} รายการ',
+  'Next entries': 'รายการถัดไป',
+  'Saved entry': 'รายการที่บันทึกไว้',
+  'Entry revision {version}': 'รายการเวอร์ชัน {version}',
+  'Optional fields are omitted unless included. Empty text, zero, false, empty groups and empty lists are allowed when they match this model.':
+    'ฟิลด์ที่ไม่บังคับจะไม่ถูกบันทึกหากไม่ได้เลือกให้รวม ข้อความว่าง ศูนย์ เท็จ กลุ่มว่าง และลิสต์ว่างใช้ได้หากตรงกับโมเดลนี้',
+
+  'Create entry': 'สร้างรายการ',
+  'Edit entry': 'แก้ไขรายการ',
+  'Reload entry': 'โหลดรายการอีกครั้ง',
+  'Save entry': 'บันทึกรายการ',
+  'Entry saved.': 'บันทึกรายการแล้ว',
+  'Could not save entry.': 'บันทึกรายการไม่สำเร็จ',
+
+  'Delete entry': 'ลบรายการ',
+  'Delete this saved entry? This permanently removes its saved content and discards any unsaved entry changes.':
+    'ลบรายการที่บันทึกไว้นี้หรือไม่? เนื้อหาที่บันทึกไว้จะถูกลบถาวร และการเปลี่ยนแปลงรายการที่ยังไม่ได้บันทึกจะถูกละทิ้ง',
+  'Entry deleted.': 'ลบรายการแล้ว',
+  'Could not delete entry.': 'ลบรายการไม่สำเร็จ',
+
+  'Struct draft changed. Review before creating.':
+    'ฉบับร่าง Struct เปลี่ยนแล้ว ตรวจสอบก่อนสร้าง',
+  'Content entry changed. Reload before saving.':
+    'รายการเนื้อหาเปลี่ยนแล้ว โหลดอีกครั้งก่อนบันทึก',
+  'Content entry changed. Reload before deleting.':
+    'รายการเนื้อหาเปลี่ยนแล้ว โหลดอีกครั้งก่อนลบ',
+
   'Content models': 'โมเดลเนื้อหา',
   'Define record fields with forms. This draft does not publish content or an API.':
     'กำหนดฟิลด์ของข้อมูลด้วยแบบฟอร์ม ฉบับร่างนี้ยังไม่เผยแพร่เนื้อหาหรือ API',

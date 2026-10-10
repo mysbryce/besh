@@ -21,6 +21,29 @@ Each field has exact `{ key, label, required, schema }`. Schema types are `text`
 
 Updates require a positive safe-integer version. Invalid input returns `400`, missing drafts `404`, stale writes/catalog capacity `409`, and malformed persisted drafts `503`. Current owner proof is rechecked inside writes; definition/version and metadata-only audit commit atomically. Non-owners are denied before inspecting the draft. No entries, delete, publication, rich-text or runtime routes are added.
 
+## Private collections and entries — working foundation
+
+These routes are owner-only and use the existing management authentication, Origin and CSRF rules. The local `0.22.0-alpha.0` work has focused browser GREEN receipts for collection creation, typed entry create/read/edit/delete and seven-language desktop/native-phone behavior. Complete delivery acceptance is pending. See [private collections](collections.md) for validation, bounds and backup confidentiality.
+
+| Method | Path                                    | Exact body / result                                                                                                   |
+| ------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/collections`                      | Summary array with `id`, `name`, `version`, `structId`, `structVersion`, `createdAt`, `updatedAt`                     |
+| GET    | `/api/collections/:id`                  | Collection metadata and complete immutable `struct` snapshot                                                          |
+| POST   | `/api/collections`                      | `{ name, structId, structVersion }`; reads the reviewed current Struct server-side and returns collection version one |
+| GET    | `/api/collections/:id/entries`          | `{ entries, total, offset, limit }`; optional strict `offset` and `limit` query parameters                            |
+| POST   | `/api/collections/:id/entries`          | `{ data }`; returns typed entry version one                                                                           |
+| GET    | `/api/collections/:id/entries/:entryId` | Complete entry with `id`, `collectionId`, `version`, `data`, `createdAt`, `updatedAt`                                 |
+| PUT    | `/api/collections/:id/entries/:entryId` | `{ version, data }`; replaces complete content and advances the current entry version                                 |
+| DELETE | `/api/collections/:id/entries/:entryId` | `{ version }`; removes only the current reviewed entry and returns `{ "ok": true }`                                   |
+
+The server copies the exact saved Struct revision when creating a collection. Later Struct edits cannot change that binding. Entry data follows its six schema types without coercion: optional fields may be absent, but present `null` and unknown keys are rejected. Permitted empty strings, zero, false, empty groups and empty lists retain their values. Updates are full replacements, not patches. No collection rename, rebinding or delete route is supplied.
+
+Entry paging defaults to offset zero and limit 20; limit is 1–25 and offset is a nonnegative safe integer. Both use canonical decimal spelling. Unknown/duplicate parameters or invalid values return `400`. Stable `created_at, id` ordering and a single deferred read transaction keep one page's total and rows consistent, without freezing later page requests.
+
+Collection names use 1–80 trimmed characters; the workspace permits 128 collections, 256 entries per collection and 1,024 entries overall. Entry JSON is at most 16,384 UTF-8 bytes, each string 4,096 UTF-8 bytes, each list 128 items, raw depth six from root zero and 1,024 visited values. The saved Struct's schema bounds still apply. Invalid input returns `400`, missing resources `404`, stale versions/capacity `409`, and malformed persisted records `503`. Accepted writes and ID-only change audit commit atomically after current-owner recheck; stale mutations preserve both content and successful-change audit.
+
+These private management routes add no runtime publication, API dependency USE, rich text or shared CMS permission. Ordinary full unencrypted backups contain entries and keep their existing `backups.manage` authority; owner-only direct access does not exclude authorized backup operators.
+
 ## Tenant row protection
 
 Implemented in 0.11. These routes implement the current contract. Tenant registry and row-policy management are owner-only; ordinary management cookies/CSRF rules still apply.

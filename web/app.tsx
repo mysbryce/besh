@@ -32,6 +32,8 @@ import { ThemeControl } from './theme'
 import { LanguageControl } from './language'
 import { translateMessage, useTranslation } from './i18n'
 import { useStructDraft } from './struct-store'
+import { useCollectionDraft } from './collection-store'
+import { useContentEntryDraft } from './content-entry-store'
 import { GitHubIcon } from './components/github-icon'
 
 const Builder = lazy(() =>
@@ -51,6 +53,9 @@ const DataSources = lazy(() =>
 )
 const Structs = lazy(() =>
   import('./structs').then((module) => ({ default: module.Structs })),
+)
+const Collections = lazy(() =>
+  import('./collections').then((module) => ({ default: module.Collections })),
 )
 const DatabaseConnections = lazy(() =>
   import('./database-connections').then((module) => ({
@@ -85,6 +90,7 @@ type Page =
   | 'builder'
   | 'data'
   | 'structs'
+  | 'content'
   | 'database'
   | 'audit'
   | 'members'
@@ -101,6 +107,7 @@ const navigation = [
   { id: 'builder', name: 'API Studio', icon: Workflow },
   { id: 'data', name: 'Data sources', icon: Table2 },
   { id: 'structs', name: 'Content models', icon: Box },
+  { id: 'content', name: 'Content', icon: LayoutGrid },
   { id: 'database', name: 'Database connections', icon: Database },
   { id: 'product-login', name: 'Product login', icon: GitHubIcon },
   { id: 'load-tests', name: 'Load testing', icon: Gauge },
@@ -138,9 +145,13 @@ export function App({
   const [page, setPage] = useState<Page>('builder')
   const state = useStudio()
   const structDirty = useStructDraft((draft) => draft.dirty)
+  const collectionDirty = useCollectionDraft((draft) => draft.dirty)
+  const entryDirty = useContentEntryDraft((draft) => draft.dirty)
 
   useEffect(() => {
     useStructDraft.getState().reset()
+    useCollectionDraft.getState().reset()
+    useContentEntryDraft.getState().reset()
     setPage(can(state.member, 'flows.read') ? 'builder' : 'account')
   }, [state.sessionId, state.member?.id])
 
@@ -182,7 +193,10 @@ export function App({
         return
       }
       if (
-        (current.dirty || useStructDraft.getState().dirty) &&
+        (current.dirty ||
+          useStructDraft.getState().dirty ||
+          useCollectionDraft.getState().dirty ||
+          useContentEntryDraft.getState().dirty) &&
         !window.confirm(
           'Leave the editor to review this invitation? Your unsaved draft will be kept until you return or confirm sign-out.',
         )
@@ -200,15 +214,30 @@ export function App({
   }, [invitation, completeInvitationBootstrap])
 
   useEffect(() => {
-    if (!state.dirty && !structDirty && !state.busy) return
+    if (
+      !state.dirty &&
+      !structDirty &&
+      !collectionDirty &&
+      !entryDirty &&
+      !state.busy
+    )
+      return
+
     const warn = (event: BeforeUnloadEvent) => {
       const current = useStudio.getState()
-      if (current.dirty || current.busy || useStructDraft.getState().dirty)
+      if (
+        current.dirty ||
+        current.busy ||
+        useStructDraft.getState().dirty ||
+        useCollectionDraft.getState().dirty ||
+        useContentEntryDraft.getState().dirty
+      )
         event.preventDefault()
     }
+
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [state.dirty, structDirty, state.busy])
+  }, [state.dirty, structDirty, collectionDirty, entryDirty, state.busy])
 
   useEffect(() => {
     if (!state.expiresAt) return
@@ -244,18 +273,38 @@ export function App({
           }}
           onSignIn={() => {
             if (
+              useContentEntryDraft.getState().dirty &&
+              !window.confirm(
+                translateMessage('Discard unsaved entry changes?'),
+              )
+            )
+              return
+
+            if (
+              useCollectionDraft.getState().dirty &&
+              !window.confirm(
+                translateMessage('Discard unsaved collection changes?'),
+              )
+            )
+              return
+
+            if (
               useStructDraft.getState().dirty &&
               !window.confirm(
                 translateMessage('Discard unsaved content model changes?'),
               )
             )
               return
+
             if (
               useStudio.getState().dirty &&
               !window.confirm('Discard unsaved draft changes and open sign-in?')
             )
               return
+
             useStructDraft.getState().reset()
+            useCollectionDraft.getState().reset()
+            useContentEntryDraft.getState().reset()
             useStudio.getState().clearSession()
             useStudio.setState({ authReady: true })
             setInvitationSignIn(true)
@@ -303,7 +352,8 @@ export function App({
       : page === 'members' ||
           page === 'updates' ||
           page === 'tenant-protection' ||
-          page === 'structs'
+          page === 'structs' ||
+          page === 'content'
         ? state.member.role !== 'owner'
         : !!grants &&
           !grants.some((permission) => can(state.member, permission))
@@ -311,7 +361,8 @@ export function App({
     page === 'members' ||
     page === 'updates' ||
     page === 'tenant-protection' ||
-    page === 'structs'
+    page === 'structs' ||
+    page === 'content'
       ? 'Owner access required'
       : state.member.role === 'custom' ||
           page === 'builder' ||
@@ -323,26 +374,41 @@ export function App({
             ? 'Product login needs editor access'
             : 'Owner access required'
 
-  function confirmStructDiscard() {
+  function confirmContentDiscard() {
     return (
-      !useStructDraft.getState().dirty ||
-      window.confirm(t('Discard unsaved content model changes?'))
+      (!useStructDraft.getState().dirty ||
+        window.confirm(t('Discard unsaved content model changes?'))) &&
+      (!useCollectionDraft.getState().dirty ||
+        window.confirm(t('Discard unsaved collection changes?'))) &&
+      (!useContentEntryDraft.getState().dirty ||
+        window.confirm(t('Discard unsaved entry changes?')))
     )
   }
 
-  function navigate(next: Page) {
-    if (state.busy || page === next || !confirmStructDiscard()) return
-
+  function discardContentDrafts() {
     if (useStructDraft.getState().dirty) useStructDraft.getState().reset()
+
+    if (useCollectionDraft.getState().dirty)
+      useCollectionDraft.getState().reset()
+
+    if (useContentEntryDraft.getState().dirty)
+      useContentEntryDraft.getState().reset()
+  }
+
+  function navigate(next: Page) {
+    if (state.busy || page === next || !confirmContentDiscard()) return
+
+    discardContentDrafts()
     setPage(next)
   }
 
   function switchFlow(action: () => void) {
-    if (state.busy || !confirmStructDiscard()) return
+    if (state.busy || !confirmContentDiscard()) return
+
     if (state.dirty && !window.confirm(t('Discard unsaved draft changes?')))
       return
 
-    if (useStructDraft.getState().dirty) useStructDraft.getState().reset()
+    discardContentDrafts()
     action()
     setPage('builder')
   }
@@ -357,13 +423,12 @@ export function App({
           aria-disabled={state.busy}
           tabIndex={state.busy ? -1 : undefined}
           onClick={(event) => {
-            if (state.busy || !confirmStructDiscard()) {
+            if (state.busy || !confirmContentDiscard()) {
               event.preventDefault()
               return
             }
 
-            if (useStructDraft.getState().dirty)
-              useStructDraft.getState().reset()
+            discardContentDrafts()
           }}
         >
           <span className="brand-icon">b</span>besh
@@ -385,7 +450,9 @@ export function App({
               .filter(({ id }) => !selectedAccess || selectedPages.includes(id))
               .filter(
                 ({ id }) =>
-                  (id !== 'tenant-protection' && id !== 'structs') ||
+                  (id !== 'tenant-protection' &&
+                    id !== 'structs' &&
+                    id !== 'content') ||
                   state.member?.role === 'owner',
               )
               .map(({ id, name, icon: Icon }) => (
@@ -465,12 +532,14 @@ export function App({
             className="user-profile"
             aria-label={t('Sign out')}
             onClick={() => {
-              if (!confirmStructDiscard()) return
+              if (!confirmContentDiscard()) return
+
               if (
                 state.dirty &&
                 !window.confirm(t('Discard unsaved draft changes?'))
               )
                 return
+
               void state.task(state.logout)
             }}
             disabled={state.busy}
@@ -537,7 +606,7 @@ export function App({
                 <ShieldCheck />
                 <h1>{t(deniedTitle)}</h1>
                 <p>
-                  {page === 'structs'
+                  {page === 'structs' || page === 'content'
                     ? t('Owner access required')
                     : page === 'members'
                       ? t('Only the owner can manage members and roles.')
@@ -571,6 +640,8 @@ export function App({
               <DataSources onOpenApi={() => setPage('builder')} />
             ) : page === 'structs' ? (
               <Structs />
+            ) : page === 'content' ? (
+              <Collections />
             ) : page === 'database' ? (
               <DatabaseConnections onOpenApi={() => setPage('builder')} />
             ) : page === 'product-login' ? (

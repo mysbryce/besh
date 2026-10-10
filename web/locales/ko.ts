@@ -1,4 +1,91 @@
 const messages: Record<string, string> = {
+  'View content model': '콘텐츠 모델 보기',
+  'Hide content model': '콘텐츠 모델 숨기기',
+
+  Content: '콘텐츠',
+  'Create private collections from saved content models. This does not publish content or an API.':
+    '저장된 콘텐츠 모델로 비공개 컬렉션을 만드세요. 콘텐츠나 API는 게시되지 않습니다.',
+  'Choose a collection': '컬렉션 선택',
+  'New collection': '새 컬렉션',
+  'Loading collections…': '컬렉션을 불러오는 중…',
+  'No collections yet': '아직 컬렉션이 없습니다',
+  'Private collection': '비공개 컬렉션',
+  'Collection name': '컬렉션 이름',
+  'Content model': '콘텐츠 모델',
+  'Save a content model in Content models first, then refresh this catalog.':
+    '먼저 콘텐츠 모델에서 모델을 저장한 다음 이 목록을 새로고침하세요.',
+  'Review the saved model revision before creating. Later model edits do not change this collection.':
+    '만들기 전에 저장된 모델 버전을 확인하세요. 이후 모델을 수정해도 이 컬렉션은 변경되지 않습니다.',
+  'Create collection': '컬렉션 만들기',
+  'Review current content model': '현재 콘텐츠 모델 확인',
+  'Saved content model': '저장된 콘텐츠 모델',
+  'Content model revision {version}': '콘텐츠 모델 버전 {version}',
+  Required: '필수',
+  Optional: '선택 사항',
+  'List item type': '목록 항목 유형',
+  'Discard unsaved collection changes?':
+    '저장하지 않은 컬렉션 변경 사항을 버리시겠습니까?',
+  'Could not load collections.': '컬렉션을 불러오지 못했습니다.',
+  'Content model ready for review.': '콘텐츠 모델을 검토할 준비가 되었습니다.',
+  'Collection loaded.': '컬렉션을 불러왔습니다.',
+  'Could not load collection.': '컬렉션을 불러오지 못했습니다.',
+  'Private collection created.': '비공개 컬렉션을 만들었습니다.',
+  'Could not create collection.': '컬렉션을 만들지 못했습니다.',
+  'Discard unsaved entry changes?':
+    '저장하지 않은 항목 변경 사항을 버리시겠습니까?',
+
+  'Check the value for {field}.': '{field}의 값을 확인하세요.',
+  'Enter a finite number for {field}.': '{field}에 유한한 숫자를 입력하세요.',
+  'Choose a value for {field}.': '{field}의 값을 선택하세요.',
+  'Include the required field {field}.': '필수 필드 {field}을(를) 포함하세요.',
+  'This entry is too large. Shorten text or remove list items.':
+    '이 항목이 너무 큽니다. 텍스트를 줄이거나 목록 항목을 삭제하세요.',
+  'Include {field}': '{field} 포함',
+  'Choose a value': '값 선택',
+  '{field} item {index}': '{field} 항목 {index}',
+  'Remove {field} item {index}': '{field} 항목 {index} 삭제',
+  'Empty list': '빈 목록',
+  'Add item to {field}': '{field}에 항목 추가',
+
+  'Could not load entries.': '항목을 불러오지 못했습니다.',
+  'New entry': '새 항목',
+  'Entry loaded.': '항목을 불러왔습니다.',
+  'Could not load entry.': '항목을 불러오지 못했습니다.',
+  'Private entry created.': '비공개 항목을 만들었습니다.',
+  'Could not create entry.': '항목을 만들지 못했습니다.',
+  Entries: '항목',
+  'Refresh entries': '항목 목록 새로고침',
+  'Loading entries…': '항목을 불러오는 중…',
+  'Revision {version}': '버전 {version}',
+  'No entries yet': '아직 항목이 없습니다',
+  'Previous entries': '이전 항목',
+  '{total} saved entries': '저장된 항목 {total}개',
+  'Next entries': '다음 항목',
+  'Saved entry': '저장된 항목',
+  'Entry revision {version}': '항목 버전 {version}',
+  'Optional fields are omitted unless included. Empty text, zero, false, empty groups and empty lists are allowed when they match this model.':
+    '선택 필드는 포함하도록 선택하지 않으면 생략됩니다. 이 모델에 맞는 경우 빈 텍스트, 0, 거짓, 빈 그룹과 빈 목록을 사용할 수 있습니다.',
+
+  'Create entry': '항목 만들기',
+  'Edit entry': '항목 편집',
+  'Reload entry': '항목 다시 불러오기',
+  'Save entry': '항목 저장',
+  'Entry saved.': '항목을 저장했습니다.',
+  'Could not save entry.': '항목을 저장하지 못했습니다.',
+
+  'Delete entry': '항목 삭제',
+  'Delete this saved entry? This permanently removes its saved content and discards any unsaved entry changes.':
+    '이 저장된 항목을 삭제하시겠습니까? 저장된 콘텐츠가 영구적으로 삭제되고 저장하지 않은 항목 변경 사항도 버려집니다.',
+  'Entry deleted.': '항목을 삭제했습니다.',
+  'Could not delete entry.': '항목을 삭제하지 못했습니다.',
+
+  'Struct draft changed. Review before creating.':
+    'Struct 초안이 변경되었습니다. 만들기 전에 확인하세요.',
+  'Content entry changed. Reload before saving.':
+    '콘텐츠 항목이 변경되었습니다. 저장하기 전에 다시 불러오세요.',
+  'Content entry changed. Reload before deleting.':
+    '콘텐츠 항목이 변경되었습니다. 삭제하기 전에 다시 불러오세요.',
+
   'Content models': '콘텐츠 모델',
   'Define record fields with forms. This draft does not publish content or an API.':
     '폼으로 레코드 필드를 정의하세요. 이 초안은 콘텐츠나 API를 게시하지 않습니다.',
