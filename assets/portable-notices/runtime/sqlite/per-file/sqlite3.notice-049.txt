@@ -1,0 +1,63 @@
+/*
+** 2008 December 3
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This module implements an object we call a "RowSet".
+**
+** The RowSet object is a collection of rowids.  Rowids
+** are inserted into the RowSet in an arbitrary order.  Inserts
+** can be intermixed with tests to see if a given rowid has been
+** previously inserted into the RowSet.
+**
+** After all inserts are finished, it is possible to extract the
+** elements of the RowSet in sorted order.  Once this extraction
+** process has started, no new elements may be inserted.
+**
+** Hence, the primitive operations for a RowSet are:
+**
+**    CREATE
+**    INSERT
+**    TEST
+**    SMALLEST
+**    DESTROY
+**
+** The CREATE and DESTROY primitives are the constructor and destructor,
+** obviously.  The INSERT primitive adds a new element to the RowSet.
+** TEST checks to see if an element is already in the RowSet.  SMALLEST
+** extracts the least value from the RowSet.
+**
+** The INSERT primitive might allocate additional memory.  Memory is
+** allocated in chunks so most INSERTs do no allocation.  There is an
+** upper bound on the size of allocated memory.  No memory is freed
+** until DESTROY.
+**
+** The TEST primitive includes a "batch" number.  The TEST primitive
+** will only see elements that were inserted before the last change
+** in the batch number.  In other words, if an INSERT occurs between
+** two TESTs where the TESTs have the same batch number, then the
+** value added by the INSERT will not be visible to the second TEST.
+** The initial batch number is zero, so if the very first TEST contains
+** a non-zero batch number, it will see all prior INSERTs.
+**
+** No INSERTs may occurs after a SMALLEST.  An assertion will fail if
+** that is attempted.
+**
+** The cost of an INSERT is roughly constant.  (Sometimes new memory
+** has to be allocated on an INSERT.)  The cost of a TEST with a new
+** batch number is O(NlogN) where N is the number of elements in the RowSet.
+** The cost of a TEST using the same batch number is O(logN).  The cost
+** of the first SMALLEST is O(NlogN).  Second and subsequent SMALLEST
+** primitives are constant time.  The cost of DESTROY is O(N).
+**
+** TEST and SMALLEST may not be used by the same RowSet.  This used to
+** be possible, but the feature was not used, so it was removed in order
+** to simplify the code.
+*/

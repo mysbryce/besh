@@ -1,0 +1,21 @@
+/*
+** 2007 August 28
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This file contains the common header for all mutex implementations.
+** The sqliteInt.h header #includes this file so that it is available
+** to all source files.  We break it out in an effort to keep the code
+** better organized.
+**
+** NOTE:  source files should *not* #include this header file directly.
+** Source files should #include the sqliteInt.h file and let that file
+** include this one indirectly.
+*/

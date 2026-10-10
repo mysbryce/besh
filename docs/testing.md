@@ -2,6 +2,22 @@
 
 User approved all three interfaces on 2026-10-08.
 
+## Portable Windows acceptance — 0.19.0-alpha.0
+
+`bun run build:portable` builds the real executable and fresh production dashboard. Set `BESH_TEST_PORTABLE_EXE` to its absolute path, then run `bun run test:portable`. The offline artifact suite passed ten cases and 1,038 assertions in 74.52 seconds. It copies only the executable into fresh paths containing spaces/Thai text, with unrelated working directories, poisoned dotenv/bunfig files and an OS-only PATH.
+
+Coverage includes embedded HTML/assets/fonts, real uploaded SQLite reads through the compiled child, original browser setup handoff, status/reopen/stop and actual HTTP cessation, concurrent starts, broadened private-leaf denial, REST/GraphQL/WebSocket publication and restart with drafts distinct from live releases, and all 682 indexed notice files exported byte-exactly without overwriting an existing destination. A real Chromium journey completed the compiled wizard, key sign-in, explicit save/test/publish, pinned key receipt and a public runtime call; seven masked light/dark/phone screenshots were captured with local fonts, zero CSP/page errors and private-path 404s.
+
+Observed failing slices preceded their fixes: missing compiled dashboard, SQLite reader dispatch, unsupported lifecycle/browser commands, short/long path identity, concurrent ownership, readable readiness leaves and notice virtual-root lookup. The optional network first-use k6 case failed before absolute Windows PowerShell extraction; it then passed in 19.45 seconds with 144 assertions, positive native metrics, managed-key revocation and identical summaries after restart. Run it separately with `BESH_TEST_PORTABLE_K6_NETWORK=1 bun test scripts/portable-k6-first-use.test.ts`; ordinary artifact CI needs no k6 download.
+
+These checks do not prove the default desktop browser opener, native Linux/macOS operation, every external adapter, complete native shutdown drain, modified-runtime relinking, signing, or hosted release delivery. See [portable instructions](portable.md), [source provenance](portable-runtime.md), and [release records](releases.md).
+
+Minimum-version support uses `engines.bun: >=1.4.2` and semantic version guards. An official checksum-verified Bun 1.4.3 compiler built an actual copied artifact; the complete ten-case/1,038-assertion artifact suite passed in 63.89 seconds with the Bun 1.4.2 parent harness. Compiler metadata records 1.4.3 and revision `c6da4a4d3010e5553438c60f6bd76d981976867c`; native notice materials keep their explicit 1.4.2 source baseline. This observes a newer compiler, not arbitrary future Bun versions.
+
+The full backend suite also passed directly under Bun 1.4.3: 361 cases and 6,368 assertions in 71.82 seconds. Bun 1.4.2 passed the same cases/assertions in 60.55 seconds. Normal browser acceptance passed all 46 cases with four workers in 2.3 minutes.
+
+The full page/action preview passed all 30 stories with four workers and captured 1,024 masked PNGs in 3.6 minutes. The compiled dashboard has seven additional masked setup/publication/receipt captures. Original images were inspected; phone graphs remain pannable viewports.
+
 | Interface       | Catches                                                             | Does not prove                                       |
 | --------------- | ------------------------------------------------------------------- | ---------------------------------------------------- |
 | Public HTTP API | Authentication, permissions, save/publish/run flows, audit, backups | Browser behavior, external production infrastructure |

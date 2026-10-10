@@ -1,0 +1,4 @@
+/*
+ * The following function was modified from PostgreSQL sources and is
+ * subject to the copyright below.
+ */

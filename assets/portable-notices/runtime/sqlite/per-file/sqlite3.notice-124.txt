@@ -1,0 +1,81 @@
+/*
+** 2014 August 30
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+**
+** OVERVIEW
+**
+**  The RBU extension requires that the RBU update be packaged as an
+**  SQLite database. The tables it expects to find are described in
+**  sqlite3rbu.h.  Essentially, for each table xyz in the target database
+**  that the user wishes to write to, a corresponding data_xyz table is
+**  created in the RBU database and populated with one row for each row to
+**  update, insert or delete from the target table.
+**
+**  The update proceeds in three stages:
+**
+**  1) The database is updated. The modified database pages are written
+**     to a *-oal file. A *-oal file is just like a *-wal file, except
+**     that it is named "<database>-oal" instead of "<database>-wal".
+**     Because regular SQLite clients do not look for file named
+**     "<database>-oal", they go on using the original database in
+**     rollback mode while the *-oal file is being generated.
+**
+**     During this stage RBU does not update the database by writing
+**     directly to the target tables. Instead it creates "imposter"
+**     tables using the SQLITE_TESTCTRL_IMPOSTER interface that it uses
+**     to update each b-tree individually. All updates required by each
+**     b-tree are completed before moving on to the next, and all
+**     updates are done in sorted key order.
+**
+**  2) The "<database>-oal" file is moved to the equivalent "<database>-wal"
+**     location using a call to rename(2). Before doing this the RBU
+**     module takes an EXCLUSIVE lock on the database file, ensuring
+**     that there are no other active readers.
+**
+**     Once the EXCLUSIVE lock is released, any other database readers
+**     detect the new *-wal file and read the database in wal mode. At
+**     this point they see the new version of the database - including
+**     the updates made as part of the RBU update.
+**
+**  3) The new *-wal file is checkpointed. This proceeds in the same way
+**     as a regular database checkpoint, except that a single frame is
+**     checkpointed each time sqlite3rbu_step() is called. If the RBU
+**     handle is closed before the entire *-wal file is checkpointed,
+**     the checkpoint progress is saved in the RBU database and the
+**     checkpoint can be resumed by another RBU client at some point in
+**     the future.
+**
+** POTENTIAL PROBLEMS
+**
+**  The rename() call might not be portable. And RBU is not currently
+**  syncing the directory after renaming the file.
+**
+**  When state is saved, any commit to the *-oal file and the commit to
+**  the RBU update database are not atomic. So if the power fails at the
+**  wrong moment they might get out of sync. As the main database will be
+**  committed before the RBU update database this will likely either just
+**  pass unnoticed, or result in SQLITE_CONSTRAINT errors (due to UNIQUE
+**  constraint violations).
+**
+**  If some client does modify the target database mid RBU update, or some
+**  other error occurs, the RBU extension will keep throwing errors. It's
+**  not really clear how to get out of this state. The system could just
+**  by delete the RBU update database and *-oal file and have the device
+**  download the update again and start over.
+**
+**  At present, for an UPDATE, both the new.* and old.* records are
+**  collected in the rbu_xyz table. And for both UPDATEs and DELETEs all
+**  fields are collected.  This means we're probably writing a lot more
+**  data to disk when saving the state of an ongoing update to the RBU
+**  update database than is strictly necessary.
+**
+*/

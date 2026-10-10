@@ -1,0 +1,18 @@
+/*
+** 2001 September 15
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** An tokenizer for SQL
+**
+** This file contains C code that implements the sqlite3_complete() API.
+** This code used to be part of the tokenizer.c source file.  But by
+** separating it out, the code will be automatically omitted from
+** static links that do not use it.
+*/

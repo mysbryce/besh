@@ -1,0 +1,35 @@
+/*
+** 2004 April 13
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This file contains routines used to translate between UTF-8,
+** UTF-16, UTF-16BE, and UTF-16LE.
+**
+** Notes on UTF-8:
+**
+**   Byte-0    Byte-1    Byte-2    Byte-3    Value
+**  0xxxxxxx                                 00000000 00000000 0xxxxxxx
+**  110yyyyy  10xxxxxx                       00000000 00000yyy yyxxxxxx
+**  1110zzzz  10yyyyyy  10xxxxxx             00000000 zzzzyyyy yyxxxxxx
+**  11110uuu  10uuzzzz  10yyyyyy  10xxxxxx   000uuuuu zzzzyyyy yyxxxxxx
+**
+**
+** Notes on UTF-16:  (with wwww+1==uuuuu)
+**
+**      Word-0               Word-1          Value
+**  110110ww wwzzzzyy   110111yy yyxxxxxx    000uuuuu zzzzyyyy yyxxxxxx
+**  zzzzyyyy yyxxxxxx                        00000000 zzzzyyyy yyxxxxxx
+**
+**
+** BOM or Byte Order Mark:
+**     0xff 0xfe   little-endian utf-16 follows
+**     0xfe 0xff   big-endian utf-16 follows
+**
+*/

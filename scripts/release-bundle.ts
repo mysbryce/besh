@@ -81,7 +81,10 @@ try {
 
   const tracked = git('ls-files', '-z').split('\0').filter(Boolean)
   const paths = tracked.filter(
-    (path) => rootFiles.has(path) || /^(src|web|docs|scripts)\//.test(path),
+    (path) =>
+      rootFiles.has(path) ||
+      /^(src|web|docs|scripts)\//.test(path) ||
+      path.startsWith('assets/portable-notices/'),
   )
   function assets(directory: string) {
     const stat = lstatSync(directory)

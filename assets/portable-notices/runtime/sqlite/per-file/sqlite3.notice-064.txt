@@ -1,0 +1,137 @@
+/*
+** 2011-07-09
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This file contains code for the VdbeSorter object, used in concert with
+** a VdbeCursor to sort large numbers of keys for CREATE INDEX statements
+** or by SELECT statements with ORDER BY clauses that cannot be satisfied
+** using indexes and without LIMIT clauses.
+**
+** The VdbeSorter object implements a multi-threaded external merge sort
+** algorithm that is efficient even if the number of elements being sorted
+** exceeds the available memory.
+**
+** Here is the (internal, non-API) interface between this module and the
+** rest of the SQLite system:
+**
+**    sqlite3VdbeSorterInit()       Create a new VdbeSorter object.
+**
+**    sqlite3VdbeSorterWrite()      Add a single new row to the VdbeSorter
+**                                  object.  The row is a binary blob in the
+**                                  OP_MakeRecord format that contains both
+**                                  the ORDER BY key columns and result columns
+**                                  in the case of a SELECT w/ ORDER BY, or
+**                                  the complete record for an index entry
+**                                  in the case of a CREATE INDEX.
+**
+**    sqlite3VdbeSorterRewind()     Sort all content previously added.
+**                                  Position the read cursor on the
+**                                  first sorted element.
+**
+**    sqlite3VdbeSorterNext()       Advance the read cursor to the next sorted
+**                                  element.
+**
+**    sqlite3VdbeSorterRowkey()     Return the complete binary blob for the
+**                                  row currently under the read cursor.
+**
+**    sqlite3VdbeSorterCompare()    Compare the binary blob for the row
+**                                  currently under the read cursor against
+**                                  another binary blob X and report if
+**                                  X is strictly less than the read cursor.
+**                                  Used to enforce uniqueness in a
+**                                  CREATE UNIQUE INDEX statement.
+**
+**    sqlite3VdbeSorterClose()      Close the VdbeSorter object and reclaim
+**                                  all resources.
+**
+**    sqlite3VdbeSorterReset()      Refurbish the VdbeSorter for reuse.  This
+**                                  is like Close() followed by Init() only
+**                                  much faster.
+**
+** The interfaces above must be called in a particular order.  Write() can
+** only occur in between Init()/Reset() and Rewind().  Next(), Rowkey(), and
+** Compare() can only occur in between Rewind() and Close()/Reset(). i.e.
+**
+**   Init()
+**   for each record: Write()
+**   Rewind()
+**     Rowkey()/Compare()
+**   Next()
+**   Close()
+**
+** Algorithm:
+**
+** Records passed to the sorter via calls to Write() are initially held
+** unsorted in main memory. Assuming the amount of memory used never exceeds
+** a threshold, when Rewind() is called the set of records is sorted using
+** an in-memory merge sort. In this case, no temporary files are required
+** and subsequent calls to Rowkey(), Next() and Compare() read records
+** directly from main memory.
+**
+** If the amount of space used to store records in main memory exceeds the
+** threshold, then the set of records currently in memory are sorted and
+** written to a temporary file in "Packed Memory Array" (PMA) format.
+** A PMA created at this point is known as a "level-0 PMA". Higher levels
+** of PMAs may be created by merging existing PMAs together - for example
+** merging two or more level-0 PMAs together creates a level-1 PMA.
+**
+** The threshold for the amount of main memory to use before flushing
+** records to a PMA is roughly the same as the limit configured for the
+** page-cache of the main database. Specifically, the threshold is set to
+** the value returned by "PRAGMA main.page_size" multiplied by
+** that returned by "PRAGMA main.cache_size", in bytes.
+**
+** If the sorter is running in single-threaded mode, then all PMAs generated
+** are appended to a single temporary file. Or, if the sorter is running in
+** multi-threaded mode then up to (N+1) temporary files may be opened, where
+** N is the configured number of worker threads. In this case, instead of
+** sorting the records and writing the PMA to a temporary file itself, the
+** calling thread usually launches a worker thread to do so. Except, if
+** there are already N worker threads running, the main thread does the work
+** itself.
+**
+** The sorter is running in multi-threaded mode if (a) the library was built
+** with pre-processor symbol SQLITE_MAX_WORKER_THREADS set to a value greater
+** than zero, and (b) worker threads have been enabled at runtime by calling
+** "PRAGMA threads=N" with some value of N greater than 0.
+**
+** When Rewind() is called, any data remaining in memory is flushed to a
+** final PMA. So at this point the data is stored in some number of sorted
+** PMAs within temporary files on disk.
+**
+** If there are fewer than SORTER_MAX_MERGE_COUNT PMAs in total and the
+** sorter is running in single-threaded mode, then these PMAs are merged
+** incrementally as keys are retrieved from the sorter by the VDBE.  The
+** MergeEngine object, described in further detail below, performs this
+** merge.
+**
+** Or, if running in multi-threaded mode, then a background thread is
+** launched to merge the existing PMAs. Once the background thread has
+** merged T bytes of data into a single sorted PMA, the main thread
+** begins reading keys from that PMA while the background thread proceeds
+** with merging the next T bytes of data. And so on.
+**
+** Parameter T is set to half the value of the memory threshold used
+** by Write() above to determine when to create a new PMA.
+**
+** If there are more than SORTER_MAX_MERGE_COUNT PMAs in total when
+** Rewind() is called, then a hierarchy of incremental-merges is used.
+** First, T bytes of data from the first SORTER_MAX_MERGE_COUNT PMAs on
+** disk are merged together. Then T bytes of data from the second set, and
+** so on, such that no operation ever merges more than SORTER_MAX_MERGE_COUNT
+** PMAs at a time. This done is to improve locality.
+**
+** If running in multi-threaded mode and there are more than
+** SORTER_MAX_MERGE_COUNT PMAs on disk when Rewind() is called, then more
+** than one background thread may be created. Specifically, there may be
+** one background thread for each temporary file on disk, and one background
+** thread to merge the output of each of the others to a single PMA for
+** the main thread to read from.
+*/

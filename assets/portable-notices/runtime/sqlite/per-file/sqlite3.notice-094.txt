@@ -1,0 +1,18 @@
+/*
+** 2015-06-08
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This module contains C code that generates VDBE code used to process
+** the WHERE clause of SQL statements.
+**
+** This file was originally part of where.c but was split out to improve
+** readability and editability.  This file contains utility routines for
+** analyzing Expr objects in the WHERE clause.
+*/

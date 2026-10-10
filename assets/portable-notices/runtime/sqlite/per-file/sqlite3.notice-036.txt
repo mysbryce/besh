@@ -1,0 +1,19 @@
+/*
+** 2015-06-08
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This file contains C code to implement the TreeView debugging routines.
+** These routines print a parse tree to standard output for debugging and
+** analysis.
+**
+** The interfaces in this file is only available when compiling
+** with SQLITE_DEBUG.
+*/

@@ -1,0 +1,15 @@
+/*
+** 2004 April 6
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+** This file implements an external (disk-based) database using BTrees.
+** See the header comment on "btreeInt.h" for additional information.
+** Including a description of file format and an overview of operation.
+*/

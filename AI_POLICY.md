@@ -5,6 +5,7 @@ AI assistance is welcome. Contributors remain responsible for every change.
 ## Contributions
 
 - Read `AGENTS.md`, the glossary, and relevant design notes first.
+- **Hard rule: readable code survives context compaction.** Re-read the readability rule in `AGENTS.md` before writing code, including after compacting context. Keep no-semicolon, single-quote style and blank lines between small logical work groups. Separate validation, preparation, effects and returns; keep related statements together. Inspect grouping before every commit because Prettier does not insert those gaps for you.
 - Explain the problem and check existing behavior before changing it.
 - Keep changes small. Test public behavior before committing.
 - Review generated code for security, correctness, licensing, and accessibility.
