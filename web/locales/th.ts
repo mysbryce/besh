@@ -1,4 +1,30 @@
 const messages: Record<string, string> = {
+  'FROM SPREADSHEET TO API': 'จากสเปรดชีตสู่ API',
+  'Bring your data. Preview its columns. Build an API without writing JSON.':
+    'นำข้อมูลของคุณมา ดูตัวอย่างคอลัมน์ แล้วสร้าง API โดยไม่ต้องเขียน JSON',
+  'Refresh list': 'รีเฟรชรายการ',
+  'Import a spreadsheet': 'นำเข้าสเปรดชีต',
+  'Check your data': 'ตรวจสอบข้อมูล',
+  'Choose API fields': 'เลือกฟิลด์ API',
+  'Add a data source': 'เพิ่มแหล่งข้อมูล',
+  'Import method': 'วิธีนำเข้า',
+  'Spreadsheet file': 'ไฟล์สเปรดชีต',
+  'Public Google Sheet': 'Google Sheet สาธารณะ',
+  'Source name': 'ชื่อแหล่งข้อมูล',
+  Products: 'สินค้า',
+  'Import spreadsheet': 'นำเข้าสเปรดชีต',
+  'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.':
+    'CSV หรือ Excel (.xlsx) ขนาดไม่เกิน 2 MB ใส่ชื่อคอลัมน์ในแถวแรก การนำเข้าจะบันทึกภาพข้อมูล ณ เวลานั้น',
+  'No data sources yet.': 'ยังไม่มีแหล่งข้อมูล',
+  'Import a spreadsheet to see your data here.':
+    'นำเข้าสเปรดชีตเพื่อดูข้อมูลที่นี่',
+  'Spreadsheet imported. Check your data before creating an API.':
+    'นำเข้าสเปรดชีตแล้ว ตรวจสอบข้อมูลก่อนสร้าง API',
+  'Saved data source': 'แหล่งข้อมูลที่บันทึกไว้',
+  '{source} · {count} rows': '{source} · {count} แถว',
+  '{count} rows': '{count} แถว',
+  'Empty cells allowed': 'อนุญาตเซลล์ว่าง',
+  Empty: 'ว่าง',
   'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
     'ใช้เส้นทางที่ตรงตามที่ระบุ เช่น /v1/messages ข้อความ WebSocket ใช้ส่งค่าข้อมูลเข้า ไม่รองรับพารามิเตอร์เส้นทางที่มีชื่อ',
   'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.':

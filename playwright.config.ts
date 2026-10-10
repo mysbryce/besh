@@ -2,14 +2,20 @@ import { defineConfig } from '@playwright/test'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { getTestWorkers } from './scripts/test-workers'
 
 const directory = mkdtempSync(join(tmpdir(), 'besh-browser-'))
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: '**/preview.spec.ts',
+  testIgnore: [
+    '**/preview.spec.ts',
+    ...(process.env.BESH_E2E_SKIP_PROXY === '1'
+      ? ['**/websocket-proxy.spec.ts']
+      : []),
+  ],
   fullyParallel: false,
-  workers: 4,
+  workers: getTestWorkers(),
   use: {
     viewport: { width: 1440, height: 1000 },
     baseURL: 'http://127.0.0.1:5179',

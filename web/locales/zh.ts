@@ -1,4 +1,30 @@
 const messages: Record<string, string> = {
+  'FROM SPREADSHEET TO API': '从电子表格到 API',
+  'Bring your data. Preview its columns. Build an API without writing JSON.':
+    '导入数据，预览列，无需编写 JSON 即可构建 API。',
+  'Refresh list': '刷新列表',
+  'Import a spreadsheet': '导入电子表格',
+  'Check your data': '检查数据',
+  'Choose API fields': '选择 API 字段',
+  'Add a data source': '添加数据源',
+  'Import method': '导入方式',
+  'Spreadsheet file': '电子表格文件',
+  'Public Google Sheet': '公开的 Google 表格',
+  'Source name': '数据源名称',
+  Products: '产品',
+  'Import spreadsheet': '导入电子表格',
+  'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.':
+    'CSV 或 Excel (.xlsx)，最大 2 MB。请在第一行填写列名。导入会保存数据快照。',
+  'No data sources yet.': '尚无数据源。',
+  'Import a spreadsheet to see your data here.':
+    '导入电子表格，在这里查看数据。',
+  'Spreadsheet imported. Check your data before creating an API.':
+    '电子表格已导入。创建 API 前请检查数据。',
+  'Saved data source': '已保存的数据源',
+  '{source} · {count} rows': '{source} · {count} 行',
+  '{count} rows': '{count} 行',
+  'Empty cells allowed': '允许空单元格',
+  Empty: '空',
   'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
     '使用精确路径，例如 /v1/messages。WebSocket 消息用于传递输入值；不支持具名路径参数。',
   'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.':

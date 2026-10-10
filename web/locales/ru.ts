@@ -1,4 +1,30 @@
 const messages: Record<string, string> = {
+  'FROM SPREADSHEET TO API': 'ИЗ ТАБЛИЦЫ В API',
+  'Bring your data. Preview its columns. Build an API without writing JSON.':
+    'Добавьте данные, просмотрите столбцы и создайте API без написания JSON.',
+  'Refresh list': 'Обновить список',
+  'Import a spreadsheet': 'Импортировать таблицу',
+  'Check your data': 'Проверить данные',
+  'Choose API fields': 'Выбрать поля API',
+  'Add a data source': 'Добавить источник данных',
+  'Import method': 'Способ импорта',
+  'Spreadsheet file': 'Файл таблицы',
+  'Public Google Sheet': 'Общедоступная Google Таблица',
+  'Source name': 'Название источника',
+  Products: 'Товары',
+  'Import spreadsheet': 'Импортировать таблицу',
+  'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.':
+    'CSV или Excel (.xlsx), до 2 МБ. Укажите названия столбцов в первой строке. Импорт сохраняет снимок данных.',
+  'No data sources yet.': 'Источников данных пока нет.',
+  'Import a spreadsheet to see your data here.':
+    'Импортируйте таблицу, чтобы увидеть данные здесь.',
+  'Spreadsheet imported. Check your data before creating an API.':
+    'Таблица импортирована. Проверьте данные перед созданием API.',
+  'Saved data source': 'Сохранённый источник данных',
+  '{source} · {count} rows': '{source} · строк: {count}',
+  '{count} rows': 'Строк: {count}',
+  'Empty cells allowed': 'Пустые ячейки разрешены',
+  Empty: 'Пусто',
   'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
     'Используйте точный путь, например /v1/messages. Сообщения WebSocket передают входные значения; именованные параметры пути не поддерживаются.',
   'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.':

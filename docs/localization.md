@@ -4,7 +4,7 @@ Besh supports English, Thai, Mandarin Chinese, Russian, Japanese, Korean and Por
 
 Use **Language** beside **Appearance** to choose a language. The custom selector supports keyboard navigation. An explicit choice survives reload and overrides the device language. Besh stores only its language code, never a credential or form payload.
 
-Translations cover setup, workspace sign-in, invitations, navigation, appearance, common Studio form labels, first-task guidance, REST draft guidance and metadata, exact-path GraphQL/WebSocket guidance, the GraphQL operation heading, the categorized step picker, account/session management, update settings and basic member/role management. Other Studio helper text, management and advanced policy panels, technical editors and server errors still use English. This is language support for these workflows, not a claim that every existing message has been translated.
+Translations cover setup, workspace sign-in, invitations, navigation, appearance, common Studio form labels, first-task guidance, REST draft guidance and metadata, exact-path GraphQL/WebSocket guidance, the GraphQL operation heading, the categorized step picker, account/session management, update settings, basic member/role management and basic spreadsheet import/data previews. Other Studio helper text, management and advanced policy panels, technical editors and server errors still use English. This is language support for these workflows, not a claim that every existing message has been translated.
 
 Authored API/member names, routes, field keys, data, response text, GraphQL schemas and generated client code are not translated. Changing the dashboard language never changes an API contract or grants access.
 
@@ -24,7 +24,9 @@ Session and release-check times use the selected language, the browser's current
 
 ## Development
 
-`web/i18n.ts` owns language selection and the memoized `useDateTime` formatter used by account/update screens. `web/locales/` keeps 575 matching message keys for each language. English loads with the dashboard; other dictionaries load on demand before their first screen. Missing keys use English. A failed download or five-second loading deadline leaves English available with an error. Late responses never change the active language; an explicit retry can use the arrived dictionary.
+Basic spreadsheet import and data previews translate form guidance, empty states, row counts and trusted column type/null labels. Authored source names, column names/keys, cell values and raw parser errors stay literal. Choosing a language performs no source/flow action. Explicit CSV import persists a snapshot; its completion uses the current language even if the choice changes while the response is pending. Navigation and management actions stay blocked during that operation. Reader and selected-viewer permissions still come from the server. Google-provider actions, source replacement, API-generation forms and advanced protection remain separate.
+
+`web/i18n.ts` owns language selection and the memoized `useDateTime` formatter used by account/update screens. `web/locales/` keeps 597 matching message keys for each language. English loads with the dashboard; other dictionaries load on demand before their first screen. Missing keys use English. A failed download or five-second loading deadline leaves English available with an error. Late responses never change the active language; an explicit retry can use the arrived dictionary.
 
 Keep text lookups explicit at the rendering boundary. Do not translate arbitrary user data, rewrite the DOM, or derive permissions from translated labels. Reuse stable descriptor IDs for node categories and favorites. Preserve interpolation names in every dictionary.
 

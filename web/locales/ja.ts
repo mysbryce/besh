@@ -1,4 +1,30 @@
 const messages: Record<string, string> = {
+  'FROM SPREADSHEET TO API': 'スプレッドシートから API へ',
+  'Bring your data. Preview its columns. Build an API without writing JSON.':
+    'データを取り込み、列を確認して、JSON を書かずに API を作成できます。',
+  'Refresh list': '一覧を更新',
+  'Import a spreadsheet': 'スプレッドシートをインポート',
+  'Check your data': 'データを確認',
+  'Choose API fields': 'API フィールドを選択',
+  'Add a data source': 'データソースを追加',
+  'Import method': 'インポート方法',
+  'Spreadsheet file': 'スプレッドシートファイル',
+  'Public Google Sheet': '公開 Google スプレッドシート',
+  'Source name': 'データソース名',
+  Products: '商品',
+  'Import spreadsheet': 'スプレッドシートをインポート',
+  'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.':
+    'CSV または Excel (.xlsx)、最大 2 MB。最初の行に列名を入力してください。インポートするとデータのスナップショットが保存されます。',
+  'No data sources yet.': 'データソースはまだありません。',
+  'Import a spreadsheet to see your data here.':
+    'スプレッドシートをインポートすると、ここでデータを確認できます。',
+  'Spreadsheet imported. Check your data before creating an API.':
+    'スプレッドシートをインポートしました。API を作成する前にデータを確認してください。',
+  'Saved data source': '保存済みデータソース',
+  '{source} · {count} rows': '{source} · {count} 行',
+  '{count} rows': '{count} 行',
+  'Empty cells allowed': '空のセルを許可',
+  Empty: '空',
   'Your team': 'チーム',
   'WORKSPACE CONTROL': 'ワークスペース管理',
   'Member keys manage the workspace. Use API keys for published endpoint callers.':

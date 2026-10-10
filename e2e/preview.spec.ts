@@ -37,6 +37,7 @@ import { studioFirstTaskLocalePreviews } from './studio-locale-previews'
 import { studioDraftLocalePreviews } from './studio-draft-locale-previews'
 import { studioGraphqlLocalePreviews } from './studio-graphql-locale-previews'
 import { studioWebsocketLocalePreviews } from './studio-websocket-locale-previews'
+import { dataSourceImportLocalePreviews } from './data-source-locale-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
@@ -4267,7 +4268,8 @@ for (const story of previewStories) {
     story.id === 'management-studio-first-task' ||
     story.id === 'management-studio-draft' ||
     story.id === 'management-studio-graphql' ||
-    story.id === 'management-studio-websocket'
+    story.id === 'management-studio-websocket' ||
+    story.id === 'management-data-source-import'
   )
     continue
   const helper = featureHelpers[story.id]
@@ -4318,3 +4320,65 @@ for (const [story, locale, helper] of [
     })
   })
 }
+
+test.describe('management-data-source-import', () => {
+  test.use({ locale: 'en-US' })
+  test('management-data-source-import', async ({ page, previewWorkspace }) => {
+    const { owner, origin } = previewWorkspace
+    const headers = { authorization: `Bearer ${owner}` }
+    const roleResponse = await page.request.post(`${origin}/api/roles`, {
+      headers,
+      data: {
+        name: 'CSV reader',
+        permissions: ['flows.read', 'sources.read'],
+      },
+    })
+    expect(roleResponse.status()).toBe(200)
+
+    const role = (await roleResponse.json()) as { id: string }
+    const readerResponse = await page.request.post(`${origin}/api/members`, {
+      headers,
+      data: { name: 'CSV reader', role: 'custom', roleId: role.id },
+    })
+    expect(readerResponse.status()).toBe(200)
+
+    const reader = (await readerResponse.json()) as { token: string }
+    const selectedResponse = await page.request.post(`${origin}/api/members`, {
+      headers,
+      data: {
+        name: 'Selected CSV viewer',
+        role: 'viewer',
+        access: {
+          mode: 'selected',
+          flowIds: [],
+          dependencyUse: {
+            sources: [],
+            databaseConnections: [],
+            authConnections: [],
+          },
+        },
+      },
+    })
+    expect(selectedResponse.status()).toBe(200)
+
+    const selectedViewer = (await selectedResponse.json()) as { token: string }
+    const errors: string[] = []
+    const { capture, complete } = storyCapture(
+      page,
+      'management-data-source-import',
+    )
+    page.on('pageerror', (error) => errors.push(error.message))
+
+    await dataSourceImportLocalePreviews({
+      page,
+      owner,
+      reader: reader.token,
+      selectedViewer: selectedViewer.token,
+      apiOrigin: origin,
+      capture,
+    })
+    expect(errors).toEqual([])
+    complete()
+    await page.context().clearPermissions()
+  })
+})

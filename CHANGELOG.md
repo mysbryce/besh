@@ -4,6 +4,19 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.0-alpha.0 — 2026-10-10
+
+### Added
+
+- CPU-adaptive backend and browser workers, using half the available logical CPUs by default with explicit all/number overrides.
+- Focused development checks for changed-file formatting, whole-project types, selected backend/browser tests and individual preview stories.
+
+### Fixed
+
+- Translate basic spreadsheet import and data previews across all seven dashboard languages while preserving authored data and current permissions.
+- Allow workspace presentation language changes during pending operations, so completion uses the current language without unlocking management actions.
+- Bound native SQLite test worker groups and isolate the cold Vite/WebSocket journey to preserve production deadlines under parallel test load. Keep preview capture capped at four verified workers.
+
 ## 0.19.1-alpha.0 — 2026-10-10
 
 ### Fixed

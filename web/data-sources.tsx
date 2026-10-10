@@ -13,6 +13,7 @@ import { Button } from './components/ui/button'
 import { Checkbox } from './components/ui/checkbox'
 import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
+import { useTranslation } from './i18n'
 import {
   api,
   authenticatedFetch,
@@ -355,20 +356,26 @@ function SourceActions({
 }
 
 export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
+  const { t } = useTranslation()
+
   const token = useStudio((state) => state.token)
   const member = useStudio((state) => state.member)
   const busy = useStudio((state) => state.busy)
   const task = useStudio((state) => state.task)
   const message = useStudio((state) => state.message)
+
   const [sources, setSources] = useState<DataSource[]>([])
   const [detail, setDetail] = useState<DataSourceDetail | null>(null)
+
   const [name, setName] = useState('')
   const [file, setFile] = useState<File | null>(null)
   const [importMethod, setImportMethod] = useState('file')
   const [sheetUrl, setSheetUrl] = useState('')
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const fileInput = useRef<HTMLInputElement>(null)
+
   const readable = can(member, 'sources.read')
   const writable = can(member, 'sources.write')
   const allowed = readable || writable
@@ -378,6 +385,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
       setLoading(false)
       return
     }
+
     let active = true
 
     api<DataSource[]>('/api/data-sources', token)
@@ -444,11 +452,12 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
     <>
       <div className="page-title">
         <div>
-          <div className="eyebrow">FROM SPREADSHEET TO API</div>
-          <h1>Data sources</h1>
+          <div className="eyebrow">{t('FROM SPREADSHEET TO API')}</div>
+          <h1>{t('Data sources')}</h1>
           <p>
-            Bring your data. Preview its columns. Build an API without writing
-            JSON.
+            {t(
+              'Bring your data. Preview its columns. Build an API without writing JSON.',
+            )}
           </p>
         </div>
         <Button
@@ -469,18 +478,18 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
           }
         >
           <RefreshCw />
-          Refresh list
+          {t('Refresh list')}
         </Button>
       </div>
       <div className="getting-started-steps">
         <span>
-          <strong>1</strong> Import a spreadsheet
+          <strong>1</strong> {t('Import a spreadsheet')}
         </span>
         <span>
-          <strong>2</strong> Check your data
+          <strong>2</strong> {t('Check your data')}
         </span>
         <span>
-          <strong>3</strong> Choose API fields
+          <strong>3</strong> {t('Choose API fields')}
         </span>
       </div>
       {error ? (
@@ -490,17 +499,17 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
       ) : null}
       {loading ? <p>Loading data sources…</p> : null}
       <fieldset className="source-write-fields" disabled={!writable || busy}>
-        <legend className="sr-only">Manage data sources</legend>
+        <legend className="sr-only">{t('Manage data sources')}</legend>
         <section className="source-preview source-import">
           <div className="panel-heading">
-            <h2>Add a data source</h2>
+            <h2>{t('Add a data source')}</h2>
             <FileSpreadsheet size={20} />
           </div>
           <div className="source-import-method">
-            <label htmlFor="import-method">Import method</label>
+            <label htmlFor="import-method">{t('Import method')}</label>
             <Select
               id="import-method"
-              label="Import method"
+              label={t('Import method')}
               value={importMethod}
               onValueChange={(value) => {
                 setImportMethod(value)
@@ -509,8 +518,8 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
                 setError('')
               }}
               options={[
-                { value: 'file', label: 'Spreadsheet file' },
-                { value: 'google', label: 'Public Google Sheet' },
+                { value: 'file', label: t('Spreadsheet file') },
+                { value: 'google', label: t('Public Google Sheet') },
               ]}
               disabled={busy}
             />
@@ -554,20 +563,20 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
             }}
           >
             <label htmlFor="source-name">
-              Source name
+              {t('Source name')}
               <Input
                 id="source-name"
                 value={name}
                 maxLength={80}
                 required
                 disabled={busy}
-                placeholder="Products"
+                placeholder={t('Products')}
                 onChange={(event) => setName(event.target.value)}
               />
             </label>
             {importMethod === 'file' ? (
               <label key="file" htmlFor="spreadsheet-file">
-                Spreadsheet file
+                {t('Spreadsheet file')}
                 <Input
                   id="spreadsheet-file"
                   ref={fileInput}
@@ -613,13 +622,15 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
             >
               <Upload />
               {importMethod === 'file'
-                ? 'Import spreadsheet'
+                ? t('Import spreadsheet')
                 : 'Import Google Sheet'}
             </Button>
           </form>
           <p className="source-note" id="import-source-help">
             {importMethod === 'file'
-              ? 'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.'
+              ? t(
+                  'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.',
+                )
               : 'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.'}
           </p>
         </section>
@@ -634,16 +645,19 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
       ) : null}
       {sources.length ? (
         <div className="source-selector">
-          <label htmlFor="saved-source">Saved data source</label>
+          <label htmlFor="saved-source">{t('Saved data source')}</label>
           <Select
             id="saved-source"
-            label="Saved data source"
+            label={t('Saved data source')}
             value={detail?.id ?? ''}
             placeholder="Choose a data source"
             disabled={busy || loading || !readable}
             options={sources.map((source) => ({
               value: source.id,
-              label: `${source.name} · ${source.rowCount} rows`,
+              label: t('{source} · {count} rows', {
+                source: source.name,
+                count: source.rowCount,
+              }),
             }))}
             onValueChange={(id) =>
               perform(async () => {
@@ -657,8 +671,8 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
       ) : !loading ? (
         <div className="runtime-key-empty">
           <Database />
-          <h2>No data sources yet.</h2>
-          <p>Import a spreadsheet to see your data here.</p>
+          <h2>{t('No data sources yet.')}</h2>
+          <p>{t('Import a spreadsheet to see your data here.')}</p>
         </div>
       ) : null}
       {detail ? (
@@ -666,7 +680,9 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
           <section className="source-preview">
             <div className="panel-heading">
               <h2>{detail.name}</h2>
-              <Badge variant="secondary">{detail.rowCount} rows</Badge>
+              <Badge variant="secondary">
+                {t('{count} rows', { count: detail.rowCount })}
+              </Badge>
             </div>
             <p className="source-note">
               Showing {detail.rows.length} of {detail.rowCount} rows. Version{' '}
@@ -682,8 +698,10 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
                       <th key={column.key}>
                         {column.label}
                         <span className="column-type">
-                          {columnTypes[column.type]}
-                          {column.nullable ? ' · Empty cells allowed' : ''}
+                          {t(columnTypes[column.type])}
+                          {column.nullable
+                            ? ` · ${t('Empty cells allowed')}`
+                            : ''}
                         </span>
                       </th>
                     ))}
@@ -696,7 +714,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
                         <td key={column.key}>
                           {row[column.key] === null ||
                           row[column.key] === undefined ? (
-                            <span className="empty-cell">Empty</span>
+                            <span className="empty-cell">{t('Empty')}</span>
                           ) : (
                             String(row[column.key])
                           )}
