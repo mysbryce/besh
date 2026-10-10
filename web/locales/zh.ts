@@ -1,4 +1,167 @@
 const messages: Record<string, string> = {
+  'Your team': '你的团队',
+  'WORKSPACE CONTROL': '工作区管理',
+  'Member keys manage the workspace. Use API keys for published endpoint callers.':
+    '成员密钥用于管理工作区。已发布端点的调用方应使用 API 密钥。',
+  'Loading workspace records…': '正在加载工作区记录…',
+  'Only the owner can manage members and roles.':
+    '只有所有者可以管理成员和角色。',
+  'Refresh Members and review an active tenant before creating this member.':
+    '创建此成员前，请刷新成员页面并确认一个活跃租户。',
+  'Create {name} with assigned tenant {tenant}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.':
+    '创建 {name} 并分配租户 {tenant}？受保护的 API 操作将使用此身份。API 权限与依赖资源 USE 权限仍然相互独立。此分配与成员凭据将一同创建。',
+  'Member created. Save their token; it is shown once.':
+    '成员已创建。请保存其令牌；令牌仅显示一次。',
+  Name: '名称',
+  'Member name': '成员名称',
+  Role: '角色',
+  'Member role': '成员角色',
+  'Member email (optional)': '成员邮箱（可选）',
+  'Member password': '成员密码',
+  '12 to 128 characters. Leave email blank for key-only access.':
+    '12 到 128 个字符。邮箱留空可仅使用密钥访问。',
+  'New member API access': '新成员 API 访问权限',
+  'New member tenant': '新成员租户',
+  'No tenant assigned': '未分配租户',
+  'Optional initial assignment. Review before adding the member; no separate credential creation and reassignment occurs.':
+    '初始租户分配为可选设置。添加成员前请仔细检查；不会先单独创建凭据再重新分配租户。',
+  'Add member': '添加成员',
+  'Save this member token': '保存此成员令牌',
+  'New member token': '新成员令牌',
+  'Member token copied.': '成员令牌已复制。',
+  Copy: '复制',
+  'I saved it': '已保存',
+  'Opening invitations…': '正在打开邀请…',
+  'API access': 'API 访问权限',
+  'Tenant identity': '租户身份',
+  'Invite sign-in': '邀请设置登录',
+  'Bootstrap owner': '初始所有者',
+  'Revoke access for {name}?': '撤销 {name} 的访问权限？',
+  'Member access revoked.': '成员访问权限已撤销。',
+  'Selected APIs · {count}': '选定 API · {count}',
+  'Manage APIs for {name}': '管理 {name} 的 API',
+  'Owner access cannot be restricted.': '所有者的访问权限无法限制。',
+  'Owner reviews a tenant for each protected action.':
+    '每次受保护的操作均由所有者确认租户。',
+  'Assigned tenant': '已分配租户',
+  'Manage tenant for {name}': '管理 {name} 的租户',
+  'Viewer · read APIs': '查看者 · 读取 API',
+  'Editor · build and test': '编辑者 · 构建和测试',
+  '{name} · custom role': '{name} · 自定义角色',
+  'Role for {name}': '{name} 的角色',
+  "Change {name}'s role from {current} to {next}? This ends their active browser sessions. Their member key immediately uses the new permissions.":
+    '将 {name} 的角色从 {current} 更改为 {next}？这会结束该成员的活跃浏览器会话。其成员密钥将立即使用新权限。',
+  'Member role updated. Their browser sessions were ended.':
+    '成员角色已更新。其浏览器会话已结束。',
+  'Could not update member role.': '无法更新成员角色。',
+  'Change role': '更改角色',
+  'Selected APIs only': '仅选定 API',
+  'Selected sharing limits API scope. Use Viewer or a custom role with only API, runtime-key and load-test actions. Actions still require separate role grants. It grants no API creation or global resource management.':
+    '选择性共享限制 API 范围。请使用查看者角色，或仅包含 API、运行时密钥及负载测试操作的自定义角色。各项操作仍需要独立的角色权限。此设置不授予创建 API 或管理全局资源的权限。',
+  'This role has actions beyond Read APIs and selected API operations. Choose an eligible custom role or Viewer, or explicitly select All APIs before continuing.':
+    '此角色包含读取 API 和选定 API 操作之外的权限。请先选择符合要求的自定义角色或查看者角色，或明确选择所有 API，再继续。',
+  'Choose APIs to share': '选择要共享的 API',
+  'Share {name}': '共享 {name}',
+  '{count} APIs selected.': '已选择 {count} 个 API。',
+  'No APIs selected. This member can sign in, but sees no APIs.':
+    '尚未选择 API。此成员可以登录，但看不到任何 API。',
+  'Dependencies these APIs may use': '这些 API 可使用的依赖资源',
+  'USE permits these selected APIs to read chosen dependency data or trigger product login when the role allows testing, publishing or callers. It can expose stored data through the API. It grants no dependency preview or management. Row, column and tenant authorization remain separate; selecting APIs or dependencies does not provide them.':
+    '当角色允许测试、发布或调用 API 时，USE 权限允许这些选定 API 读取所选依赖资源的数据或触发产品登录。它可能通过 API 暴露已存储的数据，但不授予预览或管理依赖资源的权限。行、列和租户级授权仍然相互独立；选择 API 或依赖资源不会授予这些权限。',
+  'Use spreadsheet sources': '使用电子表格数据源',
+  'Use SQLite copies': '使用 SQLite 副本',
+  'Use product login connections': '使用产品登录连接',
+  'Use spreadsheet {name}': '使用电子表格 {name}',
+  'Use SQLite copy {name}': '使用 SQLite 副本 {name}',
+  'Use product login {name}': '使用产品登录 {name}',
+  'Structure only · version {version}': '仅结构 · 版本 {version}',
+  'No saved dependencies in this group.': '此组没有已保存的依赖资源。',
+  '{count} dependencies allowed for USE.': '{count} 个依赖资源获准使用 USE。',
+  'All current and future APIs. Actions still follow the assigned role.':
+    '所有当前和未来的 API。各项操作仍受已分配角色的权限限制。',
+  'Custom roles': '自定义角色',
+  'New role': '新建角色',
+  'Choose actions for this local workspace. Every member can manage their own account and sessions. Member and role administration stays with the owner.':
+    '为此本地工作区选择操作。每个成员都可以管理自己的账户和会话。成员和角色管理仍由所有者负责。',
+  'Actions are separate: editing, testing, and publication each need their own grant. Reading related APIs or connections is needed to choose them in forms.':
+    '各项操作相互独立：编辑、测试和发布均需要各自的权限。只有拥有相关 API 或连接的读取权限，才能在表单中选择它们。',
+  'Loading permission choices…': '正在加载权限选项…',
+  'Retry permission choices': '重新加载权限选项',
+  'Save changes to {name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.':
+    '保存对 {name} 的更改？权限变更会立即应用于成员密钥，并结束受影响的浏览器会话。请先检查所有已选权限，再继续。',
+  'Role updated. Changed grants end affected browser sessions.':
+    '角色已更新。权限变更会结束受影响的浏览器会话。',
+  'Role created. Assign it to a member when ready.':
+    '角色已创建。准备就绪后可将其分配给成员。',
+  'Could not save role.': '无法保存角色。',
+  'Edit {name} · version {version}': '编辑 {name} · 版本 {version}',
+  'Create custom role': '创建自定义角色',
+  'Role name': '角色名称',
+  'No workspace action grants. Members with this role can still sign in and manage their own account.':
+    '没有工作区操作权限。拥有此角色的成员仍可登录并管理自己的账户。',
+  'Backup access exposes the entire workspace, including saved data and sensitive credential records. Keep downloads private.':
+    '备份访问权限会暴露整个工作区，包括已保存的数据和敏感凭据记录。请妥善保管下载文件，不要公开分享。',
+  'Load testing repeatedly executes live APIs. Configured writes can change product data. Grant only to trusted operators.':
+    '负载测试会反复执行在线 API。已配置的写入操作可能更改产品数据。仅向可信的操作人员授予此权限。',
+  'Save role': '保存角色',
+  'Cancel role changes': '取消角色更改',
+  'If another owner session changes this role, refresh the members page and reopen the role before saving again.':
+    '如果其他所有者会话更改了此角色，请刷新成员页面并重新打开角色，然后再保存。',
+  'Custom · v{version}': '自定义 · v{version}',
+  'Account and own sessions only': '仅限自己的账户和会话',
+  'Edit {name}': '编辑 {name}',
+  'Delete role {name}? This cannot be undone. Roles assigned to members cannot be deleted.':
+    '删除角色 {name}？此操作无法撤销。已分配给成员的角色无法删除。',
+  'Role deleted.': '角色已删除。',
+  'Could not delete role.': '无法删除角色。',
+  'Delete {name}': '删除 {name}',
+  'No custom roles yet. Built-in owner, editor, and viewer roles stay available.':
+    '尚无自定义角色。内置的所有者、编辑者和查看者角色仍然可用。',
+  'Read APIs': '读取 API',
+  'Edit APIs': '编辑 API',
+  'Test drafts': '测试草稿',
+  'Publish and roll back': '发布和回滚',
+  'Read data sources': '读取数据源',
+  'Manage data sources': '管理数据源',
+  'Read database copies': '读取数据库副本',
+  'Manage database copies': '管理数据库副本',
+  'Read product login connections': '读取产品登录连接',
+  'Manage product login connections': '管理产品登录连接',
+  'Manage runtime API keys': '管理运行时 API 密钥',
+  'Read audit history': '读取审计历史',
+  'Manage workspace backups': '管理工作区备份',
+  'Read migration history': '读取迁移历史',
+  'Run load tests': '运行负载测试',
+  APIs: 'API',
+  Databases: '数据库',
+  Security: '安全',
+  'Read authorized API drafts, release history, OpenAPI documents, client examples, and generated backend source.':
+    '读取已授权的 API 草稿、发布历史、OpenAPI 文档、客户端示例及生成的后端源代码。',
+  'Create and save API drafts. Selected access permits editing existing shared APIs with explicit dependency use, but cannot create APIs.':
+    '创建和保存 API 草稿。选择性访问允许编辑已有的共享 API，但需明确授予依赖资源使用权限，且不能创建 API。',
+  'Execute saved REST and GraphQL drafts, including their configured data and product-login steps. Selected access also requires explicit dependency use.':
+    '执行已保存的 REST 和 GraphQL 草稿，包括其中配置的数据和产品登录步骤。选择性访问还需要明确的依赖资源使用权限。',
+  'Change live API behavior by publishing drafts or rolling back releases.':
+    '通过发布草稿或回滚发布版本来更改在线 API 的行为。',
+  'Read source metadata and saved rows.': '读取数据源元数据和已保存的行。',
+  'Import, replace, refresh, and delete sources. Replacing data changes what published APIs read.':
+    '导入、替换、刷新和删除数据源。替换数据会更改已发布 API 读取的内容。',
+  'Read uploaded SQLite copy metadata and selected rows. Generated APIs may expose their configured data.':
+    '读取已上传 SQLite 副本的元数据和选定行。生成的 API 可能暴露其配置的数据。',
+  'Upload, check, and delete immutable SQLite copies. Workspace backups include all uploaded data.':
+    '上传、检查和删除不可修改的 SQLite 副本。工作区备份包含所有已上传的数据。',
+  'Read product-login connection metadata without provider secrets.':
+    '读取产品登录连接元数据，不包含提供方的秘密信息。',
+  'Create, update, and delete server-held provider credentials. Changes affect live product login.':
+    '创建、更新和删除保存在服务器上的提供方凭据。更改会影响在线产品登录。',
+  'Issue, list, replace, and revoke runtime keys. Selected access manages issuer-bound keys for shared APIs; issuance and replacement require dependency use and preserve release pins.':
+    '签发、列出、替换和撤销运行时密钥。选择性访问可管理共享 API 中绑定签发者的密钥；签发和替换均需要依赖资源使用权限，并保留发布版本固定设置。',
+  'Read workspace activity and security events.': '读取工作区活动和安全事件。',
+  'Create, list, and download complete workspace backups containing saved data and sensitive credential records.':
+    '创建、列出和下载完整工作区备份，其中包含已保存的数据和敏感凭据记录。',
+  'Read the control database migration history.': '读取控制数据库的迁移历史。',
+  'List published targets and load-test history; start and cancel bounded local runs. Runs execute published APIs and may cause their configured writes.':
+    '列出已发布的目标和负载测试历史；启动和取消有范围限制的本地运行。运行会执行已发布的 API，并可能触发其中配置的写入操作。',
   'Update available': '有新版本可用',
   'No newer release found': '未找到更新的版本',
   'No matching releases found': '未找到符合设置的版本',

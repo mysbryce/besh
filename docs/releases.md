@@ -47,6 +47,8 @@ After the normal PR #2 merge, [main run 38016098723](https://github.com/mysbryce
 
 Studio/navigation PR #3 was subsequently merged as `0.18.1-alpha.0`. [Main run 38017384825](https://github.com/mysbryce/besh/actions/runs/38017384825) at `8255b4e` passed both check and browser jobs. Future work starts from this merged head on a new branch; keep any preserved local main history instead of resetting it. This check does not resolve remote candidate-upload capacity.
 
+Account/update language PR #4 merged as `0.18.2-alpha.0`. [Main run 38021228538](https://github.com/mysbryce/besh/actions/runs/38021228538) at `fe7dd57` passed both jobs. The maintainer now authorizes continuing implementation and normal merges after exact-head core/browser CI passes. Match the reviewed head, preserve repository rules and wait for post-merge main CI before competing local native work. This authorization does not publish tags, packages or deployments.
+
 ## Automated checks and candidate artifacts
 
 [Check workflow](../.github/workflows/check.yml) uses the maintainer's Windows x64 runner with `runs-on: [self-hosted, windows, x64]`. It runs on branch pushes in this repository or manual requests, checking out the event's exact commit. Both jobs admit only those events; pull requests do not trigger this workflow. A same-repository branch push runs checks before its PR review. Repository writers and manual-run actors remain trusted to execute host code. See [GitHub's runner labels](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/use-in-a-workflow).

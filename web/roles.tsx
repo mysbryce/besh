@@ -4,8 +4,9 @@ import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import { Checkbox } from './components/ui/checkbox'
 import { Badge } from './components/ui/badge'
-import { api, memberRoleName, type Member, type Role } from './lib/api'
+import { api, type Member, type Role } from './lib/api'
 import { useStudio } from './store'
+import { translateMessage, useTranslation } from './i18n'
 import type { Permission } from '../src/workspace/permissions'
 
 type CatalogEntry = {
@@ -15,13 +16,13 @@ type CatalogEntry = {
   group: string
 }
 
-export function roleOptions(roles: Role[]) {
+export function roleOptions(roles: Role[], t: typeof translateMessage) {
   return [
-    { value: 'viewer', label: 'Viewer · read APIs' },
-    { value: 'editor', label: 'Editor · build and test' },
+    { value: 'viewer', label: t('Viewer · read APIs') },
+    { value: 'editor', label: t('Editor · build and test') },
     ...roles.map((role) => ({
       value: role.id,
-      label: `${role.name} · custom role`,
+      label: t('{name} · custom role', { name: role.name }),
     })),
   ]
 }
@@ -42,6 +43,7 @@ export function MemberAssignment({
   onChanged: () => Promise<void>
 }) {
   const state = useStudio()
+  const { t } = useTranslation()
   const [selected, setSelected] = useState(member.roleId ?? member.role)
   const [error, setError] = useState('')
   useEffect(() => {
@@ -59,9 +61,9 @@ export function MemberAssignment({
   return (
     <div className="member-assignment">
       <Select
-        label={`Role for ${member.name}`}
+        label={t('Role for {name}', { name: member.name })}
         value={selected}
-        options={roleOptions(roles)}
+        options={roleOptions(roles, t)}
         disabled={state.busy}
         onValueChange={setSelected}
       />
@@ -71,10 +73,19 @@ export function MemberAssignment({
         disabled={state.busy || selected === current}
         onClick={() => {
           const next =
-            roles.find((role) => role.id === selected)?.name ?? selected
+            selected === 'viewer' || selected === 'editor'
+              ? t(selected)
+              : (roles.find((role) => role.id === selected)?.name ?? selected)
+          const currentName =
+            member.role === 'custom'
+              ? (member.roleName ?? t('Custom role'))
+              : t(member.role)
           if (
             !confirm(
-              `Change ${member.name}'s role from ${memberRoleName(member)} to ${next}? This ends their active browser sessions. Their member key immediately uses the new permissions.`,
+              t(
+                "Change {name}'s role from {current} to {next}? This ends their active browser sessions. Their member key immediately uses the new permissions.",
+                { name: member.name, current: currentName, next },
+              ),
             )
           )
             return
@@ -89,20 +100,22 @@ export function MemberAssignment({
               )
               await onChanged()
               state.message(
-                'Member role updated. Their browser sessions were ended.',
+                translateMessage(
+                  'Member role updated. Their browser sessions were ended.',
+                ),
               )
             } catch (reason) {
               setError(
                 reason instanceof Error
                   ? reason.message
-                  : 'Could not update member role.',
+                  : translateMessage('Could not update member role.'),
               )
               throw reason
             }
           })
         }}
       >
-        Change role
+        {t('Change role')}
       </Button>
       {error ? (
         <p role="alert" className="form-error">
@@ -121,6 +134,7 @@ export function Roles({
   onChanged: () => Promise<void>
 }) {
   const state = useStudio()
+  const { t } = useTranslation()
   const [catalog, setCatalog] = useState<CatalogEntry[]>([])
   const [draft, setDraft] = useState<{
     role: Role | null
@@ -154,9 +168,9 @@ export function Roles({
   const groups = [...new Set(catalog.map((entry) => entry.group))]
 
   return (
-    <section aria-label="Custom roles" className="roles-panel">
+    <section aria-label={t('Custom roles')} className="roles-panel">
       <div className="panel-heading">
-        <h2>Custom roles</h2>
+        <h2>{t('Custom roles')}</h2>
         <Button
           variant="outline"
           disabled={state.busy || !!draft || loading || !!catalogError}
@@ -165,20 +179,20 @@ export function Roles({
             setDraft({ role: null, name: '', permissions: [] })
           }}
         >
-          New role
+          {t('New role')}
         </Button>
       </div>
       <p>
-        Choose actions for this local workspace. Every member can manage their
-        own account and sessions. Member and role administration stays with the
-        owner.
+        {t(
+          'Choose actions for this local workspace. Every member can manage their own account and sessions. Member and role administration stays with the owner.',
+        )}
       </p>
       <p>
-        Actions are separate: editing, testing, and publication each need their
-        own grant. Reading related APIs or connections is needed to choose them
-        in forms.
+        {t(
+          'Actions are separate: editing, testing, and publication each need their own grant. Reading related APIs or connections is needed to choose them in forms.',
+        )}
       </p>
-      {loading ? <p>Loading permission choices…</p> : null}
+      {loading ? <p>{t('Loading permission choices…')}</p> : null}
       {error ? (
         <p role="alert" className="form-error">
           {error}
@@ -192,7 +206,7 @@ export function Roles({
             disabled={state.busy}
             onClick={() => setRefresh((value) => value + 1)}
           >
-            Retry permission choices
+            {t('Retry permission choices')}
           </Button>
         </p>
       ) : null}
@@ -206,7 +220,10 @@ export function Roles({
             if (
               draft.role &&
               !confirm(
-                `Save changes to ${draft.role.name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.`,
+                t(
+                  'Save changes to {name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.',
+                  { name: draft.role.name },
+                ),
               )
             )
               return
@@ -226,15 +243,17 @@ export function Roles({
                 setDraft(null)
                 await onChanged()
                 state.message(
-                  draft.role
-                    ? 'Role updated. Changed grants end affected browser sessions.'
-                    : 'Role created. Assign it to a member when ready.',
+                  translateMessage(
+                    draft.role
+                      ? 'Role updated. Changed grants end affected browser sessions.'
+                      : 'Role created. Assign it to a member when ready.',
+                  ),
                 )
               } catch (reason) {
                 setError(
                   reason instanceof Error
                     ? reason.message
-                    : 'Could not save role.',
+                    : translateMessage('Could not save role.'),
                 )
                 throw reason
               }
@@ -243,13 +262,16 @@ export function Roles({
         >
           <h3>
             {draft.role
-              ? `Edit ${draft.role.name} · version ${draft.role.version}`
-              : 'Create custom role'}
+              ? t('Edit {name} · version {version}', {
+                  name: draft.role.name,
+                  version: draft.role.version,
+                })
+              : t('Create custom role')}
           </h3>
           <label>
-            Role name
+            {t('Role name')}
             <Input
-              aria-label="Role name"
+              aria-label={t('Role name')}
               value={draft.name}
               disabled={state.busy}
               maxLength={80}
@@ -262,7 +284,7 @@ export function Roles({
           <div className="role-grant-groups">
             {groups.map((group) => (
               <fieldset key={group}>
-                <legend>{group}</legend>
+                <legend>{t(group)}</legend>
                 {catalog
                   .filter((entry) => entry.group === group)
                   .map((entry) => (
@@ -270,7 +292,7 @@ export function Roles({
                       <Checkbox
                         checked={draft.permissions.includes(entry.id)}
                         disabled={state.busy}
-                        aria-label={entry.label}
+                        aria-label={t(entry.label)}
                         onCheckedChange={(checked) =>
                           setDraft({
                             ...draft,
@@ -283,8 +305,8 @@ export function Roles({
                         }
                       />
                       <span>
-                        {entry.label}
-                        <small>{entry.description}</small>
+                        {t(entry.label)}
+                        <small>{t(entry.description)}</small>
                       </span>
                     </label>
                   ))}
@@ -293,20 +315,23 @@ export function Roles({
           </div>
           {!draft.permissions.length ? (
             <p>
-              No workspace action grants. Members with this role can still sign
-              in and manage their own account.
+              {t(
+                'No workspace action grants. Members with this role can still sign in and manage their own account.',
+              )}
             </p>
           ) : null}
           {draft.permissions.includes('backups.manage') ? (
             <p className="role-warning">
-              Backup access exposes the entire workspace, including saved data
-              and sensitive credential records. Keep downloads private.
+              {t(
+                'Backup access exposes the entire workspace, including saved data and sensitive credential records. Keep downloads private.',
+              )}
             </p>
           ) : null}
           {draft.permissions.includes('load-tests.run') ? (
             <p className="role-warning">
-              Load testing repeatedly executes live APIs. Configured writes can
-              change product data. Grant only to trusted operators.
+              {t(
+                'Load testing repeatedly executes live APIs. Configured writes can change product data. Grant only to trusted operators.',
+              )}
             </p>
           ) : null}
           <div className="title-actions">
@@ -315,7 +340,7 @@ export function Roles({
                 state.busy || loading || !!catalogError || !draft.name.trim()
               }
             >
-              Save role
+              {t('Save role')}
             </Button>
             <Button
               type="button"
@@ -326,13 +351,14 @@ export function Roles({
                 setError('')
               }}
             >
-              Cancel role changes
+              {t('Cancel role changes')}
             </Button>
           </div>
           {draft.role ? (
             <p>
-              If another owner session changes this role, refresh the members
-              page and reopen the role before saving again.
+              {t(
+                'If another owner session changes this role, refresh the members page and reopen the role before saving again.',
+              )}
             </p>
           ) : null}
         </form>
@@ -342,18 +368,21 @@ export function Roles({
           <article className="role-card" key={role.id}>
             <h3>
               {role.name}{' '}
-              <Badge variant="outline">Custom · v{role.version}</Badge>
+              <Badge variant="outline">
+                {t('Custom · v{version}', { version: role.version })}
+              </Badge>
             </h3>
             <p>
               {role.permissions.length
                 ? role.permissions
-                    .map(
-                      (permission) =>
-                        catalog.find((entry) => entry.id === permission)
-                          ?.label ?? permission,
-                    )
+                    .map((permission) => {
+                      const entry = catalog.find(
+                        (entry) => entry.id === permission,
+                      )
+                      return entry ? t(entry.label) : permission
+                    })
                     .join(' · ')
-                : 'Account and own sessions only'}
+                : t('Account and own sessions only')}
             </p>
             <div className="title-actions">
               <Button
@@ -368,7 +397,7 @@ export function Roles({
                   })
                 }}
               >
-                Edit {role.name}
+                {t('Edit {name}', { name: role.name })}
               </Button>
               <Button
                 variant="ghost"
@@ -376,7 +405,10 @@ export function Roles({
                 onClick={() => {
                   if (
                     !confirm(
-                      `Delete role ${role.name}? This cannot be undone. Roles assigned to members cannot be deleted.`,
+                      t(
+                        'Delete role {name}? This cannot be undone. Roles assigned to members cannot be deleted.',
+                        { name: role.name },
+                      ),
                     )
                   )
                     return
@@ -390,19 +422,19 @@ export function Roles({
                         { version: role.version },
                       )
                       await onChanged()
-                      state.message('Role deleted.')
+                      state.message(translateMessage('Role deleted.'))
                     } catch (reason) {
                       setError(
                         reason instanceof Error
                           ? reason.message
-                          : 'Could not delete role.',
+                          : translateMessage('Could not delete role.'),
                       )
                       throw reason
                     }
                   })
                 }}
               >
-                Delete {role.name}
+                {t('Delete {name}', { name: role.name })}
               </Button>
             </div>
           </article>
@@ -410,8 +442,9 @@ export function Roles({
       </div>
       {!roles.length && !loading ? (
         <p>
-          No custom roles yet. Built-in owner, editor, and viewer roles stay
-          available.
+          {t(
+            'No custom roles yet. Built-in owner, editor, and viewer roles stay available.',
+          )}
         </p>
       ) : null}
     </section>

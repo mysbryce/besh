@@ -1,4 +1,173 @@
 const messages: Record<string, string> = {
+  'Your team': '팀',
+  'WORKSPACE CONTROL': '작업 공간 관리',
+  'Member keys manage the workspace. Use API keys for published endpoint callers.':
+    '멤버 키는 작업 공간을 관리합니다. 게시된 엔드포인트를 호출할 때는 API 키를 사용하세요.',
+  'Loading workspace records…': '작업 공간 기록을 불러오는 중…',
+  'Only the owner can manage members and roles.':
+    '소유자만 멤버와 역할을 관리할 수 있습니다.',
+  'Refresh Members and review an active tenant before creating this member.':
+    '이 멤버를 만들기 전에 멤버 페이지를 새로고침하고 활성 테넌트를 검토하세요.',
+  'Create {name} with assigned tenant {tenant}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.':
+    '테넌트 {tenant}를 할당하여 {name} 멤버를 만들까요? 보호된 API 작업은 이 할당에서 식별 정보를 가져옵니다. API 권한과 의존 항목 USE 권한은 별개입니다. 이 할당과 멤버 인증 정보는 함께 생성됩니다.',
+  'Member created. Save their token; it is shown once.':
+    '멤버를 만들었습니다. 토큰은 한 번만 표시되므로 저장하세요.',
+  Name: '이름',
+  'Member name': '멤버 이름',
+  Role: '역할',
+  'Member role': '멤버 역할',
+  'Member email (optional)': '멤버 이메일 (선택 사항)',
+  'Member password': '멤버 비밀번호',
+  '12 to 128 characters. Leave email blank for key-only access.':
+    '12~128자입니다. 키로만 접근하려면 이메일을 비워 두세요.',
+  'New member API access': '새 멤버의 API 접근 권한',
+  'New member tenant': '새 멤버의 테넌트',
+  'No tenant assigned': '할당된 테넌트 없음',
+  'Optional initial assignment. Review before adding the member; no separate credential creation and reassignment occurs.':
+    '초기 할당은 선택 사항입니다. 멤버를 추가하기 전에 검토하세요. 인증 정보를 먼저 만들고 별도로 재할당하지 않습니다.',
+  'Add member': '멤버 추가',
+  'Save this member token': '이 멤버 토큰 저장',
+  'New member token': '새 멤버 토큰',
+  'Member token copied.': '멤버 토큰을 복사했습니다.',
+  Copy: '복사',
+  'I saved it': '저장했습니다',
+  'Opening invitations…': '초대를 여는 중…',
+  'API access': 'API 접근 권한',
+  'Tenant identity': '테넌트 식별 정보',
+  'Invite sign-in': '로그인 초대',
+  'Bootstrap owner': '초기 설정 소유자',
+  'Revoke access for {name}?': '{name}의 접근 권한을 취소할까요?',
+  'Member access revoked.': '멤버 접근 권한을 취소했습니다.',
+  'Selected APIs · {count}': '선택한 API · {count}',
+  'Manage APIs for {name}': '{name}의 API 관리',
+  'Owner access cannot be restricted.':
+    '소유자의 접근 권한은 제한할 수 없습니다.',
+  'Owner reviews a tenant for each protected action.':
+    '소유자는 보호된 작업마다 테넌트를 검토합니다.',
+  'Assigned tenant': '할당된 테넌트',
+  'Manage tenant for {name}': '{name}의 테넌트 관리',
+  'Viewer · read APIs': '뷰어 · API 읽기',
+  'Editor · build and test': '편집자 · 만들기 및 테스트',
+  '{name} · custom role': '{name} · 사용자 지정 역할',
+  'Role for {name}': '{name}의 역할',
+  "Change {name}'s role from {current} to {next}? This ends their active browser sessions. Their member key immediately uses the new permissions.":
+    '{name}의 역할을 {current}에서 {next}(으)로 변경할까요? 해당 멤버의 활성 브라우저 세션이 종료됩니다. 멤버 키에는 새 권한이 즉시 적용됩니다.',
+  'Member role updated. Their browser sessions were ended.':
+    '멤버 역할을 업데이트했습니다. 해당 멤버의 브라우저 세션이 종료되었습니다.',
+  'Could not update member role.': '멤버 역할을 업데이트하지 못했습니다.',
+  'Change role': '역할 변경',
+  'Selected APIs only': '선택한 API만',
+  'Selected sharing limits API scope. Use Viewer or a custom role with only API, runtime-key and load-test actions. Actions still require separate role grants. It grants no API creation or global resource management.':
+    '선택한 API 공유는 API 범위를 제한합니다. 뷰어 또는 API, 런타임 키, 부하 테스트 작업만 가진 사용자 지정 역할을 사용하세요. 작업에는 여전히 별도의 역할 권한이 필요합니다. API 생성이나 작업 공간 전체 리소스 관리 권한은 부여하지 않습니다.',
+  'This role has actions beyond Read APIs and selected API operations. Choose an eligible custom role or Viewer, or explicitly select All APIs before continuing.':
+    '이 역할에는 API 읽기와 선택한 API 작업 이외의 권한이 있습니다. 적합한 사용자 지정 역할 또는 뷰어를 선택하거나 모든 API를 명시적으로 선택한 뒤 계속하세요.',
+  'Choose APIs to share': '공유할 API 선택',
+  'Share {name}': '{name} 공유',
+  '{count} APIs selected.': 'API {count}개를 선택했습니다.',
+  'No APIs selected. This member can sign in, but sees no APIs.':
+    '선택한 API가 없습니다. 이 멤버는 로그인할 수 있지만 API는 볼 수 없습니다.',
+  'Dependencies these APIs may use': '이 API들이 사용할 수 있는 의존 항목',
+  'USE permits these selected APIs to read chosen dependency data or trigger product login when the role allows testing, publishing or callers. It can expose stored data through the API. It grants no dependency preview or management. Row, column and tenant authorization remain separate; selecting APIs or dependencies does not provide them.':
+    'USE는 역할이 테스트, 게시 또는 호출을 허용할 때 선택한 API가 지정된 의존 항목 데이터를 읽거나 제품 로그인을 시작할 수 있게 합니다. API를 통해 저장된 데이터가 노출될 수 있습니다. 의존 항목 미리보기나 관리 권한은 부여하지 않습니다. 행, 열, 테넌트별 접근 허가는 별개이며 API나 의존 항목을 선택한다고 부여되지 않습니다.',
+  'Use spreadsheet sources': '스프레드시트 데이터 소스 사용',
+  'Use SQLite copies': 'SQLite 복사본 사용',
+  'Use product login connections': '제품 로그인 연결 사용',
+  'Use spreadsheet {name}': '스프레드시트 {name} 사용',
+  'Use SQLite copy {name}': 'SQLite 복사본 {name} 사용',
+  'Use product login {name}': '제품 로그인 {name} 사용',
+  'Structure only · version {version}': '구조만 · 버전 {version}',
+  'No saved dependencies in this group.':
+    '이 그룹에는 저장된 의존 항목이 없습니다.',
+  '{count} dependencies allowed for USE.':
+    '의존 항목 {count}개에 USE가 허용되었습니다.',
+  'All current and future APIs. Actions still follow the assigned role.':
+    '현재와 앞으로 생성될 모든 API입니다. 작업은 여전히 할당된 역할 권한을 따릅니다.',
+  'Custom roles': '사용자 지정 역할',
+  'New role': '새 역할',
+  'Choose actions for this local workspace. Every member can manage their own account and sessions. Member and role administration stays with the owner.':
+    '이 로컬 워크스페이스에서 허용할 작업을 선택하세요. 모든 멤버는 자신의 계정과 세션을 관리할 수 있습니다. 멤버와 역할 관리는 소유자만 할 수 있습니다.',
+  'Actions are separate: editing, testing, and publication each need their own grant. Reading related APIs or connections is needed to choose them in forms.':
+    '편집, 테스트, 게시는 서로 다른 작업이며 각각 별도의 권한이 필요합니다. 양식에서 관련 API나 연결을 선택하려면 해당 항목을 읽을 권한이 필요합니다.',
+  'Loading permission choices…': '권한 선택 항목을 불러오는 중…',
+  'Retry permission choices': '권한 선택 항목 다시 불러오기',
+  'Save changes to {name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.':
+    '{name}의 변경 사항을 저장할까요? 변경된 권한은 멤버 키에 즉시 적용되며 영향을 받는 브라우저 세션이 종료됩니다. 계속하기 전에 선택한 모든 권한을 확인하세요.',
+  'Role updated. Changed grants end affected browser sessions.':
+    '역할을 업데이트했습니다. 권한 변경으로 영향을 받는 브라우저 세션이 종료됩니다.',
+  'Role created. Assign it to a member when ready.':
+    '역할을 만들었습니다. 준비되면 멤버에게 할당하세요.',
+  'Could not save role.': '역할을 저장하지 못했습니다.',
+  'Edit {name} · version {version}': '{name} 편집 · 버전 {version}',
+  'Create custom role': '사용자 지정 역할 만들기',
+  'Role name': '역할 이름',
+  'No workspace action grants. Members with this role can still sign in and manage their own account.':
+    '워크스페이스 작업 권한이 없습니다. 이 역할의 멤버도 로그인하고 자신의 계정을 관리할 수 있습니다.',
+  'Backup access exposes the entire workspace, including saved data and sensitive credential records. Keep downloads private.':
+    '백업 접근 권한은 저장된 데이터와 민감한 인증 정보 기록을 포함한 전체 워크스페이스를 노출합니다. 다운로드한 파일을 비공개로 보관하세요.',
+  'Load testing repeatedly executes live APIs. Configured writes can change product data. Grant only to trusted operators.':
+    '부하 테스트는 실제 API를 반복해서 실행합니다. 설정된 쓰기 작업으로 제품 데이터가 변경될 수 있습니다. 신뢰할 수 있는 운영자에게만 권한을 부여하세요.',
+  'Save role': '역할 저장',
+  'Cancel role changes': '역할 변경 취소',
+  'If another owner session changes this role, refresh the members page and reopen the role before saving again.':
+    '다른 소유자 세션에서 이 역할을 변경했다면 멤버 페이지를 새로 고치고 역할을 다시 연 다음 저장하세요.',
+  'Custom · v{version}': '사용자 지정 · v{version}',
+  'Account and own sessions only': '자신의 계정과 세션만',
+  'Edit {name}': '{name} 편집',
+  'Delete role {name}? This cannot be undone. Roles assigned to members cannot be deleted.':
+    '{name} 역할을 삭제할까요? 이 작업은 되돌릴 수 없습니다. 멤버에게 할당된 역할은 삭제할 수 없습니다.',
+  'Role deleted.': '역할을 삭제했습니다.',
+  'Could not delete role.': '역할을 삭제하지 못했습니다.',
+  'Delete {name}': '{name} 삭제',
+  'No custom roles yet. Built-in owner, editor, and viewer roles stay available.':
+    '아직 사용자 지정 역할이 없습니다. 기본 소유자, 편집자, 뷰어 역할은 계속 사용할 수 있습니다.',
+  'Read APIs': 'API 읽기',
+  'Edit APIs': 'API 편집',
+  'Test drafts': '초안 테스트',
+  'Publish and roll back': '게시 및 롤백',
+  'Read data sources': '데이터 소스 읽기',
+  'Manage data sources': '데이터 소스 관리',
+  'Read database copies': '데이터베이스 복사본 읽기',
+  'Manage database copies': '데이터베이스 복사본 관리',
+  'Read product login connections': '제품 로그인 연결 읽기',
+  'Manage product login connections': '제품 로그인 연결 관리',
+  'Manage runtime API keys': '런타임 API 키 관리',
+  'Read audit history': '감사 기록 읽기',
+  'Manage workspace backups': '워크스페이스 백업 관리',
+  'Read migration history': '마이그레이션 기록 읽기',
+  'Run load tests': '부하 테스트 실행',
+  APIs: 'API',
+  Databases: '데이터베이스',
+  Security: '보안',
+  'Read authorized API drafts, release history, OpenAPI documents, client examples, and generated backend source.':
+    '접근이 허용된 API 초안, 릴리스 기록, OpenAPI 문서, 클라이언트 예제 및 생성된 백엔드 소스를 읽습니다.',
+  'Create and save API drafts. Selected access permits editing existing shared APIs with explicit dependency use, but cannot create APIs.':
+    'API 초안을 만들고 저장합니다. 선택된 API 접근 권한으로는 명시적인 의존 리소스 USE 권한이 있는 기존 공유 API를 편집할 수 있지만 API를 만들 수는 없습니다.',
+  'Execute saved REST and GraphQL drafts, including their configured data and product-login steps. Selected access also requires explicit dependency use.':
+    '설정된 데이터 및 제품 로그인 단계를 포함하여 저장된 REST와 GraphQL 초안을 실행합니다. 선택된 API 접근 권한에는 명시적인 의존 리소스 USE 권한도 필요합니다.',
+  'Change live API behavior by publishing drafts or rolling back releases.':
+    '초안을 게시하거나 릴리스를 롤백하여 실제 API의 동작을 변경합니다.',
+  'Read source metadata and saved rows.':
+    '소스 메타데이터와 저장된 행을 읽습니다.',
+  'Import, replace, refresh, and delete sources. Replacing data changes what published APIs read.':
+    '소스를 가져오고 교체하고 새로 고치고 삭제합니다. 데이터를 교체하면 게시된 API가 읽는 내용이 변경됩니다.',
+  'Read uploaded SQLite copy metadata and selected rows. Generated APIs may expose their configured data.':
+    '업로드된 SQLite 복사본의 메타데이터와 선택된 행을 읽습니다. 생성된 API는 설정된 데이터를 노출할 수 있습니다.',
+  'Upload, check, and delete immutable SQLite copies. Workspace backups include all uploaded data.':
+    '변경할 수 없는 SQLite 복사본을 업로드하고 확인하고 삭제합니다. 워크스페이스 백업에는 업로드된 모든 데이터가 포함됩니다.',
+  'Read product-login connection metadata without provider secrets.':
+    '공급자 비밀 정보를 제외한 제품 로그인 연결 메타데이터를 읽습니다.',
+  'Create, update, and delete server-held provider credentials. Changes affect live product login.':
+    '서버에 보관된 공급자 인증 정보를 만들고 업데이트하고 삭제합니다. 변경 사항은 실제 제품 로그인에 영향을 줍니다.',
+  'Issue, list, replace, and revoke runtime keys. Selected access manages issuer-bound keys for shared APIs; issuance and replacement require dependency use and preserve release pins.':
+    '런타임 키를 발급하고 조회하고 교체하고 폐기합니다. 선택된 API 접근 권한으로는 공유 API의 발급자에 연결된 키를 관리합니다. 발급과 교체에는 의존 리소스 USE 권한이 필요하며 릴리스 고정 정보가 유지됩니다.',
+  'Read workspace activity and security events.':
+    '워크스페이스 활동과 보안 이벤트를 읽습니다.',
+  'Create, list, and download complete workspace backups containing saved data and sensitive credential records.':
+    '저장된 데이터와 민감한 인증 정보 기록을 포함한 전체 워크스페이스 백업을 만들고 조회하고 다운로드합니다.',
+  'Read the control database migration history.':
+    '관리 데이터베이스의 마이그레이션 기록을 읽습니다.',
+  'List published targets and load-test history; start and cancel bounded local runs. Runs execute published APIs and may cause their configured writes.':
+    '게시된 대상과 부하 테스트 기록을 조회하고 제한된 로컬 실행을 시작하거나 취소합니다. 실행 시 게시된 API가 호출되며 설정된 쓰기 작업이 발생할 수 있습니다.',
   'Update available': '새 버전 사용 가능',
   'No newer release found': '더 새로운 릴리스가 없습니다',
   'No matching releases found': '설정에 맞는 릴리스가 없습니다',

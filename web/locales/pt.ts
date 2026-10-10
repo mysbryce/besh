@@ -1,4 +1,175 @@
 const messages: Record<string, string> = {
+  'Your team': 'Sua equipe',
+  'WORKSPACE CONTROL': 'CONTROLE DO ESPAÇO DE TRABALHO',
+  'Member keys manage the workspace. Use API keys for published endpoint callers.':
+    'As chaves de membro gerenciam o espaço de trabalho. Use chaves de API para chamar endpoints publicados.',
+  'Loading workspace records…':
+    'Carregando os registros do espaço de trabalho…',
+  'Only the owner can manage members and roles.':
+    'Somente o proprietário pode gerenciar membros e funções.',
+  'Refresh Members and review an active tenant before creating this member.':
+    'Atualize a página de membros e revise um tenant ativo antes de criar este membro.',
+  'Create {name} with assigned tenant {tenant}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.':
+    'Criar {name} com o tenant {tenant} atribuído? As ações de API protegidas usam esta identidade. As permissões de API e o USE de dependências continuam separados. Esta atribuição e a credencial do membro são criadas juntas.',
+  'Member created. Save their token; it is shown once.':
+    'Membro criado. Salve o token; ele é exibido apenas uma vez.',
+  Name: 'Nome',
+  'Member name': 'Nome do membro',
+  Role: 'Função',
+  'Member role': 'Função do membro',
+  'Member email (optional)': 'Email do membro (opcional)',
+  'Member password': 'Senha do membro',
+  '12 to 128 characters. Leave email blank for key-only access.':
+    'De 12 a 128 caracteres. Deixe o email em branco para acesso somente por chave.',
+  'New member API access': 'Acesso do novo membro às APIs',
+  'New member tenant': 'Tenant do novo membro',
+  'No tenant assigned': 'Nenhum tenant atribuído',
+  'Optional initial assignment. Review before adding the member; no separate credential creation and reassignment occurs.':
+    'A atribuição inicial é opcional. Revise antes de adicionar o membro; a credencial não é criada separadamente para depois ser reatribuída.',
+  'Add member': 'Adicionar membro',
+  'Save this member token': 'Salve este token de membro',
+  'New member token': 'Novo token de membro',
+  'Member token copied.': 'Token de membro copiado.',
+  Copy: 'Copiar',
+  'I saved it': 'Já salvei',
+  'Opening invitations…': 'Abrindo convites…',
+  'API access': 'Acesso às APIs',
+  'Tenant identity': 'Identidade do tenant',
+  'Invite sign-in': 'Convidar para entrar',
+  'Bootstrap owner': 'Proprietário da configuração inicial',
+  'Revoke access for {name}?': 'Revogar o acesso de {name}?',
+  'Member access revoked.': 'Acesso do membro revogado.',
+  'Selected APIs · {count}': 'APIs selecionadas · {count}',
+  'Manage APIs for {name}': 'Gerenciar APIs de {name}',
+  'Owner access cannot be restricted.':
+    'O acesso do proprietário não pode ser restringido.',
+  'Owner reviews a tenant for each protected action.':
+    'O proprietário revisa um tenant para cada ação protegida.',
+  'Assigned tenant': 'Tenant atribuído',
+  'Manage tenant for {name}': 'Gerenciar tenant de {name}',
+  'Viewer · read APIs': 'Visualizador · ler APIs',
+  'Editor · build and test': 'Editor · criar e testar',
+  '{name} · custom role': '{name} · função personalizada',
+  'Role for {name}': 'Função de {name}',
+  "Change {name}'s role from {current} to {next}? This ends their active browser sessions. Their member key immediately uses the new permissions.":
+    'Alterar a função de {name} de {current} para {next}? Isso encerra as sessões ativas do navegador desse membro. A chave do membro passa a usar as novas permissões imediatamente.',
+  'Member role updated. Their browser sessions were ended.':
+    'Função do membro atualizada. As sessões do navegador desse membro foram encerradas.',
+  'Could not update member role.':
+    'Não foi possível atualizar a função do membro.',
+  'Change role': 'Alterar função',
+  'Selected APIs only': 'Somente APIs selecionadas',
+  'Selected sharing limits API scope. Use Viewer or a custom role with only API, runtime-key and load-test actions. Actions still require separate role grants. It grants no API creation or global resource management.':
+    'O compartilhamento selecionado limita o escopo das APIs. Use Visualizador ou uma função personalizada apenas com ações de API, chaves de runtime e testes de carga. As ações ainda exigem permissões separadas da função. Isso não permite criar APIs nem gerenciar recursos de todo o espaço de trabalho.',
+  'This role has actions beyond Read APIs and selected API operations. Choose an eligible custom role or Viewer, or explicitly select All APIs before continuing.':
+    'Esta função possui ações além de Ler APIs e operações de APIs selecionadas. Escolha uma função personalizada elegível ou Visualizador, ou selecione explicitamente Todas as APIs antes de continuar.',
+  'Choose APIs to share': 'Escolha APIs para compartilhar',
+  'Share {name}': 'Compartilhar {name}',
+  '{count} APIs selected.': '{count} APIs selecionadas.',
+  'No APIs selected. This member can sign in, but sees no APIs.':
+    'Nenhuma API selecionada. Este membro pode entrar, mas não verá nenhuma API.',
+  'Dependencies these APIs may use': 'Dependências que estas APIs podem usar',
+  'USE permits these selected APIs to read chosen dependency data or trigger product login when the role allows testing, publishing or callers. It can expose stored data through the API. It grants no dependency preview or management. Row, column and tenant authorization remain separate; selecting APIs or dependencies does not provide them.':
+    'USE permite que estas APIs selecionadas leiam os dados das dependências escolhidas ou iniciem o login do produto quando a função permite testes, publicação ou chamadas. Isso pode expor dados salvos pela API. Não permite visualizar nem gerenciar dependências. A autorização de linhas, colunas e tenants continua separada; selecionar APIs ou dependências não concede essas autorizações.',
+  'Use spreadsheet sources': 'Usar fontes de planilhas',
+  'Use SQLite copies': 'Usar cópias SQLite',
+  'Use product login connections': 'Usar conexões de login do produto',
+  'Use spreadsheet {name}': 'Usar planilha {name}',
+  'Use SQLite copy {name}': 'Usar cópia SQLite {name}',
+  'Use product login {name}': 'Usar login do produto {name}',
+  'Structure only · version {version}': 'Somente estrutura · versão {version}',
+  'No saved dependencies in this group.':
+    'Não há dependências salvas neste grupo.',
+  '{count} dependencies allowed for USE.':
+    '{count} dependências permitidas para USE.',
+  'All current and future APIs. Actions still follow the assigned role.':
+    'Todas as APIs atuais e futuras. As ações continuam seguindo a função atribuída.',
+  'Custom roles': 'Funções personalizadas',
+  'New role': 'Nova função',
+  'Choose actions for this local workspace. Every member can manage their own account and sessions. Member and role administration stays with the owner.':
+    'Escolha as ações permitidas neste espaço de trabalho local. Todos os membros podem gerenciar a própria conta e as próprias sessões. A administração de membros e funções cabe apenas ao proprietário.',
+  'Actions are separate: editing, testing, and publication each need their own grant. Reading related APIs or connections is needed to choose them in forms.':
+    'As ações são separadas: editar, testar e publicar exigem permissões próprias. É preciso ter permissão de leitura das APIs ou conexões relacionadas para escolhê-las nos formulários.',
+  'Loading permission choices…': 'Carregando opções de permissões…',
+  'Retry permission choices': 'Tentar carregar opções de permissões novamente',
+  'Save changes to {name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.':
+    'Salvar as alterações de {name}? As permissões alteradas se aplicam imediatamente às chaves dos membros e encerram as sessões de navegador afetadas. Revise todas as permissões selecionadas antes de continuar.',
+  'Role updated. Changed grants end affected browser sessions.':
+    'Função atualizada. As permissões alteradas encerram as sessões de navegador afetadas.',
+  'Role created. Assign it to a member when ready.':
+    'Função criada. Atribua-a a um membro quando estiver pronta.',
+  'Could not save role.': 'Não foi possível salvar a função.',
+  'Edit {name} · version {version}': 'Editar {name} · versão {version}',
+  'Create custom role': 'Criar função personalizada',
+  'Role name': 'Nome da função',
+  'No workspace action grants. Members with this role can still sign in and manage their own account.':
+    'Sem permissões para ações no espaço de trabalho. Os membros com esta função ainda podem entrar e gerenciar a própria conta.',
+  'Backup access exposes the entire workspace, including saved data and sensitive credential records. Keep downloads private.':
+    'O acesso aos backups expõe todo o espaço de trabalho, incluindo dados salvos e registros de credenciais sensíveis. Mantenha os arquivos baixados privados.',
+  'Load testing repeatedly executes live APIs. Configured writes can change product data. Grant only to trusted operators.':
+    'Os testes de carga executam repetidamente as APIs em produção. As operações de escrita configuradas podem alterar os dados do produto. Conceda acesso apenas a operadores de confiança.',
+  'Save role': 'Salvar função',
+  'Cancel role changes': 'Cancelar alterações da função',
+  'If another owner session changes this role, refresh the members page and reopen the role before saving again.':
+    'Se outra sessão do proprietário alterar esta função, atualize a página de membros e abra a função novamente antes de salvar.',
+  'Custom · v{version}': 'Personalizada · v{version}',
+  'Account and own sessions only': 'Apenas conta e sessões próprias',
+  'Edit {name}': 'Editar {name}',
+  'Delete role {name}? This cannot be undone. Roles assigned to members cannot be deleted.':
+    'Excluir a função {name}? Esta ação não pode ser desfeita. Funções atribuídas a membros não podem ser excluídas.',
+  'Role deleted.': 'Função excluída.',
+  'Could not delete role.': 'Não foi possível excluir a função.',
+  'Delete {name}': 'Excluir {name}',
+  'No custom roles yet. Built-in owner, editor, and viewer roles stay available.':
+    'Ainda não há funções personalizadas. As funções padrão de proprietário, editor e visualizador continuam disponíveis.',
+  'Read APIs': 'Ler APIs',
+  'Edit APIs': 'Editar APIs',
+  'Test drafts': 'Testar rascunhos',
+  'Publish and roll back': 'Publicar e reverter',
+  'Read data sources': 'Ler fontes de dados',
+  'Manage data sources': 'Gerenciar fontes de dados',
+  'Read database copies': 'Ler cópias de bancos de dados',
+  'Manage database copies': 'Gerenciar cópias de bancos de dados',
+  'Read product login connections': 'Ler conexões de login do produto',
+  'Manage product login connections': 'Gerenciar conexões de login do produto',
+  'Manage runtime API keys': 'Gerenciar chaves de API de execução',
+  'Read audit history': 'Ler histórico de auditoria',
+  'Manage workspace backups': 'Gerenciar backups do espaço de trabalho',
+  'Read migration history': 'Ler histórico de migrações',
+  'Run load tests': 'Executar testes de carga',
+  APIs: 'APIs',
+  Databases: 'Bancos de dados',
+  Security: 'Segurança',
+  'Read authorized API drafts, release history, OpenAPI documents, client examples, and generated backend source.':
+    'Ler rascunhos de APIs autorizadas, histórico de versões, documentos OpenAPI, exemplos de clientes e código-fonte do backend gerado.',
+  'Create and save API drafts. Selected access permits editing existing shared APIs with explicit dependency use, but cannot create APIs.':
+    'Criar e salvar rascunhos de APIs. O acesso a APIs selecionadas permite editar APIs compartilhadas existentes com permissão USE explícita para as dependências, mas não permite criar APIs.',
+  'Execute saved REST and GraphQL drafts, including their configured data and product-login steps. Selected access also requires explicit dependency use.':
+    'Executar rascunhos REST e GraphQL salvos, incluindo as etapas de dados e login do produto configuradas. O acesso a APIs selecionadas também exige permissão USE explícita para as dependências.',
+  'Change live API behavior by publishing drafts or rolling back releases.':
+    'Alterar o comportamento das APIs em produção publicando rascunhos ou revertendo versões.',
+  'Read source metadata and saved rows.':
+    'Ler metadados das fontes e linhas salvas.',
+  'Import, replace, refresh, and delete sources. Replacing data changes what published APIs read.':
+    'Importar, substituir, atualizar e excluir fontes. A substituição dos dados altera o que as APIs publicadas leem.',
+  'Read uploaded SQLite copy metadata and selected rows. Generated APIs may expose their configured data.':
+    'Ler metadados das cópias SQLite enviadas e linhas selecionadas. As APIs geradas podem expor os dados configurados.',
+  'Upload, check, and delete immutable SQLite copies. Workspace backups include all uploaded data.':
+    'Enviar, verificar e excluir cópias SQLite imutáveis. Os backups do espaço de trabalho incluem todos os dados enviados.',
+  'Read product-login connection metadata without provider secrets.':
+    'Ler metadados das conexões de login do produto sem os segredos do provedor.',
+  'Create, update, and delete server-held provider credentials. Changes affect live product login.':
+    'Criar, atualizar e excluir credenciais do provedor mantidas no servidor. As alterações afetam o login do produto em produção.',
+  'Issue, list, replace, and revoke runtime keys. Selected access manages issuer-bound keys for shared APIs; issuance and replacement require dependency use and preserve release pins.':
+    'Emitir, listar, substituir e revogar chaves de execução. O acesso a APIs selecionadas gerencia chaves vinculadas ao emissor para APIs compartilhadas; a emissão e a substituição exigem permissão USE para as dependências e preservam a vinculação à versão publicada.',
+  'Read workspace activity and security events.':
+    'Ler atividades do espaço de trabalho e eventos de segurança.',
+  'Create, list, and download complete workspace backups containing saved data and sensitive credential records.':
+    'Criar, listar e baixar backups completos do espaço de trabalho contendo dados salvos e registros de credenciais sensíveis.',
+  'Read the control database migration history.':
+    'Ler o histórico de migrações do banco de dados de controle.',
+  'List published targets and load-test history; start and cancel bounded local runs. Runs execute published APIs and may cause their configured writes.':
+    'Listar alvos publicados e o histórico de testes de carga; iniciar e cancelar execuções locais com limites definidos. As execuções chamam APIs publicadas e podem realizar as operações de escrita configuradas.',
   'Update available': 'Atualização disponível',
   'No newer release found': 'Nenhuma versão mais recente encontrada',
   'No matching releases found': 'Nenhuma versão corresponde às configurações',

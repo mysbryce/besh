@@ -1,4 +1,172 @@
 const messages: Record<string, string> = {
+  'Your team': 'チーム',
+  'WORKSPACE CONTROL': 'ワークスペース管理',
+  'Member keys manage the workspace. Use API keys for published endpoint callers.':
+    'メンバーキーはワークスペースの管理に使います。公開済みエンドポイントを呼び出すには API キーを使ってください。',
+  'Loading workspace records…': 'ワークスペースの記録を読み込み中…',
+  'Only the owner can manage members and roles.':
+    'メンバーとロールを管理できるのはオーナーのみです。',
+  'Refresh Members and review an active tenant before creating this member.':
+    'このメンバーを作成する前に、メンバーページを再読み込みして有効なテナントを確認してください。',
+  'Create {name} with assigned tenant {tenant}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.':
+    'テナント {tenant} を割り当てて {name} を作成しますか？保護された API 操作はこの割り当てから識別情報を取得します。API の権限と依存先の USE 権限は別です。この割り当てとメンバーの認証情報は同時に作成されます。',
+  'Member created. Save their token; it is shown once.':
+    'メンバーを作成しました。トークンは一度だけ表示されるため、保存してください。',
+  Name: '名前',
+  'Member name': 'メンバー名',
+  Role: 'ロール',
+  'Member role': 'メンバーのロール',
+  'Member email (optional)': 'メンバーのメールアドレス（任意）',
+  'Member password': 'メンバーのパスワード',
+  '12 to 128 characters. Leave email blank for key-only access.':
+    '12～128 文字。キーのみでアクセスする場合はメールアドレスを空欄にしてください。',
+  'New member API access': '新しいメンバーの API アクセス',
+  'New member tenant': '新しいメンバーのテナント',
+  'No tenant assigned': 'テナント未割り当て',
+  'Optional initial assignment. Review before adding the member; no separate credential creation and reassignment occurs.':
+    '初期割り当ては任意です。メンバーを追加する前に確認してください。認証情報の作成と再割り当てを別々に行うことはありません。',
+  'Add member': 'メンバーを追加',
+  'Save this member token': 'このメンバートークンを保存',
+  'New member token': '新しいメンバートークン',
+  'Member token copied.': 'メンバートークンをコピーしました。',
+  Copy: 'コピー',
+  'I saved it': '保存しました',
+  'Opening invitations…': '招待を開いています…',
+  'API access': 'API アクセス',
+  'Tenant identity': 'テナントの識別情報',
+  'Invite sign-in': 'ログインに招待',
+  'Bootstrap owner': '初期設定のオーナー',
+  'Revoke access for {name}?': '{name} のアクセスを取り消しますか？',
+  'Member access revoked.': 'メンバーのアクセスを取り消しました。',
+  'Selected APIs · {count}': '選択した API · {count}',
+  'Manage APIs for {name}': '{name} の API を管理',
+  'Owner access cannot be restricted.': 'オーナーのアクセスは制限できません。',
+  'Owner reviews a tenant for each protected action.':
+    'オーナーは保護された操作ごとにテナントを確認します。',
+  'Assigned tenant': '割り当てられたテナント',
+  'Manage tenant for {name}': '{name} のテナントを管理',
+  'Viewer · read APIs': '閲覧者 · API を閲覧',
+  'Editor · build and test': '編集者 · 作成とテスト',
+  '{name} · custom role': '{name} · カスタムロール',
+  'Role for {name}': '{name} のロール',
+  "Change {name}'s role from {current} to {next}? This ends their active browser sessions. Their member key immediately uses the new permissions.":
+    '{name} のロールを {current} から {next} に変更しますか？そのメンバーの有効なブラウザーセッションは終了します。メンバーキーには新しい権限がすぐに適用されます。',
+  'Member role updated. Their browser sessions were ended.':
+    'メンバーのロールを更新しました。そのメンバーのブラウザーセッションは終了しました。',
+  'Could not update member role.': 'メンバーのロールを更新できませんでした。',
+  'Change role': 'ロールを変更',
+  'Selected APIs only': '選択した API のみ',
+  'Selected sharing limits API scope. Use Viewer or a custom role with only API, runtime-key and load-test actions. Actions still require separate role grants. It grants no API creation or global resource management.':
+    '選択した API の共有は API の範囲を制限します。閲覧者、または API・ランタイムキー・負荷テストの操作のみを持つカスタムロールを使ってください。操作には引き続き個別のロール権限が必要です。API の新規作成やワークスペース全体のリソース管理の権限は付与されません。',
+  'This role has actions beyond Read APIs and selected API operations. Choose an eligible custom role or Viewer, or explicitly select All APIs before continuing.':
+    'このロールには API の閲覧と選択した API の操作以外の権限があります。対応するカスタムロールまたは閲覧者を選ぶか、すべての API を明示的に選択してから続行してください。',
+  'Choose APIs to share': '共有する API を選択',
+  'Share {name}': '{name} を共有',
+  '{count} APIs selected.': '{count} 個の API を選択しています。',
+  'No APIs selected. This member can sign in, but sees no APIs.':
+    'API が選択されていません。このメンバーはログインできますが、API は表示されません。',
+  'Dependencies these APIs may use': 'これらの API が使用できる依存先',
+  'USE permits these selected APIs to read chosen dependency data or trigger product login when the role allows testing, publishing or callers. It can expose stored data through the API. It grants no dependency preview or management. Row, column and tenant authorization remain separate; selecting APIs or dependencies does not provide them.':
+    'USE は、ロールがテスト・公開・呼び出しを許可している場合に、選択した API が指定した依存先のデータを読み取ることやプロダクトのログインを実行することを許可します。API を通じて保存済みデータが公開される可能性があります。依存先のプレビューや管理の権限は付与されません。行・列・テナントの認可は別であり、API や依存先を選択しても付与されません。',
+  'Use spreadsheet sources': 'スプレッドシートのデータソースを使用',
+  'Use SQLite copies': 'SQLite コピーを使用',
+  'Use product login connections': 'プロダクトのログイン接続を使用',
+  'Use spreadsheet {name}': 'スプレッドシート {name} を使用',
+  'Use SQLite copy {name}': 'SQLite コピー {name} を使用',
+  'Use product login {name}': 'プロダクトのログイン {name} を使用',
+  'Structure only · version {version}': '構造のみ · バージョン {version}',
+  'No saved dependencies in this group.':
+    'このグループに保存済みの依存先はありません。',
+  '{count} dependencies allowed for USE.':
+    '{count} 個の依存先で USE を許可しています。',
+  'All current and future APIs. Actions still follow the assigned role.':
+    '現在および今後のすべての API。操作には引き続き割り当てられたロールの権限が適用されます。',
+  'Custom roles': 'カスタムロール',
+  'New role': '新しいロール',
+  'Choose actions for this local workspace. Every member can manage their own account and sessions. Member and role administration stays with the owner.':
+    'このローカルワークスペースで実行できる操作を選択します。すべてのメンバーは自分のアカウントとセッションを管理できます。メンバーとロールの管理はオーナーのみが行えます。',
+  'Actions are separate: editing, testing, and publication each need their own grant. Reading related APIs or connections is needed to choose them in forms.':
+    '編集、テスト、公開はそれぞれ別の操作で、個別の権限が必要です。フォームで関連する API や接続を選ぶには、それらの閲覧権限が必要です。',
+  'Loading permission choices…': '権限の選択肢を読み込み中…',
+  'Retry permission choices': '権限の選択肢を再読み込み',
+  'Save changes to {name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.':
+    '{name} の変更を保存しますか？変更した権限はメンバーキーにすぐ適用され、影響を受けるブラウザーセッションは終了します。続行する前に、選択したすべての権限を確認してください。',
+  'Role updated. Changed grants end affected browser sessions.':
+    'ロールを更新しました。権限の変更により、影響を受けるブラウザーセッションは終了します。',
+  'Role created. Assign it to a member when ready.':
+    'ロールを作成しました。準備ができたらメンバーに割り当ててください。',
+  'Could not save role.': 'ロールを保存できませんでした。',
+  'Edit {name} · version {version}': '{name} を編集 · バージョン {version}',
+  'Create custom role': 'カスタムロールを作成',
+  'Role name': 'ロール名',
+  'No workspace action grants. Members with this role can still sign in and manage their own account.':
+    'ワークスペースの操作権限はありません。このロールのメンバーもログインし、自分のアカウントを管理できます。',
+  'Backup access exposes the entire workspace, including saved data and sensitive credential records. Keep downloads private.':
+    'バックアップへのアクセスにより、保存済みデータや機密性の高い認証情報の記録を含むワークスペース全体が公開されます。ダウンロードしたファイルは非公開で保管してください。',
+  'Load testing repeatedly executes live APIs. Configured writes can change product data. Grant only to trusted operators.':
+    '負荷テストは稼働中の API を繰り返し実行します。設定された書き込み処理によってプロダクトのデータが変更される場合があります。信頼できる担当者にのみ権限を付与してください。',
+  'Save role': 'ロールを保存',
+  'Cancel role changes': 'ロールの変更をキャンセル',
+  'If another owner session changes this role, refresh the members page and reopen the role before saving again.':
+    '別のオーナーセッションがこのロールを変更した場合は、メンバーページを再読み込みし、ロールを開き直してから再度保存してください。',
+  'Custom · v{version}': 'カスタム · v{version}',
+  'Account and own sessions only': '自分のアカウントとセッションのみ',
+  'Edit {name}': '{name} を編集',
+  'Delete role {name}? This cannot be undone. Roles assigned to members cannot be deleted.':
+    'ロール {name} を削除しますか？この操作は元に戻せません。メンバーに割り当てられているロールは削除できません。',
+  'Role deleted.': 'ロールを削除しました。',
+  'Could not delete role.': 'ロールを削除できませんでした。',
+  'Delete {name}': '{name} を削除',
+  'No custom roles yet. Built-in owner, editor, and viewer roles stay available.':
+    'カスタムロールはまだありません。組み込みのオーナー、編集者、閲覧者ロールは引き続き利用できます。',
+  'Read APIs': 'API を閲覧',
+  'Edit APIs': 'API を編集',
+  'Test drafts': '下書きをテスト',
+  'Publish and roll back': '公開とロールバック',
+  'Read data sources': 'データソースを閲覧',
+  'Manage data sources': 'データソースを管理',
+  'Read database copies': 'データベースコピーを閲覧',
+  'Manage database copies': 'データベースコピーを管理',
+  'Read product login connections': 'プロダクトログイン接続を閲覧',
+  'Manage product login connections': 'プロダクトログイン接続を管理',
+  'Manage runtime API keys': 'ランタイム API キーを管理',
+  'Read audit history': '監査履歴を閲覧',
+  'Manage workspace backups': 'ワークスペースのバックアップを管理',
+  'Read migration history': '移行履歴を閲覧',
+  'Run load tests': '負荷テストを実行',
+  APIs: 'API',
+  Databases: 'データベース',
+  Security: 'セキュリティ',
+  'Read authorized API drafts, release history, OpenAPI documents, client examples, and generated backend source.':
+    'アクセスを許可された API の下書き、リリース履歴、OpenAPI ドキュメント、クライアントコード例、生成されたバックエンドソースを閲覧します。',
+  'Create and save API drafts. Selected access permits editing existing shared APIs with explicit dependency use, but cannot create APIs.':
+    'API の下書きを作成・保存します。選択された API へのアクセスでは、依存リソースの明示的な USE 権限があれば既存の共有 API を編集できますが、API は作成できません。',
+  'Execute saved REST and GraphQL drafts, including their configured data and product-login steps. Selected access also requires explicit dependency use.':
+    '設定されたデータ処理やプロダクトログインのステップを含む、保存済みの REST と GraphQL の下書きを実行します。選択された API へのアクセスでは、依存リソースの明示的な USE 権限も必要です。',
+  'Change live API behavior by publishing drafts or rolling back releases.':
+    '下書きの公開やリリースのロールバックにより、稼働中の API の動作を変更します。',
+  'Read source metadata and saved rows.':
+    'データソースのメタデータと保存済みの行を閲覧します。',
+  'Import, replace, refresh, and delete sources. Replacing data changes what published APIs read.':
+    'データソースのインポート、置き換え、更新、削除を行います。データの置き換えにより、公開済み API が読み取る内容が変わります。',
+  'Read uploaded SQLite copy metadata and selected rows. Generated APIs may expose their configured data.':
+    'アップロードされた SQLite コピーのメタデータと選択された行を閲覧します。生成された API は、設定されたデータを公開する場合があります。',
+  'Upload, check, and delete immutable SQLite copies. Workspace backups include all uploaded data.':
+    '変更不可の SQLite コピーをアップロード、確認、削除します。ワークスペースのバックアップには、アップロードされたすべてのデータが含まれます。',
+  'Read product-login connection metadata without provider secrets.':
+    'プロバイダーのシークレットを除く、プロダクトログイン接続のメタデータを閲覧します。',
+  'Create, update, and delete server-held provider credentials. Changes affect live product login.':
+    'サーバーに保存されたプロバイダーの認証情報を作成、更新、削除します。変更は稼働中のプロダクトログインに影響します。',
+  'Issue, list, replace, and revoke runtime keys. Selected access manages issuer-bound keys for shared APIs; issuance and replacement require dependency use and preserve release pins.':
+    'ランタイムキーを発行、一覧表示、置き換え、失効します。選択された API へのアクセスでは、共有 API の発行者に紐づいたキーを管理します。発行と置き換えには依存リソースの USE 権限が必要で、リリースピンは維持されます。',
+  'Read workspace activity and security events.':
+    'ワークスペースの操作履歴とセキュリティイベントを閲覧します。',
+  'Create, list, and download complete workspace backups containing saved data and sensitive credential records.':
+    '保存済みデータと機密性の高い認証情報の記録を含む、ワークスペース全体のバックアップを作成、一覧表示、ダウンロードします。',
+  'Read the control database migration history.':
+    '管理用データベースの移行履歴を閲覧します。',
+  'List published targets and load-test history; start and cancel bounded local runs. Runs execute published APIs and may cause their configured writes.':
+    '公開済みの対象と負荷テスト履歴を一覧表示し、制限付きのローカル実行を開始・キャンセルします。実行では公開済み API が呼び出され、設定された書き込み処理が行われる場合があります。',
   'Update available': '新しいバージョンがあります',
   'No newer release found': '新しいリリースは見つかりませんでした',
   'No matching releases found': '設定に一致するリリースは見つかりませんでした',

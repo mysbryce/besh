@@ -12,6 +12,10 @@ import {
   accountLocalePreviews,
   updateLocalePreviews,
 } from './management-locale-previews'
+import {
+  memberLocalePreviews,
+  roleLocalePreviews,
+} from './team-locale-previews'
 
 const test = base.extend<{ workspace: { origin: string; owner: string } }>({
   workspace: async ({ page }, use) => {
@@ -71,6 +75,71 @@ function masked(page: Page) {
     page.locator('[data-private]'),
   ]
 }
+
+test('role guidance follows language while authored names and grants stay unchanged', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let number = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+  await roleLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title) => {
+      await page.screenshot({
+        path: info.outputPath(
+          `${++number}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: true,
+        style: 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+  expect(errors).toEqual([])
+})
+
+test('member language keeps credentials and selected access without private reads', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let number = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+  await memberLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title, _detail, options) => {
+      const path = info.outputPath(
+        `${++number}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+      )
+      if (options?.region === 'listbox') {
+        const menu = page.getByRole('listbox')
+        await menu.screenshot({
+          path,
+          animations: 'disabled',
+          mask: [menu.locator('[data-private]')],
+        })
+        return
+      }
+      await page.screenshot({
+        path,
+        fullPage: true,
+        style: 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: [
+          ...masked(page),
+          page.getByLabel('New member token', { exact: true }),
+        ],
+      })
+    },
+  })
+  expect(errors).toEqual([])
+})
 
 test('account forms and session actions follow language without editing credentials', async ({
   page,

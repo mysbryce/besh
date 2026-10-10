@@ -13,6 +13,7 @@ import { Select } from './components/ui/select'
 import { Checkbox } from './components/ui/checkbox'
 import { api, ApiError, type Member, type SavedFlow } from './lib/api'
 import { useStudio } from './store'
+import { useTranslation } from './i18n'
 
 export type DependencyCatalog = {
   sources: DependencySource[]
@@ -94,9 +95,11 @@ export function FlowAccessFields({
   compatible: boolean
   label: string
 }) {
+  const { t } = useTranslation()
+
   return (
     <section className="role-editor" aria-label={label}>
-      <h3>API access</h3>
+      <h3>{t('API access')}</h3>
       <Select
         label={label}
         value={value.mode}
@@ -113,30 +116,30 @@ export function FlowAccessFields({
           )
         }
         options={[
-          { value: 'all', label: 'All APIs' },
-          { value: 'selected', label: 'Selected APIs only' },
+          { value: 'all', label: t('All APIs') },
+          { value: 'selected', label: t('Selected APIs only') },
         ]}
       />
       <p>
-        Selected sharing limits API scope. Use Viewer or a custom role with only
-        API, runtime-key and load-test actions. Actions still require separate
-        role grants. It grants no API creation or global resource management.
+        {t(
+          'Selected sharing limits API scope. Use Viewer or a custom role with only API, runtime-key and load-test actions. Actions still require separate role grants. It grants no API creation or global resource management.',
+        )}
       </p>
       {value.mode === 'selected' ? (
         <>
           {!compatible ? (
             <p className="form-error" role="alert">
-              This role has actions beyond Read APIs and selected API
-              operations. Choose an eligible custom role or Viewer, or
-              explicitly select All APIs before continuing.
+              {t(
+                'This role has actions beyond Read APIs and selected API operations. Choose an eligible custom role or Viewer, or explicitly select All APIs before continuing.',
+              )}
             </p>
           ) : null}
           <fieldset className="role-grant-groups">
-            <legend>Choose APIs to share</legend>
+            <legend>{t('Choose APIs to share')}</legend>
             {flows.map((flow) => (
               <label key={flow.id} className="permission-option">
                 <Checkbox
-                  aria-label={`Share ${flow.name}`}
+                  aria-label={t('Share {name}', { name: flow.name })}
                   checked={value.flowIds.includes(flow.id)}
                   disabled={
                     disabled ||
@@ -165,26 +168,32 @@ export function FlowAccessFields({
           </fieldset>
           <p>
             {value.flowIds.length
-              ? `${value.flowIds.length} APIs selected.`
-              : 'No APIs selected. This member can sign in, but sees no APIs.'}
+              ? t('{count} APIs selected.', { count: value.flowIds.length })
+              : t(
+                  'No APIs selected. This member can sign in, but sees no APIs.',
+                )}
           </p>
-          <h3>Dependencies these APIs may use</h3>
+          <h3>{t('Dependencies these APIs may use')}</h3>
           <p>
-            USE permits these selected APIs to read chosen dependency data or
-            trigger product login when the role allows testing, publishing or
-            callers. It can expose stored data through the API. It grants no
-            dependency preview or management. Row, column and tenant
-            authorization remain separate; selecting APIs or dependencies does
-            not provide them.
+            {t(
+              'USE permits these selected APIs to read chosen dependency data or trigger product login when the role allows testing, publishing or callers. It can expose stored data through the API. It grants no dependency preview or management. Row, column and tenant authorization remain separate; selecting APIs or dependencies does not provide them.',
+            )}
           </p>
           {dependencyGroups.map((group) => (
             <fieldset className="role-grant-groups" key={group.key}>
-              <legend>{group.label}</legend>
+              <legend>{t(group.label)}</legend>
               {dependencies[group.key].length ? (
                 dependencies[group.key].map((dependency) => (
                   <label key={dependency.id} className="permission-option">
                     <Checkbox
-                      aria-label={`Use ${group.item} ${dependency.name}`}
+                      aria-label={t(
+                        group.key === 'sources'
+                          ? 'Use spreadsheet {name}'
+                          : group.key === 'databaseConnections'
+                            ? 'Use SQLite copy {name}'
+                            : 'Use product login {name}',
+                        { name: dependency.name },
+                      )}
                       checked={value.dependencyUse[group.key].includes(
                         dependency.id,
                       )}
@@ -216,27 +225,32 @@ export function FlowAccessFields({
                     <span>
                       {dependency.name}
                       <small>
-                        Structure only · version {dependency.version}
+                        {t('Structure only · version {version}', {
+                          version: dependency.version,
+                        })}
                       </small>
                     </span>
                   </label>
                 ))
               ) : (
-                <p>No saved dependencies in this group.</p>
+                <p>{t('No saved dependencies in this group.')}</p>
               )}
             </fieldset>
           ))}
           <p>
-            {Object.values(value.dependencyUse).reduce(
-              (count, ids) => count + ids.length,
-              0,
-            )}{' '}
-            dependencies allowed for USE.
+            {t('{count} dependencies allowed for USE.', {
+              count: Object.values(value.dependencyUse).reduce(
+                (count, ids) => count + ids.length,
+                0,
+              ),
+            })}
           </p>
         </>
       ) : (
         <p>
-          All current and future APIs. Actions still follow the assigned role.
+          {t(
+            'All current and future APIs. Actions still follow the assigned role.',
+          )}
         </p>
       )}
     </section>

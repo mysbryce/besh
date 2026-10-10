@@ -1,4 +1,172 @@
 const messages: Record<string, string> = {
+  'Your team': 'ทีมของคุณ',
+  'WORKSPACE CONTROL': 'การควบคุมพื้นที่ทำงาน',
+  'Member keys manage the workspace. Use API keys for published endpoint callers.':
+    'คีย์สมาชิกใช้จัดการพื้นที่ทำงาน ใช้คีย์ API สำหรับผู้เรียกปลายทางที่เผยแพร่แล้ว',
+  'Loading workspace records…': 'กำลังโหลดระเบียนพื้นที่ทำงาน…',
+  'Only the owner can manage members and roles.':
+    'เฉพาะเจ้าของเท่านั้นที่จัดการสมาชิกและบทบาทได้',
+  'Refresh Members and review an active tenant before creating this member.':
+    'โหลดหน้าสมาชิกใหม่และตรวจสอบผู้เช่าที่ใช้งานอยู่ก่อนสร้างสมาชิกนี้',
+  'Create {name} with assigned tenant {tenant}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.':
+    'สร้าง {name} พร้อมมอบหมายผู้เช่า {tenant} หรือไม่? การดำเนินการ API ที่ปกป้องไว้ใช้ตัวตนนี้ สิทธิ์ API และสิทธิ์ USE ของทรัพยากรที่เกี่ยวข้องยังแยกจากกัน การมอบหมายนี้และข้อมูลรับรองสมาชิกจะสร้างพร้อมกัน',
+  'Member created. Save their token; it is shown once.':
+    'สร้างสมาชิกแล้ว เก็บโทเคนของสมาชิกไว้ เพราะแสดงเพียงครั้งเดียว',
+  Name: 'ชื่อ',
+  'Member name': 'ชื่อสมาชิก',
+  Role: 'บทบาท',
+  'Member role': 'บทบาทสมาชิก',
+  'Member email (optional)': 'อีเมลสมาชิก (ไม่บังคับ)',
+  'Member password': 'รหัสผ่านสมาชิก',
+  '12 to 128 characters. Leave email blank for key-only access.':
+    '12 ถึง 128 อักขระ เว้นอีเมลว่างไว้เพื่อใช้คีย์เข้าถึงเท่านั้น',
+  'New member API access': 'สิทธิ์เข้าถึง API ของสมาชิกใหม่',
+  'New member tenant': 'ผู้เช่าของสมาชิกใหม่',
+  'No tenant assigned': 'ยังไม่ได้มอบหมายผู้เช่า',
+  'Optional initial assignment. Review before adding the member; no separate credential creation and reassignment occurs.':
+    'การมอบหมายเริ่มต้นเป็นทางเลือก ตรวจสอบก่อนเพิ่มสมาชิก จะไม่มีการสร้างข้อมูลรับรองแยกแล้วมอบหมายใหม่',
+  'Add member': 'เพิ่มสมาชิก',
+  'Save this member token': 'เก็บโทเคนสมาชิกนี้ไว้',
+  'New member token': 'โทเคนสมาชิกใหม่',
+  'Member token copied.': 'คัดลอกโทเคนสมาชิกแล้ว',
+  Copy: 'คัดลอก',
+  'I saved it': 'บันทึกไว้แล้ว',
+  'Opening invitations…': 'กำลังเปิดคำเชิญ…',
+  'API access': 'สิทธิ์เข้าถึง API',
+  'Tenant identity': 'ตัวตนผู้เช่า',
+  'Invite sign-in': 'เชิญตั้งค่าการเข้าสู่ระบบ',
+  'Bootstrap owner': 'เจ้าของที่สร้างตอนเริ่มต้น',
+  'Revoke access for {name}?': 'เพิกถอนสิทธิ์เข้าถึงของ {name} หรือไม่?',
+  'Member access revoked.': 'เพิกถอนสิทธิ์เข้าถึงของสมาชิกแล้ว',
+  'Selected APIs · {count}': 'API ที่เลือก · {count}',
+  'Manage APIs for {name}': 'จัดการ API ของ {name}',
+  'Owner access cannot be restricted.':
+    'ไม่สามารถจำกัดสิทธิ์เข้าถึงของเจ้าของได้',
+  'Owner reviews a tenant for each protected action.':
+    'เจ้าของตรวจสอบผู้เช่าสำหรับการดำเนินการที่ปกป้องไว้แต่ละครั้ง',
+  'Assigned tenant': 'ผู้เช่าที่มอบหมาย',
+  'Manage tenant for {name}': 'จัดการผู้เช่าของ {name}',
+  'Viewer · read APIs': 'ผู้ดู · อ่าน API',
+  'Editor · build and test': 'ผู้แก้ไข · สร้างและทดสอบ',
+  '{name} · custom role': '{name} · บทบาทกำหนดเอง',
+  'Role for {name}': 'บทบาทของ {name}',
+  "Change {name}'s role from {current} to {next}? This ends their active browser sessions. Their member key immediately uses the new permissions.":
+    'เปลี่ยนบทบาทของ {name} จาก {current} เป็น {next} หรือไม่? การกระทำนี้สิ้นสุดเซสชันเบราว์เซอร์ที่ใช้งานอยู่ของสมาชิก คีย์สมาชิกจะใช้สิทธิ์ใหม่ทันที',
+  'Member role updated. Their browser sessions were ended.':
+    'อัปเดตบทบาทสมาชิกแล้ว เซสชันเบราว์เซอร์ของสมาชิกสิ้นสุดแล้ว',
+  'Could not update member role.': 'อัปเดตบทบาทสมาชิกไม่สำเร็จ',
+  'Change role': 'เปลี่ยนบทบาท',
+  'Selected APIs only': 'เฉพาะ API ที่เลือก',
+  'Selected sharing limits API scope. Use Viewer or a custom role with only API, runtime-key and load-test actions. Actions still require separate role grants. It grants no API creation or global resource management.':
+    'การแชร์แบบเลือกจำกัดขอบเขต API ใช้บทบาทผู้ดูหรือบทบาทกำหนดเองที่มีเฉพาะการดำเนินการ API คีย์สำหรับเรียกใช้งาน และการทดสอบโหลด การดำเนินการยังต้องมีสิทธิ์จากบทบาทแยกต่างหาก ไม่ให้สิทธิ์สร้าง API หรือจัดการทรัพยากรทั้งหมดของพื้นที่ทำงาน',
+  'This role has actions beyond Read APIs and selected API operations. Choose an eligible custom role or Viewer, or explicitly select All APIs before continuing.':
+    'บทบาทนี้มีการดำเนินการนอกเหนือจากการอ่าน API และการดำเนินการกับ API ที่เลือก เลือกบทบาทกำหนดเองที่เข้าเกณฑ์หรือบทบาทผู้ดู หรือเลือก API ทั้งหมดอย่างชัดเจนก่อนดำเนินการต่อ',
+  'Choose APIs to share': 'เลือก API ที่จะแชร์',
+  'Share {name}': 'แชร์ {name}',
+  '{count} APIs selected.': 'เลือก {count} API แล้ว',
+  'No APIs selected. This member can sign in, but sees no APIs.':
+    'ยังไม่ได้เลือก API สมาชิกนี้เข้าสู่ระบบได้ แต่จะไม่เห็น API ใด',
+  'Dependencies these APIs may use': 'ทรัพยากรที่ API เหล่านี้ใช้ได้',
+  'USE permits these selected APIs to read chosen dependency data or trigger product login when the role allows testing, publishing or callers. It can expose stored data through the API. It grants no dependency preview or management. Row, column and tenant authorization remain separate; selecting APIs or dependencies does not provide them.':
+    'สิทธิ์ USE อนุญาตให้ API ที่เลือกอ่านข้อมูลจากทรัพยากรที่เลือกหรือเริ่มการเข้าสู่ระบบผลิตภัณฑ์เมื่อบทบาทอนุญาตให้ทดสอบ เผยแพร่ หรือเรียกใช้งาน API ได้ อาจเปิดเผยข้อมูลที่เก็บไว้ผ่าน API แต่ไม่ให้สิทธิ์ดูตัวอย่างหรือจัดการทรัพยากรนั้น การอนุญาตระดับแถว คอลัมน์ และผู้เช่ายังแยกจากกัน การเลือก API หรือทรัพยากรไม่ได้ให้สิทธิ์เหล่านี้',
+  'Use spreadsheet sources': 'ใช้แหล่งข้อมูลสเปรดชีต',
+  'Use SQLite copies': 'ใช้สำเนา SQLite',
+  'Use product login connections': 'ใช้การเชื่อมต่อเข้าสู่ระบบผลิตภัณฑ์',
+  'Use spreadsheet {name}': 'ใช้สเปรดชีต {name}',
+  'Use SQLite copy {name}': 'ใช้สำเนา SQLite {name}',
+  'Use product login {name}': 'ใช้การเข้าสู่ระบบผลิตภัณฑ์ {name}',
+  'Structure only · version {version}': 'เฉพาะโครงสร้าง · เวอร์ชัน {version}',
+  'No saved dependencies in this group.':
+    'ยังไม่มีทรัพยากรที่บันทึกไว้ในกลุ่มนี้',
+  '{count} dependencies allowed for USE.': 'อนุญาต USE สำหรับ {count} ทรัพยากร',
+  'All current and future APIs. Actions still follow the assigned role.':
+    'API ทั้งหมดในปัจจุบันและอนาคต การดำเนินการยังเป็นไปตามบทบาทที่มอบหมาย',
+  'Custom roles': 'บทบาทกำหนดเอง',
+  'New role': 'บทบาทใหม่',
+  'Choose actions for this local workspace. Every member can manage their own account and sessions. Member and role administration stays with the owner.':
+    'เลือกการดำเนินการสำหรับพื้นที่ทำงานในเครื่องนี้ สมาชิกทุกคนจัดการบัญชีและเซสชันของตนเองได้ การจัดการสมาชิกและบทบาทเป็นหน้าที่ของเจ้าของ',
+  'Actions are separate: editing, testing, and publication each need their own grant. Reading related APIs or connections is needed to choose them in forms.':
+    'การดำเนินการแยกจากกัน การแก้ไข การทดสอบ และการเผยแพร่ต้องมีสิทธิ์ของตนเอง ต้องมีสิทธิ์อ่าน API หรือการเชื่อมต่อที่เกี่ยวข้องจึงจะเลือกในแบบฟอร์มได้',
+  'Loading permission choices…': 'กำลังโหลดตัวเลือกสิทธิ์…',
+  'Retry permission choices': 'ลองโหลดตัวเลือกสิทธิ์อีกครั้ง',
+  'Save changes to {name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.':
+    'บันทึกการเปลี่ยนแปลงของ {name} หรือไม่? สิทธิ์ที่เปลี่ยนจะมีผลกับคีย์สมาชิกทันทีและสิ้นสุดเซสชันเบราว์เซอร์ที่ได้รับผลกระทบ ตรวจสอบสิทธิ์ทั้งหมดที่เลือกก่อนดำเนินการต่อ',
+  'Role updated. Changed grants end affected browser sessions.':
+    'อัปเดตบทบาทแล้ว สิทธิ์ที่เปลี่ยนจะสิ้นสุดเซสชันเบราว์เซอร์ที่ได้รับผลกระทบ',
+  'Role created. Assign it to a member when ready.':
+    'สร้างบทบาทแล้ว มอบหมายให้สมาชิกเมื่อพร้อม',
+  'Could not save role.': 'บันทึกบทบาทไม่สำเร็จ',
+  'Edit {name} · version {version}': 'แก้ไข {name} · เวอร์ชัน {version}',
+  'Create custom role': 'สร้างบทบาทกำหนดเอง',
+  'Role name': 'ชื่อบทบาท',
+  'No workspace action grants. Members with this role can still sign in and manage their own account.':
+    'ไม่มีสิทธิ์ดำเนินการในพื้นที่ทำงาน สมาชิกที่มีบทบาทนี้ยังเข้าสู่ระบบและจัดการบัญชีของตนเองได้',
+  'Backup access exposes the entire workspace, including saved data and sensitive credential records. Keep downloads private.':
+    'การเข้าถึงข้อมูลสำรองเปิดเผยทั้งพื้นที่ทำงาน รวมถึงข้อมูลที่บันทึกไว้และระเบียนข้อมูลรับรองที่ละเอียดอ่อน เก็บไฟล์ที่ดาวน์โหลดเป็นส่วนตัว',
+  'Load testing repeatedly executes live APIs. Configured writes can change product data. Grant only to trusted operators.':
+    'การทดสอบโหลดเรียกใช้ API ที่เผยแพร่อยู่ซ้ำ ๆ การเขียนข้อมูลที่ตั้งค่าไว้อาจเปลี่ยนข้อมูลผลิตภัณฑ์ ให้สิทธิ์เฉพาะผู้ดำเนินการที่เชื่อถือได้',
+  'Save role': 'บันทึกบทบาท',
+  'Cancel role changes': 'ยกเลิกการเปลี่ยนบทบาท',
+  'If another owner session changes this role, refresh the members page and reopen the role before saving again.':
+    'หากเซสชันเจ้าของอื่นเปลี่ยนบทบาทนี้ ให้โหลดหน้าสมาชิกใหม่และเปิดบทบาทอีกครั้งก่อนบันทึกอีกครั้ง',
+  'Custom · v{version}': 'กำหนดเอง · v{version}',
+  'Account and own sessions only': 'เฉพาะบัญชีและเซสชันของตนเอง',
+  'Edit {name}': 'แก้ไข {name}',
+  'Delete role {name}? This cannot be undone. Roles assigned to members cannot be deleted.':
+    'ลบบทบาท {name} หรือไม่? การกระทำนี้ย้อนกลับไม่ได้ บทบาทที่มอบหมายให้สมาชิกอยู่ไม่สามารถลบได้',
+  'Role deleted.': 'ลบบทบาทแล้ว',
+  'Could not delete role.': 'ลบบทบาทไม่สำเร็จ',
+  'Delete {name}': 'ลบ {name}',
+  'No custom roles yet. Built-in owner, editor, and viewer roles stay available.':
+    'ยังไม่มีบทบาทกำหนดเอง บทบาทเจ้าของ ผู้แก้ไข และผู้ดูที่มีในระบบยังใช้งานได้',
+  'Read APIs': 'อ่าน API',
+  'Edit APIs': 'แก้ไข API',
+  'Test drafts': 'ทดสอบฉบับร่าง',
+  'Publish and roll back': 'เผยแพร่และย้อนกลับเวอร์ชัน',
+  'Read data sources': 'อ่านแหล่งข้อมูล',
+  'Manage data sources': 'จัดการแหล่งข้อมูล',
+  'Read database copies': 'อ่านสำเนาฐานข้อมูล',
+  'Manage database copies': 'จัดการสำเนาฐานข้อมูล',
+  'Read product login connections': 'อ่านการเชื่อมต่อเข้าสู่ระบบผลิตภัณฑ์',
+  'Manage product login connections': 'จัดการการเชื่อมต่อเข้าสู่ระบบผลิตภัณฑ์',
+  'Manage runtime API keys': 'จัดการคีย์ API สำหรับเรียกใช้งาน',
+  'Read audit history': 'อ่านประวัติการดำเนินการ',
+  'Manage workspace backups': 'จัดการข้อมูลสำรองของพื้นที่ทำงาน',
+  'Read migration history': 'อ่านประวัติการย้ายโครงสร้างฐานข้อมูล',
+  'Run load tests': 'รันทดสอบโหลด',
+  APIs: 'API',
+  Databases: 'ฐานข้อมูล',
+  Security: 'ความปลอดภัย',
+  'Read authorized API drafts, release history, OpenAPI documents, client examples, and generated backend source.':
+    'อ่านฉบับร่าง API ที่ได้รับอนุญาต ประวัติเวอร์ชัน เอกสาร OpenAPI ตัวอย่างโค้ดไคลเอนต์ และซอร์สโค้ดแบ็กเอนด์ที่สร้างขึ้น',
+  'Create and save API drafts. Selected access permits editing existing shared APIs with explicit dependency use, but cannot create APIs.':
+    'สร้างและบันทึกฉบับร่าง API การเข้าถึงแบบเลือกอนุญาตให้แก้ไข API ที่แชร์อยู่โดยมีสิทธิ์ใช้ทรัพยากรที่เกี่ยวข้องอย่างชัดเจน แต่สร้าง API ไม่ได้',
+  'Execute saved REST and GraphQL drafts, including their configured data and product-login steps. Selected access also requires explicit dependency use.':
+    'เรียกใช้ฉบับร่าง REST และ GraphQL ที่บันทึกแล้ว รวมถึงขั้นตอนข้อมูลและการเข้าสู่ระบบผลิตภัณฑ์ที่ตั้งค่าไว้ การเข้าถึงแบบเลือกต้องมีสิทธิ์ใช้ทรัพยากรที่เกี่ยวข้องอย่างชัดเจนด้วย',
+  'Change live API behavior by publishing drafts or rolling back releases.':
+    'เปลี่ยนพฤติกรรม API ที่เผยแพร่อยู่ด้วยการเผยแพร่ฉบับร่างหรือย้อนกลับเวอร์ชัน',
+  'Read source metadata and saved rows.':
+    'อ่านข้อมูลประกอบแหล่งข้อมูลและแถวที่บันทึกไว้',
+  'Import, replace, refresh, and delete sources. Replacing data changes what published APIs read.':
+    'นำเข้า แทนที่ โหลดใหม่ และลบแหล่งข้อมูล การแทนที่ข้อมูลเปลี่ยนข้อมูลที่ API ที่เผยแพร่แล้วอ่าน',
+  'Read uploaded SQLite copy metadata and selected rows. Generated APIs may expose their configured data.':
+    'อ่านข้อมูลประกอบสำเนา SQLite ที่อัปโหลดและแถวที่เลือก API ที่สร้างขึ้นอาจเปิดเผยข้อมูลที่ตั้งค่าไว้',
+  'Upload, check, and delete immutable SQLite copies. Workspace backups include all uploaded data.':
+    'อัปโหลด ตรวจสอบ และลบสำเนา SQLite ที่แก้ไขไม่ได้ ข้อมูลสำรองของพื้นที่ทำงานรวมข้อมูลที่อัปโหลดทั้งหมด',
+  'Read product-login connection metadata without provider secrets.':
+    'อ่านข้อมูลประกอบการเชื่อมต่อเข้าสู่ระบบผลิตภัณฑ์โดยไม่มีข้อมูลลับของผู้ให้บริการ',
+  'Create, update, and delete server-held provider credentials. Changes affect live product login.':
+    'สร้าง แก้ไข และลบข้อมูลรับรองผู้ให้บริการที่เก็บบนเซิร์ฟเวอร์ การเปลี่ยนแปลงส่งผลต่อการเข้าสู่ระบบผลิตภัณฑ์ที่ใช้งานอยู่',
+  'Issue, list, replace, and revoke runtime keys. Selected access manages issuer-bound keys for shared APIs; issuance and replacement require dependency use and preserve release pins.':
+    'ออก แสดงรายการ แทนที่ และเพิกถอนคีย์สำหรับเรียกใช้งาน การเข้าถึงแบบเลือกจัดการคีย์ที่ผูกกับผู้ออกสำหรับ API ที่แชร์ การออกและแทนที่ต้องมีสิทธิ์ใช้ทรัพยากรที่เกี่ยวข้องและคงการตรึงเวอร์ชันเผยแพร่ไว้',
+  'Read workspace activity and security events.':
+    'อ่านกิจกรรมพื้นที่ทำงานและเหตุการณ์ความปลอดภัย',
+  'Create, list, and download complete workspace backups containing saved data and sensitive credential records.':
+    'สร้าง แสดงรายการ และดาวน์โหลดข้อมูลสำรองพื้นที่ทำงานทั้งหมด ซึ่งรวมข้อมูลที่บันทึกไว้และระเบียนข้อมูลรับรองที่ละเอียดอ่อน',
+  'Read the control database migration history.':
+    'อ่านประวัติการย้ายโครงสร้างของฐานข้อมูลควบคุม',
+  'List published targets and load-test history; start and cancel bounded local runs. Runs execute published APIs and may cause their configured writes.':
+    'แสดงเป้าหมายที่เผยแพร่และประวัติการทดสอบโหลด เริ่มและยกเลิกการรันในเครื่องที่มีขอบเขตจำกัด การรันเรียกใช้ API ที่เผยแพร่แล้วและอาจทำให้เกิดการเขียนข้อมูลที่ตั้งค่าไว้',
   'Update available': 'มีเวอร์ชันใหม่',
   'No newer release found': 'ไม่พบเวอร์ชันที่ใหม่กว่า',
   'No matching releases found': 'ไม่พบเวอร์ชันที่ตรงกับการตั้งค่า',

@@ -335,28 +335,33 @@ export async function generatedBackendPreviews({
     await route.fulfill({ response })
   })
   const pendingDownload = page.waitForEvent('download')
-  await panel
-    .getByRole('button', { name: 'Download backend code', exact: true })
-    .click()
-  await expect.poll(() => held).toBe(true)
-  await expect(
-    panel.getByRole('button', { name: 'Download backend code', exact: true }),
-  ).toBeDisabled()
-  await expect(
-    page.getByRole('button', { name: 'Generated backend', exact: true }),
-  ).toBeDisabled()
-  await expect(
-    page.getByRole('button', { name: 'Sign out', exact: true }),
-  ).toBeDisabled()
-  await expect(
-    page.getByRole('button', { name: 'Publish', exact: true }),
-  ).toBeDisabled()
-  await capture(
-    'Generated backend',
-    'Backend export revision check pending',
-    'Only delivery of a real expected-revision check is delayed. Duplicate export, panel close, publication and navigation remain locked until it finishes.',
-  )
-  releaseDelivery()
+  // A failed capture can exit before the normal download assertion.
+  void pendingDownload.catch(() => {})
+  try {
+    await panel
+      .getByRole('button', { name: 'Download backend code', exact: true })
+      .click()
+    await expect.poll(() => held).toBe(true)
+    await expect(
+      panel.getByRole('button', { name: 'Download backend code', exact: true }),
+    ).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: 'Generated backend', exact: true }),
+    ).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: 'Sign out', exact: true }),
+    ).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: 'Publish', exact: true }),
+    ).toBeDisabled()
+    await capture(
+      'Generated backend',
+      'Backend export revision check pending',
+      'Only delivery of a real expected-revision check is delayed. Duplicate export, panel close, publication and navigation remain locked until it finishes.',
+    )
+  } finally {
+    releaseDelivery()
+  }
   expect((await pendingDownload).suggestedFilename()).toBe(
     `besh-${rest.id}-r2.cjs`,
   )
@@ -386,29 +391,32 @@ export async function generatedBackendPreviews({
     await route.fulfill({ response })
     finishedInitial = true
   })
-  await panel
-    .getByRole('button', { name: 'Refresh generated backend', exact: true })
-    .click()
-  await expect.poll(() => heldInitial).toBe(true)
-  await expect(panel).toContainText('Loading generated backend…')
-  await expect(code).toHaveCount(0)
-  await expect(
-    panel.getByRole('button', {
-      name: 'Refresh generated backend',
-      exact: true,
-    }),
-  ).toBeDisabled()
-  await capture(
-    'Generated backend',
-    'Generated backend read loading',
-    'A real artifact response is held during delivery. Loading replaces prior code and prevents duplicate reads.',
-  )
-  await openApiTools(page)
-  await page
-    .getByRole('button', { name: 'Generated backend', exact: true })
-    .click()
-  await open(graphql.name)
-  deliverInitial()
+  try {
+    await panel
+      .getByRole('button', { name: 'Refresh generated backend', exact: true })
+      .click()
+    await expect.poll(() => heldInitial).toBe(true)
+    await expect(panel).toContainText('Loading generated backend…')
+    await expect(code).toHaveCount(0)
+    await expect(
+      panel.getByRole('button', {
+        name: 'Refresh generated backend',
+        exact: true,
+      }),
+    ).toBeDisabled()
+    await capture(
+      'Generated backend',
+      'Generated backend read loading',
+      'A real artifact response is held during delivery. Loading replaces prior code and prevents duplicate reads.',
+    )
+    await openApiTools(page)
+    await page
+      .getByRole('button', { name: 'Generated backend', exact: true })
+      .click()
+    await open(graphql.name)
+  } finally {
+    deliverInitial()
+  }
   await expect.poll(() => finishedInitial).toBe(true)
   await expect(panel).toContainText(`POST /graphql${graphql.path}`)
   await expect(code).not.toContainText(rest.path)

@@ -486,7 +486,7 @@ export function App({
                 <h1>{t(deniedTitle)}</h1>
                 <p>
                   {page === 'members'
-                    ? 'Only the owner can manage members and roles.'
+                    ? t('Only the owner can manage members and roles.')
                     : page === 'updates'
                       ? t(
                           'Only the owner can manage Besh release settings and update notices.',
