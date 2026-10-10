@@ -1,4 +1,50 @@
 const messages: Record<string, string> = {
+  'Content models': '内容模型',
+  'Define record fields with forms. This draft does not publish content or an API.':
+    '通过表单定义记录字段。此草稿不会发布内容或 API。',
+  'New model': '新建模型',
+  'Model name': '模型名称',
+  'Choose a model': '选择模型',
+  'No content models yet': '还没有内容模型',
+  'Loading content models…': '正在加载内容模型…',
+  'Model draft': '模型草稿',
+  'Draft revision {version}': '草稿版本 {version}',
+  'Add field': '添加字段',
+  'No fields yet': '还没有字段',
+  'Field {path}': '字段 {path}',
+  'Field {path} label': '字段 {path} 标签',
+  'Field {path} key': '字段 {path} 键',
+  'Field {path} type': '字段 {path} 类型',
+  'Field {path} required': '字段 {path} 必填',
+  'Field {path} item type': '字段 {path} 项目类型',
+  'Add field to {path}': '向 {path} 添加字段',
+  'Remove field {path}': '删除字段 {path}',
+  Group: '分组',
+  List: '列表',
+  Choice: '选项',
+  'Choices for {path}': '{path} 的选项',
+  'Add option to {path}': '向 {path} 添加选项',
+  'Remove option {path}': '删除选项 {path}',
+  'Option {path} value': '选项 {path} 值',
+  'Option {path} label': '选项 {path} 标签',
+  'Keys start with a lowercase letter and use lowercase letters, numbers, or underscores. Reserved names are not allowed.':
+    '键须以小写英文字母开头，只能使用小写英文字母、数字或下划线。不允许使用保留名称。',
+  'Use up to 32 fields per group, 32 choices per field, and 6 nesting levels. Each model supports up to 128 fields and nested item types.':
+    '每组最多 32 个字段，每个字段最多 32 个选项，最多嵌套 6 层。每个模型最多支持 128 个字段和嵌套项目类型。',
+  'Enter a model name with 1 to 80 characters.':
+    '请输入 1 到 80 个字符的模型名称。',
+  'Complete every field with a valid, unique key and a label of 1 to 80 characters.':
+    '每个字段都须填写有效且唯一的键，以及 1 到 80 个字符的标签。',
+  'Choices need at least one option. Values must be unique. Values and labels use 1 to 80 characters.':
+    '至少需要一个选项。值必须唯一。值和标签须为 1 到 80 个字符。',
+  'Content model draft saved.': '内容模型草稿已保存。',
+  'Could not load content models.': '无法加载内容模型列表。',
+  'Could not load content model.': '无法加载内容模型。',
+  'Could not save content model.': '无法保存内容模型。',
+  'Reload saved version': '重新加载已保存的版本',
+  'Discard unsaved content model changes?': '放弃尚未保存的内容模型更改？',
+  'Changing this type removes its nested fields or choices. Continue?':
+    '更改此类型将删除其嵌套字段或选项。是否继续？',
   'READ A SAVED DATABASE COPY': '读取已保存的数据库副本',
   'Choose a SQLite copy, review its tables, then build a read API.':
     '选择 SQLite 副本，查看其表，再构建读取 API。',

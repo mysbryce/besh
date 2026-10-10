@@ -1,4 +1,51 @@
 const messages: Record<string, string> = {
+  'Content models': '콘텐츠 모델',
+  'Define record fields with forms. This draft does not publish content or an API.':
+    '폼으로 레코드 필드를 정의하세요. 이 초안은 콘텐츠나 API를 게시하지 않습니다.',
+  'New model': '새 모델',
+  'Model name': '모델 이름',
+  'Choose a model': '모델 선택',
+  'No content models yet': '아직 콘텐츠 모델이 없습니다',
+  'Loading content models…': '콘텐츠 모델을 불러오는 중…',
+  'Model draft': '모델 초안',
+  'Draft revision {version}': '초안 리비전 {version}',
+  'Add field': '필드 추가',
+  'No fields yet': '아직 필드가 없습니다',
+  'Field {path}': '필드 {path}',
+  'Field {path} label': '필드 {path} 레이블',
+  'Field {path} key': '필드 {path} 키',
+  'Field {path} type': '필드 {path} 유형',
+  'Field {path} required': '필드 {path} 필수',
+  'Field {path} item type': '필드 {path} 항목 유형',
+  'Add field to {path}': '{path}에 필드 추가',
+  'Remove field {path}': '필드 {path} 삭제',
+  Group: '그룹',
+  List: '목록',
+  Choice: '선택지',
+  'Choices for {path}': '{path}의 선택지',
+  'Add option to {path}': '{path}에 선택지 추가',
+  'Remove option {path}': '선택지 {path} 삭제',
+  'Option {path} value': '선택지 {path} 값',
+  'Option {path} label': '선택지 {path} 레이블',
+  'Keys start with a lowercase letter and use lowercase letters, numbers, or underscores. Reserved names are not allowed.':
+    '키는 영문 소문자로 시작하고 영문 소문자, 숫자 또는 밑줄만 사용해야 합니다. 예약된 이름은 사용할 수 없습니다.',
+  'Use up to 32 fields per group, 32 choices per field, and 6 nesting levels. Each model supports up to 128 fields and nested item types.':
+    '그룹당 최대 32개 필드, 필드당 최대 32개 선택지, 최대 6단계 중첩을 사용할 수 있습니다. 각 모델은 필드와 중첩 항목 유형을 합쳐 최대 128개까지 지원합니다.',
+  'Enter a model name with 1 to 80 characters.':
+    '모델 이름을 1~80자로 입력하세요.',
+  'Complete every field with a valid, unique key and a label of 1 to 80 characters.':
+    '모든 필드에 유효하고 중복되지 않는 키와 1~80자의 레이블을 입력하세요.',
+  'Choices need at least one option. Values must be unique. Values and labels use 1 to 80 characters.':
+    '선택지가 하나 이상 필요합니다. 값은 중복될 수 없습니다. 값과 레이블은 1~80자여야 합니다.',
+  'Content model draft saved.': '콘텐츠 모델 초안을 저장했습니다.',
+  'Could not load content models.': '콘텐츠 모델 목록을 불러오지 못했습니다.',
+  'Could not load content model.': '콘텐츠 모델을 불러오지 못했습니다.',
+  'Could not save content model.': '콘텐츠 모델을 저장하지 못했습니다.',
+  'Reload saved version': '저장된 버전 다시 불러오기',
+  'Discard unsaved content model changes?':
+    '저장하지 않은 콘텐츠 모델 변경 사항을 버리시겠습니까?',
+  'Changing this type removes its nested fields or choices. Continue?':
+    '이 유형을 변경하면 중첩된 필드나 선택지가 삭제됩니다. 계속하시겠습니까?',
   'READ A SAVED DATABASE COPY': '저장된 데이터베이스 복사본 읽기',
   'Choose a SQLite copy, review its tables, then build a read API.':
     'SQLite 복사본을 선택하고 테이블을 확인한 다음 읽기 API를 만드세요.',

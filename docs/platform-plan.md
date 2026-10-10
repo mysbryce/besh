@@ -1,14 +1,18 @@
 # Planned backend platform
 
-**PLANNED — not implemented.** This records the requested media library, CMS, visual Struct/schema builder, small published backend, payments, database breadth and product authentication. It selects no new framework or adapter. Portable Windows delivery is complete; see [roadmap](roadmap.md) for the next slice. Bun support starts at **1.4.2**; a pinned CI/release baseline is separate from that minimum.
+**Owner-only Struct drafts are implemented; the remaining platform is planned.** The `0.21.0-alpha.0` foundation defines and saves bounded nested field models through web forms; it creates no content entries or published routes. See [Struct drafts](structs.md) and actual [check receipts](testing.md). This plan records the later media library, CMS, schema publication, small published backend, payments, database breadth and product authentication. It selects no new framework or adapter. Portable Windows delivery is complete; see [roadmap](roadmap.md) for the next slice. Bun support starts at **1.4.2**; a pinned CI/release baseline is separate from that minimum.
+
+Complete this platform roadmap through consecutive, tested slices. Keep the next bounded public journey visible in the roadmap and continue within the user's authorized scope; do not stop after each delivery merely to ask what comes next. Preserve unfinished work and remove completed feature branches only after verifying their merge. CI, migration gates and actual external-provider setup still determine when a slice can advance.
 
 ## 1. Visual Struct and content foundation
 
-A Struct will describe a named, typed record through forms: field name, type, required/default rules, allowed values and reviewed relationships. Show examples and data previews; keep raw schema optional and authored values literal across languages. [Strapi's Content-type Builder](https://docs.strapi.io/cms/features/content-type-builder) is a workflow reference, not an adopted runtime.
+A saved Struct now describes named, typed fields through forms, including required flags, nested groups, lists and choices. Defaults, reviewed relationships, reusable groups and collection/content behavior remain planned. All collection and Struct configuration belongs in the web interface, including validation, editor options, access rules and renderer settings. Creating or changing a collection must not require editing TypeScript. Show examples and data previews; keep raw schema optional and authored values literal across languages. [Strapi's Content-type Builder](https://docs.strapi.io/cms/features/content-type-builder) is a workflow reference, not an adopted runtime.
 
-Version schemas separately from drafts/releases. Validate input/output server-side and generate canonical trusted modules and exact REST/GraphQL routes. Before schema writes, add migration previews, explicit destructive-change review, backup gates and recovery. Unsupported shapes fail clearly.
+The next bounded stage creates private collections from an exact saved Struct revision. The server must read and validate that revision itself, then retain an immutable definition snapshot with the collection binding; never accept a caller-provided substitute schema. Later Struct edits leave the existing binding unchanged until an explicit reviewed migration. Typed entry forms and server validation follow the bound snapshot, with current owner/entry permissions and version checks. Start without publication or generated runtime routes.
 
-**Public gate:** create a Struct without code, reject invalid HTTP values, publish its exact contract, restart and call it with a scoped runtime key. Prove draft isolation, denied mutation and failed-migration recovery.
+Version schemas separately from drafts/releases. Treat web configuration as validated data, never uploaded server code. Validate input/output server-side and generate canonical trusted modules and exact REST/GraphQL routes registered by the runtime. Before schema writes, add migration previews, explicit destructive-change review, backup gates and recovery. Unsupported shapes fail clearly.
+
+**Public gate:** configure a collection and nested Struct without code, reject invalid HTTP values, publish its exact contract, restart and call its registered route with a scoped runtime key. Prove draft isolation, denied configuration/mutation and failed-migration recovery.
 
 ## 2. Media library and bounded optimization
 
@@ -24,7 +28,27 @@ Create PNG-to-WebP variants with bounded quality, dimensions and output bytes; p
 
 Build collections on reviewed Structs/media IDs: labeled forms, validation, searchable lists, drafts, revision history and explicit publish/unpublish. Separate workspace editor permissions from generated product authority. Content/relationship/media access resolves trusted caller identity, not visible field names.
 
-**Public gate:** edit an article without code, select approved media, publish and read it through the generated API. Prove draft isolation, concurrent-edit conflict, denied writes/private media and restart recovery without unpublished-content leakage.
+### Rich-text content model
+
+Plan a full rich-text editor with paragraphs, headings, emphasis, links, ordered/unordered lists, quotes, code blocks, tables, approved media and typed content blocks. Configure supported features and block fields through web forms. Pasted or imported HTML must pass a reviewed sanitizer and conversion into the validated content model; raw HTML is not executable stored content.
+
+Store a versioned, typed abstract syntax tree (AST), with explicit node kinds and bounded depth, node count, text bytes, attributes, relationships and media references. Validate on the server before saving, publication and rendering. Reject unsupported versions, unknown nodes, invalid references and excessive work clearly; do not silently lose content. Schema, AST and renderer migrations need previews, backup coverage, compatibility checks and failed-migration recovery before activation.
+
+### Structured output and server-rendered HTML
+
+Let the published contract choose typed structured object output for a client renderer or server-rendered HTML. Both formats derive from the same reviewed content revision and preserve its schema/AST version, renderer configuration revision and published release identity. Format selection does not change authorization, runtime-key scope, release pins, current policy checks or draft isolation. Populate relationships/media only under current access, with bounded work and an authority recheck after asynchronous reads.
+
+Ship a default safe renderer and a documented typed node contract for client renderers. An owner can configure each supported child element's tag, classes and allowlisted attributes through reviewed forms. Keep renderer configuration separate from ordinary authored content, version it and require explicit owner review before publication. Changing a draft renderer must not alter an existing publication. Client adapters remain trusted application code; Besh accepts no uploaded converter functions, executable templates or JavaScript expressions.
+
+[Payload's JSX conversion](https://payloadcms.com/docs/rich-text/converting-jsx) demonstrates rendering serialized rich text with node converters; its [HTML conversion](https://payloadcms.com/docs/rich-text/converting-html) documents on-demand JSON-to-HTML output. These inform the two formats, not a Payload/Lexical installation or a security guarantee for custom converters.
+
+### Renderer safety and child attributes
+
+Render only allowlisted semantic tags and attribute names. Escape text and quoted attribute values for their actual output context; code remains escaped text. Validate URL schemes and destinations before emitting links/media, allowing only the reviewed relative/HTTPS forms. Reject scripts, event-handler attributes, `srcdoc`, executable URL schemes, arbitrary inline CSS and template interpolation. Class tokens and safe accessibility/data attributes need bounded validated values. The client renderer must use text/attribute APIs safely, rather than treating structured text as HTML. These requirements follow [OWASP's context-specific XSS prevention guidance](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html).
+
+The requested heading mapping can produce `<h1 class="text-heading-1" x-data="h1">…</h1>` only through an explicit owner-reviewed fixed mapping and a documented trusted client binding. `x-data` is not a generally safe arbitrary attribute: [Alpine evaluates its value as JavaScript](https://alpinejs.dev/directives/data). The default renderer excludes framework directives. Any optional binding must map the fixed `h1` identifier to trusted client code, reject authored expressions and event directives, and never auto-load or evaluate a framework from content. Without that reviewed consumer contract, reject the directive; ordinary class mapping remains available.
+
+**Public gates, one journey at a time:** configure a collection/Struct and renderer in the web interface, edit rich content, select approved media, save a draft and explicitly publish. Retrieve typed objects and HTML for the same publication through actual generated routes; verify content, revision identity and safe heading attributes. Prove draft isolation, concurrent-edit conflict, denied writes/private media, current authorization in both formats and restart recovery without unpublished-content leakage. Add bounded-AST, hostile text/attribute/URL and import cases before expanding supported nodes. Prove migration/backup restoration without silently rewriting published contracts. Language changes must preserve authored content and configuration values.
 
 ## 4. Product database adapters
 

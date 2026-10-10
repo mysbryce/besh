@@ -38,6 +38,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 - Built-in k6 load testing with automatic setup and optional goals.
 - [Roles and selected-API sharing](docs/roles.md), [scoped keys and handover](docs/api-keys.md), and [protected tenant rows and API fields](docs/row-protection.md).
 - [Member invitations](docs/workspace-invitations.md) with one-use password setup links.
+- [Visual content model drafts](docs/structs.md) with nested fields and versioned saving.
 - [CSV, Excel, public Sheets](docs/data-sources.md), uploaded SQLite copies, and GitHub product-login templates.
 - Audit logs, migrations, tested backups, and GitHub update notices.
 - Light/dark themes, [seven languages in main workflows](docs/localization.md), custom controls and page/action previews.

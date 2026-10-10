@@ -1,4 +1,52 @@
 const messages: Record<string, string> = {
+  'Content models': 'Модели содержимого',
+  'Define record fields with forms. This draft does not publish content or an API.':
+    'Определяйте поля записей через формы. Этот черновик не публикует содержимое или API.',
+  'New model': 'Новая модель',
+  'Model name': 'Название модели',
+  'Choose a model': 'Выберите модель',
+  'No content models yet': 'Моделей содержимого пока нет',
+  'Loading content models…': 'Загрузка моделей содержимого…',
+  'Model draft': 'Черновик модели',
+  'Draft revision {version}': 'Ревизия черновика {version}',
+  'Add field': 'Добавить поле',
+  'No fields yet': 'Полей пока нет',
+  'Field {path}': 'Поле {path}',
+  'Field {path} label': 'Подпись поля {path}',
+  'Field {path} key': 'Ключ поля {path}',
+  'Field {path} type': 'Тип поля {path}',
+  'Field {path} required': 'Поле {path} обязательно',
+  'Field {path} item type': 'Тип элемента поля {path}',
+  'Add field to {path}': 'Добавить поле в {path}',
+  'Remove field {path}': 'Удалить поле {path}',
+  Group: 'Группа',
+  List: 'Список',
+  Choice: 'Выбор',
+  'Choices for {path}': 'Варианты для {path}',
+  'Add option to {path}': 'Добавить вариант в {path}',
+  'Remove option {path}': 'Удалить вариант {path}',
+  'Option {path} value': 'Значение варианта {path}',
+  'Option {path} label': 'Подпись варианта {path}',
+  'Keys start with a lowercase letter and use lowercase letters, numbers, or underscores. Reserved names are not allowed.':
+    'Ключи начинаются со строчной латинской буквы и содержат только строчные латинские буквы, цифры или подчёркивания. Зарезервированные имена запрещены.',
+  'Use up to 32 fields per group, 32 choices per field, and 6 nesting levels. Each model supports up to 128 fields and nested item types.':
+    'Допускается до 32 полей в группе, 32 вариантов в поле и 6 уровней вложенности. Каждая модель поддерживает до 128 полей и вложенных типов элементов.',
+  'Enter a model name with 1 to 80 characters.':
+    'Введите название модели длиной от 1 до 80 символов.',
+  'Complete every field with a valid, unique key and a label of 1 to 80 characters.':
+    'У каждого поля должны быть допустимый уникальный ключ и подпись длиной от 1 до 80 символов.',
+  'Choices need at least one option. Values must be unique. Values and labels use 1 to 80 characters.':
+    'Нужен хотя бы один вариант. Значения должны быть уникальными. Значения и подписи должны содержать от 1 до 80 символов.',
+  'Content model draft saved.': 'Черновик модели содержимого сохранён.',
+  'Could not load content models.':
+    'Не удалось загрузить список моделей содержимого.',
+  'Could not load content model.': 'Не удалось загрузить модель содержимого.',
+  'Could not save content model.': 'Не удалось сохранить модель содержимого.',
+  'Reload saved version': 'Загрузить сохранённую версию заново',
+  'Discard unsaved content model changes?':
+    'Отменить несохранённые изменения модели содержимого?',
+  'Changing this type removes its nested fields or choices. Continue?':
+    'Изменение этого типа удалит вложенные поля или варианты. Продолжить?',
   'READ A SAVED DATABASE COPY': 'ЧИТАЙТЕ СОХРАНЁННУЮ КОПИЮ БАЗЫ ДАННЫХ',
   'Choose a SQLite copy, review its tables, then build a read API.':
     'Выберите копию SQLite, просмотрите её таблицы и создайте API для чтения.',

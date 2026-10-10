@@ -6,6 +6,21 @@ GraphQL runtime endpoints use the GraphQL `data`/`errors` envelope. See [GraphQL
 
 Management action permissions and API/dependency access are resolved from current server state on every request. Built-in action permissions are preserved; custom roles grant explicit actions. Eligible members can narrow existing-API actions with selected access and typed dependency USE. Only owners administer members, roles, sharing, and other members' sessions. Runtime API keys remain separate; issuer-bound keys additionally depend on current member authority. See [roles and permissions](roles.md).
 
+## Content model drafts
+
+Struct management is owner-only. These are saved field definitions, not content entries or published API contracts. Existing workspace cookie/Origin/CSRF and bearer rules apply; see [content model drafts](structs.md).
+
+| Method | Path               | Body / result                                                             |
+| ------ | ------------------ | ------------------------------------------------------------------------- |
+| GET    | `/api/structs`     | Summary array: `id`, `name`, `version`, `createdAt`, `updatedAt`          |
+| GET    | `/api/structs/:id` | Complete saved draft including `fields`                                   |
+| POST   | `/api/structs`     | Exact `{ name, fields }`; returns revision one                            |
+| PUT    | `/api/structs/:id` | Exact `{ name, fields, version }`; compare current version and advance it |
+
+Each field has exact `{ key, label, required, schema }`. Schema types are `text`, `number`, `boolean`, `object` with nested `fields`, `array` with `items`, and `select` with unique `{ value, label }` options. Keys are unique within each group. Bounds: 32 fields per group, 32 choices per field, six schema levels, 128 schema nodes including nested item types, 32,768 UTF-8 JSON bytes per definition and 128 saved drafts. Names/labels/choice values use 1–80 trimmed characters; keys follow `^[a-z][a-z0-9_]{0,63}$` and reject reserved prototype names.
+
+Updates require a positive safe-integer version. Invalid input returns `400`, missing drafts `404`, stale writes/catalog capacity `409`, and malformed persisted drafts `503`. Current owner proof is rechecked inside writes; definition/version and metadata-only audit commit atomically. Non-owners are denied before inspecting the draft. No entries, delete, publication, rich-text or runtime routes are added.
+
 ## Tenant row protection
 
 Implemented in 0.11. These routes implement the current contract. Tenant registry and row-policy management are owner-only; ordinary management cookies/CSRF rules still apply.

@@ -1,5 +1,10 @@
 # Besh context
 
+## 2026-10-11 decisions
+
+- The owner-only [Struct foundation](structs.md) starts the platform roadmap through web forms rather than TypeScript configuration. Saved drafts support text, number, boolean, nested groups, lists and choices. Migration 24 stores bounded definitions, versioned CAS saves and metadata-only audit in the control database and ordinary backups. These models create no content entries, rich text, publication or runtime routes. The broader [platform plan](platform-plan.md) keeps those later gates explicit.
+- Model drafts use a separate unsaved editor state and explicit discard/type-change decisions. Language changes preserve authored names, keys, labels and choices without Struct/source/flow requests. Seven dictionaries add the same 39 trusted messages, preserving their original 664 values. Root owns executed checks and final delivery receipts in [testing](testing.md); planned capabilities are not acceptance claims.
+
 ## 2026-10-10 decisions
 
 - Provider refresh and source deletion follow two separate public language RED/GREEN journeys for `0.20.5-alpha.1`. Only the external Google CSV boundary is simulated; management, snapshots, current draft/publication guards, deletion audits and permission denials remain real. Thirteen messages bring each dictionary to 637 aligned keys. Authored data and raw errors remain literal. Combined local checks passed 361 backend cases, 6,368 assertions, all 51 browser cases, types, build and formatting. The 1,120-image gallery preserves its prior inventory; all 39 new originals, 20 full phone slices, eight affected legacy originals and five panel sections passed review. The first head CI exposed a fixture sign-in race; positive workspace readiness, bounded cold Vite preparation and the corrected original-session WS journey passed all 51 cases again. Exact-head and post-merge CI remain separate gates. See [testing](testing.md).

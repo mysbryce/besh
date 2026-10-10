@@ -1,4 +1,51 @@
 const messages: Record<string, string> = {
+  'Content models': 'Content models',
+  'Define record fields with forms. This draft does not publish content or an API.':
+    'Define record fields with forms. This draft does not publish content or an API.',
+  'New model': 'New model',
+  'Model name': 'Model name',
+  'Choose a model': 'Choose a model',
+  'No content models yet': 'No content models yet',
+  'Loading content models…': 'Loading content models…',
+  'Model draft': 'Model draft',
+  'Draft revision {version}': 'Draft revision {version}',
+  'Add field': 'Add field',
+  'No fields yet': 'No fields yet',
+  'Field {path}': 'Field {path}',
+  'Field {path} label': 'Field {path} label',
+  'Field {path} key': 'Field {path} key',
+  'Field {path} type': 'Field {path} type',
+  'Field {path} required': 'Field {path} required',
+  'Field {path} item type': 'Field {path} item type',
+  'Add field to {path}': 'Add field to {path}',
+  'Remove field {path}': 'Remove field {path}',
+  Group: 'Group',
+  List: 'List',
+  Choice: 'Choice',
+  'Choices for {path}': 'Choices for {path}',
+  'Add option to {path}': 'Add option to {path}',
+  'Remove option {path}': 'Remove option {path}',
+  'Option {path} value': 'Option {path} value',
+  'Option {path} label': 'Option {path} label',
+  'Keys start with a lowercase letter and use lowercase letters, numbers, or underscores. Reserved names are not allowed.':
+    'Keys start with a lowercase letter and use lowercase letters, numbers, or underscores. Reserved names are not allowed.',
+  'Use up to 32 fields per group, 32 choices per field, and 6 nesting levels. Each model supports up to 128 fields and nested item types.':
+    'Use up to 32 fields per group, 32 choices per field, and 6 nesting levels. Each model supports up to 128 fields and nested item types.',
+  'Enter a model name with 1 to 80 characters.':
+    'Enter a model name with 1 to 80 characters.',
+  'Complete every field with a valid, unique key and a label of 1 to 80 characters.':
+    'Complete every field with a valid, unique key and a label of 1 to 80 characters.',
+  'Choices need at least one option. Values must be unique. Values and labels use 1 to 80 characters.':
+    'Choices need at least one option. Values must be unique. Values and labels use 1 to 80 characters.',
+  'Content model draft saved.': 'Content model draft saved.',
+  'Could not load content models.': 'Could not load content models.',
+  'Could not load content model.': 'Could not load content model.',
+  'Could not save content model.': 'Could not save content model.',
+  'Reload saved version': 'Reload saved version',
+  'Discard unsaved content model changes?':
+    'Discard unsaved content model changes?',
+  'Changing this type removes its nested fields or choices. Continue?':
+    'Changing this type removes its nested fields or choices. Continue?',
   'READ A SAVED DATABASE COPY': 'READ A SAVED DATABASE COPY',
   'Choose a SQLite copy, review its tables, then build a read API.':
     'Choose a SQLite copy, review its tables, then build a read API.',

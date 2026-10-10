@@ -44,12 +44,54 @@ import { dataSourceGoogleLocalePreviews } from './data-source-google-locale-prev
 import { dataSourceDeleteLocalePreviews } from './data-source-delete-locale-previews'
 import { dataSourceStatusLocalePreviews } from './data-source-status-locale-previews'
 import { databaseCatalogLocalePreviews } from './database-catalog-locale-previews'
+import { structPreviews } from './struct-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
 } from './locale-startup-previews'
 
 test.describe.configure({ mode: 'parallel' })
+
+test.describe('structs', () => {
+  test.use({ locale: 'en-US' })
+
+  test('structs', async ({ page, previewWorkspace }) => {
+    const { owner, origin } = previewWorkspace
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    const { capture, complete } = storyCapture(page, 'structs')
+
+    await structPreviews({ page, owner, apiOrigin: origin, capture })
+    await page.setViewportSize({ width: 1440, height: 1000 })
+    await page
+      .getByRole('combobox', { name: 'Appearance', exact: true })
+      .click()
+    await page.getByRole('option', { name: 'Light', exact: true }).click()
+    const refreshed = page.waitForResponse(
+      (response) =>
+        response.url() === origin + '/api/structs' &&
+        response.request().method() === 'GET',
+    )
+    await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+    expect((await refreshed).status()).toBe(200)
+    await expect(
+      page.getByRole('button', { name: 'Refresh', exact: true }),
+    ).toBeEnabled()
+    await expect(
+      page.getByLabel('Field 2.1 label', { exact: true }),
+    ).toHaveValue('Unit price')
+    await expect(
+      page.getByText('Draft revision 3', { exact: true }),
+    ).toBeVisible()
+    await capture(
+      'Content models',
+      'Refreshed content model catalog',
+      'Explicit catalog refresh preserves the open saved model and does not synchronize or migrate its fields.',
+    )
+    expect(errors).toEqual([])
+    complete()
+  })
+})
 
 test(
   'core',
@@ -4281,6 +4323,7 @@ for (const story of previewStories) {
     story.id === 'management-data-source-deletion' ||
     story.id === 'management-data-source-status' ||
     story.id === 'database-catalog-locales' ||
+    story.id === 'structs' ||
     story.id === 'management-data-api-generation'
   )
     continue
