@@ -751,6 +751,39 @@ const messages: Record<string, string> = {
   'GRAPHQL OPERATION': 'GRAPHQL OPERATION',
   'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
     'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.',
+  'YOUR DATA, YOUR API': 'YOUR DATA, YOUR API',
+  'Create an API': 'Create an API',
+  'Choose the fields people can receive. We will create a draft you can test and publish in API Studio.':
+    'Choose the fields people can receive. We will create a draft you can test and publish in API Studio.',
+  '{endpoint} after publication. Use letters, numbers, slashes, hyphens, or underscores.':
+    '{endpoint} after publication. Use letters, numbers, slashes, hyphens, or underscores.',
+  'Start with / and use letters, numbers, slashes, hyphens, or underscores.':
+    'Start with / and use letters, numbers, slashes, hyphens, or underscores.',
+  'Fields to return': 'Fields to return',
+  'Original column → API field': 'Original column → API field',
+  'Return {column}': 'Return {column}',
+  'Choose at least one field to continue.':
+    'Choose at least one field to continue.',
+  'Rows per request': 'Rows per request',
+  'Up to {count} rows': 'Up to {count} rows',
+  'Filter by input': 'Filter by input',
+  'Match a supplied value, or return all rows when it is omitted.':
+    'Match a supplied value, or return all rows when it is omitted.',
+  'Filter column': 'Filter column',
+  'Filter input name': 'Filter input name',
+  'Start with a lowercase letter. Use letters, numbers, or underscores.':
+    'Start with a lowercase letter. Use letters, numbers, or underscores.',
+  'Callers send ?{input}=value in the URL. Omit it to return all rows. API keys control access to the API.':
+    'Callers send ?{input}=value in the URL. Omit it to return all rows. API keys control access to the API.',
+  'Callers supply {input} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.':
+    'Callers supply {input} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.',
+  'Create API from data': 'Create API from data',
+  'Discard unsaved draft changes and create this API?':
+    'Discard unsaved draft changes and create this API?',
+  'API draft created. Test your data, then publish it.':
+    'API draft created. Test your data, then publish it.',
+  'API draft created. Read APIs access is needed to open API Studio.':
+    'API draft created. Read APIs access is needed to open API Studio.',
 }
 
 export default messages

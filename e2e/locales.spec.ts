@@ -22,6 +22,7 @@ import { studioGraphqlLocalePreviews } from './studio-graphql-locale-previews'
 import { studioWebsocketLocalePreviews } from './studio-websocket-locale-previews'
 import { dataSourceImportLocalePreviews } from './data-source-locale-previews'
 import { dataSourceReplacementLocalePreviews } from './data-source-replacement-locale-previews'
+import { dataApiLocalePreviews } from './data-api-locale-previews'
 
 const test = base.extend<{ workspace: { origin: string; owner: string } }>({
   workspace: async ({ page }, use) => {
@@ -81,6 +82,43 @@ function masked(page: Page) {
     page.locator('[data-private]'),
   ]
 }
+
+test('spreadsheet API generation follows language and creates explicit typed drafts', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let number = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+
+  await dataApiLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title) => {
+      // The gallery captures every language; acceptance keeps key diagnostics.
+      if (
+        ![
+          'Phone dark Thai invalid API generation',
+          'Russian API creation response pending',
+          'English generated GraphQL draft',
+        ].includes(title)
+      )
+        return
+
+      await page.screenshot({
+        path: info.outputPath(
+          `${++number}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: true,
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+
+  expect(errors).toEqual([])
+})
 
 test('spreadsheet replacement follows language without changing data before confirmation', async ({
   page,

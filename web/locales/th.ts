@@ -746,6 +746,39 @@ const messages: Record<string, string> = {
     'ต้องมีสิทธิ์เข้าถึงแหล่งข้อมูล ขอให้เจ้าของตรวจสอบสิทธิ์และสิทธิ์ USE ของแหล่งข้อมูล',
   'No sources are available to this account. Ask the owner to provide a source.':
     'บัญชีนี้ยังไม่มีแหล่งข้อมูลที่ใช้ได้ ขอให้เจ้าของจัดเตรียมแหล่งข้อมูล',
+  'YOUR DATA, YOUR API': 'ข้อมูลของคุณ API ของคุณ',
+  'Create an API': 'สร้าง API',
+  'Choose the fields people can receive. We will create a draft you can test and publish in API Studio.':
+    'เลือกข้อมูลที่จะส่งให้ผู้ใช้ เราจะสร้างฉบับร่างให้คุณทดสอบและเผยแพร่ใน API Studio',
+  '{endpoint} after publication. Use letters, numbers, slashes, hyphens, or underscores.':
+    '{endpoint} ใช้ได้หลังเผยแพร่ ใช้ตัวอักษร ตัวเลข เครื่องหมาย / - หรือ _',
+  'Start with / and use letters, numbers, slashes, hyphens, or underscores.':
+    'เริ่มด้วย / และใช้ตัวอักษร ตัวเลข / ขีดกลาง หรือขีดล่าง',
+  'Fields to return': 'ข้อมูลที่จะส่งกลับ',
+  'Original column → API field': 'คอลัมน์เดิม → ช่องข้อมูล API',
+  'Return {column}': 'ส่งกลับ {column}',
+  'Choose at least one field to continue.':
+    'เลือกอย่างน้อยหนึ่งฟิลด์เพื่อดำเนินการต่อ',
+  'Rows per request': 'จำนวนแถวต่อคำขอ',
+  'Up to {count} rows': 'สูงสุด {count} แถว',
+  'Filter by input': 'กรองด้วยข้อมูลนำเข้า',
+  'Match a supplied value, or return all rows when it is omitted.':
+    'จับคู่กับค่าที่ส่งมา หากไม่ส่งค่าจะคืนทุกแถว',
+  'Filter column': 'คอลัมน์ที่ใช้กรอง',
+  'Filter input name': 'ชื่อข้อมูลนำเข้าสำหรับกรอง',
+  'Start with a lowercase letter. Use letters, numbers, or underscores.':
+    'เริ่มด้วยตัวอักษรภาษาอังกฤษพิมพ์เล็ก ใช้ตัวอักษร ตัวเลข หรือขีดล่าง',
+  'Callers send ?{input}=value in the URL. Omit it to return all rows. API keys control access to the API.':
+    'ผู้เรียกใช้ส่ง ?{input}=value ใน URL หากไม่ส่งจะคืนทุกแถว คีย์ API ควบคุมการเข้าถึง API',
+  'Callers supply {input} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.':
+    'ผู้เรียกใช้ส่ง {input} เป็นอาร์กิวเมนต์ที่ไม่บังคับของคำสั่งค้นหา GraphQL ชนิดข้อมูลสร้างจากคอลัมน์ที่เลือก หากไม่ส่งจะคืนทุกแถว คีย์ API ควบคุมการเข้าถึง',
+  'Create API from data': 'สร้าง API จากข้อมูล',
+  'Discard unsaved draft changes and create this API?':
+    'ละทิ้งการเปลี่ยนแปลงฉบับร่างที่ยังไม่ได้บันทึก แล้วสร้าง API นี้หรือไม่?',
+  'API draft created. Test your data, then publish it.':
+    'สร้างฉบับร่าง API แล้ว ทดสอบข้อมูลก่อนเผยแพร่',
+  'API draft created. Read APIs access is needed to open API Studio.':
+    'สร้างฉบับร่าง API แล้ว ต้องมีสิทธิ์อ่าน API จึงจะเปิด API Studio ได้',
 }
 
 export default messages

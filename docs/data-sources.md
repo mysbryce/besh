@@ -26,6 +26,8 @@ Deleting a source used by a current draft or currently published API returns `40
 
 ## Generated APIs
 
+The generation form's guidance, field/filter controls, local validation, dirty-draft confirmation and completion follow all seven dashboard languages. Authored API names, paths, original headers, mapped keys and typed contracts stay literal. Language and protocol selection do not save or publish an API. Canceling dirty-draft review keeps the existing draft; confirmed creation saves a new unpublished draft. Changing language during pending creation keeps controls disabled and shows completion in the current language. Source-read and flow-write permissions still govern creation.
+
 REST drafts use a request, spreadsheet-read, and response flow. They return selected rows directly as an array. A GraphQL draft exposes typed `Query.rows` fields matching the selected columns; no mutation or spreadsheet write operation is generated. Both protocols retain normal draft validation, publication permission checks, and scoped runtime authentication.
 
 New REST drafts include [API rules](api-contracts.md) for their selected columns, inferred types/nullability, maximum row count, and optional typed query filter. No source rows are embedded in the OpenAPI download. Older drafts without rules still run. Replacing or refreshing data does not rewrite published rules: a changed snapshot that violates the live response contract fails with a generic 500 until data is corrected or a reviewed contract is republished.

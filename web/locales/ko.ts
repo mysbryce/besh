@@ -749,6 +749,39 @@ const messages: Record<string, string> = {
   'GRAPHQL OPERATION': 'GRAPHQL 작업',
   'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
     '/v1/messages와 같은 정확한 경로를 사용하세요. 입력 값은 WebSocket 메시지로 전달하며 이름이 있는 경로 매개변수는 지원하지 않습니다.',
+  'YOUR DATA, YOUR API': '내 데이터, 내 API',
+  'Create an API': 'API 만들기',
+  'Choose the fields people can receive. We will create a draft you can test and publish in API Studio.':
+    '사용자에게 반환할 필드를 선택하세요. API Studio에서 테스트하고 게시할 수 있는 초안을 만듭니다.',
+  '{endpoint} after publication. Use letters, numbers, slashes, hyphens, or underscores.':
+    '게시 후 {endpoint}를 사용합니다. 영문자, 숫자, 슬래시, 하이픈 또는 밑줄을 사용하세요.',
+  'Start with / and use letters, numbers, slashes, hyphens, or underscores.':
+    '/로 시작하고 영문자, 숫자, 슬래시, 하이픈 또는 밑줄을 사용하세요.',
+  'Fields to return': '반환할 필드',
+  'Original column → API field': '원본 열 → API 필드',
+  'Return {column}': '{column} 반환',
+  'Choose at least one field to continue.':
+    '계속하려면 필드를 하나 이상 선택하세요.',
+  'Rows per request': '요청당 행 수',
+  'Up to {count} rows': '최대 {count}행',
+  'Filter by input': '입력값으로 필터링',
+  'Match a supplied value, or return all rows when it is omitted.':
+    '전달한 값과 일치하는 행을 반환합니다. 값을 생략하면 모든 행을 반환합니다.',
+  'Filter column': '필터 열',
+  'Filter input name': '필터 입력 이름',
+  'Start with a lowercase letter. Use letters, numbers, or underscores.':
+    '소문자 영문자로 시작하세요. 영문자, 숫자 또는 밑줄을 사용하세요.',
+  'Callers send ?{input}=value in the URL. Omit it to return all rows. API keys control access to the API.':
+    '호출자는 URL에 ?{input}=value를 전달합니다. 생략하면 모든 행을 반환합니다. API 키가 API 접근을 제어합니다.',
+  'Callers supply {input} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.':
+    '호출자는 {input}을 선택적 GraphQL 쿼리 인수로 전달합니다. 유형은 선택한 열에서 생성됩니다. 생략하면 모든 행을 반환하며, API 키가 접근을 제어합니다.',
+  'Create API from data': '데이터로 API 만들기',
+  'Discard unsaved draft changes and create this API?':
+    '저장하지 않은 초안 변경 사항을 버리고 이 API를 만들까요?',
+  'API draft created. Test your data, then publish it.':
+    'API 초안을 만들었습니다. 데이터를 테스트한 다음 게시하세요.',
+  'API draft created. Read APIs access is needed to open API Studio.':
+    'API 초안을 만들었습니다. API Studio를 열려면 API 읽기 권한이 필요합니다.',
 }
 
 export default messages
