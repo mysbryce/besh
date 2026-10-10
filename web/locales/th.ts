@@ -1,4 +1,99 @@
 const messages: Record<string, string> = {
+  'This list item cannot be outdented safely.':
+    'ไม่สามารถลดระดับรายการนี้ได้อย่างปลอดภัย',
+
+  'This document cannot fit a list. Remove some content first.':
+    'เอกสารนี้เพิ่มรายการไม่ได้ ลบเนื้อหาบางส่วนก่อน',
+  'Indent list': 'เพิ่มระดับรายการ',
+  'Outdent list': 'ลดระดับรายการ',
+  'This list item cannot be nested further.':
+    'รายการนี้ซ้อนลึกกว่านี้ไม่ได้แล้ว',
+
+  'This document cannot fit a quote. Remove some content first.':
+    'เอกสารนี้เพิ่มข้อความอ้างอิงไม่ได้ ลบเนื้อหาบางส่วนก่อน',
+
+  'This document cannot fit a table. Remove some content first.':
+    'เอกสารนี้เพิ่มตารางไม่ได้ ลบเนื้อหาบางส่วนก่อน',
+  'This document cannot fit a divider. Remove some content first.':
+    'เอกสารนี้เพิ่มเส้นคั่นไม่ได้ ลบเนื้อหาบางส่วนก่อน',
+
+  'Insert divider': 'แทรกเส้นคั่น',
+  'Choose an unformatted paragraph outside lists and tables to create a code block.':
+    'เลือกย่อหน้าที่ไม่มีการจัดรูปแบบและอยู่นอกรายการและตารางเพื่อสร้างบล็อกโค้ด',
+
+  'Code block': 'บล็อกโค้ด',
+  '{field} code language': '{field} · ภาษาโค้ด',
+  'Plain text': 'ข้อความธรรมดา',
+  JavaScript: 'JavaScript',
+  'Choose a single paragraph outside lists and tables to create a quote.':
+    'เลือกย่อหน้าเดียวที่อยู่นอกรายการและตารางเพื่อสร้างข้อความอ้างอิง',
+
+  Quote: 'ข้อความอ้างอิง',
+
+  'Add row': 'เพิ่มแถว',
+  'Add column': 'เพิ่มคอลัมน์',
+  'This table cannot grow further.': 'ตารางนี้เพิ่มแถวหรือคอลัมน์ไม่ได้แล้ว',
+  'Remove row': 'ลบแถว',
+  'Remove column': 'ลบคอลัมน์',
+
+  'Insert table': 'แทรกตาราง',
+
+  'Add link': 'เพิ่มลิงก์',
+  'Edit link': 'แก้ไขลิงก์',
+  'Remove link': 'ลบลิงก์',
+  'Link URL': 'URL ของลิงก์',
+  'Apply link': 'ใช้ลิงก์',
+  'Enter a complete HTTPS URL without credentials.':
+    'กรอก URL แบบ HTTPS ให้ครบ โดยไม่มีชื่อผู้ใช้หรือรหัสผ่าน',
+  'Select text to add a link.': 'เลือกข้อความเพื่อเพิ่มลิงก์',
+  'Apply or cancel the link before saving this entry.':
+    'ใช้หรือยกเลิกลิงก์ก่อนบันทึกรายการนี้',
+
+  'Bullet list': 'รายการหัวข้อย่อย',
+  'Numbered list': 'รายการลำดับเลข',
+
+  'Formatted rich text': 'ข้อความที่จัดรูปแบบได้',
+  '{field} block style': '{field} · รูปแบบบล็อก',
+  Paragraph: 'ย่อหน้า',
+  'Heading 1': 'หัวข้อ 1',
+  'Heading 2': 'หัวข้อ 2',
+  'Heading 3': 'หัวข้อ 3',
+  'Heading 4': 'หัวข้อ 4',
+  'Heading 5': 'หัวข้อ 5',
+  'Heading 6': 'หัวข้อ 6',
+  Bold: 'ตัวหนา',
+  Italic: 'ตัวเอียง',
+  Underline: 'ขีดเส้นใต้',
+  Strikethrough: 'ขีดทับ',
+  'Inline code': 'โค้ดในบรรทัด',
+  Undo: 'เลิกทำ',
+  Redo: 'ทำซ้ำ',
+  '{field} formatting': '{field} · การจัดรูปแบบ',
+  'Opening text editor…': 'กำลังเปิดตัวแก้ไขข้อความ…',
+  'This content contains formatting this editor cannot edit yet.':
+    'เนื้อหานี้มีรูปแบบที่ตัวแก้ไขนี้ยังแก้ไขไม่ได้',
+  'Could not open text editor.': 'เปิดตัวแก้ไขข้อความไม่ได้',
+  'Formatted text supports headings and emphasis. Pasted content is plain text.':
+    'ข้อความแบบจัดรูปแบบรองรับหัวข้อและการเน้นข้อความ เนื้อหาที่วางจะเป็นข้อความธรรมดา',
+  'Invalid formatted text.': 'ข้อความแบบจัดรูปแบบไม่ถูกต้อง',
+
+  'Rich text': 'ข้อความแบบมีรูปแบบ',
+  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
+    'ใช้ได้เฉพาะข้อความในย่อหน้า ข้อความจะบันทึกตามที่พิมพ์ ยังจัดรูปแบบหรือแสดงผลเป็น HTML ไม่ได้',
+  '{field} · Paragraph {index}': '{field} · ย่อหน้าที่ {index}',
+  '{field} · Paragraph {paragraph} · Text {text}':
+    '{field} · ย่อหน้าที่ {paragraph} · ข้อความที่ {text}',
+  'Add paragraph to {field}': 'เพิ่มย่อหน้าใน {field}',
+  'Add text to {field} · Paragraph {index}':
+    'เพิ่มข้อความใน {field} · ย่อหน้าที่ {index}',
+  'Remove {field} · Paragraph {index}': 'ลบ {field} · ย่อหน้าที่ {index}',
+  'Remove {field} · Paragraph {paragraph} · Text {text}':
+    'ลบ {field} · ย่อหน้าที่ {paragraph} · ข้อความที่ {text}',
+  'Empty document': 'เอกสารว่าง',
+  'Empty paragraph': 'ย่อหน้าว่าง',
+  'Rich text is available only for top-level fields.':
+    'ข้อความแบบมีรูปแบบใช้ได้เฉพาะฟิลด์ระดับบนสุด',
+
   'View content model': 'ดูโมเดลเนื้อหา',
   'Hide content model': 'ซ่อนโมเดลเนื้อหา',
 

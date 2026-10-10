@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { ApiError } from '../errors'
 import type { StructField, StructSchema } from '../structs/model'
+import { parseRichTextDocument } from '../structs/rich-text'
+import { parseFormattedRichTextDocument } from '../structs/rich-text-formatted'
 import type { Store } from '../workspace/store'
 import type { ContentEntry, ContentEntryPage, EntryData } from './model'
 import type { collectionService } from './service'
@@ -38,10 +40,17 @@ function record(value: unknown): value is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null
 }
 
-function boundedData(value: unknown) {
-  const pending: { value: unknown; depth: number; exit?: boolean }[] = [
-    { value, depth: 0 },
-  ]
+type DataFrame = {
+  value: unknown
+  depth: number
+  schema?: StructSchema
+  fields?: StructField[]
+  formattedDepth?: number
+  exit?: boolean
+}
+
+function boundedData(fields: StructField[], value: unknown) {
+  const pending: DataFrame[] = [{ value, depth: 0, fields }]
   const ancestors = new WeakSet<object>()
   let visited = 0
 
@@ -53,7 +62,22 @@ function boundedData(value: unknown) {
       continue
     }
 
-    if (++visited > 1024 || current.depth > 6) return false
+    if (
+      ++visited > 1024 ||
+      (current.formattedDepth === undefined && current.depth > 6) ||
+      (current.formattedDepth !== undefined && current.formattedDepth > 24)
+    )
+      return false
+
+    // Only the frozen field schema can admit an independent v2 AST encoding budget.
+    const formattedDepth =
+      current.formattedDepth ??
+      (current.schema?.type === 'richText' &&
+      current.schema.schemaVersion === 2 &&
+      current.schema.astVersion === 2
+        ? 0
+        : undefined)
+
     if (typeof current.value === 'string') {
       if (Buffer.byteLength(current.value, 'utf8') > 4096) return false
       continue
@@ -70,7 +94,7 @@ function boundedData(value: unknown) {
     const keys = Reflect.ownKeys(descriptors)
     if (keys.some((key) => typeof key !== 'string')) return false
 
-    let children: unknown[]
+    const children: { value: unknown; schema?: StructSchema }[] = []
     if (Array.isArray(current.value)) {
       if (
         current.value.length > 128 ||
@@ -78,16 +102,24 @@ function boundedData(value: unknown) {
       )
         return false
 
-      children = []
+      const itemSchema =
+        formattedDepth === undefined && current.schema?.type === 'array'
+          ? current.schema.items
+          : undefined
       for (let index = 0; index < current.value.length; index++) {
         const descriptor = descriptors[String(index)]
         if (!descriptor || !('value' in descriptor)) return false
-        children.push(descriptor.value)
+        children.push({ value: descriptor.value, schema: itemSchema })
       }
     } else {
       if (keys.length > 1024 - visited) return false
 
-      children = []
+      const definitions = new Map(
+        (
+          current.fields ??
+          (current.schema?.type === 'object' ? current.schema.fields : [])
+        ).map((field) => [field.key, field.schema]),
+      )
       for (const key of keys as string[]) {
         const descriptor = descriptors[key]!
         if (
@@ -98,14 +130,23 @@ function boundedData(value: unknown) {
         )
           return false
 
-        children.push(descriptor.value)
+        children.push({
+          value: descriptor.value,
+          schema:
+            formattedDepth === undefined ? definitions.get(key) : undefined,
+        })
       }
     }
 
     ancestors.add(current.value)
     pending.push({ value: current.value, depth: current.depth, exit: true })
     for (const child of children)
-      pending.push({ value: child, depth: current.depth + 1 })
+      pending.push({
+        ...child,
+        depth: current.depth + 1,
+        formattedDepth:
+          formattedDepth === undefined ? undefined : formattedDepth + 1,
+      })
   }
 
   try {
@@ -137,6 +178,10 @@ function matchesSchema(schema: StructSchema, value: unknown): boolean {
       return typeof value === 'number' && Number.isFinite(value)
     case 'boolean':
       return typeof value === 'boolean'
+    case 'richText':
+      return schema.schemaVersion === 1
+        ? parseRichTextDocument(value) !== null
+        : parseFormattedRichTextDocument(value) !== null
     case 'object':
       return matchesFields(schema.fields, value)
     case 'array':
@@ -153,7 +198,11 @@ function matchesSchema(schema: StructSchema, value: unknown): boolean {
 }
 
 function parseData(fields: StructField[], value: unknown): EntryData | null {
-  if (!record(value) || !boundedData(value) || !matchesFields(fields, value))
+  if (
+    !record(value) ||
+    !boundedData(fields, value) ||
+    !matchesFields(fields, value)
+  )
     return null
 
   return value as EntryData

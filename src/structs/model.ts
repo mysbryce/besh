@@ -5,6 +5,8 @@ export type StructSchema =
   | { type: 'object'; fields: StructField[] }
   | { type: 'array'; items: StructSchema }
   | { type: 'select'; options: { value: string; label: string }[] }
+  | { type: 'richText'; schemaVersion: 1; astVersion: 1 }
+  | { type: 'richText'; schemaVersion: 2; astVersion: 2 }
 
 export type StructField = {
   key: string
@@ -48,6 +50,22 @@ const schema: z.ZodType<StructSchema> = z.lazy(() =>
     z.object({ type: z.literal('boolean') }).strict(),
     z.object({ type: z.literal('object'), fields }).strict(),
     z.object({ type: z.literal('array'), items: schema }).strict(),
+    z.discriminatedUnion('schemaVersion', [
+      z
+        .object({
+          type: z.literal('richText'),
+          schemaVersion: z.literal(1),
+          astVersion: z.literal(1),
+        })
+        .strict(),
+      z
+        .object({
+          type: z.literal('richText'),
+          schemaVersion: z.literal(2),
+          astVersion: z.literal(2),
+        })
+        .strict(),
+    ]),
     z
       .object({
         type: z.literal('select'),
@@ -109,6 +127,12 @@ function boundedDefinition(value: unknown) {
     const current = schemas.pop()!
     if (++nodes > 128 || current.depth > 6) return false
     if (!record(current.value)) continue
+    if (
+      current.value.type === 'richText' &&
+      current.value.schemaVersion === 1 &&
+      current.depth !== 1
+    )
+      return false
 
     if (current.value.type === 'array') {
       schemas.push({ value: current.value.items, depth: current.depth + 1 })

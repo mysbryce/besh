@@ -4,6 +4,29 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.23.0-alpha.0 — 2026-10-11
+
+### Added
+
+- Separate versioned paragraph and formatted rich-text fields for private content models and entries, with strict structured documents and tested backup recovery.
+- A native editor for headings, emphasis, HTTPS links, lists, tables, quotes, literal code and dividers, with keyboard history and plain-text paste.
+- Seven-language editor controls and forty page/action previews, including compact light/dark phone layouts and pending-save states.
+
+### Fixed
+
+- Preserve empty paragraphs and leaves, link boundaries, mark order, separate numbered lists, literal whitespace and untouched blocks during editing.
+- Reject reviewed table/list/quote/divider insertions and list movement that exceed document limits before changing content or history.
+- Preserve imported list owners during outdent and Backspace. Keep structural Undo through a version-pinned native history patch that also reproduces on a fresh frozen install.
+- Include dependency patches in source release candidates with verified file checksums.
+- Keep numbered list owners visible beside nested lists and saved scalar values readable in light and dark content previews.
+- Check the actual bounded runtime-key expiry response before capturing the expired-key preview.
+- Wait for native dropdown placement and selected focus before testing keyboard access to long role names.
+- Record final optimized dashboard asset sizes and hashes, verified against actual files served by the copied portable executable.
+
+### Changed
+
+- Keep HTML rendering, reviewed element mappings, media and canonical collection publication separate from private structured content.
+
 ## 0.22.0-alpha.0 — 2026-10-11
 
 ### Added

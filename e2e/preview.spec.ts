@@ -46,12 +46,40 @@ import { dataSourceStatusLocalePreviews } from './data-source-status-locale-prev
 import { databaseCatalogLocalePreviews } from './database-catalog-locale-previews'
 import { structPreviews } from './struct-previews'
 import { collectionPreviews } from './collection-previews'
+import { richTextPreviews } from './rich-text-previews'
+import { formattedRichTextPreviews } from './formatted-rich-text-previews'
+import { richTextBlockPreviews } from './rich-text-block-previews'
+import { richTextInteractionPreviews } from './rich-text-interaction-previews'
+import { richTextLocalePreviews } from './rich-text-locale-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
 } from './locale-startup-previews'
 
 test.describe.configure({ mode: 'parallel' })
+
+for (const [id, run] of [
+  ['rich-text', richTextPreviews],
+  ['formatted-rich-text', formattedRichTextPreviews],
+  ['rich-text-blocks', richTextBlockPreviews],
+  ['rich-text-interactions', richTextInteractionPreviews],
+  ['rich-text-locales', richTextLocalePreviews],
+] as const) {
+  test.describe(id, () => {
+    test.use({ locale: 'en-US' })
+
+    test(id, async ({ page, previewWorkspace }) => {
+      const { owner, origin } = previewWorkspace
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      const { capture, complete } = storyCapture(page, id)
+
+      await run({ page, owner, apiOrigin: origin, capture })
+      expect(errors).toEqual([])
+      complete()
+    })
+  })
+}
 
 test.describe('collections', () => {
   test.use({ locale: 'en-US' })
@@ -2976,19 +3004,25 @@ test(
       'Refresh revoked replacement state',
       'Refreshing reads current server metadata and removes replacement controls from the revoked record.',
     )
-    const shortKey = await (
-      await page.request.post('/api/runtime-keys', {
-        headers: rotationHeaders,
-        data: {
-          name: 'Expired replacement',
-          flowId: rotationFlow.id,
-          permissions: ['rest'],
-          expiresAt: new Date(Date.now() + 150).toISOString(),
-        },
-      })
-    ).json()
+    const shortExpiry = new Date(Date.now() + 5_000).toISOString()
+    const shortKeyResponse = await page.request.post('/api/runtime-keys', {
+      headers: rotationHeaders,
+      data: {
+        name: 'Expired replacement',
+        flowId: rotationFlow.id,
+        permissions: ['rest'],
+        expiresAt: shortExpiry,
+      },
+    })
+    expect(shortKeyResponse.status()).toBe(200)
+
+    const shortKey = await shortKeyResponse.json()
+    expect(shortKey.expiresAt).toBe(shortExpiry)
+
     await expect
-      .poll(() => Date.now() >= Date.parse(shortKey.expiresAt))
+      .poll(() => Date.now() >= Date.parse(shortKey.expiresAt), {
+        timeout: 10_000,
+      })
       .toBe(true)
     await page.getByRole('button', { name: 'Refresh', exact: true }).click()
     await notice('API keys refreshed')
@@ -4341,6 +4375,11 @@ for (const story of previewStories) {
     story.id === 'database-catalog-locales' ||
     story.id === 'structs' ||
     story.id === 'collections' ||
+    story.id === 'rich-text' ||
+    story.id === 'formatted-rich-text' ||
+    story.id === 'rich-text-blocks' ||
+    story.id === 'rich-text-interactions' ||
+    story.id === 'rich-text-locales' ||
     story.id === 'management-data-api-generation'
   )
     continue

@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef } from 'react'
+import { lazy, Suspense, useId, useLayoutEffect, useRef } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
 import type { StructField, StructSchema } from '../src/structs/model'
 import { Button } from './components/ui/button'
@@ -6,11 +6,16 @@ import { Checkbox } from './components/ui/checkbox'
 import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
 import { useTranslation } from './i18n'
+import { RichTextFields } from './rich-text-fields'
 import {
   contentValue,
   type ContentFields as ContentFieldValues,
   type ContentValue,
 } from './content-entry-store'
+
+const FormattedRichTextEditor = lazy(
+  () => import('./formatted-rich-text-editor'),
+)
 
 export function ContentFields({
   fields,
@@ -108,6 +113,39 @@ function ValueControl({
 }) {
   const { t } = useTranslation()
 
+  if (
+    schema.type === 'richText' &&
+    schema.schemaVersion === 2 &&
+    value.type === 'formattedRichText'
+  )
+    return (
+      <Suspense
+        fallback={<p className="field-help">{t('Opening text editor…')}</p>}
+      >
+        <FormattedRichTextEditor
+          key={value.id}
+          value={value}
+          label={label}
+          disabled={disabled}
+          onChange={onChange}
+        />
+      </Suspense>
+    )
+
+  if (
+    schema.type === 'richText' &&
+    schema.schemaVersion === 1 &&
+    value.type === 'richText'
+  )
+    return (
+      <RichTextFields
+        value={value}
+        label={label}
+        disabled={disabled}
+        onChange={onChange}
+      />
+    )
+
   if (schema.type === 'boolean' && value.type === 'boolean')
     return (
       <BooleanControl
@@ -169,6 +207,7 @@ function ValueControl({
         {label}
         <Input
           aria-label={label}
+          className="disabled:opacity-100"
           value={value.value}
           type="text"
           inputMode={type === 'number' ? 'decimal' : 'text'}

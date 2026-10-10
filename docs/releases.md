@@ -4,6 +4,20 @@ Besh stays below `1.0.0` until the project is ready and the maintainer explicitl
 
 Every completed change delivery gets a new version in `package.json` and an entry in [CHANGELOG.md](../CHANGELOG.md), in the same tested commit. Work in progress does not need a version change after every edit.
 
+## Rich-text candidate verification — 0.23.0-alpha.0
+
+The copied-executable asset-integrity RED found dashboard inventory metadata recorded before final CSS optimization. Recording final optimized files in `writeBundle` corrected the byte/hash mismatch; the public HTML probe uses `/`. Focused GREEN passed one case/57 assertions in 14.64 seconds (`.cache/rich-text-portable-inventory-green-2.log`); detailed RED/GREEN evidence is in [testing](testing.md#structured-rich-text--active-023-work).
+
+The exact original license/component binding for nested `zustand@4.5.7` is included in the 713-file/276-component notice inventory. Fresh reconciliation covers 77 observed npm components and appends 18 dashboard scopes, with no unmatched components or blocking inventory gaps; application changes only scopes and preserves all 31 new original license files and prior index entries. Stale dashboard chunk inventory was refused before the fresh reconciliation. The final executable was compiled afterward (`.cache/rich-text-final-portable-build.log`); its full suite passed ten cases/1,080 assertions across eight files in 108.11 seconds (`.cache/rich-text-final-portable.log`). The fresh complete browser command passed all 65 cases in 292.68 seconds (`.cache/rich-text-final-browser.log`).
+
+Executable metadata records version `0.23.0-alpha.0`, source base `3c527bb` and `clean: false`, identifying a local working-tree candidate. No tag, executable asset or release was published. Hosted exact-head/main CI and source delivery remain pending. These local receipts do not establish legal clearance or publisher signing.
+
+## Private collection delivery — 0.22.0-alpha.0
+
+[PR #19](https://github.com/mysbryce/besh/pull/19) merged reviewed head `6ab4b3f60f86df486ea2deb7c65dbf72816d853e` as squash main `3c527bbf4ef4b14588ee7b31177420e2792dadbe`. Reviewed and merged trees match `d850d650b1e9f59cb4b3c43239839ceff930c1ee`. [Exact-head CI 38078443388](https://github.com/mysbryce/besh/actions/runs/38078443388) and [main CI 38078825873](https://github.com/mysbryce/besh/actions/runs/38078825873) passed all three jobs: 376 backend cases/7,705 assertions, 55 browser cases and 10 portable cases/1,038 assertions. Local browser/gallery acceptance and its RED/GREEN history remain in [testing](testing.md#private-collection-snapshots-and-entries--active-022-work).
+
+The PR body retained three reviewed anonymous attachments with verified remote SHA-256 values. After successful main CI and exact-tree proof, local and remote `feat/private-content-collections-0.22.0` branches were removed; unrelated local main history was preserved. Proof is recorded in `.cache/collections-delivery-proof.json`, `.cache/collections-attachment-proof.json`, `.cache/collections-head-ci.log` and `.cache/collections-main-ci.log`. This completes owner-only private collection/entry source delivery, not rich text, shared CMS, runtime publication or a new public portable release asset.
+
 ## Struct draft delivery — 0.21.0-alpha.0
 
 [PR #18](https://github.com/mysbryce/besh/pull/18) merged reviewed head `48a9615cd14bc3522df82fa0a90e53fe8cc8eeb2` as main commit `865c29dbd16fc193bb4fc31ffa2e7754d04b6b13`. [Head CI 38073598920](https://github.com/mysbryce/besh/actions/runs/38073598920) and [main CI 38074035373](https://github.com/mysbryce/besh/actions/runs/38074035373) passed all three jobs. Both ran 366 backend cases with 6,419 assertions, 54 browser cases and 10 portable cases with 1,038 assertions. Browser wrapper times were 151.05 seconds on the head and 151.18 seconds on main; logs are `.cache/structs-head-ci.log` and `.cache/structs-main-ci.log`.

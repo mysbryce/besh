@@ -1,4 +1,99 @@
 const messages: Record<string, string> = {
+  'This list item cannot be outdented safely.':
+    'Нельзя безопасно уменьшить отступ этого элемента списка.',
+
+  'This document cannot fit a list. Remove some content first.':
+    'В этот документ нельзя добавить список. Сначала удалите часть содержимого.',
+  'Indent list': 'Увеличить отступ списка',
+  'Outdent list': 'Уменьшить отступ списка',
+  'This list item cannot be nested further.':
+    'Этот элемент списка нельзя вложить глубже.',
+
+  'This document cannot fit a quote. Remove some content first.':
+    'В этот документ нельзя добавить цитату. Сначала удалите часть содержимого.',
+
+  'This document cannot fit a table. Remove some content first.':
+    'В этот документ нельзя добавить таблицу. Сначала удалите часть содержимого.',
+  'This document cannot fit a divider. Remove some content first.':
+    'В этот документ нельзя добавить разделитель. Сначала удалите часть содержимого.',
+
+  'Insert divider': 'Вставить разделитель',
+  'Choose an unformatted paragraph outside lists and tables to create a code block.':
+    'Выберите неформатированный абзац вне списков и таблиц, чтобы создать блок кода.',
+
+  'Code block': 'Блок кода',
+  '{field} code language': '{field} · Язык кода',
+  'Plain text': 'Обычный текст',
+  JavaScript: 'JavaScript',
+  'Choose a single paragraph outside lists and tables to create a quote.':
+    'Выберите один абзац вне списков и таблиц, чтобы создать цитату.',
+
+  Quote: 'Цитата',
+
+  'Add row': 'Добавить строку',
+  'Add column': 'Добавить столбец',
+  'This table cannot grow further.': 'Эту таблицу больше нельзя расширить.',
+  'Remove row': 'Удалить строку',
+  'Remove column': 'Удалить столбец',
+
+  'Insert table': 'Вставить таблицу',
+
+  'Add link': 'Добавить ссылку',
+  'Edit link': 'Изменить ссылку',
+  'Remove link': 'Удалить ссылку',
+  'Link URL': 'URL ссылки',
+  'Apply link': 'Применить ссылку',
+  'Enter a complete HTTPS URL without credentials.':
+    'Введите полный HTTPS URL без учётных данных.',
+  'Select text to add a link.': 'Выделите текст, чтобы добавить ссылку.',
+  'Apply or cancel the link before saving this entry.':
+    'Примените или отмените ссылку перед сохранением этой записи.',
+
+  'Bullet list': 'Маркированный список',
+  'Numbered list': 'Нумерованный список',
+
+  'Formatted rich text': 'Текст с форматированием',
+  '{field} block style': '{field} · Стиль блока',
+  Paragraph: 'Абзац',
+  'Heading 1': 'Заголовок 1',
+  'Heading 2': 'Заголовок 2',
+  'Heading 3': 'Заголовок 3',
+  'Heading 4': 'Заголовок 4',
+  'Heading 5': 'Заголовок 5',
+  'Heading 6': 'Заголовок 6',
+  Bold: 'Жирный',
+  Italic: 'Курсив',
+  Underline: 'Подчёркивание',
+  Strikethrough: 'Зачёркивание',
+  'Inline code': 'Код в строке',
+  Undo: 'Отменить',
+  Redo: 'Повторить',
+  '{field} formatting': '{field} · Форматирование',
+  'Opening text editor…': 'Открытие текстового редактора…',
+  'This content contains formatting this editor cannot edit yet.':
+    'Это содержимое включает форматирование, которое редактор пока не может изменять.',
+  'Could not open text editor.': 'Не удалось открыть текстовый редактор.',
+  'Formatted text supports headings and emphasis. Pasted content is plain text.':
+    'Форматированный текст поддерживает заголовки и выделение. Вставляемое содержимое становится обычным текстом.',
+  'Invalid formatted text.': 'Недопустимый форматированный текст.',
+
+  'Rich text': 'Форматированный текст',
+  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
+    'Доступен только текст абзацев. Текст сохраняется буквально; форматирование и отображение HTML недоступны.',
+  '{field} · Paragraph {index}': '{field} · Абзац {index}',
+  '{field} · Paragraph {paragraph} · Text {text}':
+    '{field} · Абзац {paragraph} · Текст {text}',
+  'Add paragraph to {field}': 'Добавить абзац в {field}',
+  'Add text to {field} · Paragraph {index}':
+    'Добавить текст в {field} · Абзац {index}',
+  'Remove {field} · Paragraph {index}': 'Удалить {field} · Абзац {index}',
+  'Remove {field} · Paragraph {paragraph} · Text {text}':
+    'Удалить {field} · Абзац {paragraph} · Текст {text}',
+  'Empty document': 'Пустой документ',
+  'Empty paragraph': 'Пустой абзац',
+  'Rich text is available only for top-level fields.':
+    'Форматированный текст доступен только для полей верхнего уровня.',
+
   'View content model': 'Посмотреть модель контента',
   'Hide content model': 'Скрыть модель контента',
 

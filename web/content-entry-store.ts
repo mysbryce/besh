@@ -1,5 +1,17 @@
 import { create } from 'zustand'
 import type { StructField, StructSchema } from '../src/structs/model'
+import {
+  parseRichTextDocument,
+  type RichTextDocument,
+} from '../src/structs/rich-text'
+import {
+  parseFormattedRichTextDocument,
+  type FormattedRichTextDocument,
+} from '../src/structs/rich-text-formatted'
+import {
+  canEditFormattedText,
+  unsupportedFormattedText,
+} from './formatted-rich-text-value'
 import type { EntryData, EntryValue } from '../src/collections/model'
 import type { Collection, ContentEntry } from './lib/api'
 
@@ -8,6 +20,16 @@ export type ContentValue =
   | { type: 'boolean'; value: boolean }
   | { type: 'object'; fields: ContentFields }
   | { type: 'array'; items: { id: string; value: ContentValue }[] }
+  | {
+      type: 'formattedRichText'
+      id: string
+      document: FormattedRichTextDocument
+      error?: string
+    }
+  | {
+      type: 'richText'
+      paragraphs: { id: string; texts: { id: string; text: string }[] }[]
+    }
 
 export type ContentFields = Record<
   string,
@@ -19,6 +41,40 @@ export function contentValue(
   value?: EntryValue,
 ): ContentValue {
   switch (schema.type) {
+    case 'richText': {
+      if (schema.schemaVersion === 2) {
+        const document: FormattedRichTextDocument | null =
+          value === undefined
+            ? { type: 'document', astVersion: 2, children: [] }
+            : parseFormattedRichTextDocument(value)
+        if (!document) throw new Error('Could not load entry.')
+
+        return {
+          type: 'formattedRichText',
+          id: crypto.randomUUID(),
+          document,
+          error: canEditFormattedText(document)
+            ? undefined
+            : unsupportedFormattedText,
+        }
+      }
+
+      const document =
+        value === undefined ? undefined : parseRichTextDocument(value)
+      if (document === null) throw new Error('Could not load entry.')
+
+      return {
+        type: 'richText',
+        paragraphs:
+          document?.children.map((paragraph) => ({
+            id: crypto.randomUUID(),
+            texts: paragraph.children.map((text) => ({
+              id: crypto.randomUUID(),
+              text: text.text,
+            })),
+          })) ?? [],
+      }
+    }
     case 'text':
     case 'select':
       return {
@@ -98,8 +154,86 @@ export function prepareEntry(
     depth: number,
   ): EntryValue | undefined {
     if (++visited > 1024 || depth > 6) return fail(contentBounds)
+    if (
+      schema.type === 'richText' &&
+      schema.schemaVersion === 2 &&
+      value.type === 'formattedRichText'
+    ) {
+      if (value.error) return fail(value.error)
+      if (!parseFormattedRichTextDocument(value.document))
+        return fail('Invalid formatted text.')
+
+      const pending: { value: unknown; depth: number }[] = Object.values(
+        value.document,
+      ).map((child) => ({ value: child, depth: 1 }))
+
+      // Only this frozen v2 schema admits a separate AST encoding depth budget.
+      while (pending.length) {
+        const current = pending.pop()!
+        if (++visited > 1024 || current.depth > 24) return fail(contentBounds)
+        if (
+          typeof current.value === 'string' &&
+          encoder.encode(current.value).length > 4096
+        )
+          return fail(contentBounds)
+        if (current.value === null || typeof current.value !== 'object')
+          continue
+        if (Array.isArray(current.value) && current.value.length > 128)
+          return fail(contentBounds)
+
+        for (const child of Object.values(current.value))
+          pending.push({ value: child, depth: current.depth + 1 })
+      }
+
+      return value.document
+    }
+
     if (schema.type !== value.type)
       return fail('Check the value for {field}.', { field: path })
+
+    if (
+      schema.type === 'richText' &&
+      schema.schemaVersion === 1 &&
+      value.type === 'richText'
+    ) {
+      const document: RichTextDocument = {
+        type: 'document',
+        astVersion: 1,
+        children: value.paragraphs.map((paragraph) => ({
+          type: 'paragraph',
+          children: paragraph.texts.map((text) => ({
+            type: 'text',
+            text: text.text,
+          })),
+        })),
+      }
+
+      if (!parseRichTextDocument(document)) return fail(contentBounds)
+
+      // The entry budget counts every AST property value and array, not only text leaves.
+      const pending: { value: unknown; depth: number }[] = Object.values(
+        document,
+      ).map((child) => ({ value: child, depth: depth + 1 }))
+
+      while (pending.length) {
+        const current = pending.pop()!
+        if (++visited > 1024 || current.depth > 6) return fail(contentBounds)
+        if (
+          typeof current.value === 'string' &&
+          encoder.encode(current.value).length > 4096
+        )
+          return fail(contentBounds)
+        if (current.value === null || typeof current.value !== 'object')
+          continue
+        if (Array.isArray(current.value) && current.value.length > 128)
+          return fail(contentBounds)
+
+        for (const child of Object.values(current.value))
+          pending.push({ value: child, depth: current.depth + 1 })
+      }
+
+      return document
+    }
 
     if (schema.type === 'object' && value.type === 'object')
       return readFields(schema.fields, value.fields, path, depth)

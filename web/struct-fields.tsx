@@ -20,6 +20,8 @@ const typeLabels = [
   { value: 'object', label: 'Group' },
   { value: 'array', label: 'List' },
   { value: 'select', label: 'Choice' },
+  { value: 'richText', label: 'Rich text' },
+  { value: 'formattedRichText', label: 'Formatted rich text' },
 ] as const
 
 export function StructFields({
@@ -170,6 +172,10 @@ function SchemaEditor({
   const addOption = useRef<HTMLButtonElement>(null)
   const returnFocus = useRef(false)
   const optionCount = schema.type === 'select' ? schema.options.length : 0
+  const selectedType =
+    schema.type === 'richText' && schema.schemaVersion === 2
+      ? 'formattedRichText'
+      : schema.type
   const label = t(item ? 'Field {path} item type' : 'Field {path} type', {
     path,
   })
@@ -182,7 +188,9 @@ function SchemaEditor({
   }, [optionCount])
 
   function switchType(value: string) {
-    if (disabled || value === schema.type) return
+    if (disabled || value === selectedType) return
+    if (value === 'richText' && (depth !== 1 || item)) return
+
     if (
       removesStructure(schema) &&
       !window.confirm(
@@ -190,6 +198,11 @@ function SchemaEditor({
       )
     )
       return
+
+    if (value === 'formattedRichText') {
+      onChange(emptySchema('formattedRichText'))
+      return
+    }
 
     onChange(emptySchema(value as EditorSchema['type']))
   }
@@ -200,14 +213,26 @@ function SchemaEditor({
         {label}
         <Select
           label={label}
-          value={schema.type}
+          value={selectedType}
           disabled={disabled}
           options={typeLabels
             .filter((entry) => depth < 6 || entry.value !== 'array')
+            .filter(
+              (entry) => entry.value !== 'richText' || (depth === 1 && !item),
+            )
             .map((entry) => ({ value: entry.value, label: t(entry.label) }))}
           onValueChange={switchType}
         />
       </label>
+      {schema.type === 'richText' ? (
+        <p className="field-help">
+          {t(
+            schema.schemaVersion === 1
+              ? 'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.'
+              : 'Formatted text supports headings and emphasis. Pasted content is plain text.',
+          )}
+        </p>
+      ) : null}
       {schema.type === 'object' ? (
         <div className="struct-nested">
           <StructFields

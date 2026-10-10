@@ -1,6 +1,6 @@
 # Content model drafts
 
-Owners can define and save a Struct through **Content models** in the dashboard. A Struct describes record fields; it does not store content entries, publish a collection or create an API. Rich text, renderer configuration, relationships, schema migrations for content and runtime routes remain [planned](platform-plan.md).
+Owners can define and save a Struct through **Content models** in the dashboard. A Struct describes record fields; it does not itself store content entries, publish a collection or create an API. Private collections can bind a saved revision. [Versioned rich text](rich-text.md) has passed local paragraph/formatted-editor checks, complete browser/gallery and compiled portable gates; hosted 0.23 source delivery remains pending. Renderer configuration, relationships, schema migrations for content and runtime routes remain [planned](platform-plan.md).
 
 ## Define a model
 
@@ -18,7 +18,9 @@ Owners can define and save a Struct through **Content models** in the dashboard.
 | List          | `array`           | An item schema                         |
 | Choice        | `select`          | Unique saved values and display labels |
 
-Labels, model names, keys and choice values remain authored text when the interface language changes. The required flag is saved definition metadata; this delivery does not validate or execute content records.
+Current 0.23 work also exposes **Rich text** for literal version-one paragraphs and **Formatted rich text** for version-two content, including nested fields. Both store explicit paired schema/AST versions. These controls have focused checks, not completed 0.23 delivery acceptance; see the [working contract](rich-text.md).
+
+Labels, model names, keys and choice values remain authored text when the interface language changes. Private collections validate entries against their copied saved model, including required fields. Changing this draft does not change an existing collection's binding.
 
 **Choose a model** opens a saved draft. **New model** starts an unsaved definition. Changing models, starting another model or leaving a dirty editor requires a discard decision; canceling preserves the current edits. Changing a type that contains nested fields or choices also asks before removing that structure. Opening a model never publishes it.
 

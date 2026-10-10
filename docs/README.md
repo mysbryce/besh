@@ -26,7 +26,8 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [Spreadsheet data sources](data-sources.md): CSV/Excel import, public Google Sheets, reviewed field mapping, generated APIs, and snapshot lifecycle.
 - [Uploaded SQLite database copies](databases.md): bounded import, inspected tables/columns, read previews, generated APIs, permissions, and backup/recovery limits.
 - [Content model drafts](structs.md): owner-only visual Struct fields, nested groups/lists/choices, versioned saves, bounds and backup limits.
-- [Private collections and entries](collections.md): immutable Struct binding, locally accepted seven-language typed entry CRUD, version checks, paging and backup confidentiality; final formatting and hosted checks remain separate.
+- [Private collections and entries](collections.md): delivered immutable Struct binding, seven-language typed entry CRUD, version checks, paging and backup confidentiality.
+- [Structured rich text](rich-text.md): working version-one paragraph and version-two formatted contracts, bounds and separate planned HTML/publication gates.
 - [GitHub update notices](updates.md): owner-only manual release checks, saved repository/prerelease choices, cached results, and notice-only limits.
 - [Page and action previews](preview.md): capture commands, gallery inventory, masked credentials, data isolation, and Git ignore choices.
 - [Glossary](../GLOSSARY.md): workspace, draft, release, member identity, and caller credentials.

@@ -21,6 +21,15 @@ async function phoneTarget(control: Locator) {
   expect(Math.round(bounds!.height * 100) / 100).toBeGreaterThanOrEqual(44)
 }
 
+async function openedMenu(page: Page) {
+  const menu = page.getByRole('listbox')
+  const selected = page.getByRole('option', { selected: true })
+
+  await expect(menu).toHaveCSS('opacity', '1')
+  await expect(selected).toBeFocused()
+  await expect(selected).toBeInViewport()
+}
+
 async function contained(page: Page) {
   expect(
     await page.evaluate(
@@ -116,6 +125,7 @@ export async function navigationPreviews({
   await expect(role).toBeEnabled()
   await compact(role)
   await role.click()
+  await openedMenu(page)
   await compact(
     page.getByRole('option', { name: 'Editor · build and test', exact: true }),
   )
@@ -129,6 +139,9 @@ export async function navigationPreviews({
   await page.getByRole('listbox').hover()
   await page.mouse.wheel(0, 600)
   await page.keyboard.press('End')
+  await expect(
+    page.getByRole('option', { name: longRoleLabel, exact: true }),
+  ).toBeFocused()
   await expect(
     page.getByRole('option', { name: longRoleLabel, exact: true }),
   ).toBeInViewport()
@@ -181,7 +194,11 @@ export async function navigationPreviews({
     .getByRole('button', { name: 'Members', exact: true })
     .click()
   await role.click()
+  await openedMenu(page)
   await page.keyboard.press('End')
+  await expect(
+    page.getByRole('option', { name: longRoleLabel, exact: true }),
+  ).toBeFocused()
   await expect(
     page.getByRole('option', { name: longRoleLabel, exact: true }),
   ).toBeInViewport()

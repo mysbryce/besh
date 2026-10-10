@@ -12,11 +12,19 @@ export type EditorField = Omit<StructField, 'schema'> & {
 
 export type EditorSchema =
   | { type: 'text' | 'number' | 'boolean' }
+  | { type: 'richText'; schemaVersion: 1; astVersion: 1 }
+  | { type: 'richText'; schemaVersion: 2; astVersion: 2 }
   | { type: 'object'; fields: EditorField[] }
   | { type: 'array'; items: EditorSchema }
   | { type: 'select'; options: { id: string; value: string; label: string }[] }
 
-export function emptySchema(type: StructSchema['type']): EditorSchema {
+export function emptySchema(
+  type: StructSchema['type'] | 'formattedRichText',
+): EditorSchema {
+  if (type === 'formattedRichText')
+    return { type: 'richText', schemaVersion: 2, astVersion: 2 }
+
+  if (type === 'richText') return { type, schemaVersion: 1, astVersion: 1 }
   if (type === 'object') return { type, fields: [] }
   if (type === 'array') return { type, items: { type: 'text' } }
   if (type === 'select')
@@ -39,6 +47,7 @@ export function emptyField(): EditorField {
 }
 
 function editableSchema(schema: StructSchema): EditorSchema {
+  if (schema.type === 'richText') return { ...schema }
   if (schema.type === 'object')
     return { type: schema.type, fields: editableFields(schema.fields) }
   if (schema.type === 'array')
@@ -64,6 +73,7 @@ function editableFields(fields: StructField[]): EditorField[] {
 }
 
 function savedSchema(schema: EditorSchema): StructSchema {
+  if (schema.type === 'richText') return { ...schema }
   if (schema.type === 'object')
     return { type: schema.type, fields: savedFields(schema.fields) }
   if (schema.type === 'array')
@@ -111,6 +121,9 @@ export function definitionError(name: string, fields: EditorField[]) {
   let nodes = 0
   function inspectSchema(schema: EditorSchema, depth: number): string | null {
     if (++nodes > 128 || depth > 6) return structLimits
+    if (schema.type === 'richText' && schema.schemaVersion === 1 && depth !== 1)
+      return 'Rich text is available only for top-level fields.'
+
     if (schema.type === 'object') return inspectFields(schema.fields, depth + 1)
     if (schema.type === 'array') return inspectSchema(schema.items, depth + 1)
     if (schema.type === 'select') {
