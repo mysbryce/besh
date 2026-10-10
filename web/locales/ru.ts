@@ -1,4 +1,35 @@
 const messages: Record<string, string> = {
+  'READ A SAVED DATABASE COPY': 'ЧИТАЙТЕ СОХРАНЁННУЮ КОПИЮ БАЗЫ ДАННЫХ',
+  'Choose a SQLite copy, review its tables, then build a read API.':
+    'Выберите копию SQLite, просмотрите её таблицы и создайте API для чтения.',
+  'Refresh connections': 'Обновить список подключений',
+  'SQLite uploaded copy · read-only':
+    'Загруженная копия SQLite · только чтение',
+  'This is an uploaded read-only copy. Changes to your original database are not synced.':
+    'Это загруженная копия только для чтения. Изменения исходной базы данных не синхронизируются с ней.',
+  'Upload an ordinary SQLite file up to 2 MiB. No database address, server credentials, or SQL is needed.':
+    'Загрузите обычный файл SQLite размером до 2 MiB. Адрес базы данных, учётные данные сервера и SQL не нужны.',
+  'Loading SQLite copies…': 'Загрузка копий SQLite…',
+  'Upload a SQLite copy': 'Загрузить копию SQLite',
+  'Manage database connections access is needed to upload, check, or delete copies.':
+    'Для загрузки, проверки или удаления копий нужно разрешение на управление подключениями к базам данных.',
+  'Connection name': 'Название подключения',
+  'SQLite file': 'Файл SQLite',
+  'Upload read-only copy': 'Загрузить копию только для чтения',
+  'Read database connections access is needed to list saved copies, preview rows, or choose API fields.':
+    'Для просмотра списка сохранённых копий, строк или выбора полей API нужно разрешение на чтение подключений к базам данных.',
+  'No SQLite copies yet': 'Копий SQLite пока нет',
+  'Upload a copy to review its ordinary tables and saved rows.':
+    'Загрузите копию, чтобы просмотреть её обычные таблицы и сохранённые строки.',
+  'Saved SQLite copies': 'Сохранённые копии SQLite',
+  'Read-only · v{version}': 'Только чтение · v{version}',
+  'Database connection': 'Подключение к базе данных',
+  '{count} tables · {size} KiB saved copy. Published APIs read this copy.':
+    'Таблиц: {count} · Размер сохранённой копии: {size} KiB. Опубликованные API читают эту копию.',
+  'SQLite copy uploaded. Review its table and returned columns.':
+    'Копия SQLite загружена. Проверьте её таблицу и возвращаемые столбцы.',
+  'Database connections refreshed.':
+    'Список подключений к базам данных обновлён.',
   'Loading data sources…': 'Загрузка источников данных…',
   'Read data sources access is needed to browse saved sources.':
     'Для просмотра сохранённых источников нужно разрешение на чтение источников данных.',

@@ -1,4 +1,33 @@
 const messages: Record<string, string> = {
+  'READ A SAVED DATABASE COPY': '读取已保存的数据库副本',
+  'Choose a SQLite copy, review its tables, then build a read API.':
+    '选择 SQLite 副本，查看其表，再构建读取 API。',
+  'Refresh connections': '刷新连接列表',
+  'SQLite uploaded copy · read-only': '已上传的 SQLite 副本 · 只读',
+  'This is an uploaded read-only copy. Changes to your original database are not synced.':
+    '这是已上传的只读副本。原始数据库的更改不会同步到此副本。',
+  'Upload an ordinary SQLite file up to 2 MiB. No database address, server credentials, or SQL is needed.':
+    '上传不超过 2 MiB 的普通 SQLite 文件。无需数据库地址、服务器凭据或 SQL。',
+  'Loading SQLite copies…': '正在加载 SQLite 副本…',
+  'Upload a SQLite copy': '上传 SQLite 副本',
+  'Manage database connections access is needed to upload, check, or delete copies.':
+    '需要管理数据库连接权限才能上传、检查或删除副本。',
+  'Connection name': '连接名称',
+  'SQLite file': 'SQLite 文件',
+  'Upload read-only copy': '上传只读副本',
+  'Read database connections access is needed to list saved copies, preview rows, or choose API fields.':
+    '需要读取数据库连接权限才能列出已保存的副本、预览行或选择 API 字段。',
+  'No SQLite copies yet': '还没有 SQLite 副本',
+  'Upload a copy to review its ordinary tables and saved rows.':
+    '上传副本以查看其普通表和已保存的行。',
+  'Saved SQLite copies': '已保存的 SQLite 副本',
+  'Read-only · v{version}': '只读 · v{version}',
+  'Database connection': '数据库连接',
+  '{count} tables · {size} KiB saved copy. Published APIs read this copy.':
+    '{count} 个表 · 已保存的副本大小为 {size} KiB。已发布的 API 读取此副本。',
+  'SQLite copy uploaded. Review its table and returned columns.':
+    'SQLite 副本已上传。请查看其表和返回列。',
+  'Database connections refreshed.': '数据库连接列表已刷新。',
   'Loading data sources…': '正在加载数据源…',
   'Read data sources access is needed to browse saved sources.':
     '需要读取数据源权限才能浏览已保存的数据源。',

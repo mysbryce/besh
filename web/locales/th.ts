@@ -1,4 +1,34 @@
 const messages: Record<string, string> = {
+  'READ A SAVED DATABASE COPY': 'อ่านสำเนาฐานข้อมูลที่บันทึกไว้',
+  'Choose a SQLite copy, review its tables, then build a read API.':
+    'เลือกสำเนา SQLite ตรวจสอบตาราง แล้วสร้าง API สำหรับอ่านข้อมูล',
+  'Refresh connections': 'รีเฟรชรายการการเชื่อมต่อ',
+  'SQLite uploaded copy · read-only':
+    'สำเนา SQLite ที่อัปโหลด · อ่านอย่างเดียว',
+  'This is an uploaded read-only copy. Changes to your original database are not synced.':
+    'นี่คือสำเนาที่อัปโหลดสำหรับอ่านอย่างเดียว การเปลี่ยนแปลงในฐานข้อมูลต้นฉบับจะไม่ซิงก์มายังสำเนานี้',
+  'Upload an ordinary SQLite file up to 2 MiB. No database address, server credentials, or SQL is needed.':
+    'อัปโหลดไฟล์ SQLite ทั่วไปขนาดไม่เกิน 2 MiB ไม่ต้องใช้ที่อยู่ฐานข้อมูล ข้อมูลเข้าสู่ระบบเซิร์ฟเวอร์ หรือ SQL',
+  'Loading SQLite copies…': 'กำลังโหลดสำเนา SQLite…',
+  'Upload a SQLite copy': 'อัปโหลดสำเนา SQLite',
+  'Manage database connections access is needed to upload, check, or delete copies.':
+    'ต้องมีสิทธิ์จัดการการเชื่อมต่อฐานข้อมูลเพื่ออัปโหลด ตรวจสอบ หรือลบสำเนา',
+  'Connection name': 'ชื่อการเชื่อมต่อ',
+  'SQLite file': 'ไฟล์ SQLite',
+  'Upload read-only copy': 'อัปโหลดสำเนาแบบอ่านอย่างเดียว',
+  'Read database connections access is needed to list saved copies, preview rows, or choose API fields.':
+    'ต้องมีสิทธิ์อ่านการเชื่อมต่อฐานข้อมูลเพื่อดูรายการสำเนาที่บันทึกไว้ ดูตัวอย่างแถวข้อมูล หรือเลือกฟิลด์ API',
+  'No SQLite copies yet': 'ยังไม่มีสำเนา SQLite',
+  'Upload a copy to review its ordinary tables and saved rows.':
+    'อัปโหลดสำเนาเพื่อตรวจสอบตารางทั่วไปและแถวข้อมูลที่บันทึกไว้',
+  'Saved SQLite copies': 'สำเนา SQLite ที่บันทึกไว้',
+  'Read-only · v{version}': 'อ่านอย่างเดียว · v{version}',
+  'Database connection': 'การเชื่อมต่อฐานข้อมูล',
+  '{count} tables · {size} KiB saved copy. Published APIs read this copy.':
+    '{count} ตาราง · สำเนาที่บันทึกไว้ขนาด {size} KiB API ที่เผยแพร่แล้วจะอ่านสำเนานี้',
+  'SQLite copy uploaded. Review its table and returned columns.':
+    'อัปโหลดสำเนา SQLite แล้ว ตรวจสอบตารางและคอลัมน์ที่จะส่งกลับ',
+  'Database connections refreshed.': 'รีเฟรชรายการการเชื่อมต่อฐานข้อมูลแล้ว',
   'Loading data sources…': 'กำลังโหลดแหล่งข้อมูล…',
   'Read data sources access is needed to browse saved sources.':
     'ต้องมีสิทธิ์อ่านแหล่งข้อมูลเพื่อดูแหล่งข้อมูลที่บันทึกไว้',
