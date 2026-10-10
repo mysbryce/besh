@@ -42,5 +42,6 @@ test-results/
 blob-report/
 playwright/.cache/
 .preview/
+/marketing/
 *.log
 *.tsbuildinfo

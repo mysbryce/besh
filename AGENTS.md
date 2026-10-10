@@ -38,6 +38,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Commit completed work with Conventional Commits, for example `feat(flows): publish validated API flows` or `fix(auth): reject expired credentials`.
 - Bump `package.json` for every completed change delivery and update `CHANGELOG.md` in the same tested commit. Follow `docs/releases.md`: fixes use patch, new features use minor, incomplete releases use `alpha`. Never bump to `1.0.0` or above without the maintainer's explicit confirmation.
 - Never commit secrets, generated data, dependencies, or build output. Never hide tests or this file in `.gitignore`.
+- Keep `marketing/` and its editable video tooling local and ignored. The maintainer permits only the final product-film MP4 under `docs/assets` in Git. Root README video placement and remote video upload require the maintainer's design approval.
 - Keep local skill installation metadata such as `skills-lock.json` out of Git while preserving the local file.
 - Preserve unrelated user edits. Do not force push, reset history, or publish without authorization.
 - Document what works, what remains planned, and exact checks run. Never claim an adapter works based only on a type definition or mock.
