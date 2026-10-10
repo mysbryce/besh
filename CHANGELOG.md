@@ -48,6 +48,18 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 - Recheck invitation eligibility after password hashing. Bound attempts and concurrent work; invalidate pending links after access changes or owner-key recovery.
 - Keep invitation secrets out of URL requests, browser storage, audit records and previews. Require explicit sign-out of an existing browser session before dashboard acceptance.
 
+## 0.17.2-alpha.0 — 2026-10-10
+
+### Changed
+
+- Pin GitHub Actions artifact uploads to v7.0.1. Preserve manual candidate preparation, read-only permissions, the reviewed bundle contents, and 14-day artifact retention.
+
+## 0.17.1-alpha.0 — 2026-10-10
+
+### Changed
+
+- Pin GitHub Actions checkout to v7.0.1, compatible with the current Windows runner. Preserve manual and push triggers, read-only permissions, and the local Bun installer.
+
 ## 0.17.0-alpha.0 — 2026-10-09
 
 ### Added

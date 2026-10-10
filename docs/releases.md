@@ -43,6 +43,8 @@ Upload-artifact v7.0.1 was reviewed and merged as `0.17.2-alpha.0`. [Head run 38
 
 A separately generated local archive from the same reviewed head passed safe-path, complete inventory, byte-count, SHA-256, source-byte and dashboard-asset checks for all 223 payload files. This is local bundle evidence, not verification of GitHub delivery or a signed artifact. The repository artifact inventory was empty. Review the owner's [Actions and Packages storage allowance](https://docs.github.com/en/billing/concepts/product-billing/github-actions), then rerun the candidate when uploads are available. Do not delete unrelated artifacts, change billing or weaken workflow failures to make the run green.
 
+After the normal PR #2 merge, [main run 38016098723](https://github.com/mysbryce/besh/actions/runs/38016098723) at `7851bff` passed both check and browser jobs. This main check does not upload artifacts and does not resolve the candidate's storage-quota failure.
+
 ## Automated checks and candidate artifacts
 
 [Check workflow](../.github/workflows/check.yml) uses the maintainer's Windows x64 runner with `runs-on: [self-hosted, windows, x64]`. It runs on branch pushes in this repository or manual requests, checking out the event's exact commit. Both jobs admit only those events; pull requests do not trigger this workflow. A same-repository branch push runs checks before its PR review. Repository writers and manual-run actors remain trusted to execute host code. See [GitHub's runner labels](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/use-in-a-workflow).
