@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Replacement spreadsheet': 'Replacement spreadsheet',
+  'Replace spreadsheet': 'Replace spreadsheet',
+  'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':
+    'Replaces saved rows used by your APIs. Keep published columns and their types compatible.',
+  'Replace saved data for {source}? APIs using this source will read the new snapshot.':
+    'Replace saved data for {source}? APIs using this source will read the new snapshot.',
+  'Spreadsheet replaced. Your APIs now use the saved data.':
+    'Spreadsheet replaced. Your APIs now use the saved data.',
   'FROM SPREADSHEET TO API': 'FROM SPREADSHEET TO API',
   'Bring your data. Preview its columns. Build an API without writing JSON.':
     'Bring your data. Preview its columns. Build an API without writing JSON.',

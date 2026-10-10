@@ -261,12 +261,16 @@ export async function flowAccessPreviews({
     .getByRole('option', { name: 'Viewer · read APIs', exact: true })
     .click()
   await page.getByRole('combobox', { name: 'Member role', exact: true }).click()
-  await page
-    .getByRole('option', {
-      name: 'Selected API reading role · custom role',
-      exact: true,
-    })
-    .click()
+  const readingRole = page.getByRole('option', {
+    name: 'Selected API reading role · custom role',
+    exact: true,
+  })
+
+  // Scroll within the menu instead of relying on option-click auto-scrolling.
+  await page.getByRole('listbox').hover()
+  await page.mouse.wheel(0, 600)
+  await expect(readingRole).toBeInViewport({ ratio: 1 })
+  await readingRole.click()
   await chooseMode('Selected APIs only', true)
   await creation
     .getByRole('checkbox', { name: `Share ${rest.name}`, exact: true })

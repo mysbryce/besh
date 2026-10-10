@@ -32,6 +32,18 @@ export const previewStories = [
   { id: 'management-studio-graphql', count: 8, locks: [] },
   { id: 'management-studio-websocket', count: 8, locks: [] },
   { id: 'management-data-source-import', count: 17, locks: [] },
+  { id: 'management-data-source-replacement', count: 18, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']
+
+// Product SQLite stories launch deadline-bound native child readers.
+export const sqlitePreviewStories = [
+  'database',
+  'scoped-actions',
+  'tenant-protection',
+  'field-access',
+  'tenant-field-profiles',
+  'protected-read-graphs',
+  'member-field-profiles',
+] as const satisfies readonly PreviewStory[]

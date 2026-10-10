@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Replacement spreadsheet': 'ไฟล์สเปรดชีตใหม่',
+  'Replace spreadsheet': 'แทนที่สเปรดชีต',
+  'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':
+    'แทนที่แถวข้อมูลที่บันทึกไว้ซึ่ง API ของคุณใช้อยู่ คอลัมน์และชนิดข้อมูลต้องยังรองรับ API ที่เผยแพร่แล้ว',
+  'Replace saved data for {source}? APIs using this source will read the new snapshot.':
+    'แทนที่ข้อมูลที่บันทึกไว้ของ {source} หรือไม่? API ที่ใช้แหล่งข้อมูลนี้จะอ่านข้อมูลชุดใหม่',
+  'Spreadsheet replaced. Your APIs now use the saved data.':
+    'แทนที่สเปรดชีตแล้ว ตอนนี้ API ของคุณใช้ข้อมูลที่บันทึกไว้',
   'FROM SPREADSHEET TO API': 'จากสเปรดชีตสู่ API',
   'Bring your data. Preview its columns. Build an API without writing JSON.':
     'นำข้อมูลของคุณมา ดูตัวอย่างคอลัมน์ แล้วสร้าง API โดยไม่ต้องเขียน JSON',

@@ -21,6 +21,7 @@ import { studioDraftLocalePreviews } from './studio-draft-locale-previews'
 import { studioGraphqlLocalePreviews } from './studio-graphql-locale-previews'
 import { studioWebsocketLocalePreviews } from './studio-websocket-locale-previews'
 import { dataSourceImportLocalePreviews } from './data-source-locale-previews'
+import { dataSourceReplacementLocalePreviews } from './data-source-replacement-locale-previews'
 
 const test = base.extend<{ workspace: { origin: string; owner: string } }>({
   workspace: async ({ page }, use) => {
@@ -80,6 +81,44 @@ function masked(page: Page) {
     page.locator('[data-private]'),
   ]
 }
+
+test('spreadsheet replacement follows language without changing data before confirmation', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let number = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+
+  await dataSourceReplacementLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title) => {
+      // The gallery captures every language; acceptance keeps key diagnostics.
+      if (
+        ![
+          'Russian replacement response pending',
+          'Phone dark Thai replaced snapshot',
+          'Thai rejected replacement keeps saved data',
+        ].includes(title)
+      )
+        return
+
+      await page.screenshot({
+        path: info.outputPath(
+          `${++number}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: true,
+        style: 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+
+  expect(errors).toEqual([])
+})
 
 test('CSV import follows language without changing authored data or permissions', async ({
   page,

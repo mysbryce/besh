@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Replacement spreadsheet': '用于替换的电子表格',
+  'Replace spreadsheet': '替换电子表格',
+  'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':
+    '替换 API 使用的已保存数据行。请保持已发布的列及其类型兼容。',
+  'Replace saved data for {source}? APIs using this source will read the new snapshot.':
+    '替换 {source} 的已保存数据？使用此数据源的 API 将读取新快照。',
+  'Spreadsheet replaced. Your APIs now use the saved data.':
+    '电子表格已替换。您的 API 现在使用已保存的数据。',
   'FROM SPREADSHEET TO API': '从电子表格到 API',
   'Bring your data. Preview its columns. Build an API without writing JSON.':
     '导入数据，预览列，无需编写 JSON 即可构建 API。',

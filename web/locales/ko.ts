@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Replacement spreadsheet': '교체할 스프레드시트',
+  'Replace spreadsheet': '스프레드시트 교체',
+  'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':
+    'API에서 사용하는 저장된 행을 교체합니다. 게시된 열과 해당 유형의 호환성을 유지하세요.',
+  'Replace saved data for {source}? APIs using this source will read the new snapshot.':
+    '{source}의 저장된 데이터를 교체하시겠습니까? 이 데이터 소스를 사용하는 API는 새 데이터 스냅샷을 읽습니다.',
+  'Spreadsheet replaced. Your APIs now use the saved data.':
+    '스프레드시트를 교체했습니다. 이제 API는 저장된 데이터를 사용합니다.',
   'FROM SPREADSHEET TO API': '스프레드시트에서 API로',
   'Bring your data. Preview its columns. Build an API without writing JSON.':
     '데이터를 가져오고 열을 미리 확인한 뒤 JSON을 작성하지 않고 API를 만드세요.',

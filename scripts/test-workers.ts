@@ -17,6 +17,13 @@ export function getTestWorkers(
   return workers
 }
 
+export function getBrowserWorkers(value = process.env.BESH_TEST_WORKERS) {
+  const workers = getTestWorkers(value)
+
+  // Browser workers also start servers and render; higher defaults failed locally.
+  return value === undefined ? Math.min(workers, 4) : workers
+}
+
 export function getPreviewWorkers(value?: string) {
   const limit = Math.min(availableParallelism(), 4)
   const selected = value ?? process.env.BESH_PREVIEW_WORKERS ?? String(limit)

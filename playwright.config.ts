@@ -2,7 +2,8 @@ import { defineConfig } from '@playwright/test'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { getTestWorkers } from './scripts/test-workers'
+import { getBrowserWorkers } from './scripts/test-workers'
+import { sqlitePreviewStories } from './e2e/preview-order'
 
 const directory = mkdtempSync(join(tmpdir(), 'besh-browser-'))
 
@@ -13,9 +14,12 @@ export default defineConfig({
     ...(process.env.BESH_E2E_SKIP_PROXY === '1'
       ? ['**/websocket-proxy.spec.ts']
       : []),
+    ...(process.env.BESH_E2E_SKIP_SQLITE === '1'
+      ? sqlitePreviewStories.map((story) => `**/${story}.spec.ts`)
+      : []),
   ],
   fullyParallel: false,
-  workers: getTestWorkers(),
+  workers: getBrowserWorkers(),
   use: {
     viewport: { width: 1440, height: 1000 },
     baseURL: 'http://127.0.0.1:5179',

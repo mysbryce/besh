@@ -38,6 +38,7 @@ import { studioDraftLocalePreviews } from './studio-draft-locale-previews'
 import { studioGraphqlLocalePreviews } from './studio-graphql-locale-previews'
 import { studioWebsocketLocalePreviews } from './studio-websocket-locale-previews'
 import { dataSourceImportLocalePreviews } from './data-source-locale-previews'
+import { dataSourceReplacementLocalePreviews } from './data-source-replacement-locale-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
@@ -4269,7 +4270,8 @@ for (const story of previewStories) {
     story.id === 'management-studio-draft' ||
     story.id === 'management-studio-graphql' ||
     story.id === 'management-studio-websocket' ||
-    story.id === 'management-data-source-import'
+    story.id === 'management-data-source-import' ||
+    story.id === 'management-data-source-replacement'
   )
     continue
   const helper = featureHelpers[story.id]
@@ -4303,6 +4305,11 @@ for (const [story, locale, helper] of [
   ['management-studio-draft', 'en-US', studioDraftLocalePreviews],
   ['management-studio-graphql', 'en-US', studioGraphqlLocalePreviews],
   ['management-studio-websocket', 'en-US', studioWebsocketLocalePreviews],
+  [
+    'management-data-source-replacement',
+    'en-US',
+    dataSourceReplacementLocalePreviews,
+  ],
 ] as const) {
   test.describe(story, () => {
     test.use({ locale })
