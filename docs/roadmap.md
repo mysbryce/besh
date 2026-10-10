@@ -2,6 +2,14 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Current work: portable Windows delivery
+
+Deliver the requested standalone executable, double-click setup/browser, owned background start/status/stop and Ubuntu/macOS build instructions. The actual copied executable must pass its own public HTTP/process/browser journeys before release delivery. Portable prototypes and prepared CSV-language drafts are not implemented features.
+
+## Implemented in 0.18.5: protocol guidance languages
+
+GraphQL route guidance and operation heading passed a public RED/GREEN journey across all seven languages with a real draft query. WebSocket route guidance then passed its own public RED/GREEN with one native draft reply and no locale-triggered ticket or message. All 46 browser cases and the 1024-image walkthrough passed. Advanced editors and server errors remain separate.
+
 ## Implemented in 0.18.4: basic Studio languages
 
 First-task and basic Save/Test/Publish guidance support all seven languages after separate public RED/GREEN slices. They preserve unsaved defaults, authored values and permission-limited shortcuts; actual saves, draft tests and publication still require explicit actions. All 44 browser cases and the 1008-image walkthrough passed. Protocol-specific guidance, advanced editors and other management panels remain next.
@@ -276,7 +284,9 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-Next translate protocol-specific Studio guidance, data-source/database panels, backups and advanced sharing/protection panels through separate public journeys. Technical errors, dynamic completion notices and native-speaker review remain separate. Basic Studio translation is complete in 0.18.4; member/role translation is complete in 0.18.3; account/session and update settings are complete in 0.18.2. Date/number formatting outside account/update screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
+Deliver the requested standalone portable Windows executable with double-click setup/browser, owned background start/status/stop and Ubuntu/macOS build instructions. Embed the dashboard and runtime, preserve separate SQLite readers and external workspace data, and verify the actual executable before release-asset claims. CSV/data-source languages follow; prepared drafts are not implemented behavior.
+
+Continue data-source/database panels, backups and advanced sharing/protection languages through separate public journeys. Technical errors, dynamic completion notices and native-speaker review remain separate. Basic Studio translation is complete in 0.18.4; member/role translation is complete in 0.18.3; account/session and update settings are complete in 0.18.2. Date/number formatting outside account/update screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
 
 1. **Product authorization and shared resources.** Preserve member-field intersections and the narrow workspace invitation lifecycle. Next add reviewed product accounts/sessions/linking, workspace email verification/recovery, resource-management sharing and multi-workspace isolation through separate lifecycles. Joins, social effects, public endpoints and broader WS graphs remain separate. Caller fields and static projections never establish identity or authorization.
 2. **Data connections and query tools.** Extend reviewed adapter capabilities and encrypted server-held credentials to PostgreSQL and MySQL/MariaDB; add MongoDB, Supabase, and Firebase with their own transaction, identity, query, and backup semantics. Add live SQLite connection/write capabilities separately from the uploaded-copy read adapter. Ship bounded parameterized read/write forms, pagination, previews, and explicit transactions one adapter at a time. Add migration dry runs, backup gates, restoration checks, and destructive-change review before schema changes. Private Sheets OAuth, write-back, and scheduled synchronization follow their connection/permission work.

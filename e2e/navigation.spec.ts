@@ -40,6 +40,11 @@ test('compact navigation and menus preserve keyboard and phone access', async ({
     page.locator('input[type="password"]'),
     page.locator('[data-private]'),
   ]
+  const menuCloseups = new Set([
+    'Compact dark role menu with many choices',
+    'Complete long role label at the end of a menu',
+    'Phone long role choice without clipping',
+  ])
 
   try {
     await expect
@@ -56,14 +61,34 @@ test('compact navigation and menus preserve keyboard and phone access', async ({
       owner,
       apiOrigin: origin,
       capture: async (_group, title, _detail, options) => {
-        await page.screenshot({
-          path: info.outputPath(
-            `${++captureNumber}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
-          ),
-          fullPage: options?.fullPage ?? true,
-          animations: 'disabled',
-          mask: mask(),
-        })
+        const path = info.outputPath(
+          `${++captureNumber}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        )
+        const menu = page.getByRole('listbox')
+        const bytes =
+          options?.region === 'listbox'
+            ? await page.screenshot({
+                path,
+                clip: (await menu.boundingBox())!,
+                animations: 'disabled',
+                mask: [
+                  menu.locator('input[type="password"]'),
+                  menu.locator('[data-private]'),
+                ],
+              })
+            : await page.screenshot({
+                path,
+                fullPage: options?.fullPage ?? true,
+                animations: 'disabled',
+                mask: mask(),
+              })
+        if (menuCloseups.has(title)) {
+          const bounds = await page.getByRole('listbox').boundingBox()
+          expect(bounds).not.toBeNull()
+          expect(bytes.readUInt32BE(16)).toBeLessThanOrEqual(
+            Math.ceil(bounds!.width) + 1,
+          )
+        }
       },
     })
     expect(errors).toEqual([])

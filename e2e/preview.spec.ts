@@ -35,6 +35,8 @@ import {
 } from './team-locale-previews'
 import { studioFirstTaskLocalePreviews } from './studio-locale-previews'
 import { studioDraftLocalePreviews } from './studio-draft-locale-previews'
+import { studioGraphqlLocalePreviews } from './studio-graphql-locale-previews'
+import { studioWebsocketLocalePreviews } from './studio-websocket-locale-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
@@ -89,7 +91,7 @@ test(
       ).toBeVisible()
     }
 
-    async function fitLoginGraph() {
+    async function fitGeneratedGraph() {
       await page.getByRole('button', { name: 'Fit View', exact: true }).click()
       await expect(page.locator('.react-flow__node')).toHaveCount(3)
       await expect
@@ -803,6 +805,7 @@ test(
     await page
       .getByRole('checkbox', { name: 'Filter rows', exact: true })
       .uncheck()
+    await fitGeneratedGraph()
     await page
       .locator('.react-flow__node')
       .filter({ hasText: 'JSON response' })
@@ -2380,7 +2383,7 @@ test(
     await expect(
       page.getByRole('combobox', { name: 'GitHub connection', exact: true }),
     ).toHaveText('Demo product')
-    await fitLoginGraph()
+    await fitGeneratedGraph()
     await capture(
       'Product login API',
       'Generated REST login graph',
@@ -2494,7 +2497,7 @@ test(
       'The generated graph, masked callback fields, identity response, and errors remain readable in dark appearance.',
     )
     await page.setViewportSize({ width: 390, height: 844 })
-    await fitLoginGraph()
+    await fitGeneratedGraph()
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -2517,7 +2520,7 @@ test(
       'The same generated login API stays contained and readable in light appearance at phone width.',
     )
     await page.setViewportSize({ width: 1440, height: 1000 })
-    await fitLoginGraph()
+    await fitGeneratedGraph()
     await page.getByRole('button', { name: 'Publish', exact: true }).click()
     await notice('Published · POST /run/login/github-preview')
     await navigate('Product login')
@@ -4262,7 +4265,9 @@ for (const story of previewStories) {
     story.id === 'management-roles' ||
     story.id === 'management-members' ||
     story.id === 'management-studio-first-task' ||
-    story.id === 'management-studio-draft'
+    story.id === 'management-studio-draft' ||
+    story.id === 'management-studio-graphql' ||
+    story.id === 'management-studio-websocket'
   )
     continue
   const helper = featureHelpers[story.id]
@@ -4294,6 +4299,8 @@ for (const [story, locale, helper] of [
   ['management-members', 'en-US', memberLocalePreviews],
   ['management-studio-first-task', 'en-US', studioFirstTaskLocalePreviews],
   ['management-studio-draft', 'en-US', studioDraftLocalePreviews],
+  ['management-studio-graphql', 'en-US', studioGraphqlLocalePreviews],
+  ['management-studio-websocket', 'en-US', studioWebsocketLocalePreviews],
 ] as const) {
   test.describe(story, () => {
     test.use({ locale })

@@ -128,8 +128,11 @@ export function storyCapture(page: Page, story: PreviewStory) {
     const fullPage = options?.fullPage ?? !dropdownOpen
     if (options?.region === 'listbox') {
       const menu = page.getByRole('listbox')
-      await menu.screenshot({
+      const bounds = await menu.boundingBox()
+      expect(bounds).not.toBeNull()
+      await page.screenshot({
         path: join(directory, image),
+        clip: bounds!,
         animations: 'disabled',
         mask: [
           menu.locator('input[type="password"]'),

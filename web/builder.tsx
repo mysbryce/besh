@@ -1047,9 +1047,13 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
       </div>
       <p className="field-help">
         {state.websocket
-          ? 'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.'
+          ? t(
+              'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.',
+            )
           : state.graphql
-            ? 'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.'
+            ? t(
+                'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.',
+              )
             : t(
                 'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.',
               )}
@@ -1176,7 +1180,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             <div className="panel-heading">
               <strong>{t('Try it out')}</strong>
               <span>
-                {state.graphql ? 'GRAPHQL OPERATION' : t('REQUEST DETAILS')}
+                {state.graphql ? t('GRAPHQL OPERATION') : t('REQUEST DETAILS')}
               </span>
             </div>
             {socialFlow ? (

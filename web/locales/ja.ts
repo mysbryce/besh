@@ -713,6 +713,11 @@ const messages: Record<string, string> = {
   '// Save your draft, then run a test.\n// Your response will appear here.':
     '// 下書きを保存してからテストを実行してください。\n// レスポンスはここに表示されます。',
   'Discard unsaved draft changes?': '未保存の下書きの変更を破棄しますか？',
+  'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.':
+    '/v1/customers などの完全なパスを指定してください。入力値は GraphQL の引数で渡します。',
+  'GRAPHQL OPERATION': 'GRAPHQL オペレーション',
+  'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
+    '/v1/messages などの完全なパスを指定してください。入力値は WebSocket メッセージで渡します。名前付きパスパラメーターは使えません。',
 }
 
 export default messages
