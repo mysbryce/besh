@@ -36,6 +36,7 @@ export const previewStories = [
   { id: 'management-data-api-generation', count: 22, locks: [] },
   { id: 'management-data-source-google', count: 19, locks: [] },
   { id: 'management-data-source-deletion', count: 20, locks: [] },
+  { id: 'management-data-source-status', count: 22, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']

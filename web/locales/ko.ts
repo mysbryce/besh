@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Loading data sources…': '데이터 소스를 불러오는 중…',
+  'Read data sources access is needed to browse saved sources.':
+    '저장된 데이터 소스를 보려면 데이터 소스 읽기 권한이 필요합니다.',
+  'Choose a data source': '데이터 소스 선택',
+  'Showing {shown} of {total} rows. Version {version} · Saved {saved}':
+    '전체 {total}행 중 {shown}행 표시. 버전 {version} · 저장 {saved}',
+  'Sheet: {sheet}': '시트: {sheet}',
+  'Data sources refreshed.': '데이터 소스 목록을 새로고침했습니다.',
   'Delete data source': '데이터 소스 삭제',
   'Data sources used by a draft or published API cannot be deleted.':
     '초안 또는 현재 게시된 API에서 사용하는 데이터 소스는 삭제할 수 없습니다.',

@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Loading data sources…': 'データソースを読み込み中…',
+  'Read data sources access is needed to browse saved sources.':
+    '保存済みデータソースを表示するには、データソースの閲覧権限が必要です。',
+  'Choose a data source': 'データソースを選択',
+  'Showing {shown} of {total} rows. Version {version} · Saved {saved}':
+    '{total} 行中 {shown} 行を表示。バージョン {version} · 保存日時 {saved}',
+  'Sheet: {sheet}': 'シート: {sheet}',
+  'Data sources refreshed.': 'データソース一覧を更新しました。',
   'Delete data source': 'データソースを削除',
   'Data sources used by a draft or published API cannot be deleted.':
     '下書きまたは現在公開中の API が使用しているデータソースは削除できません。',

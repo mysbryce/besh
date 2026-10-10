@@ -42,6 +42,7 @@ import { dataSourceReplacementLocalePreviews } from './data-source-replacement-l
 import { dataApiLocalePreviews } from './data-api-locale-previews'
 import { dataSourceGoogleLocalePreviews } from './data-source-google-locale-previews'
 import { dataSourceDeleteLocalePreviews } from './data-source-delete-locale-previews'
+import { dataSourceStatusLocalePreviews } from './data-source-status-locale-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
@@ -4277,6 +4278,7 @@ for (const story of previewStories) {
     story.id === 'management-data-source-replacement' ||
     story.id === 'management-data-source-google' ||
     story.id === 'management-data-source-deletion' ||
+    story.id === 'management-data-source-status' ||
     story.id === 'management-data-api-generation'
   )
     continue
@@ -4319,9 +4321,15 @@ for (const [story, locale, helper] of [
   ['management-data-api-generation', 'en-US', dataApiLocalePreviews],
   ['management-data-source-google', 'en-US', dataSourceGoogleLocalePreviews],
   ['management-data-source-deletion', 'en-US', dataSourceDeleteLocalePreviews],
+  ['management-data-source-status', 'en-US', dataSourceStatusLocalePreviews],
 ] as const) {
   test.describe(story, () => {
-    test.use({ locale })
+    test.use({
+      locale,
+      ...(story === 'management-data-source-status'
+        ? { timezoneId: 'UTC' }
+        : {}),
+    })
     test(story, async ({ page, previewWorkspace }) => {
       const { owner, origin } = previewWorkspace
       const errors: string[] = []

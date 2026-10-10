@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Loading data sources…': 'Загрузка источников данных…',
+  'Read data sources access is needed to browse saved sources.':
+    'Для просмотра сохранённых источников нужно разрешение на чтение источников данных.',
+  'Choose a data source': 'Выберите источник данных',
+  'Showing {shown} of {total} rows. Version {version} · Saved {saved}':
+    'Показано {shown} из {total} строк. Версия {version} · Сохранено {saved}',
+  'Sheet: {sheet}': 'Лист: {sheet}',
+  'Data sources refreshed.': 'Список источников данных обновлён.',
   'Delete data source': 'Удалить источник данных',
   'Data sources used by a draft or published API cannot be deleted.':
     'Источники данных, используемые черновиком или текущим опубликованным API, нельзя удалить.',
