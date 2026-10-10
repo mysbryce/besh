@@ -31,6 +31,7 @@ import { createK6Runner } from './load-tests/k6'
 import type { K6Runner } from './load-tests/model'
 import type { SheetFetch } from './data/google-sheets'
 import { productAuthService, type OAuthFetch } from './auth/product'
+import { invitationService } from './auth/invitations'
 import { timingSafeEqual } from 'node:crypto'
 import {
   sessionService,
@@ -127,6 +128,7 @@ export function createApp(options: AppOptions) {
   const browser = browserSecurity(options.authOrigin)
   const store = openStore(options.databasePath, options.adminToken)
   const sessions = sessionService(store, options.now)
+  const invitations = invitationService(store, options.now)
   const dependencies = dependencyService(store)
   const rowPolicies = rowPolicyService(store)
   const tenantFields = tenantFieldPolicyService(store)
@@ -442,6 +444,22 @@ export function createApp(options: AppOptions) {
       return { member, session }
     })
     .get('/me', ({ member }) => member)
+    .get('/invitations', ({ member }) => {
+      allow(member, ['owner'])
+      return invitations.list()
+    })
+    .post('/invitations', ({ member, body, request }) => {
+      allow(member, ['owner'])
+      return invitations.create(member.id, body, () =>
+        allow(currentMember(request), ['owner']),
+      )
+    })
+    .delete('/invitations/:id', ({ member, params, body, request }) => {
+      allow(member, ['owner'])
+      return invitations.revoke(member.id, params.id, body, () =>
+        allow(currentMember(request), ['owner']),
+      )
+    })
     .post('/flows/:id/ws/test-ticket', ({ member, params, request, body }) => {
       authorizeFlow(member, params.id, 'flows.test')
       return websockets.mintDraft(params.id, request, body)
@@ -1163,6 +1181,7 @@ export function createApp(options: AppOptions) {
       websocket: websocketLimits,
     })
       .onStop(() => {
+        invitations.close()
         websockets.beginShutdown()
         runtime.close()
         loadTests.close()
@@ -1225,6 +1244,14 @@ export function createApp(options: AppOptions) {
           : { error: message }
       })
       .get('/health', () => ({ status: 'ok', version }))
+      .post('/auth/invitations/preview', ({ request, body }) => {
+        browser.checkOrigin(request)
+        return invitations.preview(body)
+      })
+      .post('/auth/invitations/accept', ({ request, body }) => {
+        browser.checkOrigin(request)
+        return invitations.accept(body)
+      })
       .post(
         '/auth/login',
         async ({ body, set, request }) => {
@@ -1311,6 +1338,7 @@ export function createApp(options: AppOptions) {
     },
     close() {
       if (storeClosed) return shutdown!
+      invitations.close()
       websockets.close()
       runtime.close()
       loadTests.close()

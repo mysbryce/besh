@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { generatedBackendPreviews } from './generated-backend-preview'
 
+test.describe.configure({ lock: 'clipboard' })
+
 test('publication provides read-only generated backend code for its actual live route', async ({
   page,
 }) => {

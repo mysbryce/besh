@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { fieldAccessPreviews } from './field-access-preview'
 
+test.describe.configure({ lock: 'port-4330' })
+
 test('owner reviews fields shared through protected APIs', async ({ page }) => {
   test.setTimeout(180_000)
   page.setDefaultTimeout(10_000)

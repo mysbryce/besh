@@ -2,6 +2,16 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.18: invitations and step discovery
+
+- Owners can give existing key-only members a private, one-use link to set their own password. Links last 24 hours; existing accounts and the bootstrap owner are excluded.
+- Active metadata, exact revocation and explicit reissue support uncertain delivery without recovering secrets. Invitation mode requires explicit logout of an existing browser session and ordinary sign-in afterward.
+- Hash-only storage, migration 23, bounded attempts/work and post-hash transactional checks preserve current member grants and keys. Role, permission, sharing, tenant and account changes invalidate pending links; owner-key recovery clears them.
+- Email delivery/verification, password recovery, new-workspace membership and product-account/session lifecycles remain planned. See [workspace invitations](workspace-invitations.md) and [testing](testing.md).
+- A large categorized step picker replaces the stacked palette. Search, favorites, keyboard focus and explicit draft changes retain feature/permission guards. Desktop spacing is compact; phone targets remain usable. See [choose API steps](node-library.md).
+- Main workflows support English, Thai, Mandarin Chinese, Russian, Japanese, Korean and Portuguese, with device initialization, English fallback and a persisted manual choice. Some helper text, advanced panels and technical errors still use English. See [language coverage](localization.md).
+- Normal browser tests and preview stories use four workers. Shared ports/setup/clipboard/k6 retain locks; previews use isolated temporary workspaces and stable gallery ordering. All 361 backend cases, the same 34 browser cases in both modes and the 927-state walkthrough passed. Four browser workers took 107.30 seconds against 307.65 seconds serial locally. Plugin execution remains planned; the [CommonJS/ZIP proposal](plugins.md) specifies author packaging and owner upload review.
+
 ## Implemented in 0.17: member fields and easier workflows
 
 - Owner-reviewed member profiles intersect shared and tenant field settings for protected sources and SQLite tables. Drafts use the authenticated member; bound published keys retain their original issuer.
@@ -194,7 +204,7 @@ Current limits: one local workspace, literal or whole-segment parameterized REST
 - Implemented workspace accounts and cookie sessions: optional email/password or member/owner-key sign-in, fixed 12-hour expiry, session restoration, CSRF/origin checks, bounded persistent login throttling, own-account changes with fresh proof, metadata-only session listing, member-own/owner-all revocation, and a 20-session member limit. Bearer management clients remain compatible.
 - Implemented GitHub product identity template: permission-managed encrypted OAuth connections and draft generation, REST POST or typed GraphQL login mutation, ten-minute state/proof with S256 PKCE, one-use caller/flow/revision/connection binding, and normalized identity output. Product servers retain runtime keys and separate proof, handle their own callbacks, and create their own sessions. Controlled GitHub responses test the boundary; no live OAuth app round trip has been verified.
 - Planned product auth expansion: Discord, Facebook, Google, generic OIDC, product sessions/accounts, and reviewed identity linking. These do not change workspace sign-in.
-- Planned workspace invites and account recovery.
+- One-use invitation links onboard existing key-only members. Email delivery/verification, account recovery and cross-workspace invitations remain planned.
 - Implemented: built-in roles plus owner-managed custom workspace action grants, version checks, member assignment, immediate current-grant resolution, affected session revocation, audit, selected existing-API actions, typed USE, and issuer-bound caller authority. Implemented: narrow tenant-protected resource reads. Planned: broader record/field policies, resource-management sharing, and multi-workspace isolation.
 - Extend GraphQL with reviewed introspection policy, custom scalar contracts, and subscriptions alongside WebSocket work. Whole-query/mutation runtime grants and the separate resource-global projection/filter gate are implemented; caller-specific GraphQL field grants remain planned.
 - Implemented: typed generated WebSocket request/reply, bounded connections and live revocation. Planned: lifecycle events, subscriptions, reconnect/replay, and distributed delivery.
@@ -209,7 +219,7 @@ Current limits: one local workspace, literal or whole-segment parameterized REST
 - Parameterized query builder and explicit transaction capabilities.
 - Migration plans with dry runs, backup gates and restore verification.
 - Backup scheduling, retention, encryption and off-site storage.
-- Plugin SDK, manifest upload, compatibility checks and permission review.
+- Planned node plugin SDK, reviewed ZIP upload and CommonJS package pattern, with compatibility/capability review and a proven isolated worker before executable imports. No installer or uploaded-code execution is implemented. See [node plugin proposal](plugins.md).
 - Isolated custom code execution with resource and network limits.
 - Extension examples and adapter contract tests against real services.
 
@@ -237,7 +247,9 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-1. **Product authorization and shared resources.** Member fields are implemented in 0.17; preserve their original subject, current intersections and reviewed repair boundaries. Next add reviewed product accounts/sessions/linking, invitations/recovery, resource-management sharing and multi-workspace isolation through separate lifecycles. Joins, social effects, public endpoints and broader WS graphs remain separate. Caller fields and static projections never establish identity or authorization.
+First finish translation of remaining Studio guidance, management panels and technical errors, then obtain native-speaker review. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
+
+1. **Product authorization and shared resources.** Preserve member-field intersections and the narrow workspace invitation lifecycle. Next add reviewed product accounts/sessions/linking, workspace email verification/recovery, resource-management sharing and multi-workspace isolation through separate lifecycles. Joins, social effects, public endpoints and broader WS graphs remain separate. Caller fields and static projections never establish identity or authorization.
 2. **Data connections and query tools.** Extend reviewed adapter capabilities and encrypted server-held credentials to PostgreSQL and MySQL/MariaDB; add MongoDB, Supabase, and Firebase with their own transaction, identity, query, and backup semantics. Add live SQLite connection/write capabilities separately from the uploaded-copy read adapter. Ship bounded parameterized read/write forms, pagination, previews, and explicit transactions one adapter at a time. Add migration dry runs, backup gates, restoration checks, and destructive-change review before schema changes. Private Sheets OAuth, write-back, and scheduled synchronization follow their connection/permission work.
 3. **Graph execution and extensions.** Add typed transformations, bounded outbound HTTP, explicit error/retry paths, and subflows with execution limits. Introduce a versioned declarative plugin manifest and SDK before uploaded code. Require a real isolated process/container, capability grants, integrity checks, and resource/network limits before enabling custom-code plugins. Verify each extension against its actual services.
 4. **Product providers and AI operator.** Verify GitHub with a real OAuth app, exact product callback, and private encryption-key backup. Add Discord, Facebook, Google, and generic OIDC individually with state/PKCE, redirect validation, and safe identity linking. Implement provider settings and capability discovery for Anthropic, OpenAI API, OpenRouter, Ollama/compatible endpoints, and a separate restricted Codex CLI process adapter. Add caller-scoped typed tools, durable proposals, budgets, redaction, cancellation, approvals, and adversarial tests. Do not infer live provider success from mocks or stored configuration.

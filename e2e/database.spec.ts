@@ -237,9 +237,15 @@ test('owners upload a read-only SQLite copy and preview real table rows', async 
       'GraphQL test complete',
     )
     await expect(result).toContainText('Grace')
+    await page.getByRole('button', { name: 'Add step', exact: true }).click()
     await expect(
-      page.getByRole('button', { name: 'SQLite rows', exact: true }),
+      page
+        .getByRole('dialog', { name: 'Choose a step', exact: true })
+        .getByRole('button', { name: 'Add SQLite rows', exact: true }),
     ).toBeVisible()
+    await page
+      .getByRole('button', { name: 'Close step picker', exact: true })
+      .click()
     await page
       .locator('.react-flow__node')
       .filter({ hasText: 'SQLite rows' })

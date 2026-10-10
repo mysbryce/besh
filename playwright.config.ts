@@ -9,7 +9,7 @@ export default defineConfig({
   testDir: './e2e',
   testIgnore: '**/preview.spec.ts',
   fullyParallel: false,
-  workers: 1,
+  workers: 4,
   use: {
     viewport: { width: 1440, height: 1000 },
     baseURL: 'http://127.0.0.1:5179',

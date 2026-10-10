@@ -1,5 +1,15 @@
 # Besh context
 
+## 2026-10-10 decisions
+
+- Step discovery uses a large categorized searchable dialog with favorites. Descriptor IDs remain stable and built-in guards remain authoritative. The maintainer wants compact CMS-sized desktop controls while keeping the existing visual style and phone usability. See [step library](node-library.md) and [design system](design.md).
+- Main language workflows use the primary browser language, English fallback and a custom persisted selector for seven languages. Non-English dictionaries load on demand; interface changes never translate authored API names or contracts. Remaining helper text and advanced-panel translation are explicit next work. See [languages](localization.md).
+- The maintainer clarified plugins are planned only for this delivery. Document the CommonJS pattern, ZIP folder structure and non-technical owner upload review before implementing installation. No guest module is imported in Besh; a real isolation boundary must precede execution. See [plugin proposal](plugins.md).
+- Four browser workers initially reproduced a shared-port credential collision. File locks now serialize reused ports, shared setup, clipboard and native k6 work. Preview stories instead get fresh temporary workspaces at four exact worker origins and stable manifest merging. Exact benchmark and gallery acceptance belong in [testing](testing.md).
+- Final local 0.18 acceptance passed 361 backend cases and the identical 34 bundled-Chromium browser cases in both modes. Four workers took 107.30 seconds against 307.65 seconds serial, without skips, failures or flaky results. Types, production build and complete formatting passed separately. This does not establish a new hosted-runner result.
+- The four-worker preview invocation passed 21 actual stories and 927 canonical states in 3.3 minutes. All 65 new originals, 17 affected legacy originals and 12 lossless native-width sections were independently inspected; gallery controls, themes, fonts, all image URLs, private-file denials and exact refreshed image bytes passed. See [preview inventory](preview.md).
+- Workspace invitations onboard existing key-only members through private one-use links, with hash-only persistence and migration 23. Delivery is manual; email verification, recovery and product accounts remain separate lifecycles. See [invitations](workspace-invitations.md).
+
 ## 2026-10-09 decisions
 
 - The maintainer requested GitHub Sponsors funding, Dependabot, small PR/issue templates and easier workflows for people who do not write code. Those changes join the 0.17 member-field delivery after its focused authority checks: clear primary actions, optional technical detail, locally served Google Sans Flex/Noto Sans Thai and distinct text/heading weights. One final complete browser/gallery check follows all UI changes. Templates do not change the persistent runner's push/manual-only execution policy.
@@ -178,7 +188,7 @@
 
 ## Next Steps
 
-1. Continue the remaining product-authorization lifecycle: reviewed product accounts/sessions/linking, invitations/recovery and resource sharing. The 0.17 member-field, beginner UX, complete gallery and clean candidate checks passed. Publishing, hosted GitHub activation and live providers require their own verification; no push, tag or deployment is implied.
+1. Continue advanced-panel translations and the remaining product-authorization lifecycle: reviewed product accounts/sessions/linking, verified email recovery and resource sharing. Keep the invitation, node-picker and isolated worker boundaries intact. Exact completed checks belong in [testing](testing.md). Publishing, hosted GitHub activation and live providers require their own verification; no push, tag or deployment is implied.
 2. Follow the [remaining roadmap](roadmap.md#next-steps): broader product authorization, external data/query/migration tools, graph extensions/plugins, verified product providers/AI tools, realtime event/subscription work, and operations/releases. None is completed by the WebSocket delivery.
 
 See [testing](testing.md), [architecture](architecture.md), and [roadmap](roadmap.md) for durable detail.

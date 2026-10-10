@@ -27,15 +27,16 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 
 ## What works
 
-- Visual REST/GraphQL builder, typed inputs, OpenAPI, and beginner forms.
+- Visual REST/GraphQL builder, searchable step categories, favorites, typed inputs and OpenAPI.
 - [Typed WebSocket replies](docs/websockets.md), browser draft testing, and one-use tickets.
 - [Generated backend routes](docs/runtime-code.md), saved drafts, release history, and rollback.
 - [Client code examples](docs/client-code.md) in eight targets.
 - Built-in k6 load testing with automatic setup and optional goals.
 - [Roles and selected-API sharing](docs/roles.md), [scoped keys and handover](docs/api-keys.md), and [protected tenant rows and API fields](docs/row-protection.md).
+- [Member invitations](docs/workspace-invitations.md) with one-use password setup links.
 - [CSV, Excel, public Sheets](docs/data-sources.md), uploaded SQLite copies, and GitHub product-login templates.
 - Audit logs, migrations, tested backups, and GitHub update notices.
-- Light/dark themes, accessible custom controls, and page/action previews.
+- Light/dark themes, [seven languages in main workflows](docs/localization.md), custom controls and page/action previews.
 
 ## Documentation
 

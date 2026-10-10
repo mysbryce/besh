@@ -16,7 +16,7 @@ Use real SQLite in temporary directories. Test through public routes or exported
 - `bun run typecheck`: server and dashboard types.
 - `bun run build`: production dashboard bundle.
 - `bun run test:e2e`: fresh production build, then browser flows with isolated servers and data.
-- `bun run preview:all --no-serve`: full page/action walkthrough with masked screenshots and an isolated demo workspace. See [preview inventory](preview.md).
+- `bun run preview:all --no-serve`: full page/action walkthrough with masked screenshots and isolated per-story workspaces. See [preview inventory](preview.md).
 - `bun run format:check`: formatting.
 
 During development, run the affected story rather than the whole browser suite:
@@ -28,7 +28,30 @@ bun run test:e2e e2e/builder.spec.ts -g 'build, move'
 
 The same command builds fresh assets before a focused run. Run the complete suite before delivery. CI still runs all stories; it does not exclude the slower permission, data, k6 or WebSocket journeys.
 
-Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. CI uses bundled Chromium. Normal stories use the built dashboard and Bun API at port `5179`, with temporary SQLite state and supported reduced motion. The builder explicitly keeps normal motion. Dedicated feature APIs use ports `4312`–`4313`, `4315`–`4319`, `4321`, and `4323`–`4330`. Native SQLite uploads use their own built origin at `4321`, production uses `4314`, and WS uses `4329`. The retained WS proxy story uses its own ephemeral API listener and Vite port `5187`, including the ignored-document watch check. Keep one worker while stories share ports, workspace setup, the OS clipboard or the native k6 lane.
+Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. CI uses bundled Chromium. Normal stories use the built dashboard and Bun API at port `5179`, with temporary SQLite state and supported reduced motion. The builder explicitly keeps normal motion. Dedicated feature APIs use ports `4312`–`4313`, `4315`–`4319`, `4321`, and `4323`–`4331`. Native SQLite uploads use their own built origin at `4321`, production uses `4314`, and WS uses `4329`. The retained WS proxy story uses its own ephemeral API listener and Vite port `5187`, including the ignored-document watch check.
+
+Normal E2E uses four workers. Named file locks serialize reused feature ports, shared `5179` setup, OS clipboard access and native k6 work. Other files can run concurrently; tests within a file keep their order. Do not remove those locks merely to increase parallelism. Use `--workers=1` for serial diagnosis. Retries and budgets are unchanged.
+
+Previews use four real worker slots, each with its own exact same-origin server at `4340`–`4343` and fresh temporary database, backups, encryption key and generated routes. A server shuts down before its slot is reused. Clipboard and native k6 work retain shared locks. Canonical screenshot IDs come from the story order, independently of completion order. Use `bun run preview:all --no-serve --workers=1` for a serial capture.
+
+## Verified on 2026-10-10 — 0.18
+
+Windows, Bun 1.4.2, Node 22.22.1 and bundled Chromium through Playwright 1.64.0. These are local results, not a new observation of the self-hosted GitHub runner.
+
+- Backend: all 361 tests passed with 6,368 assertions in 60.99 seconds. The initial combined check then stopped on dashboard formatting; formatting was corrected, and final type checks, production build and complete formatting passed separately. No backend code changed after that complete backend run.
+- The invitation slice passed 18 public HTTP cases, including fixed expiry, exact one-use acceptance, revocation and reissue, existing-account refusal, current owner/member authority, bounded attempts/work, lost delivery, restart and backup restoration. The focused invitation/session pair passed 29 cases with 1,002 assertions. No email delivery or verification is claimed.
+- A shared-port credential collision genuinely failed the first parallel browser pair. Named resource locks fixed the same pair without retries, removed scenarios or larger timeouts. Four workers now serialize only reused feature ports, shared setup, clipboard and native k6 jobs.
+- The exact final 34-case suite passed with four workers in 107.30 seconds and with one worker in 307.65 seconds: about 2.87 times faster on this local machine. Both used the same frozen built assets and bundled Chromium, with zero failures, skips or flaky results. The builder retains ordinary animation; other stories retain supported reduced motion. CLI worker overrides exercised the final default and serial mode before changing the default to four.
+- The categorized picker reproduced missing discovery and favorite behavior before its public browser implementation. The same stories now cover categories, search, favorites, focus return, pending/read-only guards and native phone containment. An actually loaded empty spreadsheet list separately reproduced perpetual loading; the corrected form shows import guidance without exposing data or widening permission checks.
+- Real Thai and unsupported Spanish contexts verify device initialization, English fallback, all seven language choices, persisted selection and unchanged authored API text. A held real dictionary response reproduced blank startup before the five-second English fallback; late delivery never silently switches language. Links arriving during that hold separately reproduced an unstripped/lost recipient before the latest-fragment bootstrap handoff passed without private setup or workspace reads.
+- Native Korean phone heading inspection reproduced an orphaned final syllable. Word-boundary wrapping corrected the same seven-language story. Main entry, navigation, invitations, common Studio labels and step discovery are translated; some helper text, advanced panels and technical errors remain English. Dictionaries have matching 372-key inventories. Translation accuracy still needs native-speaker review.
+- The final initial dashboard bundle is 475.83 kB before gzip, with non-English dictionaries loaded on demand and no large-chunk warning. Uploaded plugin installation/execution remains planned only; the CommonJS/ZIP format is documented, not an accepted executable upload.
+
+- The complete preview invocation passed all 21 actual stories with four isolated worker slots in 3.3 minutes. It produced 927 canonical records and PNGs, refreshed all 862 previous states with the approved ID 39 picker-action change, and added 65 invitation/picker/language states. Every completion count and canonical identity passed before replacing the latest gallery.
+- Gallery verification passed mouse/keyboard filtering, search/empty results, all 927 image URLs, native phone containment and private-file denials. Light/dark/system choice, persistence, actual Latin/Latin Extended/Thai decoding and exact refreshed denial-image bytes passed. The local gallery is served at `http://127.0.0.1:4174`; generated credentials remain masked.
+- Independent visual review inspected all 65 new originals and 17 affected legacy originals, plus 12 lossless native-width sections of long forms. Native phone picker themes, seven welcome languages, Thai workspace headers, invitation states and startup recovery are readable and contained. This does not claim every canonical image was individually visually reviewed.
+
+Preview inventory belongs in [page and action previews](preview.md). Logs and generated screenshots stay in ignored `.preview/` storage.
 
 ## Verified on 2026-10-08–09
 

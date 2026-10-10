@@ -5,6 +5,8 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+test.describe.configure({ lock: ['port-4318', 'native-k6'] })
+
 test('versioned route forms and rollback preserve the edited draft', async ({
   page,
 }) => {

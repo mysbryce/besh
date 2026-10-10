@@ -8,9 +8,11 @@ The first-run wizard creates a workspace and shows its owner key once. Save that
 
 To add email/password sign-in, open **Account & sessions** after signing in with your key. Enter an email address and a new password containing 12 to 128 characters. Under **Confirm your identity**, choose **Workspace key** or **Current password** and enter that credential. Select **Save sign-in details**.
 
-An account change needs fresh proof even when you already have a browser session. It changes only your own account, keeps your current session, and ends your other sessions. It does not change your workspace key. Email addresses are trimmed, lowercased, and unique across the workspace; passwords retain their exact characters. Email delivery, verification links, password-reset links, and workspace invitations are not implemented.
+An account change needs fresh proof even when you already have a browser session. It changes only your own account, keeps your current session, and ends your other sessions. It does not change your workspace key. Email addresses are trimmed, lowercased, and unique across the workspace; passwords retain their exact characters. Email delivery, verification links and password-reset links remain planned.
 
 Owners can add an editor, viewer, or custom-role member from **Members**. Enter **Member email (optional)** and **Member password** to create email/password access with the member, or leave email blank for key-only access. The member key still appears once and must be saved. This creates access directly; no invitation email is sent. Members can later change their own account under **Account & sessions**. See [roles and permissions](roles.md) for custom grants and assignment.
+
+For a key-only member, use an [invitation link](workspace-invitations.md) so they set their own password. The link lasts 24 hours, works once and does not change their grants. Existing accounts cannot be reset through invitations. Send links privately; Besh does not verify email ownership or deliver emails.
 
 ## Manage sessions
 
@@ -36,6 +38,6 @@ Login throttling persists across restarts: 10 invalid attempts for an identity i
 
 Keep the owner key privately even when using email/password. Server-side owner-key recovery is described in [getting started](getting-started.md#data-and-recovery). Changing `BESH_ADMIN_TOKEN` replaces the owner key and ends owner sessions when the key changes. It preserves the owner's existing email/password account. If that password also needs replacement, sign in with the recovered key and update **Account & sessions**, using that key as proof.
 
-Backups include password hashes, session hashes/metadata, login throttle state, custom roles, and member-role assignments. Restoring an older snapshot can restore an old password, old permission grants, an unexpired session, or a key revoked after the snapshot. Review restored member access, accounts, sessions, and runtime keys before serving the restored workspace. Ending sessions alone does not invalidate restored passwords or keys.
+Backups include password hashes, session hashes/metadata, invitation hashes/metadata, throttle state, custom roles and member-role assignments. Restoring an older snapshot can restore an old password, old permission grants, an unexpired session or invitation, or a key revoked after the snapshot. Review restored member access, accounts, sessions, invitations and runtime keys before serving the restored workspace. Ending sessions alone does not invalidate restored passwords or keys.
 
 See [API reference](api.md), [architecture](architecture.md#identity-and-roles), and [roadmap](roadmap.md) for supported boundaries and remaining work.

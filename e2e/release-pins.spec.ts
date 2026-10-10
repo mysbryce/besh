@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { releasePinPreviews } from './release-pins-preview'
 
+test.describe.configure({ lock: ['clipboard', 'native-k6'] })
+
 test('release-pinned caller keys stay separate from keys following publication', async ({
   page,
 }) => {

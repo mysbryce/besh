@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { memberFieldProfilePreviews } from './member-field-profiles-preview'
 
+test.describe.configure({ lock: 'port-4330' })
+
 test('owner reviews inherited member API field ceilings', async ({
   page,
 }, testInfo) => {

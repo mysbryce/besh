@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { protectedReadGraphPreviews } from './protected-read-graphs-preview'
 
+test.describe.configure({ lock: 'port-4330' })
+
 test('owner reviews the last protected read reply', async ({
   page,
 }, testInfo) => {

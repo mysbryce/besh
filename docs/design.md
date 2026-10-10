@@ -37,4 +37,8 @@ Besh gives the flow editor most of the space. Navigation, setup, and workspace c
 
 ## Review
 
+Desktop layouts above 1100px use compact cards, form gaps and 32px actions. Phone controls retain their existing touch targets; do not apply desktop sizing to phone confirmations. The step picker uses a searchable modal with clear category and favorite states, contained keyboard focus and explicit selection. Appearance and language controls wrap within the phone header.
+
+Keep translations readable at native phone widths. Korean welcome headings break at word boundaries rather than splitting their final syllable. Authored data stays untouched; see [language coverage](localization.md).
+
 Run the [browser checks](testing.md) and [preview walkthrough](preview.md) after interface changes. Inspect setup, studio, data sources, workspace controls, custom dropdowns, and phone layouts in both appearances. Preserve behavior when changing visual structure.

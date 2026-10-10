@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { tenantProtectionPreviews } from './tenant-protection-preview'
 
+test.describe.configure({ lock: 'native-k6' })
+
 test('owner reviews exact tenant identity before row protection', async ({
   page,
 }) => {

@@ -6,6 +6,8 @@ import { join } from 'node:path'
 import { graphqlFlow, helloFlow } from '../test/fixtures'
 import type { LoadTestRun } from '../src/load-tests/model'
 
+test.describe.configure({ lock: 'native-k6' })
+
 test('owner tests live REST and GraphQL APIs, reviews limits, cancels, and restores history', async ({
   page,
 }) => {

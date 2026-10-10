@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve, sep } from 'node:path'
 import { keyRolloverPreviews } from './key-rollover-preview'
 
+test.describe.configure({ lock: ['port-4330', 'clipboard'] })
+
 test('caller keys support reviewed bounded replacement overlap', async ({
   page,
 }) => {

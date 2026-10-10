@@ -14,6 +14,8 @@ import { Checkbox } from './components/ui/checkbox'
 import { api } from './lib/api'
 import { useStudio } from './store'
 import { ThemeControl } from './theme'
+import { useTranslation } from './i18n'
+import { LanguageControl } from './language'
 
 export function Welcome({
   setup,
@@ -24,6 +26,7 @@ export function Welcome({
   setupKey: string
   onSetup: (name: string) => void
 }) {
+  const { t } = useTranslation()
   const [name, setName] = useState('My workspace')
   const [key, setKey] = useState(setupKey)
   const [token, setToken] = useState('')
@@ -64,20 +67,21 @@ export function Welcome({
   return (
     <main className="welcome">
       <section className="welcome-story">
-        <a className="brand" href="/" aria-label="Besh home">
+        <a className="brand" href="/" aria-label={t('Besh home')}>
           <span className="brand-icon">b</span>besh
           <span className="brand-period">.</span>
         </a>
         <div className="welcome-copy">
-          <span className="eyebrow">A SPACE FOR YOUR NEXT IDEA</span>
+          <span className="eyebrow">{t('A SPACE FOR YOUR NEXT IDEA')}</span>
           <h1>
-            Your next API.
+            {t('Your next API.')}
             <br />
-            <em>Clearly connected.</em>
+            <em>{t('Clearly connected.')}</em>
           </h1>
           <p>
-            Turn an idea into an endpoint. Build visually, test your flow, and
-            publish when you’re ready.
+            {t(
+              'Turn an idea into an endpoint. Build visually, test your flow, and publish when you’re ready.',
+            )}
           </p>
           <div className="welcome-workcards" aria-hidden="true">
             <article className="sample-card sample-rest">
@@ -85,25 +89,25 @@ export function Welcome({
                 <span className="sample-icon">
                   <ArrowRight size={18} />
                 </span>
-                <strong>REST API</strong>
+                <strong>{t('REST API')}</strong>
                 <span className="sample-method">GET</span>
               </div>
               <code>/hello?name=Ada</code>
-              <p>Start with a simple request.</p>
+              <p>{t('Start with a simple request.')}</p>
             </article>
             <article className="sample-card sample-response">
               <div className="sample-card-heading">
                 <span className="sample-icon">
                   <Braces size={18} />
                 </span>
-                <strong>JSON response</strong>
+                <strong>{t('JSON response')}</strong>
                 <span className="sample-method">200</span>
               </div>
               <pre>{'{\n  "message": "Hello, Ada!"\n}'}</pre>
               <div className="sample-flow">
-                <span>Request</span>
+                <span>{t('Request')}</span>
                 <GitBranch size={16} />
-                <span>Response</span>
+                <span>{t('Response')}</span>
               </div>
             </article>
             <article className="sample-card sample-graphql">
@@ -111,44 +115,53 @@ export function Welcome({
                 <span className="sample-icon">
                   <GitBranch size={18} />
                 </span>
-                <strong>GraphQL API</strong>
+                <strong>{t('GraphQL API')}</strong>
               </div>
               <code>{'{ hello { message } }'}</code>
-              <p>Ask for exactly what you need.</p>
+              <p>{t('Ask for exactly what you need.')}</p>
             </article>
           </div>
         </div>
         <div className="welcome-footer">
-          <ShieldCheck size={16} /> Your workspace. Your APIs. Private by
-          default.
+          <ShieldCheck size={16} />
+          {t('Your workspace. Your APIs. Private by default.')}
         </div>
       </section>
       <section className="welcome-form">
-        <ThemeControl />
+        <div className="welcome-controls">
+          <LanguageControl disabled={busy} />
+          <ThemeControl />
+        </div>
         <div className="setup-card">
           <span className="step-label">
-            {setup
-              ? created
-                ? '02 / SAVE YOUR KEY'
-                : '01 / MAKE IT YOURS'
-              : 'WELCOME BACK'}
+            {t(
+              setup
+                ? created
+                  ? '02 / SAVE YOUR KEY'
+                  : '01 / MAKE IT YOURS'
+                : 'WELCOME BACK',
+            )}
           </span>
           <h2>
-            {setup
-              ? created
-                ? 'Your workspace is ready.'
-                : 'A little setup. A lot of possibility.'
-              : 'Open your workspace.'}
+            {t(
+              setup
+                ? created
+                  ? 'Your workspace is ready.'
+                  : 'A little setup. A lot of possibility.'
+                : 'Open your workspace.',
+            )}
           </h2>
           <p>
-            {setup
-              ? created
-                ? 'Keep this owner key safe. It is shown once.'
-                : 'Choose a name for your workspace. We’ll create an owner key so you can get started.'
-              : 'Sign in with email and password, or your owner or member key. Configure email sign-in in Account & sessions.'}
+            {t(
+              setup
+                ? created
+                  ? 'Keep this owner key safe. It is shown once.'
+                  : 'Choose a name for your workspace. We’ll create an owner key so you can get started.'
+                : 'Sign in with email and password, or your owner or member key. Configure email sign-in in Account & sessions.',
+            )}
           </p>
           {!setup ? (
-            <div className="login-methods" aria-label="Sign-in method">
+            <div className="login-methods" aria-label={t('Sign-in method')}>
               <Button
                 type="button"
                 variant={method === 'key' ? 'default' : 'outline'}
@@ -156,7 +169,7 @@ export function Welcome({
                 disabled={busy}
                 onClick={() => setMethod('key')}
               >
-                Workspace key
+                {t('Workspace key')}
               </Button>
               <Button
                 type="button"
@@ -165,14 +178,14 @@ export function Welcome({
                 disabled={busy}
                 onClick={() => setMethod('password')}
               >
-                Email & password
+                {t('Email & password')}
               </Button>
             </div>
           ) : null}
           <form onSubmit={submit} className="form-stack">
             {setup && !created ? (
               <>
-                <label htmlFor="workspace-name">Workspace name</label>
+                <label htmlFor="workspace-name">{t('Workspace name')}</label>
                 <Input
                   id="workspace-name"
                   value={name}
@@ -183,7 +196,7 @@ export function Welcome({
                 />
                 {!setupKey ? (
                   <>
-                    <label htmlFor="setup-key">Setup key</label>
+                    <label htmlFor="setup-key">{t('Setup key')}</label>
                     <Input
                       id="setup-key"
                       type="password"
@@ -192,25 +205,30 @@ export function Welcome({
                       required
                     />
                     <small>
-                      Open the setup link printed in your server terminal.
+                      {t(
+                        'Open the setup link printed in your server terminal.',
+                      )}
                     </small>
                   </>
                 ) : null}
                 <div className="setup-features">
                   <span>
-                    <Check /> Visual API Studio
+                    <Check />
+                    {t('Visual API Studio')}
                   </span>
                   <span>
-                    <Check /> Separate drafts and releases
+                    <Check />
+                    {t('Separate drafts and releases')}
                   </span>
                   <span>
-                    <Check /> Private workspace
+                    <Check />
+                    {t('Private workspace')}
                   </span>
                 </div>
               </>
             ) : method === 'password' && !created ? (
               <>
-                <label htmlFor="login-email">Email</label>
+                <label htmlFor="login-email">{t('Email')}</label>
                 <Input
                   id="login-email"
                   type="email"
@@ -221,7 +239,7 @@ export function Welcome({
                   required
                   disabled={busy}
                 />
-                <label htmlFor="login-password">Password</label>
+                <label htmlFor="login-password">{t('Password')}</label>
                 <Input
                   id="login-password"
                   type="password"
@@ -236,10 +254,11 @@ export function Welcome({
             ) : (
               <>
                 <label htmlFor="owner-token">
-                  {created ? 'Your owner key' : 'Workspace token'}
+                  {t(created ? 'Your owner key' : 'Workspace token')}
                 </label>
                 <Input
                   id="owner-token"
+                  data-private="true"
                   type={created ? 'text' : 'password'}
                   value={token}
                   onChange={(event) => setToken(event.target.value)}
@@ -262,7 +281,7 @@ export function Welcome({
                       }
                     >
                       <Copy />
-                      Copy owner key
+                      {t('Copy owner key')}
                     </Button>
                     <label className="checkbox-row">
                       <Checkbox
@@ -271,20 +290,22 @@ export function Welcome({
                           setSaved(checked === true)
                         }
                       />
-                      I saved my owner key
+                      {t('I saved my owner key')}
                     </label>
                   </>
                 ) : (
                   <small>
-                    <KeyRound size={13} /> Your key creates a private browser
-                    session. The key is discarded after sign-in.
+                    <KeyRound size={13} />
+                    {t(
+                      'Your key creates a private browser session. The key is discarded after sign-in.',
+                    )}
                   </small>
                 )}
               </>
             )}
             {notice && (failed || created || !setup) ? (
               <p className={failed ? 'form-error' : 'form-note'} role="status">
-                {notice}
+                {t(notice)}
               </p>
             ) : null}
             <Button
@@ -292,18 +313,20 @@ export function Welcome({
               size="lg"
               disabled={busy || (created && !saved)}
             >
-              {busy
-                ? 'Working…'
-                : setup
-                  ? created
-                    ? 'Enter studio'
-                    : 'Create workspace'
-                  : 'Open workspace'}
+              {t(
+                busy
+                  ? 'Working…'
+                  : setup
+                    ? created
+                      ? 'Enter studio'
+                      : 'Create workspace'
+                    : 'Open workspace',
+              )}
               <ArrowRight />
             </Button>
           </form>
           <p className="setup-footnote">
-            A small start. Something worth building.
+            {t('A small start. Something worth building.')}
           </p>
         </div>
       </section>

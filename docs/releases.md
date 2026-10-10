@@ -37,6 +37,8 @@ Keep the runner online and registered for this repository with those three label
 
 A normal Windows user can run the runner. The earlier upstream action attempted a `bunx.exe` symlink before checking an existing Bun install and failed with `EPERM` on the maintainer's non-admin account. The local action avoids that operation. See the [upstream source](https://github.com/oven-sh/setup-bun/blob/0c5077e51419868618aeaa5fe8019c62421857d6/src/action.ts#L53-L71).
 
+Normal browser tests now use four workers with locks for shared feature ports, setup, clipboard and native k6 work. This does not parallelize the core/browser jobs or change the workflow concurrency group. Local 0.18 acceptance passed the same 34 cases in both serial and four-worker modes; a new 0.18 GitHub runner result has not been observed. See [testing](testing.md).
+
 Start a new workflow run from the commit containing this fix; [rerunning an older failed run uses its original commit and ref](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs). If the runner is installed as a service, opening a separate administrator terminal does not change that service's account.
 
 Run the policy locally with:

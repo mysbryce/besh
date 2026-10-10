@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test'
+import { chooseNode } from './node-picker'
+
+test.describe.configure({ lock: ['clipboard', 'workspace-5179'] })
 
 test.use({ reducedMotion: 'no-preference' })
 
@@ -252,8 +255,11 @@ test('build, move, save, test and publish a flow through the dashboard', async (
     .getByRole('button', { name: 'Advanced configuration', exact: true })
     .click()
   await page.getByRole('button', { name: 'Remove node', exact: true }).click()
+  await chooseNode(page, 'Response')
+  await page.getByRole('button', { name: 'Fit View', exact: true }).click()
   await page
-    .getByRole('button', { name: 'Response', exact: true })
+    .locator('.react-flow__node')
+    .filter({ hasText: 'JSON response' })
     .dragTo(page.getByTestId('flow-canvas'), {
       targetPosition: { x: 480, y: 235 },
     })
