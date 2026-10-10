@@ -35,8 +35,8 @@ export function Select({
         className={cn('select-trigger', className)}
       >
         <SelectPrimitive.Value placeholder={placeholder} />
-        <SelectPrimitive.Icon>
-          <ChevronDown size={14} />
+        <SelectPrimitive.Icon className="select-icon">
+          <ChevronDown size={16} aria-hidden="true" />
         </SelectPrimitive.Icon>
       </SelectPrimitive.Trigger>
       <SelectPrimitive.Portal>
@@ -46,9 +46,9 @@ export function Select({
           sideOffset={5}
         >
           <SelectPrimitive.ScrollUpButton className="select-scroll">
-            <ChevronUp size={14} />
+            <ChevronUp size={16} aria-hidden="true" />
           </SelectPrimitive.ScrollUpButton>
-          <SelectPrimitive.Viewport>
+          <SelectPrimitive.Viewport className="select-viewport">
             {options.map((option) => (
               <SelectPrimitive.Item
                 key={option.value}
@@ -58,14 +58,14 @@ export function Select({
                 <SelectPrimitive.ItemText>
                   {option.label}
                 </SelectPrimitive.ItemText>
-                <SelectPrimitive.ItemIndicator>
-                  <Check size={14} />
+                <SelectPrimitive.ItemIndicator className="select-indicator">
+                  <Check size={16} aria-hidden="true" />
                 </SelectPrimitive.ItemIndicator>
               </SelectPrimitive.Item>
             ))}
           </SelectPrimitive.Viewport>
           <SelectPrimitive.ScrollDownButton className="select-scroll">
-            <ChevronDown size={14} />
+            <ChevronDown size={16} aria-hidden="true" />
           </SelectPrimitive.ScrollDownButton>
         </SelectPrimitive.Content>
       </SelectPrimitive.Portal>

@@ -110,6 +110,10 @@ export function storyCapture(page: Page, story: PreviewStory) {
   mkdirSync(join(directory, 'images'), { recursive: true })
 
   const capture: PreviewCapture = async (group, title, detail, options) => {
+    // A closing portal must disappear before deciding the screenshot viewport.
+    await expect(
+      page.locator('[role="listbox"][data-state="closed"]'),
+    ).toHaveCount(0)
     const dropdownOpen = (await page.getByRole('listbox').count()) > 0
     if (dropdownOpen)
       await expect(page.getByRole('listbox')).toHaveCSS('opacity', '1')
@@ -121,9 +125,14 @@ export function storyCapture(page: Page, story: PreviewStory) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/-$/, '')}.png`
+    const fullPage = options?.fullPage ?? !dropdownOpen
     await page.screenshot({
       path: join(directory, image),
-      fullPage: options?.fullPage ?? !dropdownOpen,
+      fullPage,
+      // Full-page compositing must not reflow controls after masks are measured.
+      style: fullPage
+        ? 'html { scrollbar-gutter: stable !important }'
+        : undefined,
       animations: 'disabled',
       mask: [
         page.locator('input[type="password"]'),

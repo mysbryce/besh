@@ -22,6 +22,7 @@ export const previewStories = [
   { id: 'locale-fallback', count: 2, locks: [] },
   { id: 'locale-startup', count: 3, locks: [] },
   { id: 'locale-bootstrap', count: 2, locks: [] },
+  { id: 'navigation', count: 10, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']

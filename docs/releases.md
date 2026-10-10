@@ -29,6 +29,20 @@ Use `alpha` while the platform is incomplete. A stable `0.x` milestone still doe
 
 A Git push stores commits remotely. It does not by itself publish a package, deploy Besh, or create a GitHub release. Do not push, tag, or publish unless requested. The k6 binary's upstream version is separate from Besh's version.
 
+## Protected main and dependency updates
+
+The repository's [main rules](https://github.com/mysbryce/besh/rules/24821269) require a pull request. Direct pushes to `main` are rejected; use a named branch and review its PR instead. Keep the rules enabled.
+
+Dependency updates still need a patch version and dated changelog entry. An initial branch push or manual run can pass without a comparison base, but merging an unchanged version would fail the next main push check. Validate against the current main commit explicitly before merging. If another delivery advances main, incorporate it and review the version again.
+
+Use a Conventional Commit squash title, match the reviewed head commit, and wait for the resulting main checks. Keep action commits pinned and preserve the self-hosted runner controls. Local browser/k6 runs and remote CI on the same machine must not overlap; workflow concurrency only serializes GitHub runs.
+
+Checkout v7.0.1 passed both jobs at the reviewed dependency head and again after the normal PR merge, in [main run 38014643079](https://github.com/mysbryce/besh/actions/runs/38014643079) at `9e797b4`: 343 backend cases and all 28 browser stories. Its patch release is `0.17.1-alpha.0`. Later dependency or dashboard changes need their own exact-head checks.
+
+Upload-artifact v7.0.1 was reviewed and merged as `0.17.2-alpha.0`. [Head run 38015072008](https://github.com/mysbryce/besh/actions/runs/38015072008) at `a46db22` passed all 343 backend cases and 28 browser stories. [Candidate run 38015516497](https://github.com/mysbryce/besh/actions/runs/38015516497) passed policy, types, tests, build, formatting, browser tests and preparation of 223 bundle files. Its upload failed at `CreateArtifact` with GitHub's storage-quota error; keep that failure visible. Successful remote upload, download and digest verification remain unobserved.
+
+A separately generated local archive from the same reviewed head passed safe-path, complete inventory, byte-count, SHA-256, source-byte and dashboard-asset checks for all 223 payload files. This is local bundle evidence, not verification of GitHub delivery or a signed artifact. The repository artifact inventory was empty. Review the owner's [Actions and Packages storage allowance](https://docs.github.com/en/billing/concepts/product-billing/github-actions), then rerun the candidate when uploads are available. Do not delete unrelated artifacts, change billing or weaken workflow failures to make the run green.
+
 ## Automated checks and candidate artifacts
 
 [Check workflow](../.github/workflows/check.yml) uses the maintainer's Windows x64 runner with `runs-on: [self-hosted, windows, x64]`. It runs on branch pushes in this repository or manual requests, checking out the event's exact commit. Both jobs admit only those events; pull requests do not trigger this workflow. A same-repository branch push runs checks before its PR review. Repository writers and manual-run actors remain trusted to execute host code. See [GitHub's runner labels](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/use-in-a-workflow).
@@ -37,7 +51,7 @@ Keep the runner online and registered for this repository with those three label
 
 A normal Windows user can run the runner. The earlier upstream action attempted a `bunx.exe` symlink before checking an existing Bun install and failed with `EPERM` on the maintainer's non-admin account. The local action avoids that operation. See the [upstream source](https://github.com/oven-sh/setup-bun/blob/0c5077e51419868618aeaa5fe8019c62421857d6/src/action.ts#L53-L71).
 
-Normal browser tests now use four workers with locks for shared feature ports, setup, clipboard and native k6 work. This does not parallelize the core/browser jobs or change the workflow concurrency group. Local 0.18 acceptance passed the same 34 cases in both serial and four-worker modes; a new 0.18 GitHub runner result has not been observed. See [testing](testing.md).
+Normal browser tests now use four workers with locks for shared feature ports, setup, clipboard and native k6 work. This does not parallelize the core/browser jobs or change the workflow concurrency group. Local 0.18 acceptance passed the same 34 cases in both serial and four-worker modes. Review subsequent exact-head runner results on the delivery PR; see [testing](testing.md) for recorded local acceptance.
 
 Start a new workflow run from the commit containing this fix; [rerunning an older failed run uses its original commit and ref](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/re-run-workflows-and-jobs). If the runner is installed as a service, opening a separate administrator terminal does not change that service's account.
 

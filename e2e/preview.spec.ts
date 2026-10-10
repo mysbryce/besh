@@ -23,6 +23,7 @@ import { studioFirstTaskPreviews } from './studio-first-task-preview'
 import { studioToolsPreviews } from './studio-tools-preview'
 import { invitationPreviews } from './invitation-previews'
 import { nodePickerPreviews } from './node-picker-preview'
+import { navigationPreviews } from './navigation-preview'
 import { localePreviews, localeFallbackPreviews } from './locale-previews'
 import {
   localeStartupPreviews,
@@ -4234,6 +4235,7 @@ const featureHelpers = {
   'studio-tools': studioToolsPreviews,
   invitations: invitationPreviews,
   'node-picker': nodePickerPreviews,
+  navigation: navigationPreviews,
 }
 
 for (const story of previewStories) {

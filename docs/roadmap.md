@@ -2,6 +2,15 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.18.1: compact navigation and controls
+
+- Desktop sidebar and dropdown rows use 36px sizing with centered chevrons. Full authored and translated labels wrap; phone controls retain 44px targets.
+- Light/dark dashboard and gallery scrollbars use narrow rounded thumbs without native arrow buttons. High-contrast mode retains operating-system controls. Keyboard selection, focus return and Radix scrolling remain available.
+- Public geometry reproduced oversized controls and a member-form cascade override before correction. The two focused browser stories and all 36 normal stories passed; four-worker acceptance took 107.97 seconds. See [design](design.md) and [testing](testing.md).
+- The closing-menu capture race passed its exact regression before the complete 22-story walkthrough passed. The gallery has 937 screenshots, retaining all previous 927 identities and adding ten navigation/menu states.
+- Main requires a PR. Dependency deliveries also need version/changelog updates before merging; preserve this policy and runner serialization. See [release workflow](releases.md).
+- Reviewed checkout/artifact action updates were normally merged with patch release history. Exact-head checks passed; remote candidate delivery remains blocked by GitHub's reported storage quota, with separate local bundle inspection. Rerun the candidate after account/service capacity is available; no successful remote artifact is claimed.
+
 ## Implemented in 0.18: invitations and step discovery
 
 - Owners can give existing key-only members a private, one-use link to set their own password. Links last 24 hours; existing accounts and the bootstrap owner are excluded.
@@ -70,7 +79,7 @@ This does not add product sessions, per-member fields, public endpoints, provide
 - Shared policy versions/CAS, retained omitted/dormant selections, safe source replacement, migration 19 default preservation, and unchanged compiler-two artifacts.
 - Beginner full-name field selection, reviewed empty/widening changes, explicit stale/lost-save recovery, and per-table scope. Backend/native, complete browser checks and fresh theme/phone captures passed; exact evidence belongs in [testing](testing.md).
 
-See [tenant rows and API fields](row-protection.md). Tenant profiles extend this rule in 0.15, and bounded protected HTTP graphs in 0.16 above. Per-member profiles, product identity, and public endpoint policies remain separate work.
+See [tenant rows and API fields](row-protection.md). Tenant profiles extend this rule in 0.15, bounded protected HTTP graphs in 0.16, and member profiles in 0.17 above. Product identity and public endpoint policies remain planned.
 
 ## Implemented in 0.12: typed WebSocket request/reply
 
@@ -190,7 +199,7 @@ Verification status and exact platform evidence belong in [testing](testing.md).
 - Clear setup, contribution, security, AI, and community policies.
 - Reproducible gallery of current pages, actions, error states, permissions, and phone layouts.
 - Custom styled accessible controls and per-API GraphQL schemas, query/mutation execution, variables, and bounded field selection.
-- Permission-issued runtime API keys for one published flow, required expiration, REST/query/mutation grants, hash-only storage, atomic replacement, and immediate revocation; member identity stays at the management boundary.
+- Permission-issued runtime API keys for one published flow, required expiration, REST/query/mutation grants, hash-only storage, atomic replacement, and immediate revocation. Member credentials remain management-only; bound callers retain their original issuer authority.
 - Beginner response/request/condition/data field forms with optional advanced JSON, generated GraphQL queries and optional schema editing, readable light/dark themes, and a mobile saved-API picker.
 - CSV/Excel imports and public Google Sheets snapshots, reviewed column mapping, generated REST/typed GraphQL drafts, bounded data reads, manual snapshot replacement/refresh, and referenced-source deletion protection.
 
@@ -206,7 +215,7 @@ Current limits: one local workspace, literal or whole-segment parameterized REST
 - Planned product auth expansion: Discord, Facebook, Google, generic OIDC, product sessions/accounts, and reviewed identity linking. These do not change workspace sign-in.
 - One-use invitation links onboard existing key-only members. Email delivery/verification, account recovery and cross-workspace invitations remain planned.
 - Implemented: built-in roles plus owner-managed custom workspace action grants, version checks, member assignment, immediate current-grant resolution, affected session revocation, audit, selected existing-API actions, typed USE, and issuer-bound caller authority. Implemented: narrow tenant-protected resource reads. Planned: broader record/field policies, resource-management sharing, and multi-workspace isolation.
-- Extend GraphQL with reviewed introspection policy, custom scalar contracts, and subscriptions alongside WebSocket work. Whole-query/mutation runtime grants and the separate resource-global projection/filter gate are implemented; caller-specific GraphQL field grants remain planned.
+- Extend GraphQL with reviewed introspection policy, custom scalar contracts, and subscriptions alongside WebSocket work. Whole-query/mutation runtime grants and protected-row global, tenant and member field intersections are implemented; broader GraphQL field policies remain planned.
 - Implemented: typed generated WebSocket request/reply, bounded connections and live revocation. Planned: lifecycle events, subscriptions, reconnect/replay, and distributed delivery.
 - Implemented: safe whole-segment REST path parameters, explicit version-prefix flows, immutable release inspection, and permission-checked rollback. Same-method route overlap is rejected; draft edits and mutable dependencies stay separate from releases.
 - Planned: pagination, bounded retry/error nodes, transformations, outbound HTTP, and subflows.

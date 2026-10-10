@@ -4,6 +4,22 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.18.1-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Replace the gallery's text chevron with an aligned SVG icon.
+- Reduce desktop sidebar and custom dropdown spacing while retaining full labels and 44px phone targets.
+- Use rounded themed native scrollbars, preserving wheel, keyboard and system high-contrast behavior.
+- Make shared dropdown sizing apply consistently to member and runtime-key forms.
+- Wait for closing dropdowns to disappear before choosing a preview capture viewport.
+- Preserve opaque redaction alignment when native scrollbars are captured in full-page previews.
+
+### Changed
+
+- Capture actual scrollbars in previews and add compact navigation/menu states.
+- Document protected-main dependency updates, their patch history and the observed GitHub artifact storage-quota limitation.
+
 ## 0.18.0-alpha.0 — 2026-10-10
 
 ### Added

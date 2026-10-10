@@ -16,6 +16,8 @@ export default defineConfig({
     actionTimeout: 10_000,
     viewport: { width: 1440, height: 1000 },
     channel: process.env.PLAYWRIGHT_CHANNEL,
+    // Native scrollbar styling must remain visible in captured previews.
+    launchOptions: { ignoreDefaultArgs: ['--hide-scrollbars'] },
     permissions: ['clipboard-read', 'clipboard-write'],
     trace: 'off',
     video: 'off',
