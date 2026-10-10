@@ -757,6 +757,39 @@ const messages: Record<string, string> = {
     'Нужен доступ к источникам. Попросите владельца проверить ваши разрешения и разрешения USE для источников.',
   'No sources are available to this account. Ask the owner to provide a source.':
     'Для этой учётной записи нет доступных источников. Попросите владельца предоставить источник.',
+  'YOUR DATA, YOUR API': 'ВАШИ ДАННЫЕ, ВАШ API',
+  'Create an API': 'Создать API',
+  'Choose the fields people can receive. We will create a draft you can test and publish in API Studio.':
+    'Выберите поля, которые смогут получать пользователи. Мы создадим черновик, который можно проверить и опубликовать в API Studio.',
+  '{endpoint} after publication. Use letters, numbers, slashes, hyphens, or underscores.':
+    '{endpoint} после публикации. Используйте буквы, цифры, косые черты, дефисы или знаки подчёркивания.',
+  'Start with / and use letters, numbers, slashes, hyphens, or underscores.':
+    'Начните с / и используйте буквы, цифры, косые черты, дефисы или знаки подчёркивания.',
+  'Fields to return': 'Возвращаемые поля',
+  'Original column → API field': 'Исходный столбец → поле API',
+  'Return {column}': 'Возвращать {column}',
+  'Choose at least one field to continue.':
+    'Выберите хотя бы одно поле, чтобы продолжить.',
+  'Rows per request': 'Строк на запрос',
+  'Up to {count} rows': 'До {count} строк',
+  'Filter by input': 'Фильтровать по входным данным',
+  'Match a supplied value, or return all rows when it is omitted.':
+    'Сопоставлять с переданным значением или возвращать все строки, если оно не передано.',
+  'Filter column': 'Столбец для фильтра',
+  'Filter input name': 'Имя входного параметра фильтра',
+  'Start with a lowercase letter. Use letters, numbers, or underscores.':
+    'Начните со строчной буквы. Используйте буквы, цифры или знаки подчёркивания.',
+  'Callers send ?{input}=value in the URL. Omit it to return all rows. API keys control access to the API.':
+    'Клиенты передают ?{input}=value в URL. Если параметр не передан, возвращаются все строки. Ключи API управляют доступом к API.',
+  'Callers supply {input} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.':
+    'Клиенты передают {input} как необязательный аргумент запроса GraphQL. Его тип создаётся на основе выбранного столбца. Если аргумент не передан, возвращаются все строки; ключи API управляют доступом.',
+  'Create API from data': 'Создать API из данных',
+  'Discard unsaved draft changes and create this API?':
+    'Отменить несохранённые изменения черновика и создать этот API?',
+  'API draft created. Test your data, then publish it.':
+    'Черновик API создан. Проверьте данные, затем опубликуйте его.',
+  'API draft created. Read APIs access is needed to open API Studio.':
+    'Черновик API создан. Для открытия API Studio нужно право на чтение API.',
 }
 
 export default messages

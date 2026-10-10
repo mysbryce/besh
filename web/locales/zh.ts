@@ -720,6 +720,38 @@ const messages: Record<string, string> = {
     '需要数据源访问权限。请让所有者检查你的权限和数据源 USE 权限。',
   'No sources are available to this account. Ask the owner to provide a source.':
     '此账户没有可用的数据源。请让所有者提供数据源。',
+  'YOUR DATA, YOUR API': '您的数据，您的 API',
+  'Create an API': '创建 API',
+  'Choose the fields people can receive. We will create a draft you can test and publish in API Studio.':
+    '选择用户可以接收的字段。我们会创建草稿，供您在 API Studio 中测试和发布。',
+  '{endpoint} after publication. Use letters, numbers, slashes, hyphens, or underscores.':
+    '{endpoint} 在发布后可用。请使用字母、数字、斜杠、连字符或下划线。',
+  'Start with / and use letters, numbers, slashes, hyphens, or underscores.':
+    '以 / 开头，并使用字母、数字、斜杠、连字符或下划线。',
+  'Fields to return': '返回的字段',
+  'Original column → API field': '原始列 → API 字段',
+  'Return {column}': '返回 {column}',
+  'Choose at least one field to continue.': '至少选择一个字段才能继续。',
+  'Rows per request': '每次请求的行数',
+  'Up to {count} rows': '最多 {count} 行',
+  'Filter by input': '按输入筛选',
+  'Match a supplied value, or return all rows when it is omitted.':
+    '匹配传入的值；未传入值时返回所有行。',
+  'Filter column': '筛选列',
+  'Filter input name': '筛选输入名称',
+  'Start with a lowercase letter. Use letters, numbers, or underscores.':
+    '以小写字母开头。请使用字母、数字或下划线。',
+  'Callers send ?{input}=value in the URL. Omit it to return all rows. API keys control access to the API.':
+    '调用方在 URL 中发送 ?{input}=value。省略它时返回所有行。API 密钥控制对 API 的访问。',
+  'Callers supply {input} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.':
+    '调用方将 {input} 作为可选的 GraphQL 查询参数传入。其类型根据所选列生成。省略它时返回所有行；API 密钥控制访问。',
+  'Create API from data': '从数据创建 API',
+  'Discard unsaved draft changes and create this API?':
+    '放弃未保存的草稿更改并创建此 API？',
+  'API draft created. Test your data, then publish it.':
+    'API 草稿已创建。请测试数据，然后发布。',
+  'API draft created. Read APIs access is needed to open API Studio.':
+    'API 草稿已创建。需要读取 API 权限才能打开 API Studio。',
 }
 
 export default messages

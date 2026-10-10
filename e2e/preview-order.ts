@@ -33,6 +33,7 @@ export const previewStories = [
   { id: 'management-studio-websocket', count: 8, locks: [] },
   { id: 'management-data-source-import', count: 17, locks: [] },
   { id: 'management-data-source-replacement', count: 18, locks: [] },
+  { id: 'management-data-api-generation', count: 22, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']

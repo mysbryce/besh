@@ -70,6 +70,8 @@ function ApiFromData({
   busy: boolean
   onCreate: (options: ApiOptions) => void
 }) {
+  const { t } = useTranslation()
+
   const [name, setName] = useState(`${source.name} API`.slice(0, 80))
   const [path, setPath] = useState(
     `/${
@@ -101,11 +103,12 @@ function ApiFromData({
 
   return (
     <section className="data-mapping">
-      <div className="eyebrow">YOUR DATA, YOUR API</div>
-      <h2>Create an API</h2>
+      <div className="eyebrow">{t('YOUR DATA, YOUR API')}</div>
+      <h2>{t('Create an API')}</h2>
       <p className="source-note">
-        Choose the fields people can receive. We will create a draft you can
-        test and publish in API Studio.
+        {t(
+          'Choose the fields people can receive. We will create a draft you can test and publish in API Studio.',
+        )}
       </p>
       <form
         className="simple-form"
@@ -126,7 +129,7 @@ function ApiFromData({
         }}
       >
         <label htmlFor="data-api-name">
-          API name
+          {t('API name')}
           <Input
             id="data-api-name"
             value={name}
@@ -137,10 +140,10 @@ function ApiFromData({
           />
         </label>
         <label htmlFor="data-api-type">
-          API type
+          {t('API type')}
           <Select
             id="data-api-type"
-            label="API type"
+            label={t('API type')}
             value={protocol}
             onValueChange={(value) => setProtocol(value as 'rest' | 'graphql')}
             options={[
@@ -151,7 +154,7 @@ function ApiFromData({
           />
         </label>
         <label htmlFor="data-api-path">
-          Endpoint path
+          {t('Endpoint path')}
           <Input
             id="data-api-path"
             value={path}
@@ -165,17 +168,24 @@ function ApiFromData({
         </label>
         <p className="field-help" id="data-path-help">
           {validPath
-            ? `${protocol === 'rest' ? 'GET /run' : 'POST /graphql'}${path} after publication. Use letters, numbers, slashes, hyphens, or underscores.`
-            : 'Start with / and use letters, numbers, slashes, hyphens, or underscores.'}
+            ? t(
+                '{endpoint} after publication. Use letters, numbers, slashes, hyphens, or underscores.',
+                {
+                  endpoint: `${protocol === 'rest' ? 'GET /run' : 'POST /graphql'}${path}`,
+                },
+              )
+            : t(
+                'Start with / and use letters, numbers, slashes, hyphens, or underscores.',
+              )}
         </p>
         <fieldset className="source-fieldset">
-          <legend>Fields to return</legend>
-          <p className="field-help">Original column → API field</p>
+          <legend>{t('Fields to return')}</legend>
+          <p className="field-help">{t('Original column → API field')}</p>
           <div className="source-column-choices">
             {source.columns.map((column) => (
               <label className="source-column-choice" key={column.key}>
                 <Checkbox
-                  aria-label={`Return ${column.label}`}
+                  aria-label={t('Return {column}', { column: column.label })}
                   checked={columns.includes(column.key)}
                   disabled={busy}
                   onCheckedChange={(checked) =>
@@ -189,51 +199,55 @@ function ApiFromData({
                 <span>
                   <strong>{column.label}</strong>
                   <span className="source-field-mapping">
-                    → <code>{column.key}</code> · {columnTypes[column.type]}
+                    → <code>{column.key}</code> · {t(columnTypes[column.type])}
                   </span>
                 </span>
               </label>
             ))}
           </div>
           {!columns.length ? (
-            <p className="field-help">Choose at least one field to continue.</p>
+            <p className="field-help">
+              {t('Choose at least one field to continue.')}
+            </p>
           ) : null}
         </fieldset>
         <label htmlFor="data-api-limit">
-          Rows per request
+          {t('Rows per request')}
           <Select
             id="data-api-limit"
-            label="Rows per request"
+            label={t('Rows per request')}
             value={limit}
             onValueChange={setLimit}
             options={['10', '25', '50', '100'].map((value) => ({
               value,
-              label: `Up to ${value} rows`,
+              label: t('Up to {count} rows', { count: value }),
             }))}
             disabled={busy}
           />
         </label>
         <label className="permission-option">
           <Checkbox
-            aria-label="Filter by input"
+            aria-label={t('Filter by input')}
             checked={filtered}
             disabled={busy}
             onCheckedChange={(checked) => setFiltered(checked === true)}
           />
           <span>
-            Filter by input
+            {t('Filter by input')}
             <small>
-              Match a supplied value, or return all rows when it is omitted.
+              {t(
+                'Match a supplied value, or return all rows when it is omitted.',
+              )}
             </small>
           </span>
         </label>
         {filtered ? (
           <div className="source-filter-fields">
             <label htmlFor="data-filter-column">
-              Filter column
+              {t('Filter column')}
               <Select
                 id="data-filter-column"
-                label="Filter column"
+                label={t('Filter column')}
                 value={filterColumn}
                 onValueChange={setFilterColumn}
                 options={source.columns.map((column) => ({
@@ -244,7 +258,7 @@ function ApiFromData({
               />
             </label>
             <label htmlFor="data-filter-input">
-              Filter input name
+              {t('Filter input name')}
               <Input
                 id="data-filter-input"
                 value={filterInput}
@@ -257,16 +271,24 @@ function ApiFromData({
             </label>
             <p className="field-help" id="data-filter-help">
               {!validFilter
-                ? 'Start with a lowercase letter. Use letters, numbers, or underscores.'
+                ? t(
+                    'Start with a lowercase letter. Use letters, numbers, or underscores.',
+                  )
                 : protocol === 'rest'
-                  ? `Callers send ?${filterInput}=value in the URL. Omit it to return all rows. API keys control access to the API.`
-                  : `Callers supply ${filterInput} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.`}
+                  ? t(
+                      'Callers send ?{input}=value in the URL. Omit it to return all rows. API keys control access to the API.',
+                      { input: filterInput },
+                    )
+                  : t(
+                      'Callers supply {input} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.',
+                      { input: filterInput },
+                    )}
             </p>
           </div>
         ) : null}
         <Button disabled={busy || !ready}>
           <ArrowUpRight />
-          Create API from data
+          {t('Create API from data')}
         </Button>
       </form>
     </section>
@@ -814,7 +836,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
               if (
                 useStudio.getState().dirty &&
                 !window.confirm(
-                  'Discard unsaved draft changes and create this API?',
+                  t('Discard unsaved draft changes and create this API?'),
                 )
               )
                 return

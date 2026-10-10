@@ -752,6 +752,39 @@ const messages: Record<string, string> = {
   'GRAPHQL OPERATION': 'GRAPHQL オペレーション',
   'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
     '/v1/messages などの完全なパスを指定してください。入力値は WebSocket メッセージで渡します。名前付きパスパラメーターは使えません。',
+  'YOUR DATA, YOUR API': 'あなたのデータ、あなたの API',
+  'Create an API': 'API を作成',
+  'Choose the fields people can receive. We will create a draft you can test and publish in API Studio.':
+    '利用者に返すフィールドを選択してください。API Studio でテストして公開できる下書きを作成します。',
+  '{endpoint} after publication. Use letters, numbers, slashes, hyphens, or underscores.':
+    '公開後は {endpoint} を使用します。英字、数字、スラッシュ、ハイフン、アンダースコアを使用してください。',
+  'Start with / and use letters, numbers, slashes, hyphens, or underscores.':
+    '/ で始め、英字、数字、スラッシュ、ハイフン、アンダースコアを使用してください。',
+  'Fields to return': '返すフィールド',
+  'Original column → API field': '元の列 → API フィールド',
+  'Return {column}': '{column} を返す',
+  'Choose at least one field to continue.':
+    '続行するには、少なくとも 1 つのフィールドを選択してください。',
+  'Rows per request': 'リクエストごとの行数',
+  'Up to {count} rows': '最大 {count} 行',
+  'Filter by input': '入力値で絞り込む',
+  'Match a supplied value, or return all rows when it is omitted.':
+    '指定された値と一致する行を返します。値を省略すると、すべての行を返します。',
+  'Filter column': '絞り込む列',
+  'Filter input name': '絞り込み用の入力名',
+  'Start with a lowercase letter. Use letters, numbers, or underscores.':
+    '小文字の英字で始めてください。英字、数字、アンダースコアを使用してください。',
+  'Callers send ?{input}=value in the URL. Omit it to return all rows. API keys control access to the API.':
+    '呼び出し元は URL に ?{input}=value を指定します。省略すると、すべての行を返します。API キーで API へのアクセスを制御します。',
+  'Callers supply {input} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.':
+    '呼び出し元は {input} を任意の GraphQL クエリ引数として指定します。型は選択した列から生成されます。省略すると、すべての行を返します。API キーでアクセスを制御します。',
+  'Create API from data': 'データから API を作成',
+  'Discard unsaved draft changes and create this API?':
+    '未保存の下書きの変更を破棄して、この API を作成しますか？',
+  'API draft created. Test your data, then publish it.':
+    'API の下書きを作成しました。データをテストしてから公開してください。',
+  'API draft created. Read APIs access is needed to open API Studio.':
+    'API の下書きを作成しました。API Studio を開くには API の読み取り権限が必要です。',
 }
 
 export default messages

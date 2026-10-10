@@ -2,6 +2,20 @@
 
 User approved all three interfaces on 2026-10-08.
 
+## Spreadsheet API-generation languages — 0.20.2-alpha.0
+
+The public RED failed in 9.4 seconds: the Thai data-mapping form still had an English heading. The focused `check:dev` GREEN passed whole-project types, changed-file formatting and a fresh build, then the actual bundled-Chromium journey in 15.5 seconds (18.0 seconds Playwright total). Twenty-two trusted messages were added in each of seven dictionaries; a decoded TypeScript AST audit found 624 aligned keys, unchanged original 602 values, no duplicate keys and matching interpolation placeholders.
+
+The journey reviews REST and GraphQL generation in all seven languages without source/flow refetches or writes from language changes. Authored API/source names, paths, column labels and keys, excluded fields, the 50-row limit, filter column and input stay literal. Phone light/dark Thai views at native 390px keep complete invalid-path, input-name and minimum-field guidance contained. Canceling dirty-draft confirmation sends no generation request and preserves both the saved original and unsaved Studio changes.
+
+One real creation response is held after server commit while language changes: controls stay disabled and delivery opens the current-language completion. Explicit REST and GraphQL creations produce unpublished revision-one drafts with exact typed contracts and selected fields. Real draft HTTP tests return matching typed rows; GraphQL rejects an invalid numeric variable. Read-only source access cannot create an API; selected viewers cannot read the raw source catalog or generate from it, with actual HTTP 403s. This is draft execution proof, not a new published-runtime, Excel-generation, provider-refresh, policy-race or native-speaker certification claim.
+
+Two development fixture corrections matched existing public behavior: GraphQL draft tests wrap their result in `body`, and initial source loading must finish before asserting that a subsequent language change causes no refetch. Held-response failure cleanup now signals readiness, drains a started handler and reports its original error. No retries, assertion removal, raised budgets or server-authority changes were needed.
+
+The complete preview passed seven native stories at two workers in 1.9 minutes and all 26 remaining tests at four workers in 4.3 minutes. The gallery contains 1,081 images and 34 receipts; all prior 1,059 identities/captions remain unchanged and every referenced PNG exists. Review inspected all 22 new originals and eight affected legacy originals, including native-resolution Thai phone images. This is scoped visual review, not individual inspection of every earlier image. The full core check passed types, all 361 backend cases and 6,368 assertions, production build and whole-project formatting; backend execution took 33.68 seconds.
+
+The complete staged browser command passed all 49 cases without retries: six native cases at two workers in 51.6 seconds, 41 regular cases at four workers in 2.0 minutes, the member-field case alone in 21.8 seconds and the Vite/WebSocket case alone in 27.9 seconds. The wrapper took 224.86 seconds; the new generation journey passed in 16.1 seconds within that run. Exact-head hosted check, browser and compiled-portable jobs remain the merge gate.
+
 ## Uploaded-source replacement languages — 0.20.1-alpha.0
 
 The public RED failed in 8.3 seconds: choosing Thai still showed the English replacement-file label. The focused `check:dev` GREEN passed whole-project types, Git-discovered formatting and a fresh build, then the actual bundled-Chromium journey in 18.3 seconds (20.5 seconds Playwright total). Five trusted messages were added in each of seven dictionaries; the prior 597 entries remain unchanged.

@@ -4,6 +4,13 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.2-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Translate spreadsheet API-generation forms, complete path/filter guidance, field choices, draft-discard confirmation and completion notices across all seven dashboard languages.
+- Keep authored API names, paths, column mappings, typed REST/GraphQL contracts and current permissions unchanged when choosing a language. Creating, testing and publishing remain explicit actions.
+
 ## 0.20.1-alpha.0 — 2026-10-10
 
 ### Fixed

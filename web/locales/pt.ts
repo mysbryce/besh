@@ -757,6 +757,39 @@ const messages: Record<string, string> = {
   'GRAPHQL OPERATION': 'OPERAÇÃO GRAPHQL',
   'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.':
     'Use um caminho exato, como /v1/messages. As mensagens WebSocket transportam os valores de entrada; parâmetros de caminho nomeados não são suportados.',
+  'YOUR DATA, YOUR API': 'SEUS DADOS, SUA API',
+  'Create an API': 'Criar uma API',
+  'Choose the fields people can receive. We will create a draft you can test and publish in API Studio.':
+    'Escolha os campos que as pessoas podem receber. Criaremos um rascunho para você testar e publicar no API Studio.',
+  '{endpoint} after publication. Use letters, numbers, slashes, hyphens, or underscores.':
+    '{endpoint} após a publicação. Use letras, números, barras, hífens ou sublinhados.',
+  'Start with / and use letters, numbers, slashes, hyphens, or underscores.':
+    'Comece com / e use letras, números, barras, hífens ou sublinhados.',
+  'Fields to return': 'Campos a retornar',
+  'Original column → API field': 'Coluna original → campo da API',
+  'Return {column}': 'Retornar {column}',
+  'Choose at least one field to continue.':
+    'Escolha pelo menos um campo para continuar.',
+  'Rows per request': 'Linhas por solicitação',
+  'Up to {count} rows': 'Até {count} linhas',
+  'Filter by input': 'Filtrar por entrada',
+  'Match a supplied value, or return all rows when it is omitted.':
+    'Corresponder a um valor fornecido ou retornar todas as linhas quando ele for omitido.',
+  'Filter column': 'Coluna do filtro',
+  'Filter input name': 'Nome da entrada do filtro',
+  'Start with a lowercase letter. Use letters, numbers, or underscores.':
+    'Comece com uma letra minúscula. Use letras, números ou sublinhados.',
+  'Callers send ?{input}=value in the URL. Omit it to return all rows. API keys control access to the API.':
+    'Os chamadores enviam ?{input}=value na URL. Omita o parâmetro para retornar todas as linhas. As chaves de API controlam o acesso à API.',
+  'Callers supply {input} as an optional GraphQL query argument. Its type is created from the selected column. Omit it to return all rows; API keys control access.':
+    'Os chamadores fornecem {input} como argumento opcional da consulta GraphQL. Seu tipo é criado a partir da coluna selecionada. Omita o argumento para retornar todas as linhas; as chaves de API controlam o acesso.',
+  'Create API from data': 'Criar API a partir dos dados',
+  'Discard unsaved draft changes and create this API?':
+    'Descartar as alterações não salvas do rascunho e criar esta API?',
+  'API draft created. Test your data, then publish it.':
+    'Rascunho da API criado. Teste seus dados e depois publique.',
+  'API draft created. Read APIs access is needed to open API Studio.':
+    'Rascunho da API criado. A permissão de leitura de APIs é necessária para abrir o API Studio.',
 }
 
 export default messages
