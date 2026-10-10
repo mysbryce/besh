@@ -202,7 +202,7 @@
 
 Spreadsheet API-generation languages, [PR #12](https://github.com/mysbryce/besh/pull/12), merged as `0.20.2-alpha.0` at `0b100e4`. All three exact-head and post-merge jobs passed. The public Windows portable remains `0.19.0-alpha.0`; newer source versions do not imply a new executable release.
 
-1. Review the final English 60-second [product-video preview](product-video.md), with animated React/SVG interfaces and visible cursor interactions. The local MP4 is ready for the maintainer's design feedback. Root README placement and video publication wait for approval.
+1. The maintainer approved the final English 60-second [product film](product-video.md) on 2026-10-10 and requested its README link. Include the approved tracked MP4 in the normal tested repository delivery; keep editable marketing files ignored.
 2. Continue provider refresh and deletion localization through separate public journeys, preserving confirmations, snapshots and current grants. See [current roadmap](roadmap.md#next-steps) for advanced protection and remaining language work.
 3. Follow the [remaining roadmap](roadmap.md#next-steps): external data/query/migration tools, graph extensions/plugins, verified product providers/AI tools, realtime events/subscriptions, media/CMS/payments and operations. Keep implemented behavior distinct from planned integrations.
 
@@ -229,4 +229,4 @@ See [testing](testing.md), [architecture](architecture.md), and [roadmap](roadma
 - Keep animation brisk: short cursor travel and text/panel entrances, with readable result holds. Use a more energetic original score and cute synthesized boops synchronized to actual clicks, deletes and connection drops.
 - Vary the composition across the film: centered typography, full-frame workspace, camera detail shots, prominent response/release cards and an external phone viewport. A permanent left narration column beside a right preview does not satisfy the maintainer's design direction.
 - Keep interaction feedback local and brief: clicked controls and affected results bounce with a focus ring; connection handles and completed lines pulse to show which nodes are linked. Preserve readable text and fixed port geometry.
-- Present a local MP4 preview first. The maintainer will specify design corrections and approve the film before root README placement or video publication.
+- Present a local MP4 preview first. The maintainer approved the final cut and requested README placement on 2026-10-10; future revisions still require design review.

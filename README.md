@@ -6,6 +6,8 @@ Build and publish APIs visually. Connect nodes, test drafts, and publish REST, G
 
 Besh is an early local development preview. Remote databases, more login providers, plugins, and the AI operator remain planned.
 
+[Watch Besh in 60 seconds](docs/assets/besh-product.mp4)
+
 [Download Windows portable 0.19.0-alpha.0](https://github.com/mysbryce/besh/releases/download/v0.19.0-alpha.0/besh-0.19.0-alpha.0-windows-x64.exe), with no Bun installation required. See [ZIP and checksums](https://github.com/mysbryce/besh/releases/tag/v0.19.0-alpha.0) and [portable instructions](docs/portable.md).
 
 ## Start locally

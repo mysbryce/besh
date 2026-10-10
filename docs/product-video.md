@@ -2,7 +2,7 @@
 
 The [Besh product film](assets/besh-product.mp4) is an original, local English 60-second presentation with music and interaction sounds. React/SVG interfaces use continuing simulated state, without screenshot swaps. They illustrate implemented workflows; they do not call a real backend or provide browser execution proof.
 
-The maintainer accepted the cinematic layout and requested target-local bounces/rings. Clicks highlight controls; drops pulse existing ports and animate edges without moving endpoints. These effects add no product capabilities. Latest-cut approval remains pending; root README placement and remote upload wait.
+The maintainer approved this final cut and requested README placement on 2026-10-10. Clicks highlight controls; drops pulse existing ports and animate edges without moving endpoints. These effects add no product capabilities. The README links the tracked MP4; editable marketing files remain local.
 
 ## Sequence
 
@@ -38,6 +38,6 @@ The original 144 BPM instrumental and 32 interaction sounds follow 29 clicks, tw
 
 The ohmygame reference informed composition through 1853 decoded frames on 62 contact sheets with 320 × 180 tiles. No assets, text or music were copied; continuous playback/audio audition was unobserved.
 
-Review covered 266 prior cinematic stills and 171 decoded reaction-cut frames at original detail. Final export yielded 171 sampled frames: 76 match reviewed PNG hashes; all 95 changed originals passed visual review after the spotlight-corner correction. Repository checks passed 361 tests/6368 assertions, types, Vite build and formatting; they do not prove playback quality. Audio mean −18.3 dB/max −4.1 dB is numeric evidence only. Continuous playback, listening and final approval remain outstanding.
+Review covered 266 prior cinematic stills and 171 decoded reaction-cut frames at original detail. Final export yielded 171 sampled frames: 76 match reviewed PNG hashes; all 95 changed originals passed visual review after the spotlight-corner correction. Repository checks passed 361 tests/6368 assertions, types, Vite build and formatting; they do not prove playback quality. Audio mean −18.3 dB/max −4.1 dB is numeric evidence only. Maintainer design approval is recorded above; continuous playback and listening were not independently observed by the agents.
 
 Remotion tooling, source, audio and stills under `marketing/` are local and ignored, unavailable from a fresh clone. Only the final MP4 is retained.

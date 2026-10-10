@@ -4,6 +4,13 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.4-alpha.0 — 2026-10-10
+
+### Changed
+
+- Link the maintainer-approved 60-second product film from the README, with its final MP4 retained in Git and editable marketing files ignored.
+- Record design approval and resume the next spreadsheet-provider localization journey.
+
 ## 0.20.3-alpha.0 — 2026-10-10
 
 ### Changed
