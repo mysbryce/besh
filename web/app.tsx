@@ -30,7 +30,8 @@ import {
 } from '../src/workspace/permissions'
 import { ThemeControl } from './theme'
 import { LanguageControl } from './language'
-import { useTranslation } from './i18n'
+import { translateMessage, useTranslation } from './i18n'
+import { useStructDraft } from './struct-store'
 import { GitHubIcon } from './components/github-icon'
 
 const Builder = lazy(() =>
@@ -47,6 +48,9 @@ const FlowPicker = lazy(() =>
 )
 const DataSources = lazy(() =>
   import('./data-sources').then((module) => ({ default: module.DataSources })),
+)
+const Structs = lazy(() =>
+  import('./structs').then((module) => ({ default: module.Structs })),
 )
 const DatabaseConnections = lazy(() =>
   import('./database-connections').then((module) => ({
@@ -80,6 +84,7 @@ type Setup = { required: boolean; name: string }
 type Page =
   | 'builder'
   | 'data'
+  | 'structs'
   | 'database'
   | 'audit'
   | 'members'
@@ -95,6 +100,7 @@ type Page =
 const navigation = [
   { id: 'builder', name: 'API Studio', icon: Workflow },
   { id: 'data', name: 'Data sources', icon: Table2 },
+  { id: 'structs', name: 'Content models', icon: Box },
   { id: 'database', name: 'Database connections', icon: Database },
   { id: 'product-login', name: 'Product login', icon: GitHubIcon },
   { id: 'load-tests', name: 'Load testing', icon: Gauge },
@@ -131,10 +137,12 @@ export function App({
   )
   const [page, setPage] = useState<Page>('builder')
   const state = useStudio()
+  const structDirty = useStructDraft((draft) => draft.dirty)
 
   useEffect(() => {
+    useStructDraft.getState().reset()
     setPage(can(state.member, 'flows.read') ? 'builder' : 'account')
-  }, [state.sessionId])
+  }, [state.sessionId, state.member?.id])
 
   useEffect(() => {
     if (invitation || !invitationBootstrapReady) return
@@ -174,7 +182,7 @@ export function App({
         return
       }
       if (
-        current.dirty &&
+        (current.dirty || useStructDraft.getState().dirty) &&
         !window.confirm(
           'Leave the editor to review this invitation? Your unsaved draft will be kept until you return or confirm sign-out.',
         )
@@ -192,11 +200,15 @@ export function App({
   }, [invitation, completeInvitationBootstrap])
 
   useEffect(() => {
-    if (!state.dirty && !state.busy) return
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault()
+    if (!state.dirty && !structDirty && !state.busy) return
+    const warn = (event: BeforeUnloadEvent) => {
+      const current = useStudio.getState()
+      if (current.dirty || current.busy || useStructDraft.getState().dirty)
+        event.preventDefault()
+    }
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [state.dirty, state.busy])
+  }, [state.dirty, structDirty, state.busy])
 
   useEffect(() => {
     if (!state.expiresAt) return
@@ -232,10 +244,18 @@ export function App({
           }}
           onSignIn={() => {
             if (
+              useStructDraft.getState().dirty &&
+              !window.confirm(
+                translateMessage('Discard unsaved content model changes?'),
+              )
+            )
+              return
+            if (
               useStudio.getState().dirty &&
               !window.confirm('Discard unsaved draft changes and open sign-in?')
             )
               return
+            useStructDraft.getState().reset()
             useStudio.getState().clearSession()
             useStudio.setState({ authReady: true })
             setInvitationSignIn(true)
@@ -280,12 +300,18 @@ export function App({
   const forbidden =
     selectedAccess && !selectedPages.includes(page)
       ? true
-      : page === 'members' || page === 'updates' || page === 'tenant-protection'
+      : page === 'members' ||
+          page === 'updates' ||
+          page === 'tenant-protection' ||
+          page === 'structs'
         ? state.member.role !== 'owner'
         : !!grants &&
           !grants.some((permission) => can(state.member, permission))
   const deniedTitle =
-    page === 'members' || page === 'updates' || page === 'tenant-protection'
+    page === 'members' ||
+    page === 'updates' ||
+    page === 'tenant-protection' ||
+    page === 'structs'
       ? 'Owner access required'
       : state.member.role === 'custom' ||
           page === 'builder' ||
@@ -297,9 +323,26 @@ export function App({
             ? 'Product login needs editor access'
             : 'Owner access required'
 
+  function confirmStructDiscard() {
+    return (
+      !useStructDraft.getState().dirty ||
+      window.confirm(t('Discard unsaved content model changes?'))
+    )
+  }
+
+  function navigate(next: Page) {
+    if (state.busy || page === next || !confirmStructDiscard()) return
+
+    if (useStructDraft.getState().dirty) useStructDraft.getState().reset()
+    setPage(next)
+  }
+
   function switchFlow(action: () => void) {
+    if (state.busy || !confirmStructDiscard()) return
     if (state.dirty && !window.confirm(t('Discard unsaved draft changes?')))
       return
+
+    if (useStructDraft.getState().dirty) useStructDraft.getState().reset()
     action()
     setPage('builder')
   }
@@ -314,7 +357,13 @@ export function App({
           aria-disabled={state.busy}
           tabIndex={state.busy ? -1 : undefined}
           onClick={(event) => {
-            if (state.busy) event.preventDefault()
+            if (state.busy || !confirmStructDiscard()) {
+              event.preventDefault()
+              return
+            }
+
+            if (useStructDraft.getState().dirty)
+              useStructDraft.getState().reset()
           }}
         >
           <span className="brand-icon">b</span>besh
@@ -336,7 +385,8 @@ export function App({
               .filter(({ id }) => !selectedAccess || selectedPages.includes(id))
               .filter(
                 ({ id }) =>
-                  id !== 'tenant-protection' || state.member?.role === 'owner',
+                  (id !== 'tenant-protection' && id !== 'structs') ||
+                  state.member?.role === 'owner',
               )
               .map(({ id, name, icon: Icon }) => (
                 <button
@@ -344,7 +394,7 @@ export function App({
                   aria-label={t(name)}
                   className={page === id ? 'active' : ''}
                   disabled={state.busy}
-                  onClick={() => setPage(id)}
+                  onClick={() => navigate(id)}
                 >
                   <Icon size={18} />
                   {t(name)}
@@ -415,6 +465,7 @@ export function App({
             className="user-profile"
             aria-label={t('Sign out')}
             onClick={() => {
+              if (!confirmStructDiscard()) return
               if (
                 state.dirty &&
                 !window.confirm(t('Discard unsaved draft changes?'))
@@ -460,7 +511,7 @@ export function App({
               size="icon"
               aria-label={t('Help & roadmap')}
               disabled={state.busy}
-              onClick={() => setPage('roadmap')}
+              onClick={() => navigate('roadmap')}
             >
               <CircleHelp size={18} />
             </Button>
@@ -486,18 +537,20 @@ export function App({
                 <ShieldCheck />
                 <h1>{t(deniedTitle)}</h1>
                 <p>
-                  {page === 'members'
-                    ? t('Only the owner can manage members and roles.')
-                    : page === 'updates'
-                      ? t(
-                          'Only the owner can manage Besh release settings and update notices.',
-                        )
-                      : page === 'tenant-protection'
-                        ? 'Only the owner can approve tenant identities and row protection.'
-                        : page === 'load-tests' &&
-                            state.member.role !== 'custom'
-                          ? `Your ${state.member.role} role cannot run or view workspace load tests. Ask an owner to test the published API.`
-                          : `Your ${memberRoleName(state.member)} role needs ${grants?.map((permission) => permissionCatalog.find((entry) => entry.id === permission)?.label).join(' or ')} access. Ask the workspace owner to review your grants.`}
+                  {page === 'structs'
+                    ? t('Owner access required')
+                    : page === 'members'
+                      ? t('Only the owner can manage members and roles.')
+                      : page === 'updates'
+                        ? t(
+                            'Only the owner can manage Besh release settings and update notices.',
+                          )
+                        : page === 'tenant-protection'
+                          ? 'Only the owner can approve tenant identities and row protection.'
+                          : page === 'load-tests' &&
+                              state.member.role !== 'custom'
+                            ? `Your ${state.member.role} role cannot run or view workspace load tests. Ask an owner to test the published API.`
+                            : `Your ${memberRoleName(state.member)} role needs ${grants?.map((permission) => permissionCatalog.find((entry) => entry.id === permission)?.label).join(' or ')} access. Ask the workspace owner to review your grants.`}
                 </p>
               </div>
             ) : page === 'builder' ? (
@@ -516,6 +569,8 @@ export function App({
               )
             ) : page === 'data' ? (
               <DataSources onOpenApi={() => setPage('builder')} />
+            ) : page === 'structs' ? (
+              <Structs />
             ) : page === 'database' ? (
               <DatabaseConnections onOpenApi={() => setPage('builder')} />
             ) : page === 'product-login' ? (

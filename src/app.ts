@@ -32,6 +32,7 @@ import type { K6Runner } from './load-tests/model'
 import type { SheetFetch } from './data/google-sheets'
 import { productAuthService, type OAuthFetch } from './auth/product'
 import { invitationService } from './auth/invitations'
+import { structService } from './structs/service'
 import { timingSafeEqual } from 'node:crypto'
 import {
   sessionService,
@@ -129,6 +130,7 @@ export function createApp(options: AppOptions) {
   const store = openStore(options.databasePath, options.adminToken)
   const sessions = sessionService(store, options.now)
   const invitations = invitationService(store, options.now)
+  const structs = structService(store)
   const dependencies = dependencyService(store)
   const rowPolicies = rowPolicyService(store)
   const tenantFields = tenantFieldPolicyService(store)
@@ -444,6 +446,26 @@ export function createApp(options: AppOptions) {
       return { member, session }
     })
     .get('/me', ({ member }) => member)
+    .get('/structs', ({ member }) => {
+      allow(member, ['owner'])
+      return structs.list()
+    })
+    .get('/structs/:id', ({ member, params }) => {
+      allow(member, ['owner'])
+      return structs.get(params.id)
+    })
+    .post('/structs', ({ member, body, request }) => {
+      allow(member, ['owner'])
+      return structs.create(member.id, body, () =>
+        allow(currentMember(request), ['owner']),
+      )
+    })
+    .put('/structs/:id', ({ member, params, body, request }) => {
+      allow(member, ['owner'])
+      return structs.update(member.id, params.id, body, () =>
+        allow(currentMember(request), ['owner']),
+      )
+    })
     .get('/invitations', ({ member }) => {
       allow(member, ['owner'])
       return invitations.list()

@@ -4,6 +4,12 @@ Besh stays below `1.0.0` until the project is ready and the maintainer explicitl
 
 Every completed change delivery gets a new version in `package.json` and an entry in [CHANGELOG.md](../CHANGELOG.md), in the same tested commit. Work in progress does not need a version change after every edit.
 
+## SQLite catalog language delivery — 0.20.8-alpha.0
+
+[PR #17](https://github.com/mysbryce/besh/pull/17) merged reviewed head `edbb059` as `18c1d90`. [Exact-head CI 38067899614, attempt 2](https://github.com/mysbryce/besh/actions/runs/38067899614/attempts/2) and [main CI 38069172751](https://github.com/mysbryce/besh/actions/runs/38069172751) passed all three jobs: core, browser and compiled portable acceptance. Receipts include 361 backend cases with 6,368 assertions, 53 browser cases and 10 portable cases with 1,038 assertions. The first head attempt failed during network-dependent job setup; the unchanged head passed its rerun. This was not a product-test correction.
+
+After successful merge/main checks and proof that the reviewed and merged trees were identical, the completed `fix/sqlite-catalog-languages-0.20.8` remote and local delivery branches were deleted. Unrelated branches and local main history were preserved. See [local browser/gallery evidence](testing.md#sqlite-upload-and-saved-copy-catalog-languages--0208-alpha0). This source delivery does not replace the public `0.19.0-alpha.0` portable executable.
+
 ## Choose the version
 
 Use `x.y.z` with an optional `-alpha.N`, `-beta.N`, or `-rc.N` suffix.

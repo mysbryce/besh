@@ -1113,7 +1113,9 @@ test('downloaded current backup restores pending links and consumed account stat
     now: () => clock,
   })
   expect(
-    (await (await request('/api/migrations')).json()).at(-1),
+    (await (await request('/api/migrations')).json()).find(
+      (migration: { version: number }) => migration.version === 23,
+    ),
   ).toMatchObject({
     version: 23,
     name: 'one-time workspace member invitations',

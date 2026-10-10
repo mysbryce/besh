@@ -23,11 +23,12 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Keep local setup easy. Provide a first-run wizard; do not require manual environment edits for the basic workflow.
 - Portable executables default to adjacent `besh-data`; preserve explicit data-directory overrides and genuine first-run browser handoff. Keep executable artifact checks serialized after browser CI and exclude optional network probes from the offline suite.
 - Design common workflows for people who do not write code. Use labeled forms, selectors, examples, and data previews. Keep JSON and schema editors optional advanced tools.
+- CMS collections and Structs must be configured through dashboard forms. Rich text needs a bounded, versioned structured format and an optional safe server HTML renderer with reviewed per-element classes/attributes. Keep authored content separate from trusted renderer settings and published runtime code; never evaluate content or attribute expressions.
 - Support light, dark, and system appearance. Keep text, controls, focus, and error states readable in both themes; respect reduced-motion settings. Persist appearance, supported language codes and validated built-in favorite IDs only, never credentials or form payloads.
 - Use the primary browser language on initialization, with English fallback and an explicit persisted override. Translate interface labels, never authored API names, fields, data or contracts. Keep locale dictionaries aligned and load non-English dictionaries on demand.
 - Keep step selection in the categorized searchable picker. Preserve keyboard focus, mobile touch targets, feature/permission guards and explicit saving/publication. Uploaded CJS/ZIP plugins remain planned until their archive and real isolation boundary are implemented.
 - Use locally served Google Sans Flex and Noto Sans Thai with clear body, label, subheading and heading weights. Keep code monospace. Make technical details optional while keeping current state, errors, next actions and important review warnings visible.
-- Keep feature files together in shallow server folders: `src/auth/`, `src/data/`, `src/databases/`, `src/flows/`, `src/load-tests/`, `src/updates/`, `src/websockets/`, and `src/workspace/`. Root server files compose/start the app or provide shared errors. Keep `web/` dashboard, `test/` backend tests, `e2e/` browser tests, and `docs/` documentation. Avoid empty folders and unnecessary barrel exports.
+- Keep feature files together in shallow server folders: `src/auth/`, `src/data/`, `src/databases/`, `src/flows/`, `src/load-tests/`, `src/structs/`, `src/updates/`, `src/websockets/`, and `src/workspace/`. Root server files compose/start the app or provide shared errors. Keep `web/` dashboard, `test/` backend tests, `e2e/` browser tests, and `docs/` documentation. Avoid empty folders and unnecessary barrel exports.
 - Read applicable local skills when requested. Current requested skills: `tdd`, `wait-what`, `handoff`.
 - Test first through agreed public interfaces. See `docs/testing.md` for approved scope. Work one failing test and implementation at a time.
 - Run relevant tests, type checks, build, and formatting before committing. Run browser tests for editor behavior changes.
@@ -42,6 +43,8 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - The maintainer approved the current 60-second film and its README placement on 2026-10-10. Include these approved assets in the normal tested repository delivery; future revised cuts still need design review.
 - Keep local skill installation metadata such as `skills-lock.json` out of Git while preserving the local file.
 - Preserve unrelated user edits. Do not force push, reset history, or publish without authorization.
+- After a normally tested PR merge and successful main CI, delete its remote and local delivery branches. Verify the reviewed head and merged tree first. Preserve unrelated branches and local main history; never delete work that has not been verified as merged.
+- Continue the authorized roadmap through consecutive public-test-first deliveries. Do not pause after each delivery just to ask what to do next. Preserve required tests, main CI, migration/backup gates and release authorization; report concrete external blockers while completing independent work.
 - Document what works, what remains planned, and exact checks run. Never claim an adapter works based only on a type definition or mock.
 
 ## Security rules

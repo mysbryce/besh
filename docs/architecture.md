@@ -5,7 +5,7 @@ Goal: help teams build secure, documented APIs with a visual editor.
 ## Decisions
 
 1. Use Bun and Elysia for the server. Use React, Zustand, Tailwind CSS, shadcn/ui, and React Flow for the dashboard. Keep one repository and one package manifest until independent packages are needed.
-2. Keep server code in `src/`, dashboard code in `web/`, tests in `test/`, and design notes in `docs/`. Group server features into `auth/`, `data/`, `databases/`, `flows/`, `load-tests/`, `updates/`, `websockets/`, and `workspace/`. Only application wiring, startup, and shared errors stay at the source root. Avoid empty abstraction layers.
+2. Keep server code in `src/`, dashboard code in `web/`, tests in `test/`, and design notes in `docs/`. Group server features into `auth/`, `data/`, `databases/`, `flows/`, `load-tests/`, `structs/`, `updates/`, `websockets/`, and `workspace/`. Only application wiring, startup, and shared errors stay at the source root. Avoid empty abstraction layers.
 3. Store flows as versioned JSON. The dashboard edits this format; the server validates and executes it. Never evaluate JavaScript from a flow.
 4. Separate drafts from releases. Validate before publishing or restoring a release. Existing releases remain unchanged when drafts are edited. Same-method overlapping REST routes fail explicitly rather than relying on literal-route precedence.
 5. Start with a local SQLite control database. Product database connections are separate adapters. Do not pretend SQL databases, MongoDB, Firebase, and Supabase have identical query or transaction semantics.
@@ -14,6 +14,14 @@ Goal: help teams build secure, documented APIs with a visual editor.
 8. Add integrations through capability-based adapters. Unsupported features fail clearly. A provider listed in a roadmap is not a working integration.
 9. Keep AI providers replaceable. Use typed tools with the caller's permissions. Models cannot grant themselves access. Codex CLI requires a separate, restricted process adapter; an HTTP provider adapter cannot substitute for it.
 10. Manual owner-only checks read public GitHub release notices from a configured canonical repository URL. Do not execute application updates or silently migrate a running installation. Pin dependencies and release artifacts. Built-in load testing provisions only the explicitly selected, checksum-verified official k6 binary on first use; it does not update Besh.
+
+## Content model draft boundary
+
+`src/structs/` validates and stores owner-only Struct definitions; `web/structs.tsx`, `web/struct-fields.tsx` and a separate draft store provide form editing without TypeScript configuration. Six schema types cover text, number, boolean, nested object, list and choice. A bounded preflight checks raw input, schema depth/node count and JSON bytes before recursive validation; strict schemas enforce field/choice rules and creation checks catalog capacity. Migration 24 stores definitions in the control database and its ordinary backups.
+
+Create/update transactions recheck the original management proof and current owner, then commit the saved definition/version with metadata-only audit. Updates compare the supplied positive safe version and increment it on every accepted save; stale or invalid writes leave state and audit unchanged. The frontend tracks unsaved model edits separately from API drafts, confirms destructive transitions and rejects late replies from a different editor/session. Language changes affect trusted labels only and do not fetch the Struct catalog or change authored definitions.
+
+These are saved model drafts only. They create no content entries, collection tables, rich-text renderer, published schema or runtime route, and they do not participate in API dependency USE. See [content model drafts](structs.md), [planned platform](platform-plan.md) and actual [check receipts](testing.md).
 
 ## Portable executable boundary
 

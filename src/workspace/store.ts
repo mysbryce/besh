@@ -693,6 +693,21 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 24').get()) {
+      db.run(`CREATE TABLE structs (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        fields TEXT NOT NULL CHECK(json_valid(fields) AND json_type(fields) = 'array'),
+        version INTEGER NOT NULL CHECK(typeof(version) = 'integer' AND version > 0),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`)
+      query('INSERT INTO migrations VALUES (24, ?, ?)').run(
+        'owner-managed bounded content Struct drafts',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,

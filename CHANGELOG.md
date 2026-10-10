@@ -4,6 +4,21 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.21.0-alpha.0 — 2026-10-11
+
+### Added
+
+- Owner-managed content model drafts with visual Text, Number, Boolean, Group, List and Choice fields, including nested groups and list item types.
+- Bounded, versioned Struct management with strict validation, current owner authorization, atomic metadata audit and backup/restart recovery.
+- Seven-language forms and twenty-one page/action previews covering real saves, pending delivery, catalog refresh, conflict recovery, accepted new drafts and light/dark phone controls.
+
+### Changed
+
+- Keep authored values intact across language changes; preserve unsaved edits on stale saves and require an explicit discard before reloading.
+- Return keyboard focus after removing fields or choices and keep mobile actions at least 44 pixels with square custom checkboxes.
+- Continue authorized Roadmap deliveries and delete completed delivery branches after reviewed merges and successful main CI.
+- Specify web-configured CMS Structs and structured rich text with optional reviewed server HTML mappings. Content entries, rich-text editing and collection runtime publication remain planned.
+
 ## 0.20.8-alpha.0 — 2026-10-10
 
 ### Fixed

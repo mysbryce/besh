@@ -1,4 +1,52 @@
 const messages: Record<string, string> = {
+  'Content models': 'コンテンツモデル',
+  'Define record fields with forms. This draft does not publish content or an API.':
+    'フォームでレコードのフィールドを定義します。この下書きはコンテンツや API を公開しません。',
+  'New model': '新しいモデル',
+  'Model name': 'モデル名',
+  'Choose a model': 'モデルを選択',
+  'No content models yet': 'コンテンツモデルはまだありません',
+  'Loading content models…': 'コンテンツモデルを読み込み中…',
+  'Model draft': 'モデルの下書き',
+  'Draft revision {version}': '下書きリビジョン {version}',
+  'Add field': 'フィールドを追加',
+  'No fields yet': 'フィールドはまだありません',
+  'Field {path}': 'フィールド {path}',
+  'Field {path} label': 'フィールド {path} のラベル',
+  'Field {path} key': 'フィールド {path} のキー',
+  'Field {path} type': 'フィールド {path} の型',
+  'Field {path} required': 'フィールド {path} は必須',
+  'Field {path} item type': 'フィールド {path} の項目の型',
+  'Add field to {path}': '{path} にフィールドを追加',
+  'Remove field {path}': 'フィールド {path} を削除',
+  Group: 'グループ',
+  List: 'リスト',
+  Choice: '選択肢',
+  'Choices for {path}': '{path} の選択肢',
+  'Add option to {path}': '{path} に選択肢を追加',
+  'Remove option {path}': '選択肢 {path} を削除',
+  'Option {path} value': '選択肢 {path} の値',
+  'Option {path} label': '選択肢 {path} のラベル',
+  'Keys start with a lowercase letter and use lowercase letters, numbers, or underscores. Reserved names are not allowed.':
+    'キーは英小文字で始め、英小文字、数字、アンダースコアのみを使います。予約済みの名前は使えません。',
+  'Use up to 32 fields per group, 32 choices per field, and 6 nesting levels. Each model supports up to 128 fields and nested item types.':
+    '各グループは最大 32 フィールド、各フィールドは最大 32 選択肢、入れ子は最大 6 階層です。各モデルはフィールドと入れ子の項目の型を合計 128 個まで扱えます。',
+  'Enter a model name with 1 to 80 characters.':
+    'モデル名を 1〜80 文字で入力してください。',
+  'Complete every field with a valid, unique key and a label of 1 to 80 characters.':
+    '各フィールドに有効で重複しないキーと、1〜80 文字のラベルを入力してください。',
+  'Choices need at least one option. Values must be unique. Values and labels use 1 to 80 characters.':
+    '少なくとも 1 つの選択肢が必要です。値は重複できません。値とラベルは 1〜80 文字にしてください。',
+  'Content model draft saved.': 'コンテンツモデルの下書きを保存しました。',
+  'Could not load content models.':
+    'コンテンツモデル一覧を読み込めませんでした。',
+  'Could not load content model.': 'コンテンツモデルを読み込めませんでした。',
+  'Could not save content model.': 'コンテンツモデルを保存できませんでした。',
+  'Reload saved version': '保存済みのバージョンを再読み込み',
+  'Discard unsaved content model changes?':
+    'コンテンツモデルの未保存の変更を破棄しますか？',
+  'Changing this type removes its nested fields or choices. Continue?':
+    'この型を変更すると、入れ子のフィールドまたは選択肢が削除されます。続行しますか？',
   'READ A SAVED DATABASE COPY': '保存済みデータベースコピーを読み取る',
   'Choose a SQLite copy, review its tables, then build a read API.':
     'SQLite のコピーを選び、テーブルを確認してから、読み取り API を作成します。',

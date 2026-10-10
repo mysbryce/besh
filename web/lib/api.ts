@@ -4,6 +4,8 @@ import type { FlowAccess, MemberAccess } from '../../src/workspace/flow-access'
 import type { TenantAssignment } from '../../src/workspace/tenant-model'
 import type { FlowTransport } from '../../src/flows/transport'
 
+export type { StructDraft, StructSummary } from '../../src/structs/model'
+
 export type PublishedEndpoint = {
   method: Flow['method']
   path: string

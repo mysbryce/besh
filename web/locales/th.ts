@@ -1,4 +1,51 @@
 const messages: Record<string, string> = {
+  'Content models': 'โมเดลเนื้อหา',
+  'Define record fields with forms. This draft does not publish content or an API.':
+    'กำหนดฟิลด์ของข้อมูลด้วยแบบฟอร์ม ฉบับร่างนี้ยังไม่เผยแพร่เนื้อหาหรือ API',
+  'New model': 'โมเดลใหม่',
+  'Model name': 'ชื่อโมเดล',
+  'Choose a model': 'เลือกโมเดล',
+  'No content models yet': 'ยังไม่มีโมเดลเนื้อหา',
+  'Loading content models…': 'กำลังโหลดโมเดลเนื้อหา…',
+  'Model draft': 'ฉบับร่างโมเดล',
+  'Draft revision {version}': 'ฉบับร่างเวอร์ชัน {version}',
+  'Add field': 'เพิ่มฟิลด์',
+  'No fields yet': 'ยังไม่มีฟิลด์',
+  'Field {path}': 'ฟิลด์ {path}',
+  'Field {path} label': 'ชื่อแสดงของฟิลด์ {path}',
+  'Field {path} key': 'คีย์ของฟิลด์ {path}',
+  'Field {path} type': 'ชนิดของฟิลด์ {path}',
+  'Field {path} required': 'ฟิลด์ {path} ต้องมีค่า',
+  'Field {path} item type': 'ชนิดรายการของฟิลด์ {path}',
+  'Add field to {path}': 'เพิ่มฟิลด์ใน {path}',
+  'Remove field {path}': 'ลบฟิลด์ {path}',
+  Group: 'กลุ่ม',
+  List: 'รายการ',
+  Choice: 'ตัวเลือก',
+  'Choices for {path}': 'ตัวเลือกของ {path}',
+  'Add option to {path}': 'เพิ่มตัวเลือกใน {path}',
+  'Remove option {path}': 'ลบตัวเลือก {path}',
+  'Option {path} value': 'ค่าของตัวเลือก {path}',
+  'Option {path} label': 'ชื่อแสดงของตัวเลือก {path}',
+  'Keys start with a lowercase letter and use lowercase letters, numbers, or underscores. Reserved names are not allowed.':
+    'คีย์ต้องเริ่มด้วยตัวอักษรภาษาอังกฤษพิมพ์เล็ก ใช้ตัวอักษรพิมพ์เล็ก ตัวเลข หรือขีดล่าง ห้ามใช้ชื่อสงวน',
+  'Use up to 32 fields per group, 32 choices per field, and 6 nesting levels. Each model supports up to 128 fields and nested item types.':
+    'แต่ละกลุ่มมีได้ไม่เกิน 32 ฟิลด์ แต่ละฟิลด์มีได้ไม่เกิน 32 ตัวเลือก และซ้อนได้ 6 ระดับ แต่ละโมเดลมีฟิลด์และชนิดรายการที่ซ้อนกันรวมได้ไม่เกิน 128 รายการ',
+  'Enter a model name with 1 to 80 characters.':
+    'ใส่ชื่อโมเดลยาว 1 ถึง 80 ตัวอักษร',
+  'Complete every field with a valid, unique key and a label of 1 to 80 characters.':
+    'ทุกฟิลด์ต้องมีคีย์ที่ถูกต้องและไม่ซ้ำ พร้อมชื่อแสดงยาว 1 ถึง 80 ตัวอักษร',
+  'Choices need at least one option. Values must be unique. Values and labels use 1 to 80 characters.':
+    'ต้องมีอย่างน้อยหนึ่งตัวเลือก ค่าแต่ละตัวต้องไม่ซ้ำ ค่าและชื่อแสดงต้องยาว 1 ถึง 80 ตัวอักษร',
+  'Content model draft saved.': 'บันทึกฉบับร่างโมเดลเนื้อหาแล้ว',
+  'Could not load content models.': 'โหลดรายการโมเดลเนื้อหาไม่ได้',
+  'Could not load content model.': 'โหลดโมเดลเนื้อหาไม่ได้',
+  'Could not save content model.': 'บันทึกโมเดลเนื้อหาไม่ได้',
+  'Reload saved version': 'โหลดเวอร์ชันที่บันทึกไว้อีกครั้ง',
+  'Discard unsaved content model changes?':
+    'ละทิ้งการเปลี่ยนแปลงโมเดลเนื้อหาที่ยังไม่ได้บันทึกหรือไม่?',
+  'Changing this type removes its nested fields or choices. Continue?':
+    'การเปลี่ยนชนิดนี้จะลบฟิลด์หรือตัวเลือกที่ซ้อนอยู่ ดำเนินการต่อหรือไม่?',
   'READ A SAVED DATABASE COPY': 'อ่านสำเนาฐานข้อมูลที่บันทึกไว้',
   'Choose a SQLite copy, review its tables, then build a read API.':
     'เลือกสำเนา SQLite ตรวจสอบตาราง แล้วสร้าง API สำหรับอ่านข้อมูล',

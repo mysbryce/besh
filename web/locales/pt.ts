@@ -1,4 +1,54 @@
 const messages: Record<string, string> = {
+  'Content models': 'Modelos de conteúdo',
+  'Define record fields with forms. This draft does not publish content or an API.':
+    'Defina os campos dos registros com formulários. Este rascunho não publica conteúdo nem uma API.',
+  'New model': 'Novo modelo',
+  'Model name': 'Nome do modelo',
+  'Choose a model': 'Escolha um modelo',
+  'No content models yet': 'Ainda não há modelos de conteúdo',
+  'Loading content models…': 'Carregando modelos de conteúdo…',
+  'Model draft': 'Rascunho do modelo',
+  'Draft revision {version}': 'Revisão do rascunho {version}',
+  'Add field': 'Adicionar campo',
+  'No fields yet': 'Ainda não há campos',
+  'Field {path}': 'Campo {path}',
+  'Field {path} label': 'Rótulo do campo {path}',
+  'Field {path} key': 'Chave do campo {path}',
+  'Field {path} type': 'Tipo do campo {path}',
+  'Field {path} required': 'Campo {path} obrigatório',
+  'Field {path} item type': 'Tipo de item do campo {path}',
+  'Add field to {path}': 'Adicionar campo a {path}',
+  'Remove field {path}': 'Remover campo {path}',
+  Group: 'Grupo',
+  List: 'Lista',
+  Choice: 'Opção',
+  'Choices for {path}': 'Opções de {path}',
+  'Add option to {path}': 'Adicionar opção a {path}',
+  'Remove option {path}': 'Remover opção {path}',
+  'Option {path} value': 'Valor da opção {path}',
+  'Option {path} label': 'Rótulo da opção {path}',
+  'Keys start with a lowercase letter and use lowercase letters, numbers, or underscores. Reserved names are not allowed.':
+    'As chaves começam com uma letra minúscula e usam letras minúsculas, números ou sublinhados. Nomes reservados não são permitidos.',
+  'Use up to 32 fields per group, 32 choices per field, and 6 nesting levels. Each model supports up to 128 fields and nested item types.':
+    'Use até 32 campos por grupo, 32 opções por campo e 6 níveis de aninhamento. Cada modelo aceita até 128 campos e tipos de itens aninhados.',
+  'Enter a model name with 1 to 80 characters.':
+    'Insira um nome de modelo com 1 a 80 caracteres.',
+  'Complete every field with a valid, unique key and a label of 1 to 80 characters.':
+    'Preencha cada campo com uma chave válida e única e um rótulo de 1 a 80 caracteres.',
+  'Choices need at least one option. Values must be unique. Values and labels use 1 to 80 characters.':
+    'É necessária pelo menos uma opção. Os valores devem ser únicos. Valores e rótulos devem ter de 1 a 80 caracteres.',
+  'Content model draft saved.': 'Rascunho do modelo de conteúdo salvo.',
+  'Could not load content models.':
+    'Não foi possível carregar a lista de modelos de conteúdo.',
+  'Could not load content model.':
+    'Não foi possível carregar o modelo de conteúdo.',
+  'Could not save content model.':
+    'Não foi possível salvar o modelo de conteúdo.',
+  'Reload saved version': 'Recarregar versão salva',
+  'Discard unsaved content model changes?':
+    'Descartar alterações não salvas do modelo de conteúdo?',
+  'Changing this type removes its nested fields or choices. Continue?':
+    'Alterar este tipo remove seus campos ou opções aninhados. Continuar?',
   'READ A SAVED DATABASE COPY': 'LEIA UMA CÓPIA SALVA DO BANCO DE DADOS',
   'Choose a SQLite copy, review its tables, then build a read API.':
     'Escolha uma cópia SQLite, confira suas tabelas e crie uma API de leitura.',
