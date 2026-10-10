@@ -4,6 +4,12 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.17.1-alpha.0 — 2026-10-10
+
+### Changed
+
+- Pin GitHub Actions checkout to v7.0.1, compatible with the current Windows runner. Preserve manual and push triggers, read-only permissions, and the local Bun installer.
+
 ## 0.17.0-alpha.0 — 2026-10-09
 
 ### Added
