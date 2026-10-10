@@ -2,6 +2,14 @@
 
 User approved all three interfaces on 2026-10-08.
 
+## Portable release receipt — 0.19.0-alpha.0
+
+[PR #8](https://github.com/mysbryce/besh/pull/8) merged at `8e5ef68ced9f631d6eff7b5a005180bbee8745d8`. [Head CI 38033615060](https://github.com/mysbryce/besh/actions/runs/38033615060) and [main CI 38033984171](https://github.com/mysbryce/besh/actions/runs/38033984171) passed core, browser and portable jobs before the authorized [public prerelease](https://github.com/mysbryce/besh/releases/tag/v0.19.0-alpha.0).
+
+All seven uploaded assets were downloaded and matched staged SHA-256/byte counts. The downloaded portable ZIP verified all 689 payload files. Final packaged EXE public CLI, offline license export and real browser setup/key sign-in/save/test/publish/runtime checks passed **3 cases, 779 assertions, 21.56 seconds**. The actual setup and dark phone originals were inspected. Evidence remains in `.cache/portable-delivery-proof.json` and clean checkout `.cache/portable-main-8e5ef68`; see [release receipt](releases.md#portable-prerelease-delivery--0190-alpha0).
+
+[Tag-push CI 38034487284](https://github.com/mysbryce/besh/actions/runs/38034487284) subsequently passed all three jobs at the same source commit. The source-only 0.19.1-alpha.0 documentation patch does not change the released executable or establish new runtime checks.
+
 ## Portable Windows acceptance — 0.19.0-alpha.0
 
 `bun run build:portable` builds the real executable and fresh production dashboard. Set `BESH_TEST_PORTABLE_EXE` to its absolute path, then run `bun run test:portable`. The offline artifact suite passed ten cases and 1,038 assertions in 74.52 seconds. It copies only the executable into fresh paths containing spaces/Thai text, with unrelated working directories, poisoned dotenv/bunfig files and an OS-only PATH.
@@ -10,7 +18,7 @@ Coverage includes embedded HTML/assets/fonts, real uploaded SQLite reads through
 
 Observed failing slices preceded their fixes: missing compiled dashboard, SQLite reader dispatch, unsupported lifecycle/browser commands, short/long path identity, concurrent ownership, readable readiness leaves and notice virtual-root lookup. The optional network first-use k6 case failed before absolute Windows PowerShell extraction; it then passed in 19.45 seconds with 144 assertions, positive native metrics, managed-key revocation and identical summaries after restart. Run it separately with `BESH_TEST_PORTABLE_K6_NETWORK=1 bun test scripts/portable-k6-first-use.test.ts`; ordinary artifact CI needs no k6 download.
 
-These checks do not prove the default desktop browser opener, native Linux/macOS operation, every external adapter, complete native shutdown drain, modified-runtime relinking, signing, or hosted release delivery. See [portable instructions](portable.md), [source provenance](portable-runtime.md), and [release records](releases.md).
+Hosted asset delivery is now verified by the receipt above. These checks do not prove the default desktop browser opener, native Linux/macOS operation, every external adapter, complete native shutdown drain, modified-runtime relinking or publisher signing. Notice bytes were checked, but complete native source/attribution reconciliation remains limited. See [portable instructions](portable.md), [source provenance and material limits](portable-runtime.md#verification-and-material-limits), and [release records](releases.md).
 
 Minimum-version support uses `engines.bun: >=1.4.2` and semantic version guards. An official checksum-verified Bun 1.4.3 compiler built an actual copied artifact; the complete ten-case/1,038-assertion artifact suite passed in 63.89 seconds with the Bun 1.4.2 parent harness. Compiler metadata records 1.4.3 and revision `c6da4a4d3010e5553438c60f6bd76d981976867c`; native notice materials keep their explicit 1.4.2 source baseline. This observes a newer compiler, not arbitrary future Bun versions.
 
