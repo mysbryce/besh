@@ -449,7 +449,7 @@ export function App({
             </strong>
           </div>
           <div>
-            <LanguageControl disabled={state.busy} />
+            <LanguageControl />
             <ThemeControl />
             <Badge variant="outline">
               <span className="live-dot" />

@@ -1,4 +1,30 @@
 const messages: Record<string, string> = {
+  'FROM SPREADSHEET TO API': 'FROM SPREADSHEET TO API',
+  'Bring your data. Preview its columns. Build an API without writing JSON.':
+    'Bring your data. Preview its columns. Build an API without writing JSON.',
+  'Refresh list': 'Refresh list',
+  'Import a spreadsheet': 'Import a spreadsheet',
+  'Check your data': 'Check your data',
+  'Choose API fields': 'Choose API fields',
+  'Add a data source': 'Add a data source',
+  'Import method': 'Import method',
+  'Spreadsheet file': 'Spreadsheet file',
+  'Public Google Sheet': 'Public Google Sheet',
+  'Source name': 'Source name',
+  Products: 'Products',
+  'Import spreadsheet': 'Import spreadsheet',
+  'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.':
+    'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.',
+  'No data sources yet.': 'No data sources yet.',
+  'Import a spreadsheet to see your data here.':
+    'Import a spreadsheet to see your data here.',
+  'Spreadsheet imported. Check your data before creating an API.':
+    'Spreadsheet imported. Check your data before creating an API.',
+  'Saved data source': 'Saved data source',
+  '{source} · {count} rows': '{source} · {count} rows',
+  '{count} rows': '{count} rows',
+  'Empty cells allowed': 'Empty cells allowed',
+  Empty: 'Empty',
   'Update available': 'Update available',
   'No newer release found': 'No newer release found',
   'No matching releases found': 'No matching releases found',

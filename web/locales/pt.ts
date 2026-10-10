@@ -1,4 +1,30 @@
 const messages: Record<string, string> = {
+  'FROM SPREADSHEET TO API': 'DA PLANILHA À API',
+  'Bring your data. Preview its columns. Build an API without writing JSON.':
+    'Traga seus dados, confira as colunas e crie uma API sem escrever JSON.',
+  'Refresh list': 'Atualizar lista',
+  'Import a spreadsheet': 'Importar uma planilha',
+  'Check your data': 'Conferir os dados',
+  'Choose API fields': 'Escolher campos da API',
+  'Add a data source': 'Adicionar uma fonte de dados',
+  'Import method': 'Método de importação',
+  'Spreadsheet file': 'Arquivo de planilha',
+  'Public Google Sheet': 'Planilha Google pública',
+  'Source name': 'Nome da fonte',
+  Products: 'Produtos',
+  'Import spreadsheet': 'Importar planilha',
+  'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.':
+    'CSV ou Excel (.xlsx), até 2 MB. Coloque os nomes das colunas na primeira linha. A importação salva uma cópia dos dados daquele momento.',
+  'No data sources yet.': 'Ainda não há fontes de dados.',
+  'Import a spreadsheet to see your data here.':
+    'Importe uma planilha para ver seus dados aqui.',
+  'Spreadsheet imported. Check your data before creating an API.':
+    'Planilha importada. Confira os dados antes de criar uma API.',
+  'Saved data source': 'Fonte de dados salva',
+  '{source} · {count} rows': '{source} · {count} linhas',
+  '{count} rows': '{count} linhas',
+  'Empty cells allowed': 'Células vazias permitidas',
+  Empty: 'Vazio',
   'Your team': 'Sua equipe',
   'WORKSPACE CONTROL': 'CONTROLE DO ESPAÇO DE TRABALHO',
   'Member keys manage the workspace. Use API keys for published endpoint callers.':

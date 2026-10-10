@@ -25,12 +25,12 @@ export const test = base.extend<{ previewWorkspace: Workspace }>({
     const story = info.title as PreviewStory
     if (!previewStories.some((entry) => entry.id === story))
       throw new Error('Unknown preview story')
-    if (info.parallelIndex > 3)
-      throw new Error('Previews allow at most 4 workers')
+    const port = 4340 + info.parallelIndex
+    if (info.parallelIndex > 3) throw new Error('Invalid preview worker port')
 
     const prefix = resolve(tmpdir(), 'besh-preview-')
     const directory = mkdtempSync(prefix)
-    const origin = `http://127.0.0.1:${4340 + info.parallelIndex}`
+    const origin = `http://127.0.0.1:${port}`
     const owner = crypto.randomUUID() + crypto.randomUUID()
     const setupKey = crypto.randomUUID() + crypto.randomUUID()
     const child = spawn('bun', ['e2e/preview-server.ts'], {
@@ -38,7 +38,7 @@ export const test = base.extend<{ previewWorkspace: Workspace }>({
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        PORT: String(4340 + info.parallelIndex),
+        PORT: String(port),
         BESH_WEB_URL: origin,
         BESH_ADMIN_TOKEN: story === 'core' ? '' : owner,
         BESH_SETUP_KEY: setupKey,

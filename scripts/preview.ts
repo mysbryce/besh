@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { resolve, join, sep } from 'node:path'
 import { renderPreview, type PreviewRecord } from './preview-report'
 import { previewStories } from '../e2e/preview-order'
+import { getPreviewWorkers } from './test-workers'
 
 const root = resolve('.preview')
 let directory: string
@@ -13,15 +14,13 @@ if (process.argv.includes('--open')) {
   directory = resolve((await latest.json()).directory)
   if (!directory.startsWith(root + sep)) throw new Error('Invalid preview path')
 } else {
-  directory = join(root, `run-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`)
-  mkdirSync(directory, { recursive: true })
-
   const workersArgument = process.argv.find((argument) =>
     argument.startsWith('--workers='),
   )
-  const workers = workersArgument?.slice('--workers='.length) ?? '4'
-  if (!/^[1-4]$/.test(workers))
-    throw new Error('Preview workers must be an integer from 1 to 4')
+  const workers = getPreviewWorkers(workersArgument?.slice('--workers='.length))
+
+  directory = join(root, `run-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`)
+  mkdirSync(directory, { recursive: true })
 
   // Build once; every isolated workspace serves these exact dashboard bytes.
   const build = Bun.spawn([process.execPath, 'run', 'build'], {

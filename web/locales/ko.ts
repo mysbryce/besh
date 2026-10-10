@@ -1,4 +1,30 @@
 const messages: Record<string, string> = {
+  'FROM SPREADSHEET TO API': '스프레드시트에서 API로',
+  'Bring your data. Preview its columns. Build an API without writing JSON.':
+    '데이터를 가져오고 열을 미리 확인한 뒤 JSON을 작성하지 않고 API를 만드세요.',
+  'Refresh list': '목록 새로고침',
+  'Import a spreadsheet': '스프레드시트 가져오기',
+  'Check your data': '데이터 확인',
+  'Choose API fields': 'API 필드 선택',
+  'Add a data source': '데이터 소스 추가',
+  'Import method': '가져오기 방법',
+  'Spreadsheet file': '스프레드시트 파일',
+  'Public Google Sheet': '공개 Google 스프레드시트',
+  'Source name': '데이터 소스 이름',
+  Products: '제품',
+  'Import spreadsheet': '스프레드시트 가져오기',
+  'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.':
+    'CSV 또는 Excel(.xlsx), 최대 2 MB. 첫 번째 행에 열 이름을 넣으세요. 가져오면 데이터 스냅샷이 저장됩니다.',
+  'No data sources yet.': '아직 데이터 소스가 없습니다.',
+  'Import a spreadsheet to see your data here.':
+    '스프레드시트를 가져오면 여기에서 데이터를 볼 수 있습니다.',
+  'Spreadsheet imported. Check your data before creating an API.':
+    '스프레드시트를 가져왔습니다. API를 만들기 전에 데이터를 확인하세요.',
+  'Saved data source': '저장된 데이터 소스',
+  '{source} · {count} rows': '{source} · {count}행',
+  '{count} rows': '{count}행',
+  'Empty cells allowed': '빈 셀 허용',
+  Empty: '비어 있음',
   'Your team': '팀',
   'WORKSPACE CONTROL': '작업 공간 관리',
   'Member keys manage the workspace. Use API keys for published endpoint callers.':

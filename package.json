@@ -1,6 +1,6 @@
 {
   "name": "besh",
-  "version": "0.19.1-alpha.0",
+  "version": "0.20.0-alpha.0",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -13,8 +13,8 @@
     "dev:api": "bun --watch src/index.ts",
     "dev:web": "vite --host 127.0.0.1",
     "start": "bun src/index.ts",
-    "test": "bun test ./test",
-    "test:e2e": "bun run build && playwright test",
+    "test": "bun scripts/test.ts",
+    "test:e2e": "bun run build && bun scripts/test-e2e.ts",
     "preview:all": "bun scripts/preview.ts",
     "typecheck": "tsc --noEmit",
     "build": "vite build",
@@ -23,7 +23,8 @@
     "test:portable": "bun test ./scripts/portable-smoke.test.ts ./scripts/portable-sqlite.test.ts ./scripts/portable-lifecycle.test.ts ./scripts/portable-concurrent-start.test.ts ./scripts/portable-leaf-acl.test.ts ./scripts/portable-publication.test.ts ./scripts/portable-licenses.test.ts ./scripts/portable-browser-ui.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "bun run typecheck && bun run test && bun run build && bun run format:check"
+    "check": "bun run typecheck && bun run test && bun run build && bun run format:check",
+    "check:dev": "bun scripts/check-dev.ts"
   },
   "dependencies": {
     "@radix-ui/react-checkbox": "1.3.12",

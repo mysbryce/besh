@@ -36,7 +36,7 @@ Use real SQLite in temporary directories. Test through public routes or exported
 
 ## Commands
 
-- `bun test ./test`: backend behavior.
+- `bun run test`: backend behavior with isolated file workers.
 - `bun run typecheck`: server and dashboard types.
 - `bun run build`: production dashboard bundle.
 - `bun run test:e2e`: fresh production build, then browser flows with isolated servers and data.
@@ -52,11 +52,57 @@ bun run test:e2e e2e/builder.spec.ts -g 'build, move'
 
 The same command builds fresh assets before a focused run. Run the complete suite before delivery. CI still runs all stories; it does not exclude the slower permission, data, k6 or WebSocket journeys.
 
+### CPU workers
+
+Backend tests and normal E2E default to half the available logical CPUs, rounded down with a minimum of one. On the current 16-thread machine that means eight workers; `all` selects sixteen. `availableParallelism()` respects the CPUs available to the process. Preview capture has a separate four-worker cap.
+
+Set the backend/E2E override in PowerShell:
+
+```powershell
+$env:BESH_TEST_WORKERS = 'all' # Or 'half', '1', '8', up to available CPUs
+bun run test
+bun run test:e2e
+Remove-Item Env:BESH_TEST_WORKERS
+```
+
+Bun uses isolated file processes, with cases inside each file still serial. Twenty current backend files use the selected count; eight native SQLite files run afterward with at most two workers, then the CPU-sensitive SQLite policy-race file runs alone. Unrestricted eight-worker and two-worker native runs exposed reader deadline contention. This scheduling retains the production two-second deadline and every test. Add future native-reader files to the lane in `scripts/test.ts`; do not increase deadlines to hide contention. Direct `bun test ./test` bypasses this scheduling. For focused files, options can precede or follow the file path:
+
+```sh
+bun run test --timeout 30000 test/roles.test.ts
+```
+
+Normal browser files remain serial internally and retain shared-port, clipboard and native-k6 locks. The complete `test:e2e` command runs the cold Vite/WebSocket proxy journey alone after the parallel built-dashboard suite; focused commands run the requested selection. An eight-worker combined run passed 46 cases but failed its proxy exchange, which passed in isolation. Both phases remain mandatory. CI jobs and portable artifact tests remain serialized. More workers can consume more memory and need not reduce elapsed time. [Bun's parallel test documentation](https://bun.com/docs/test/parallel) explains file isolation and the distinction from concurrent cases.
+
+Previews default to the smaller of four and available CPUs. They use separate `BESH_PREVIEW_WORKERS` integer overrides within that limit, or `bun run preview:all --no-serve --workers=1` for serial capture. Backend/E2E `BESH_TEST_WORKERS` settings do not change this cap. Every preview slot owns a temporary workspace and exact same-origin port within `4340`–`4343`.
+
+An unrestricted eight-worker capture passed 29 stories and failed the field-access and protected-read SQLite stories. A subsequent staged attempt passed all eight native stories with at most four workers, then failed three of the 23 remaining stories: two server-start deadlines and a navigation viewport assertion. Neither failed attempt replaced the canonical gallery. The requested four-worker gallery policy is restored. Its final recapture passed all 31 tests in 5.0 minutes, producing 1,041 screenshots and 32 story receipts in `.preview/run-1791622679137-2dcf7f54`; the core test also completes the first-task receipt. The rejected-attempt observations do not prove every failure's cause, and no production deadline, assertion or retry was weakened.
+
+Local 0.20 acceptance passed all 361 backend cases and 6,368 assertions with both half/eight and all/sixteen workers, subject to the native lanes. The final `bun run check` passed types, backend, build and whole-project formatting; its backend phases took 39.47 seconds total. A separate all/sixteen run took 25.99 seconds. These are single observations against the earlier 60.55-second serial run, not a guaranteed speedup or controlled benchmark. Full browser acceptance passed 46 built-dashboard cases in 1.9 minutes and the isolated proxy case in 31.7 seconds; no browser speedup is claimed. The final gallery retained the exact prior 1,024 entry identities/captions and added 17 CSV states. All 17 new original images were inspected for desktop language and Thai light/dark phone/error readability. Static review does not certify native-language wording or every prior image after recapture.
+
+### Fast development loop
+
+Use explicit changed files and the affected public test during each RED/GREEN loop:
+
+```sh
+bun scripts/check-dev.ts web/builder.tsx
+bun scripts/check-dev.ts src/flows/model.ts --test test/read-graph.test.ts
+bun scripts/check-dev.ts web/builder.tsx --e2e e2e/builder.spec.ts --grep 'build, move'
+bun scripts/check-dev.ts web/builder.tsx --preview management-studio-graphql
+```
+
+The tool always checks whole-project types, then checks formatting of supplied files and selected test files. Without positional files it discovers tracked changes against `HEAD` plus unignored untracked files, using NUL-delimited Git output. Positional files override that discovery. Unsupported file types are ignored by Prettier; existing ignore rules still apply. With no Git metadata, provide explicit files; the tool reports when formatting was not run. Backend files are explicit; it does not guess affected tests. Browser modes always build fresh assets and retain existing resource locks, assertions and budgets. Unsupported options, missing files and unknown preview IDs fail before checks or output creation. Use `--help` for the available story IDs.
+
+Selected backend and normal E2E checks use the shared CPU policy: half the available logical CPUs by default. `BESH_TEST_WORKERS=all` uses every available logical CPU; an explicit positive integer selects a count within that limit, subject to the backend native-reader lanes. Focused previews instead use the separate `BESH_PREVIEW_WORKERS` policy capped at four. Resource locks still serialize shared ports, clipboard and native k6 work.
+
+Focused browser output uses a fresh `.preview/dev-*` folder. Preview mode uses the existing isolated workspace fixture and credential masks; it validates selected completion receipts and writes a local manifest, masked images and report HTML without changing canonical `latest.json`. `first-task` runs its containing `core` test and checks both receipts. Run only one local native/browser check at a time, and wait for the shared GitHub runner to become idle.
+
+Actual `check:dev --preview management-data-source-import` passed whole-project types, Git-discovered changed/untracked formatting, a fresh build and the 17-state CSV story, then wrote its local HTML/images/manifest without changing `latest.json`. A second run with `--test test/contracts.test.ts --e2e e2e/locales.spec.ts --grep 'CSV import follows language'` passed ten backend cases/134 assertions and the real browser journey. Invalid options, outside files, conflicting browser modes and a grep without a file were rejected before checks. Backend flags-before-path and Windows uppercase-path selection ran only the four intended SQLite cases; E2E list/filter smoke checks retained all 47 cases or the single requested file. These checks are not a CI speed benchmark. Before delivery, retain the complete required backend, browser, build, type, formatting and affected preview checks; portable changes retain their artifact checks too.
+
 Install the browser with `bunx playwright install chromium`, or set `PLAYWRIGHT_CHANNEL=chrome` to use installed Chrome. CI uses bundled Chromium. Normal stories use the built dashboard and Bun API at port `5179`, with temporary SQLite state and supported reduced motion. The builder explicitly keeps normal motion. Dedicated feature APIs use ports `4312`–`4313`, `4315`–`4319`, `4321`, and `4323`–`4331`. Native SQLite uploads use their own built origin at `4321`, production uses `4314`, and WS uses `4329`. The retained WS proxy story uses its own ephemeral API listener and Vite port `5187`, including the ignored-document watch check.
 
-Normal E2E uses four workers. Named file locks serialize reused feature ports, shared `5179` setup, OS clipboard access and native k6 work. Other files can run concurrently; tests within a file keep their order. Do not remove those locks merely to increase parallelism. Use `--workers=1` for serial diagnosis. Retries and budgets are unchanged.
+Normal E2E uses half the available logical CPUs by default. Named file locks serialize reused feature ports, shared `5179` setup, OS clipboard access and native k6 work. Other files can run concurrently; tests within a file keep their order. Do not remove those locks merely to increase parallelism. Use `--workers=1` for serial diagnosis. Retries and budgets are unchanged.
 
-Previews use four real worker slots, each with its own exact same-origin server at `4340`–`4343` and fresh temporary database, backups, encryption key and generated routes. A server shuts down before its slot is reused. Clipboard and native k6 work retain shared locks. Canonical screenshot IDs come from the story order, independently of completion order. Use `bun run preview:all --no-serve --workers=1` for a serial capture.
+Previews use at most four slots, each with its own exact same-origin server at `4340`–`4343` and fresh temporary database, backups, encryption key and generated routes. A server shuts down before its slot is reused. Clipboard and native k6 work retain shared locks. Canonical screenshot IDs come from the story order, independently of completion order. Use `bun run preview:all --no-serve --workers=1` for a serial capture.
 
 ## Verified on 2026-10-10 — 0.18.5
 

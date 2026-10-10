@@ -8,15 +8,19 @@ The [Windows portable prerelease](https://github.com/mysbryce/besh/releases/tag/
 
 The earlier compiled SQLite, background lifecycle, concurrent-start, private-file ACL, REST/GraphQL/WebSocket restart and optional first-use k6 journeys also passed. Default OS browser handoff, native Linux/macOS execution, broader external integration coverage, full native load-test shutdown, signing and complete notice reconciliation remain separate. Five build targets and Ubuntu/macOS instructions are documented, not native-platform verification. See [portable usage](portable.md) and [runtime notice limits](portable-runtime.md#verification-and-material-limits).
 
-## Next work: CSV languages
+## Implemented in 0.20.0: CSV languages and faster checks
 
-The source-only **0.19.1-alpha.0** documentation patch records the completed 0.19.0 delivery; it does not replace or relabel the published executable. Next start one failing public CSV-import language test, then its narrow implementation. Prepared CSV journeys remain drafts until that slice is tested.
+Basic spreadsheet import, empty states, row counts and trusted preview type/null labels follow all seven dashboard languages. A public RED/GREEN journey imports a real CSV, preserves authored names/headers/keys/types/rows, changes language while its response is pending, and verifies allowed-reader/selected-viewer boundaries and phone containment. Language selection remains presentation-only. Provider refresh, API generation, protection, technical errors and broader date/number formatting remain separate.
+
+Backend and E2E workers use half the available logical CPUs by default, with `BESH_TEST_WORKERS` selecting `all` or a numeric override. Eight native SQLite backend files use at most two workers; the CPU-sensitive row-database file runs alone. The full browser command retains its mandatory isolated Vite/WebSocket phase. Preview capture uses the separate `BESH_PREVIEW_WORKERS` policy capped at four; higher-worker capture attempts failed, then the final four-worker recapture passed all 31 tests in 5.0 minutes, with 1,041 screenshots and 32 story receipts. No production deadline or assertion changed. Focused development checks passed real backend, browser and individual-gallery journeys with whole-project types, changed-file formatting and fresh assets. Final local core checks passed all 361 cases/6,368 assertions, build and formatting; full staged browser acceptance passed all 47 cases. Exact-head remote delivery checks remain required. See [testing](testing.md).
+
+The source-only **0.19.1-alpha.0** documentation patch records the completed 0.19.0 delivery; neither it nor these source changes replace or relabel the published executable.
 
 ## Planned platform milestone
 
 The requested [backend platform plan](platform-plan.md) covers a non-developer Struct/schema builder, media folders/tags and bounded image/video jobs, CMS publication, product database adapters, social authentication, payments, and measured published-backend size/performance. These remain **planned, not implemented**. Payload/Strapi, DBX, Better Auth and payment-provider references inform the plan without adding their frameworks or inheriting their compatibility claims.
 
-Portable delivery is complete. CSV-import localization is next; select later platform slices one public RED/GREEN journey at a time. Real database/provider acceptance, migration safety and current authorization remain gates.
+Portable delivery and basic CSV-import localization are complete. Continue broader data-panel languages and select later platform slices one public RED/GREEN journey at a time. Real database/provider acceptance, migration safety and current authorization remain gates.
 
 ## Implemented in 0.18.5: protocol guidance languages
 
@@ -298,7 +302,7 @@ Keep the requested [platform stages and public acceptance gates](platform-plan.m
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-Begin the basic CSV-import language slice: seven language choices preserve authored names, headers/types/rows and cause no automatic source/flow action; explicit import persists real data and completion uses the current language. Prove allowed-reader/selected-viewer boundaries and phone containment through the public browser/API journey. Keep provider refresh, API generation, protection and number/date formatting outside that slice. Preserve portable platform/browser/notice limits; native load-test shutdown needs separate evidence before any process-drain claim.
+Basic CSV-import localization passed its public journey. Next translate explicit spreadsheet replacement and API-generation forms through their own permission-checked journeys. Keep provider refresh, protection and number/date formatting separate. Preserve portable platform/browser/notice limits; native load-test shutdown needs separate evidence before any process-drain claim.
 
 Continue data-source/database panels, backups and advanced sharing/protection languages through separate public journeys. Technical errors, dynamic completion notices and native-speaker review remain separate. Basic Studio translation is complete in 0.18.4; member/role translation is complete in 0.18.3; account/session and update settings are complete in 0.18.2. Date/number formatting outside account/update screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
 

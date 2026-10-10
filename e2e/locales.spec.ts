@@ -20,6 +20,7 @@ import { studioFirstTaskLocalePreviews } from './studio-locale-previews'
 import { studioDraftLocalePreviews } from './studio-draft-locale-previews'
 import { studioGraphqlLocalePreviews } from './studio-graphql-locale-previews'
 import { studioWebsocketLocalePreviews } from './studio-websocket-locale-previews'
+import { dataSourceImportLocalePreviews } from './data-source-locale-previews'
 
 const test = base.extend<{ workspace: { origin: string; owner: string } }>({
   workspace: async ({ page }, use) => {
@@ -79,6 +80,83 @@ function masked(page: Page) {
     page.locator('[data-private]'),
   ]
 }
+
+test('CSV import follows language without changing authored data or permissions', async ({
+  page,
+  workspace,
+}, info) => {
+  const headers = { authorization: `Bearer ${workspace.owner}` }
+  const roleResponse = await page.request.post(
+    `${workspace.origin}/api/roles`,
+    {
+      headers,
+      data: {
+        name: 'CSV reader',
+        permissions: ['flows.read', 'sources.read'],
+      },
+    },
+  )
+  expect(roleResponse.status()).toBe(200)
+
+  const role = (await roleResponse.json()) as { id: string }
+  const readerResponse = await page.request.post(
+    `${workspace.origin}/api/members`,
+    {
+      headers,
+      data: { name: 'CSV reader', role: 'custom', roleId: role.id },
+    },
+  )
+  expect(readerResponse.status()).toBe(200)
+
+  const reader = (await readerResponse.json()) as { token: string }
+  const selectedResponse = await page.request.post(
+    `${workspace.origin}/api/members`,
+    {
+      headers,
+      data: {
+        name: 'Selected CSV viewer',
+        role: 'viewer',
+        access: {
+          mode: 'selected',
+          flowIds: [],
+          dependencyUse: {
+            sources: [],
+            databaseConnections: [],
+            authConnections: [],
+          },
+        },
+      },
+    },
+  )
+  expect(selectedResponse.status()).toBe(200)
+
+  const selectedViewer = (await selectedResponse.json()) as { token: string }
+  const errors: string[] = []
+  let number = 0
+
+  page.on('pageerror', (error) => errors.push(error.message))
+
+  await dataSourceImportLocalePreviews({
+    page,
+    owner: workspace.owner,
+    reader: reader.token,
+    selectedViewer: selectedViewer.token,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title) => {
+      await page.screenshot({
+        path: info.outputPath(
+          `${++number}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: true,
+        style: 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+
+  expect(errors).toEqual([])
+})
 
 test('WebSocket Studio guidance follows language without extra tickets or messages', async ({
   page,
