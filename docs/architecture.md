@@ -5,7 +5,7 @@ Goal: help teams build secure, documented APIs with a visual editor.
 ## Decisions
 
 1. Use Bun and Elysia for the server. Use React, Zustand, Tailwind CSS, shadcn/ui, and React Flow for the dashboard. Keep one repository and one package manifest until independent packages are needed.
-2. Keep server code in `src/`, dashboard code in `web/`, tests in `test/`, and design notes in `docs/`. Group server features into `auth/`, `data/`, `databases/`, `flows/`, `load-tests/`, `structs/`, `updates/`, `websockets/`, and `workspace/`. Only application wiring, startup, and shared errors stay at the source root. Avoid empty abstraction layers.
+2. Keep server code in `src/`, dashboard code in `web/`, tests in `test/`, and design notes in `docs/`. Group server features into `auth/`, `collections/`, `data/`, `databases/`, `flows/`, `load-tests/`, `structs/`, `updates/`, `websockets/`, and `workspace/`. Only application wiring, startup, and shared errors stay at the source root. Avoid empty abstraction layers.
 3. Store flows as versioned JSON. The dashboard edits this format; the server validates and executes it. Never evaluate JavaScript from a flow.
 4. Separate drafts from releases. Validate before publishing or restoring a release. Existing releases remain unchanged when drafts are edited. Same-method overlapping REST routes fail explicitly rather than relying on literal-route precedence.
 5. Start with a local SQLite control database. Product database connections are separate adapters. Do not pretend SQL databases, MongoDB, Firebase, and Supabase have identical query or transaction semantics.
@@ -22,6 +22,14 @@ Goal: help teams build secure, documented APIs with a visual editor.
 Create/update transactions recheck the original management proof and current owner, then commit the saved definition/version with metadata-only audit. Updates compare the supplied positive safe version and increment it on every accepted save; stale or invalid writes leave state and audit unchanged. The frontend tracks unsaved model edits separately from API drafts, confirms destructive transitions and rejects late replies from a different editor/session. Language changes affect trusted labels only and do not fetch the Struct catalog or change authored definitions.
 
 These are saved model drafts only. They create no content entries, collection tables, rich-text renderer, published schema or runtime route, and they do not participate in API dependency USE. See [content model drafts](structs.md), [planned platform](platform-plan.md) and actual [check receipts](testing.md).
+
+## Private collection boundary
+
+`src/collections/` provides owner-only collection and typed entry management. Collection creation reads the exact reviewed saved Struct revision inside an immediate write transaction and stores an immutable snapshot; caller-supplied definitions are rejected. Later Struct edits cannot change existing collection validation. Migrations 25 and 26 add snapshots and versioned entries to the control database.
+
+Entry validation bounds raw values before matching all six schema types. Optional absence differs from invalid `null`; valid falsy content is preserved, unknown keys are rejected and persisted records are revalidated before delivery. Writes recheck the original proof and current owner inside the transaction. Complete-content updates and deletes compare the reviewed entry version; accepted changes and ID-only audit commit together. Entry pages use canonical bounded offset/limit queries, stable creation-time/ID order and one deferred read snapshot for their count and rows.
+
+These are private management records, not API dependencies or published runtime data. Collection creation, typed entry create/read/edit/delete and seven-language desktop/native-phone behavior passed local public backend, complete browser and gallery checks, including catalog recovery and preserved stale edits. Language changes preserve authored content without model/collection/entry fetches or writes. Hosted delivery checks remain separate. Existing full unencrypted backups include content and retain their own permission boundary: trusted `backups.manage` roles remain able to download it until ordinary backups become permanently owner-only after first tenant protection. No entry encryption, shared CMS, rich-text renderer or runtime publication is implied. See [private collections](collections.md) and [current evidence](testing.md#private-collection-snapshots-and-entries--active-022-work).
 
 ## Portable executable boundary
 

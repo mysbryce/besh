@@ -45,12 +45,28 @@ import { dataSourceDeleteLocalePreviews } from './data-source-delete-locale-prev
 import { dataSourceStatusLocalePreviews } from './data-source-status-locale-previews'
 import { databaseCatalogLocalePreviews } from './database-catalog-locale-previews'
 import { structPreviews } from './struct-previews'
+import { collectionPreviews } from './collection-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
 } from './locale-startup-previews'
 
 test.describe.configure({ mode: 'parallel' })
+
+test.describe('collections', () => {
+  test.use({ locale: 'en-US' })
+
+  test('collections', async ({ page, previewWorkspace }) => {
+    const { owner, origin } = previewWorkspace
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    const { capture, complete } = storyCapture(page, 'collections')
+
+    await collectionPreviews({ page, owner, apiOrigin: origin, capture })
+    expect(errors).toEqual([])
+    complete()
+  })
+})
 
 test.describe('structs', () => {
   test.use({ locale: 'en-US' })
@@ -4324,6 +4340,7 @@ for (const story of previewStories) {
     story.id === 'management-data-source-status' ||
     story.id === 'database-catalog-locales' ||
     story.id === 'structs' ||
+    story.id === 'collections' ||
     story.id === 'management-data-api-generation'
   )
     continue

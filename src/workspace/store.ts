@@ -708,6 +708,38 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 25').get()) {
+      db.run(`CREATE TABLE collections (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        version INTEGER NOT NULL CHECK(typeof(version) = 'integer' AND version > 0),
+        struct_id TEXT NOT NULL,
+        struct_version INTEGER NOT NULL CHECK(typeof(struct_version) = 'integer' AND struct_version > 0),
+        struct_snapshot TEXT NOT NULL CHECK(json_valid(struct_snapshot) AND json_type(struct_snapshot) = 'object'),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`)
+      query('INSERT INTO migrations VALUES (25, ?, ?)').run(
+        'owner-managed immutable private collection Struct snapshots',
+        new Date().toISOString(),
+      )
+    }
+
+    if (!query('SELECT version FROM migrations WHERE version = 26').get()) {
+      db.run(`CREATE TABLE collection_entries (
+        id TEXT PRIMARY KEY,
+        collection_id TEXT NOT NULL REFERENCES collections(id),
+        version INTEGER NOT NULL CHECK(typeof(version) = 'integer' AND version > 0),
+        data TEXT NOT NULL CHECK(json_valid(data) AND json_type(data) = 'object'),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      ); CREATE INDEX collection_entries_collection ON collection_entries(collection_id, created_at, id)`)
+      query('INSERT INTO migrations VALUES (26, ?, ?)').run(
+        'owner-managed bounded typed private collection entries',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,

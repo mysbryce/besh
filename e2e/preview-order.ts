@@ -39,6 +39,7 @@ export const previewStories = [
   { id: 'management-data-source-status', count: 22, locks: [] },
   { id: 'database-catalog-locales', count: 23, locks: [] },
   { id: 'structs', count: 21, locks: [] },
+  { id: 'collections', count: 35, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']

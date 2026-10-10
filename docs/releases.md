@@ -4,6 +4,12 @@ Besh stays below `1.0.0` until the project is ready and the maintainer explicitl
 
 Every completed change delivery gets a new version in `package.json` and an entry in [CHANGELOG.md](../CHANGELOG.md), in the same tested commit. Work in progress does not need a version change after every edit.
 
+## Struct draft delivery — 0.21.0-alpha.0
+
+[PR #18](https://github.com/mysbryce/besh/pull/18) merged reviewed head `48a9615cd14bc3522df82fa0a90e53fe8cc8eeb2` as main commit `865c29dbd16fc193bb4fc31ffa2e7754d04b6b13`. [Head CI 38073598920](https://github.com/mysbryce/besh/actions/runs/38073598920) and [main CI 38074035373](https://github.com/mysbryce/besh/actions/runs/38074035373) passed all three jobs. Both ran 366 backend cases with 6,419 assertions, 54 browser cases and 10 portable cases with 1,038 assertions. Browser wrapper times were 151.05 seconds on the head and 151.18 seconds on main; logs are `.cache/structs-head-ci.log` and `.cache/structs-main-ci.log`.
+
+Reviewed and merged trees matched `ea53385dc1043384fbfe0c261feb4e621acda8c8`. Three reviewed PR attachments matched their remote SHA-256 values; the existing PR body was preserved and updated with delivery evidence. After successful main CI and identical-tree proof, both remote and local `feat/visual-struct-drafts-0.21.0` branches were deleted. See [local acceptance and visual history](testing.md#owner-only-content-model-drafts--0210-alpha0). This is completed source delivery, not a new portable release or CMS publication.
+
 ## SQLite catalog language delivery — 0.20.8-alpha.0
 
 [PR #17](https://github.com/mysbryce/besh/pull/17) merged reviewed head `edbb059` as `18c1d90`. [Exact-head CI 38067899614, attempt 2](https://github.com/mysbryce/besh/actions/runs/38067899614/attempts/2) and [main CI 38069172751](https://github.com/mysbryce/besh/actions/runs/38069172751) passed all three jobs: core, browser and compiled portable acceptance. Receipts include 361 backend cases with 6,368 assertions, 53 browser cases and 10 portable cases with 1,038 assertions. The first head attempt failed during network-dependent job setup; the unchanged head passed its rerun. This was not a product-test correction.
