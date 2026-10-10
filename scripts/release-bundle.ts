@@ -83,7 +83,7 @@ try {
   const paths = tracked.filter(
     (path) =>
       rootFiles.has(path) ||
-      /^(src|web|docs|scripts)\//.test(path) ||
+      /^(src|web|docs|scripts|patches)\//.test(path) ||
       path.startsWith('assets/portable-notices/'),
   )
   function assets(directory: string) {

@@ -364,6 +364,188 @@
   font-weight: 650;
   overflow-wrap: anywhere;
 }
+.formatted-text-field {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+.formatted-text-field h4 {
+  overflow-wrap: anywhere;
+}
+.formatted-text-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.formatted-link-review {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-subtle);
+}
+.formatted-text-surface a {
+  color: var(--text);
+  text-decoration: underline;
+  text-decoration-color: var(--focus);
+  text-underline-offset: 3px;
+}
+.formatted-text-toolbar .select-trigger {
+  width: auto;
+  min-width: 150px;
+  max-width: 100%;
+}
+.formatted-text-surface {
+  min-width: 0;
+  min-height: 180px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.formatted-text-surface:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.formatted-text-surface[aria-disabled='true'] {
+  background: var(--surface-subtle);
+  cursor: default;
+}
+.formatted-text-surface p {
+  margin: 0 0 10px;
+}
+.formatted-text-surface .formatted-divider {
+  margin: 20px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.formatted-text-surface .formatted-divider-selected {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+.formatted-text-surface blockquote {
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-left: 3px solid var(--focus);
+  background: var(--surface-subtle);
+}
+.formatted-text-surface blockquote > p:last-child {
+  margin-bottom: 0;
+}
+.formatted-text-surface .formatted-code-block {
+  display: block;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+  color: var(--text);
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+  tab-size: 2;
+}
+.formatted-text-surface .formatted-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.formatted-text-surface table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: pre-wrap;
+}
+.formatted-text-surface table tr th,
+.formatted-text-surface table tr td {
+  min-width: 120px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.formatted-text-surface table tr th {
+  background: var(--surface-subtle);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.formatted-text-surface td > p:last-child,
+.formatted-text-surface th > p:last-child {
+  margin-bottom: 0;
+}
+.formatted-text-surface ul,
+.formatted-text-surface ol {
+  margin: 10px 0;
+  padding-left: 26px;
+}
+.formatted-text-surface ul {
+  list-style-type: disc;
+}
+.formatted-text-surface ol {
+  list-style-type: decimal;
+}
+/* Native list-only wrappers skip a marker; an owner with text keeps its number. */
+.formatted-text-surface .formatted-list-wrapper:not(:has(> :not(ol, ul))) {
+  list-style-type: none;
+}
+.formatted-text-surface h1,
+.formatted-text-surface h2,
+.formatted-text-surface h3,
+.formatted-text-surface h4,
+.formatted-text-surface h5,
+.formatted-text-surface h6 {
+  margin: 12px 0;
+  line-height: 1.35;
+  font-weight: 700;
+}
+.formatted-text-surface h1 {
+  font-size: 28px;
+}
+.formatted-text-surface h2 {
+  font-size: 24px;
+}
+.formatted-text-surface h3 {
+  font-size: 21px;
+}
+.formatted-text-surface h4 {
+  font-size: 18px;
+}
+.formatted-text-surface h5 {
+  font-size: 16px;
+}
+.formatted-text-surface h6 {
+  font-size: 14px;
+}
+.formatted-text-bold {
+  font-weight: 700;
+}
+.formatted-text-italic {
+  font-style: italic;
+}
+.formatted-text-underline {
+  text-decoration: underline;
+}
+.formatted-text-strikethrough {
+  text-decoration: line-through;
+}
+.formatted-text-underline.formatted-text-strikethrough {
+  text-decoration: underline line-through;
+}
+.formatted-text-code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--surface-subtle);
+  font-family: monospace;
+}
 .collection-editor .content-checkbox {
   display: flex;
   align-items: center;

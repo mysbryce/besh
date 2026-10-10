@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "packageVersion": "0.19.1-alpha.0",
+  "packageVersion": "0.23.0-alpha.0",
   "bunVersion": "1.4.2",
   "bunUpstreamSourceCommit": "744846f844374847c902b5e7fd59b4342a51ef99",
-  "lockSha256": "7536827e75bf91dd5cd515af5ae3e03f53c59b3d3f9653d7e8caa02ba877e45e",
-  "codeInputsSha256": "9c485f6e78114a6ea24d560b5c39420ccbd7610290ef988e2d7595672363954e",
+  "lockSha256": "239d865dfa3ef7b27dd5dd531c6bab4a3643c927ac89f0fa4dd4d397dda3b408",
+  "codeInputsSha256": "1d306894bb24257ce38371ff8446419373feca283ca50c56ca3a8cd2c67fe7d3",
   "files": [
     {
       "path": "adapted-ui/THIRD_PARTY_NOTICES.md",
@@ -4097,6 +4097,192 @@
       "bytes": 1023,
       "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
       "sourceUrl": "https://raw.githubusercontent.com/bytecodealliance/wasm-tools/d4e317f22c3bace76cb3205003bcc34b4929037d/LICENSE-MIT"
+    },
+    {
+      "path": "npm/lexical__a11y/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/a11y/0.52.0"
+    },
+    {
+      "path": "npm/lexical__clipboard/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/clipboard/0.52.0"
+    },
+    {
+      "path": "npm/lexical__code-core/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/code-core/0.52.0"
+    },
+    {
+      "path": "npm/lexical__devtools-core/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/devtools-core/0.52.0"
+    },
+    {
+      "path": "npm/lexical__dragon/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/dragon/0.52.0"
+    },
+    {
+      "path": "npm/lexical__extension/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/extension/0.52.0"
+    },
+    {
+      "path": "npm/lexical__hashtag/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/hashtag/0.52.0"
+    },
+    {
+      "path": "npm/lexical__history/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/history/0.52.0"
+    },
+    {
+      "path": "npm/lexical__html/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/html/0.52.0"
+    },
+    {
+      "path": "npm/lexical__internal/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/internal/0.52.0"
+    },
+    {
+      "path": "npm/lexical__link/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/link/0.52.0"
+    },
+    {
+      "path": "npm/lexical__list/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/list/0.52.0"
+    },
+    {
+      "path": "npm/lexical__mark/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/mark/0.52.0"
+    },
+    {
+      "path": "npm/lexical__markdown/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/markdown/0.52.0"
+    },
+    {
+      "path": "npm/lexical__overflow/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/overflow/0.52.0"
+    },
+    {
+      "path": "npm/lexical__plain-text/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/plain-text/0.52.0"
+    },
+    {
+      "path": "npm/lexical__react/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/react/0.52.0"
+    },
+    {
+      "path": "npm/lexical__rich-text/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/rich-text/0.52.0"
+    },
+    {
+      "path": "npm/lexical__selection/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/selection/0.52.0"
+    },
+    {
+      "path": "npm/lexical__table/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/table/0.52.0"
+    },
+    {
+      "path": "npm/lexical__text/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/text/0.52.0"
+    },
+    {
+      "path": "npm/lexical__utils/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/utils/0.52.0"
+    },
+    {
+      "path": "npm/lexical__yjs/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/@lexical/yjs/0.52.0"
+    },
+    {
+      "path": "npm/lexical/0.52.0/LICENSE",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93",
+      "sourceUrl": "https://registry.npmjs.org/lexical/0.52.0"
+    },
+    {
+      "path": "npm/floating-ui__react/0.27.20/LICENSE",
+      "bytes": 1089,
+      "sha256": "0e4c9a9b6c71019cbbea3bdc20b01223110a9035700f9c960c8fcbf78c2325ce",
+      "sourceUrl": "https://registry.npmjs.org/@floating-ui/react/0.27.20"
+    },
+    {
+      "path": "npm/preact__signals-core/1.14.4/LICENSE",
+      "bytes": 1086,
+      "sha256": "a11fc89e4c6b118854c7a667734a0b2e6bf2af5e45c6686de31adbccc8f3ae8d",
+      "sourceUrl": "https://registry.npmjs.org/@preact/signals-core/1.14.4"
+    },
+    {
+      "path": "npm/tabbable/6.5.0/LICENSE",
+      "bytes": 1079,
+      "sha256": "8e714750725e75c8b31172ef84c0805f94873f86e3b5cfca8a948553f0778fa1",
+      "sourceUrl": "https://registry.npmjs.org/tabbable/6.5.0"
+    },
+    {
+      "path": "npm/yjs/13.6.33/LICENSE",
+      "bytes": 1211,
+      "sha256": "341baa53605ed85d6f95782322854cca56c655ebc7fd4712649b8e7afc6020ff",
+      "sourceUrl": "https://registry.npmjs.org/yjs/13.6.33"
+    },
+    {
+      "path": "npm/lib0/0.2.119/LICENSE",
+      "bytes": 1108,
+      "sha256": "5446db1e43fe52faf3faab7e9959fe3762ac11bdc61c0945934c498affd52d73",
+      "sourceUrl": "https://registry.npmjs.org/lib0/0.2.119"
+    },
+    {
+      "path": "npm/isomorphic.js/0.2.5/LICENSE",
+      "bytes": 1108,
+      "sha256": "dd6488c9c1a4ce2dc978ecee067e5b6a725b52e6057a450b24f1a23bc373b057",
+      "sourceUrl": "https://registry.npmjs.org/isomorphic.js/0.2.5"
+    },
+    {
+      "path": "npm/zustand/4.5.7/LICENSE",
+      "bytes": 1070,
+      "sha256": "c1e6e266563517467b1bf874817d23e426f3149252bd7d42758cd697514b8417",
+      "sourceUrl": "https://registry.npmjs.org/zustand/4.5.7"
     }
   ],
   "components": [
@@ -4113,7 +4299,7 @@
     },
     {
       "id": "besh",
-      "version": "0.19.1-alpha.0",
+      "version": "0.23.0-alpha.0",
       "inclusionScopes": [
         "compiled-server",
         "dashboard"
@@ -7491,6 +7677,365 @@
         "runtime/sqlite/per-file/sqlite3.notice-135.txt",
         "runtime/sqlite/per-file/sqlite3.notice-136.txt",
         "runtime/sqlite/per-file/sqlite3.notice-137.txt"
+      ]
+    },
+    {
+      "id": "npm:@lexical/a11y@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__a11y/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/clipboard@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__clipboard/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/code-core@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__code-core/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/devtools-core@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__devtools-core/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/dragon@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__dragon/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/extension@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__extension/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/hashtag@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__hashtag/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/history@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__history/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/html@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__html/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/internal@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__internal/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/link@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__link/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/list@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__list/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/mark@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__mark/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/markdown@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__markdown/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/overflow@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__overflow/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/plain-text@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__plain-text/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/react@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__react/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/rich-text@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__rich-text/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/selection@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__selection/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/table@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__table/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/text@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__text/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/utils@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__utils/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@lexical/yjs@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical__yjs/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:lexical@0.52.0",
+      "version": "0.52.0",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lexical/0.52.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@floating-ui/react@0.27.20",
+      "version": "0.27.20",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/floating-ui__react/0.27.20/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:@preact/signals-core@1.14.4",
+      "version": "1.14.4",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/preact__signals-core/1.14.4/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:tabbable@6.5.0",
+      "version": "6.5.0",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/tabbable/6.5.0/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:yjs@13.6.33",
+      "version": "13.6.33",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/yjs/13.6.33/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:lib0@0.2.119",
+      "version": "0.2.119",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/lib0/0.2.119/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:isomorphic.js@0.2.5",
+      "version": "0.2.5",
+      "inclusionScopes": [
+        "locked production dependency candidate"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/isomorphic.js/0.2.5/LICENSE"
+      ]
+    },
+    {
+      "id": "npm:zustand@4.5.7",
+      "version": "4.5.7",
+      "inclusionScopes": [
+        "locked production dependency candidate",
+        "dashboard"
+      ],
+      "upstreamSourceCommits": [],
+      "files": [
+        "npm/zustand/4.5.7/LICENSE"
       ]
     }
   ],

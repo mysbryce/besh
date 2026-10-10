@@ -1,4 +1,99 @@
 const messages: Record<string, string> = {
+  'This list item cannot be outdented safely.':
+    '이 목록 항목은 안전하게 내어쓰기할 수 없습니다.',
+
+  'This document cannot fit a list. Remove some content first.':
+    '이 문서에는 목록을 추가할 수 없습니다. 먼저 내용 일부를 삭제하세요.',
+  'Indent list': '목록 들여쓰기',
+  'Outdent list': '목록 내어쓰기',
+  'This list item cannot be nested further.':
+    '이 목록 항목을 더 깊게 중첩할 수 없습니다.',
+
+  'This document cannot fit a quote. Remove some content first.':
+    '이 문서에는 인용문을 추가할 수 없습니다. 먼저 내용 일부를 삭제하세요.',
+
+  'This document cannot fit a table. Remove some content first.':
+    '이 문서에는 표를 추가할 수 없습니다. 먼저 내용 일부를 삭제하세요.',
+  'This document cannot fit a divider. Remove some content first.':
+    '이 문서에는 구분선을 추가할 수 없습니다. 먼저 내용 일부를 삭제하세요.',
+
+  'Insert divider': '구분선 삽입',
+  'Choose an unformatted paragraph outside lists and tables to create a code block.':
+    '코드 블록을 만들려면 목록과 표 밖의 서식 없는 문단을 선택하세요.',
+
+  'Code block': '코드 블록',
+  '{field} code language': '{field} 코드 언어',
+  'Plain text': '일반 텍스트',
+  JavaScript: 'JavaScript',
+  'Choose a single paragraph outside lists and tables to create a quote.':
+    '인용문을 만들려면 목록과 표 밖의 문단 하나를 선택하세요.',
+
+  Quote: '인용문',
+
+  'Add row': '행 추가',
+  'Add column': '열 추가',
+  'This table cannot grow further.': '이 표는 더 이상 확장할 수 없습니다.',
+  'Remove row': '행 삭제',
+  'Remove column': '열 삭제',
+
+  'Insert table': '표 삽입',
+
+  'Add link': '링크 추가',
+  'Edit link': '링크 편집',
+  'Remove link': '링크 제거',
+  'Link URL': '링크 URL',
+  'Apply link': '링크 적용',
+  'Enter a complete HTTPS URL without credentials.':
+    '인증 정보가 없는 완전한 HTTPS URL을 입력하세요.',
+  'Select text to add a link.': '링크를 추가할 텍스트를 선택하세요.',
+  'Apply or cancel the link before saving this entry.':
+    '이 항목을 저장하기 전에 링크를 적용하거나 취소하세요.',
+
+  'Bullet list': '글머리 기호 목록',
+  'Numbered list': '번호 매기기 목록',
+
+  'Formatted rich text': '서식을 적용할 수 있는 텍스트',
+  '{field} block style': '{field} 블록 스타일',
+  Paragraph: '문단',
+  'Heading 1': '제목 1',
+  'Heading 2': '제목 2',
+  'Heading 3': '제목 3',
+  'Heading 4': '제목 4',
+  'Heading 5': '제목 5',
+  'Heading 6': '제목 6',
+  Bold: '굵게',
+  Italic: '기울임꼴',
+  Underline: '밑줄',
+  Strikethrough: '취소선',
+  'Inline code': '인라인 코드',
+  Undo: '실행 취소',
+  Redo: '다시 실행',
+  '{field} formatting': '{field} 서식 지정',
+  'Opening text editor…': '텍스트 편집기를 여는 중…',
+  'This content contains formatting this editor cannot edit yet.':
+    '이 콘텐츠에는 이 편집기에서 아직 편집할 수 없는 서식이 포함되어 있습니다.',
+  'Could not open text editor.': '텍스트 편집기를 열 수 없습니다.',
+  'Formatted text supports headings and emphasis. Pasted content is plain text.':
+    '서식 있는 텍스트는 제목과 강조를 지원합니다. 붙여넣은 콘텐츠는 일반 텍스트가 됩니다.',
+  'Invalid formatted text.': '서식 있는 텍스트가 올바르지 않습니다.',
+
+  'Rich text': '서식 있는 텍스트',
+  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
+    '문단 텍스트만 지원합니다. 텍스트는 입력한 그대로 저장되며 서식 지정과 HTML 렌더링은 사용할 수 없습니다.',
+  '{field} · Paragraph {index}': '{field} · 문단 {index}',
+  '{field} · Paragraph {paragraph} · Text {text}':
+    '{field} · 문단 {paragraph} · 텍스트 {text}',
+  'Add paragraph to {field}': '{field}에 문단 추가',
+  'Add text to {field} · Paragraph {index}':
+    '{field} · 문단 {index}에 텍스트 추가',
+  'Remove {field} · Paragraph {index}': '{field} · 문단 {index} 삭제',
+  'Remove {field} · Paragraph {paragraph} · Text {text}':
+    '{field} · 문단 {paragraph} · 텍스트 {text} 삭제',
+  'Empty document': '빈 문서',
+  'Empty paragraph': '빈 문단',
+  'Rich text is available only for top-level fields.':
+    '서식 있는 텍스트는 최상위 필드에서만 사용할 수 있습니다.',
+
   'View content model': '콘텐츠 모델 보기',
   'Hide content model': '콘텐츠 모델 숨기기',
 

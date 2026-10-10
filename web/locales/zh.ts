@@ -1,4 +1,98 @@
 const messages: Record<string, string> = {
+  'This list item cannot be outdented safely.':
+    '无法安全地减少此列表项的缩进。',
+
+  'This document cannot fit a list. Remove some content first.':
+    '此文档无法再添加列表。请先删除部分内容。',
+  'Indent list': '增加列表缩进',
+  'Outdent list': '减少列表缩进',
+  'This list item cannot be nested further.': '此列表项无法再嵌套。',
+
+  'This document cannot fit a quote. Remove some content first.':
+    '此文档无法再添加引用。请先删除部分内容。',
+
+  'This document cannot fit a table. Remove some content first.':
+    '此文档无法再添加表格。请先删除部分内容。',
+  'This document cannot fit a divider. Remove some content first.':
+    '此文档无法再添加分隔线。请先删除部分内容。',
+
+  'Insert divider': '插入分隔线',
+  'Choose an unformatted paragraph outside lists and tables to create a code block.':
+    '请选择列表和表格之外的未格式化段落以创建代码块。',
+
+  'Code block': '代码块',
+  '{field} code language': '{field} 代码语言',
+  'Plain text': '纯文本',
+  JavaScript: 'JavaScript',
+  'Choose a single paragraph outside lists and tables to create a quote.':
+    '请选择列表和表格之外的单个段落以创建引用。',
+
+  Quote: '引用',
+
+  'Add row': '添加行',
+  'Add column': '添加列',
+  'This table cannot grow further.': '此表格无法继续扩展。',
+  'Remove row': '删除行',
+  'Remove column': '删除列',
+
+  'Insert table': '插入表格',
+
+  'Add link': '添加链接',
+  'Edit link': '编辑链接',
+  'Remove link': '移除链接',
+  'Link URL': '链接 URL',
+  'Apply link': '应用链接',
+  'Enter a complete HTTPS URL without credentials.':
+    '请输入不含凭据的完整 HTTPS URL。',
+  'Select text to add a link.': '请选择文本以添加链接。',
+  'Apply or cancel the link before saving this entry.':
+    '请先应用或取消链接，再保存此条目。',
+
+  'Bullet list': '项目符号列表',
+  'Numbered list': '编号列表',
+
+  'Formatted rich text': '带格式的富文本',
+  '{field} block style': '{field} 块样式',
+  Paragraph: '段落',
+  'Heading 1': '标题 1',
+  'Heading 2': '标题 2',
+  'Heading 3': '标题 3',
+  'Heading 4': '标题 4',
+  'Heading 5': '标题 5',
+  'Heading 6': '标题 6',
+  Bold: '粗体',
+  Italic: '斜体',
+  Underline: '下划线',
+  Strikethrough: '删除线',
+  'Inline code': '行内代码',
+  Undo: '撤销',
+  Redo: '重做',
+  '{field} formatting': '{field} 格式设置',
+  'Opening text editor…': '正在打开文本编辑器…',
+  'This content contains formatting this editor cannot edit yet.':
+    '此内容包含本编辑器暂时无法编辑的格式。',
+  'Could not open text editor.': '无法打开文本编辑器。',
+  'Formatted text supports headings and emphasis. Pasted content is plain text.':
+    '带格式文本支持标题和强调。粘贴的内容为纯文本。',
+  'Invalid formatted text.': '带格式文本无效。',
+
+  'Rich text': '富文本',
+  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
+    '仅支持段落文本。文本按原样保存；暂不支持格式设置或 HTML 渲染。',
+  '{field} · Paragraph {index}': '{field} · 第 {index} 段',
+  '{field} · Paragraph {paragraph} · Text {text}':
+    '{field} · 第 {paragraph} 段 · 文本 {text}',
+  'Add paragraph to {field}': '为 {field} 添加段落',
+  'Add text to {field} · Paragraph {index}':
+    '为 {field} · 第 {index} 段添加文本',
+  'Remove {field} · Paragraph {index}': '移除 {field} · 第 {index} 段',
+  'Remove {field} · Paragraph {paragraph} · Text {text}':
+    '移除 {field} · 第 {paragraph} 段 · 文本 {text}',
+  'Empty document': '空文档',
+  'Empty paragraph': '空段落',
+  'Rich text is available only for top-level fields.':
+    '富文本仅适用于顶层字段。',
+
   'View content model': '查看内容模型',
   'Hide content model': '隐藏内容模型',
 

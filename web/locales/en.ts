@@ -1,4 +1,99 @@
 const messages: Record<string, string> = {
+  'This list item cannot be outdented safely.':
+    'This list item cannot be outdented safely.',
+
+  'This document cannot fit a list. Remove some content first.':
+    'This document cannot fit a list. Remove some content first.',
+  'Indent list': 'Indent list',
+  'Outdent list': 'Outdent list',
+  'This list item cannot be nested further.':
+    'This list item cannot be nested further.',
+
+  'This document cannot fit a quote. Remove some content first.':
+    'This document cannot fit a quote. Remove some content first.',
+
+  'This document cannot fit a table. Remove some content first.':
+    'This document cannot fit a table. Remove some content first.',
+  'This document cannot fit a divider. Remove some content first.':
+    'This document cannot fit a divider. Remove some content first.',
+
+  'Insert divider': 'Insert divider',
+  'Choose an unformatted paragraph outside lists and tables to create a code block.':
+    'Choose an unformatted paragraph outside lists and tables to create a code block.',
+
+  'Code block': 'Code block',
+  '{field} code language': '{field} code language',
+  'Plain text': 'Plain text',
+  JavaScript: 'JavaScript',
+  'Choose a single paragraph outside lists and tables to create a quote.':
+    'Choose a single paragraph outside lists and tables to create a quote.',
+
+  Quote: 'Quote',
+
+  'Add row': 'Add row',
+  'Add column': 'Add column',
+  'This table cannot grow further.': 'This table cannot grow further.',
+  'Remove row': 'Remove row',
+  'Remove column': 'Remove column',
+
+  'Insert table': 'Insert table',
+
+  'Add link': 'Add link',
+  'Edit link': 'Edit link',
+  'Remove link': 'Remove link',
+  'Link URL': 'Link URL',
+  'Apply link': 'Apply link',
+  'Enter a complete HTTPS URL without credentials.':
+    'Enter a complete HTTPS URL without credentials.',
+  'Select text to add a link.': 'Select text to add a link.',
+  'Apply or cancel the link before saving this entry.':
+    'Apply or cancel the link before saving this entry.',
+
+  'Bullet list': 'Bullet list',
+  'Numbered list': 'Numbered list',
+
+  'Formatted rich text': 'Formatted rich text',
+  '{field} block style': '{field} block style',
+  Paragraph: 'Paragraph',
+  'Heading 1': 'Heading 1',
+  'Heading 2': 'Heading 2',
+  'Heading 3': 'Heading 3',
+  'Heading 4': 'Heading 4',
+  'Heading 5': 'Heading 5',
+  'Heading 6': 'Heading 6',
+  Bold: 'Bold',
+  Italic: 'Italic',
+  Underline: 'Underline',
+  Strikethrough: 'Strikethrough',
+  'Inline code': 'Inline code',
+  Undo: 'Undo',
+  Redo: 'Redo',
+  '{field} formatting': '{field} formatting',
+  'Opening text editor…': 'Opening text editor…',
+  'This content contains formatting this editor cannot edit yet.':
+    'This content contains formatting this editor cannot edit yet.',
+  'Could not open text editor.': 'Could not open text editor.',
+  'Formatted text supports headings and emphasis. Pasted content is plain text.':
+    'Formatted text supports headings and emphasis. Pasted content is plain text.',
+  'Invalid formatted text.': 'Invalid formatted text.',
+
+  'Rich text': 'Rich text',
+  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
+    'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.',
+  '{field} · Paragraph {index}': '{field} · Paragraph {index}',
+  '{field} · Paragraph {paragraph} · Text {text}':
+    '{field} · Paragraph {paragraph} · Text {text}',
+  'Add paragraph to {field}': 'Add paragraph to {field}',
+  'Add text to {field} · Paragraph {index}':
+    'Add text to {field} · Paragraph {index}',
+  'Remove {field} · Paragraph {index}': 'Remove {field} · Paragraph {index}',
+  'Remove {field} · Paragraph {paragraph} · Text {text}':
+    'Remove {field} · Paragraph {paragraph} · Text {text}',
+  'Empty document': 'Empty document',
+  'Empty paragraph': 'Empty paragraph',
+  'Rich text is available only for top-level fields.':
+    'Rich text is available only for top-level fields.',
+
   'View content model': 'View content model',
   'Hide content model': 'Hide content model',
 

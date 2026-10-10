@@ -17,7 +17,8 @@ export async function buildPortableDashboard(root: string) {
   const assets: { path: string; bytes: number; sha256: string }[] = []
   const inventory: Plugin = {
     name: 'besh-portable-inputs',
-    generateBundle(_, bundle) {
+    // Hash final assets after output transforms, not the earlier CSS payload.
+    writeBundle(_, bundle) {
       const modules = new Map<string, (typeof inputs)[number]>()
       for (const output of Object.values(bundle)) {
         if (output.type === 'asset') {

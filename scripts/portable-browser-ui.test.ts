@@ -1,11 +1,13 @@
 import { expect, test } from 'bun:test'
 import { chromium, expect as browserExpect, type Page } from '@playwright/test'
 import { spawn } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import {
   chmod,
   copyFile,
   mkdir,
   mkdtemp,
+  readFile,
   rm,
   writeFile,
 } from 'node:fs/promises'
@@ -335,6 +337,29 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     challenge = target.searchParams.get('setup') ?? ''
     expect(Boolean(challenge)).toBe(true)
     safeCLI(launch)
+
+    const inventory = JSON.parse(
+      await readFile(resolve(artifact) + '.dashboard.json', 'utf8'),
+    ) as {
+      assets: { path: string; bytes: number; sha256: string }[]
+    }
+    expect(inventory.assets.length > 0).toBe(true)
+    for (const asset of inventory.assets) {
+      const response = await fetch(
+        new URL(asset.path === 'index.html' ? '/' : asset.path, knownOrigin),
+        {
+          redirect: 'manual',
+          signal: AbortSignal.timeout(3_000),
+        },
+      )
+      expect(response.status).toBe(200)
+
+      const bytes = new Uint8Array(await response.arrayBuffer())
+      const digest = createHash('sha256').update(bytes).digest('hex')
+      expect(bytes.byteLength === asset.bytes && digest === asset.sha256).toBe(
+        true,
+      )
+    }
 
     browser = await chromium.launch({ headless: true })
     const context = await browser.newContext({

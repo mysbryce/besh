@@ -20,6 +20,7 @@ import { ContentEntries } from './content-entries'
 import { useTranslation } from './i18n'
 
 const typeLabels = {
+  richText: 'Rich text',
   text: 'Text',
   number: 'Number',
   boolean: 'True or false',
@@ -495,7 +496,13 @@ function SavedSchema({ schema }: { schema: StructSchema }) {
 
   return (
     <div className="collection-schema">
-      <span className="field-help">{t(typeLabels[schema.type])}</span>
+      <span className="field-help">
+        {t(
+          schema.type === 'richText' && schema.schemaVersion === 2
+            ? 'Formatted rich text'
+            : typeLabels[schema.type],
+        )}
+      </span>
       {schema.type === 'object' ? (
         <SavedFields fields={schema.fields} />
       ) : schema.type === 'array' ? (

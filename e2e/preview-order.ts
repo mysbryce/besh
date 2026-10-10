@@ -40,6 +40,11 @@ export const previewStories = [
   { id: 'database-catalog-locales', count: 23, locks: [] },
   { id: 'structs', count: 21, locks: [] },
   { id: 'collections', count: 35, locks: [] },
+  { id: 'rich-text', count: 3, locks: [] },
+  { id: 'formatted-rich-text', count: 7, locks: [] },
+  { id: 'rich-text-blocks', count: 10, locks: [] },
+  { id: 'rich-text-interactions', count: 7, locks: [] },
+  { id: 'rich-text-locales', count: 13, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']

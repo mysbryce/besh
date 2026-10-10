@@ -1,4 +1,99 @@
 const messages: Record<string, string> = {
+  'This list item cannot be outdented safely.':
+    'このリスト項目のインデントを安全に減らすことはできません。',
+
+  'This document cannot fit a list. Remove some content first.':
+    'この文書にはリストを追加できません。先に内容を一部削除してください。',
+  'Indent list': 'リストのインデントを増やす',
+  'Outdent list': 'リストのインデントを減らす',
+  'This list item cannot be nested further.':
+    'このリスト項目をこれ以上深く入れ子にできません。',
+
+  'This document cannot fit a quote. Remove some content first.':
+    'この文書には引用を追加できません。先に内容を一部削除してください。',
+
+  'This document cannot fit a table. Remove some content first.':
+    'この文書には表を追加できません。先に内容を一部削除してください。',
+  'This document cannot fit a divider. Remove some content first.':
+    'この文書には区切り線を追加できません。先に内容を一部削除してください。',
+
+  'Insert divider': '区切り線を挿入',
+  'Choose an unformatted paragraph outside lists and tables to create a code block.':
+    'コードブロックを作成するには、リストや表の外にある書式なしの段落を選択してください。',
+
+  'Code block': 'コードブロック',
+  '{field} code language': '{field} のコード言語',
+  'Plain text': 'プレーンテキスト',
+  JavaScript: 'JavaScript',
+  'Choose a single paragraph outside lists and tables to create a quote.':
+    '引用を作成するには、リストや表の外にある単一の段落を選択してください。',
+
+  Quote: '引用',
+
+  'Add row': '行を追加',
+  'Add column': '列を追加',
+  'This table cannot grow further.': 'この表はこれ以上拡張できません。',
+  'Remove row': '行を削除',
+  'Remove column': '列を削除',
+
+  'Insert table': '表を挿入',
+
+  'Add link': 'リンクを追加',
+  'Edit link': 'リンクを編集',
+  'Remove link': 'リンクを削除',
+  'Link URL': 'リンク URL',
+  'Apply link': 'リンクを適用',
+  'Enter a complete HTTPS URL without credentials.':
+    '認証情報を含まない完全な HTTPS URL を入力してください。',
+  'Select text to add a link.': 'リンクを追加するテキストを選択してください。',
+  'Apply or cancel the link before saving this entry.':
+    'この項目を保存する前に、リンクを適用するかキャンセルしてください。',
+
+  'Bullet list': '箇条書き',
+  'Numbered list': '番号付きリスト',
+
+  'Formatted rich text': '書式付きリッチテキスト',
+  '{field} block style': '{field} のブロックスタイル',
+  Paragraph: '段落',
+  'Heading 1': '見出し 1',
+  'Heading 2': '見出し 2',
+  'Heading 3': '見出し 3',
+  'Heading 4': '見出し 4',
+  'Heading 5': '見出し 5',
+  'Heading 6': '見出し 6',
+  Bold: '太字',
+  Italic: '斜体',
+  Underline: '下線',
+  Strikethrough: '取り消し線',
+  'Inline code': 'インラインコード',
+  Undo: '元に戻す',
+  Redo: 'やり直す',
+  '{field} formatting': '{field} の書式設定',
+  'Opening text editor…': 'テキストエディターを開いています…',
+  'This content contains formatting this editor cannot edit yet.':
+    'この内容には、このエディターではまだ編集できない書式が含まれています。',
+  'Could not open text editor.': 'テキストエディターを開けませんでした。',
+  'Formatted text supports headings and emphasis. Pasted content is plain text.':
+    '書式付きテキストは見出しや強調に対応しています。貼り付けた内容はプレーンテキストになります。',
+  'Invalid formatted text.': '書式付きテキストが無効です。',
+
+  'Rich text': 'リッチテキスト',
+  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
+    '段落のテキストのみ対応しています。テキストはそのまま保存され、書式設定や HTML の描画は利用できません。',
+  '{field} · Paragraph {index}': '{field} · 段落 {index}',
+  '{field} · Paragraph {paragraph} · Text {text}':
+    '{field} · 段落 {paragraph} · テキスト {text}',
+  'Add paragraph to {field}': '{field} に段落を追加',
+  'Add text to {field} · Paragraph {index}':
+    '{field} · 段落 {index} にテキストを追加',
+  'Remove {field} · Paragraph {index}': '{field} · 段落 {index} を削除',
+  'Remove {field} · Paragraph {paragraph} · Text {text}':
+    '{field} · 段落 {paragraph} · テキスト {text} を削除',
+  'Empty document': '空のドキュメント',
+  'Empty paragraph': '空の段落',
+  'Rich text is available only for top-level fields.':
+    'リッチテキストは最上位のフィールドでのみ利用できます。',
+
   'View content model': 'コンテンツモデルを表示',
   'Hide content model': 'コンテンツモデルを非表示',
 

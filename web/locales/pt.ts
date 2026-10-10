@@ -1,4 +1,99 @@
 const messages: Record<string, string> = {
+  'This list item cannot be outdented safely.':
+    'Não é possível diminuir o recuo deste item da lista com segurança.',
+
+  'This document cannot fit a list. Remove some content first.':
+    'Não cabe mais uma lista neste documento. Remova parte do conteúdo primeiro.',
+  'Indent list': 'Aumentar recuo da lista',
+  'Outdent list': 'Diminuir recuo da lista',
+  'This list item cannot be nested further.':
+    'Este item da lista não pode ser aninhado mais profundamente.',
+
+  'This document cannot fit a quote. Remove some content first.':
+    'Não cabe mais uma citação neste documento. Remova parte do conteúdo primeiro.',
+
+  'This document cannot fit a table. Remove some content first.':
+    'Não cabe mais uma tabela neste documento. Remova parte do conteúdo primeiro.',
+  'This document cannot fit a divider. Remove some content first.':
+    'Não cabe mais um divisor neste documento. Remova parte do conteúdo primeiro.',
+
+  'Insert divider': 'Inserir divisor',
+  'Choose an unformatted paragraph outside lists and tables to create a code block.':
+    'Escolha um parágrafo sem formatação fora de listas e tabelas para criar um bloco de código.',
+
+  'Code block': 'Bloco de código',
+  '{field} code language': '{field} · Linguagem do código',
+  'Plain text': 'Texto simples',
+  JavaScript: 'JavaScript',
+  'Choose a single paragraph outside lists and tables to create a quote.':
+    'Escolha um único parágrafo fora de listas e tabelas para criar uma citação.',
+
+  Quote: 'Citação',
+
+  'Add row': 'Adicionar linha',
+  'Add column': 'Adicionar coluna',
+  'This table cannot grow further.': 'Esta tabela não pode ser ampliada.',
+  'Remove row': 'Remover linha',
+  'Remove column': 'Remover coluna',
+
+  'Insert table': 'Inserir tabela',
+
+  'Add link': 'Adicionar link',
+  'Edit link': 'Editar link',
+  'Remove link': 'Remover link',
+  'Link URL': 'URL do link',
+  'Apply link': 'Aplicar link',
+  'Enter a complete HTTPS URL without credentials.':
+    'Insira uma URL HTTPS completa sem credenciais.',
+  'Select text to add a link.': 'Selecione texto para adicionar um link.',
+  'Apply or cancel the link before saving this entry.':
+    'Aplique ou cancele o link antes de salvar esta entrada.',
+
+  'Bullet list': 'Lista com marcadores',
+  'Numbered list': 'Lista numerada',
+
+  'Formatted rich text': 'Texto rico com formatação',
+  '{field} block style': '{field} · Estilo do bloco',
+  Paragraph: 'Parágrafo',
+  'Heading 1': 'Título 1',
+  'Heading 2': 'Título 2',
+  'Heading 3': 'Título 3',
+  'Heading 4': 'Título 4',
+  'Heading 5': 'Título 5',
+  'Heading 6': 'Título 6',
+  Bold: 'Negrito',
+  Italic: 'Itálico',
+  Underline: 'Sublinhado',
+  Strikethrough: 'Riscado',
+  'Inline code': 'Código em linha',
+  Undo: 'Desfazer',
+  Redo: 'Refazer',
+  '{field} formatting': '{field} · Formatação',
+  'Opening text editor…': 'Abrindo editor de texto…',
+  'This content contains formatting this editor cannot edit yet.':
+    'Este conteúdo inclui formatação que este editor ainda não pode editar.',
+  'Could not open text editor.': 'Não foi possível abrir o editor de texto.',
+  'Formatted text supports headings and emphasis. Pasted content is plain text.':
+    'Texto formatado aceita títulos e ênfase. O conteúdo colado fica como texto simples.',
+  'Invalid formatted text.': 'Texto formatado inválido.',
+
+  'Rich text': 'Texto formatado',
+  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
+    'Somente texto em parágrafos. O texto é salvo literalmente; formatação e renderização HTML não estão disponíveis.',
+  '{field} · Paragraph {index}': '{field} · Parágrafo {index}',
+  '{field} · Paragraph {paragraph} · Text {text}':
+    '{field} · Parágrafo {paragraph} · Texto {text}',
+  'Add paragraph to {field}': 'Adicionar parágrafo a {field}',
+  'Add text to {field} · Paragraph {index}':
+    'Adicionar texto a {field} · Parágrafo {index}',
+  'Remove {field} · Paragraph {index}': 'Remover {field} · Parágrafo {index}',
+  'Remove {field} · Paragraph {paragraph} · Text {text}':
+    'Remover {field} · Parágrafo {paragraph} · Texto {text}',
+  'Empty document': 'Documento vazio',
+  'Empty paragraph': 'Parágrafo vazio',
+  'Rich text is available only for top-level fields.':
+    'Texto formatado está disponível apenas para campos de nível superior.',
+
   'View content model': 'Ver modelo de conteúdo',
   'Hide content model': 'Ocultar modelo de conteúdo',
 
