@@ -1,4 +1,62 @@
 const messages: Record<string, string> = {
+  'Copy HTML': 'Скопировать HTML',
+  'HTML copied': 'HTML скопирован',
+  'Could not copy HTML. Select and copy the HTML source.':
+    'Не удалось скопировать HTML. Выделите и скопируйте исходный HTML.',
+
+  'Advanced element settings': 'Дополнительные настройки элементов',
+  Element: 'Элемент',
+  'CSS classes': 'Классы CSS',
+  'Title attribute': 'Атрибут title',
+  'Accessibility label': 'Метка доступности',
+  'Use fixed heading identifier':
+    'Использовать фиксированный идентификатор заголовка',
+  Link: 'Ссылка',
+  'List item': 'Элемент списка',
+  Divider: 'Разделитель',
+  'Line break': 'Перенос строки',
+  Table: 'Таблица',
+  'Table body': 'Тело таблицы',
+  'Table row': 'Строка таблицы',
+  'Header cell': 'Ячейка заголовка',
+  'Table cell': 'Ячейка таблицы',
+  'The preview uses default styles. Custom classes need CSS in your client.':
+    'Предпросмотр использует стандартные стили. Для своих классов нужен CSS в клиентском приложении.',
+  'Use up to 8 class names. Start with a letter or underscore; use letters, numbers, underscores or hyphens. Each name uses up to 64 characters.':
+    'Используйте до 8 имён классов. Начинайте с латинской буквы или подчёркивания; используйте латинские буквы, цифры, подчёркивания или дефисы. Каждое имя — до 64 символов.',
+  'Title and accessibility labels use up to 160 UTF-8 bytes.':
+    'Заголовок и метка доступности — до 160 байт UTF-8.',
+  'Besh does not run x-data or load Alpine.js. Use this fixed identifier only with a trusted consumer that you have reviewed.':
+    'Besh не выполняет x-data и не загружает Alpine.js. Используйте этот фиксированный идентификатор только в проверенном вами доверенном приложении-потребителе.',
+  'Check class names: up to 8 names, each 1 to 64 ASCII characters.':
+    'Проверьте имена классов: до 8 имён, каждое от 1 до 64 символов ASCII.',
+  'Shorten the title or accessibility label to 160 UTF-8 bytes.':
+    'Сократите заголовок или метку доступности до 160 байт UTF-8.',
+  'These settings are too large. Remove some settings.':
+    'Настройки слишком велики. Удалите часть настроек.',
+
+  'Item {index}': 'Элемент {index}',
+
+  'Rich-text field': 'Поле форматированного текста',
+  'Generate HTML preview': 'Создать предпросмотр HTML',
+  'HTML source': 'Исходный HTML',
+  'Rendered HTML preview': 'Предпросмотр отображаемого HTML',
+  'Visual preview only. Links are inactive. HTML source is available below.':
+    'Только визуальный предпросмотр. Ссылки неактивны. Исходный HTML доступен ниже.',
+  'HTML preview generated.': 'Предпросмотр HTML создан.',
+  'Could not generate HTML preview.': 'Не удалось создать предпросмотр HTML.',
+  'Could not verify this HTML preview. Generate it again.':
+    'Не удалось проверить этот предпросмотр HTML. Создайте его снова.',
+  'Content entry changed. Reload before previewing.':
+    'Запись контента изменилась. Перезагрузите её перед предпросмотром.',
+
+  'Preview HTML': 'Предпросмотр HTML',
+  'Private HTML preview': 'Приватный предпросмотр HTML',
+  'Rich-text fields': 'Поля форматированного текста',
+  'Review the saved entry and fields. This does not save or publish content.':
+    'Проверьте сохранённую запись и поля. Это действие не сохраняет и не публикует контент.',
+  'Close HTML preview': 'Закрыть предпросмотр HTML',
+
   'This list item cannot be outdented safely.':
     'Нельзя безопасно уменьшить отступ этого элемента списка.',
 
@@ -78,8 +136,8 @@ const messages: Record<string, string> = {
   'Invalid formatted text.': 'Недопустимый форматированный текст.',
 
   'Rich text': 'Форматированный текст',
-  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
-    'Доступен только текст абзацев. Текст сохраняется буквально; форматирование и отображение HTML недоступны.',
+  'Paragraph text only. Text is stored literally; preview saved HTML from Content.':
+    'Доступен только текст абзацев. Текст сохраняется буквально; предпросмотр сохранённого HTML доступен в разделе «Контент».',
   '{field} · Paragraph {index}': '{field} · Абзац {index}',
   '{field} · Paragraph {paragraph} · Text {text}':
     '{field} · Абзац {paragraph} · Текст {text}',

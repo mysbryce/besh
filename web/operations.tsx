@@ -285,7 +285,7 @@ export function Operations({
       ) : null}
       {page === 'members' ? (
         <>
-          <Roles roles={roles} onChanged={refresh} />
+          <Roles roles={roles} recordsLoading={loading} onChanged={refresh} />
           <form
             className="member-form"
             onSubmit={(event) => {
@@ -364,7 +364,7 @@ export function Operations({
               <Select
                 label={t('Member role')}
                 value={role}
-                disabled={busy || !!issued}
+                disabled={busy || loading || !!issued}
                 onValueChange={setRole}
                 options={roleOptions(roles, t)}
               />

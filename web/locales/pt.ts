@@ -1,4 +1,62 @@
 const messages: Record<string, string> = {
+  'Copy HTML': 'Copiar HTML',
+  'HTML copied': 'HTML copiado',
+  'Could not copy HTML. Select and copy the HTML source.':
+    'Não foi possível copiar o HTML. Selecione e copie o código HTML.',
+
+  'Advanced element settings': 'Configurações avançadas de elementos',
+  Element: 'Elemento',
+  'CSS classes': 'Classes CSS',
+  'Title attribute': 'Atributo title',
+  'Accessibility label': 'Rótulo de acessibilidade',
+  'Use fixed heading identifier': 'Usar identificador fixo de título',
+  Link: 'Link',
+  'List item': 'Item de lista',
+  Divider: 'Divisor',
+  'Line break': 'Quebra de linha',
+  Table: 'Tabela',
+  'Table body': 'Corpo da tabela',
+  'Table row': 'Linha da tabela',
+  'Header cell': 'Célula de cabeçalho',
+  'Table cell': 'Célula da tabela',
+  'The preview uses default styles. Custom classes need CSS in your client.':
+    'A prévia usa estilos padrão. Classes personalizadas precisam de CSS no seu aplicativo cliente.',
+  'Use up to 8 class names. Start with a letter or underscore; use letters, numbers, underscores or hyphens. Each name uses up to 64 characters.':
+    'Use até 8 nomes de classe. Comece com letra ou sublinhado; use letras, números, sublinhados ou hífens. Cada nome aceita até 64 caracteres.',
+  'Title and accessibility labels use up to 160 UTF-8 bytes.':
+    'O título e o rótulo de acessibilidade aceitam até 160 bytes UTF-8.',
+  'Besh does not run x-data or load Alpine.js. Use this fixed identifier only with a trusted consumer that you have reviewed.':
+    'Besh não executa x-data nem carrega Alpine.js. Use este identificador fixo apenas com um aplicativo consumidor confiável que você tenha revisado.',
+  'Check class names: up to 8 names, each 1 to 64 ASCII characters.':
+    'Confira os nomes de classe: até 8 nomes, cada um com 1 a 64 caracteres ASCII.',
+  'Shorten the title or accessibility label to 160 UTF-8 bytes.':
+    'Reduza o título ou o rótulo de acessibilidade para até 160 bytes UTF-8.',
+  'These settings are too large. Remove some settings.':
+    'Estas configurações são grandes demais. Remova algumas configurações.',
+
+  'Item {index}': 'Item {index}',
+
+  'Rich-text field': 'Campo de texto formatado',
+  'Generate HTML preview': 'Gerar prévia do HTML',
+  'HTML source': 'Código HTML',
+  'Rendered HTML preview': 'Prévia do HTML renderizado',
+  'Visual preview only. Links are inactive. HTML source is available below.':
+    'Apenas uma prévia visual. Os links estão inativos. O código HTML está abaixo.',
+  'HTML preview generated.': 'Prévia do HTML gerada.',
+  'Could not generate HTML preview.':
+    'Não foi possível gerar a prévia do HTML.',
+  'Could not verify this HTML preview. Generate it again.':
+    'Não foi possível verificar esta prévia do HTML. Gere-a novamente.',
+  'Content entry changed. Reload before previewing.':
+    'A entrada de conteúdo mudou. Recarregue antes de visualizar.',
+
+  'Preview HTML': 'Prévia do HTML',
+  'Private HTML preview': 'Prévia privada do HTML',
+  'Rich-text fields': 'Campos de texto formatado',
+  'Review the saved entry and fields. This does not save or publish content.':
+    'Confira a entrada e os campos salvos. Esta ação não salva nem publica conteúdo.',
+  'Close HTML preview': 'Fechar prévia do HTML',
+
   'This list item cannot be outdented safely.':
     'Não é possível diminuir o recuo deste item da lista com segurança.',
 
@@ -78,8 +136,8 @@ const messages: Record<string, string> = {
   'Invalid formatted text.': 'Texto formatado inválido.',
 
   'Rich text': 'Texto formatado',
-  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
-    'Somente texto em parágrafos. O texto é salvo literalmente; formatação e renderização HTML não estão disponíveis.',
+  'Paragraph text only. Text is stored literally; preview saved HTML from Content.':
+    'Somente texto em parágrafos. O texto é salvo literalmente; veja a prévia do HTML salvo em Conteúdo.',
   '{field} · Paragraph {index}': '{field} · Parágrafo {index}',
   '{field} · Paragraph {paragraph} · Text {text}':
     '{field} · Parágrafo {paragraph} · Texto {text}',

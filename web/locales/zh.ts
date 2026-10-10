@@ -1,4 +1,61 @@
 const messages: Record<string, string> = {
+  'Copy HTML': '复制 HTML',
+  'HTML copied': 'HTML 已复制',
+  'Could not copy HTML. Select and copy the HTML source.':
+    '无法复制 HTML。请选中并复制 HTML 源码。',
+
+  'Advanced element settings': '高级元素设置',
+  Element: '元素',
+  'CSS classes': 'CSS 类名',
+  'Title attribute': 'title 属性',
+  'Accessibility label': '无障碍标签',
+  'Use fixed heading identifier': '使用固定标题标识符',
+  Link: '链接',
+  'List item': '列表项',
+  Divider: '分隔线',
+  'Line break': '换行',
+  Table: '表格',
+  'Table body': '表格主体',
+  'Table row': '表格行',
+  'Header cell': '表头单元格',
+  'Table cell': '表格单元格',
+  'The preview uses default styles. Custom classes need CSS in your client.':
+    '预览使用默认样式。自定义类名需要在客户端应用中提供 CSS。',
+  'Use up to 8 class names. Start with a letter or underscore; use letters, numbers, underscores or hyphens. Each name uses up to 64 characters.':
+    '最多使用 8 个类名。以英文字母或下划线开头，可使用英文字母、数字、下划线或连字符。每个名称最多 64 个字符。',
+  'Title and accessibility labels use up to 160 UTF-8 bytes.':
+    '标题和无障碍标签最多使用 160 个 UTF-8 字节。',
+  'Besh does not run x-data or load Alpine.js. Use this fixed identifier only with a trusted consumer that you have reviewed.':
+    'Besh 不运行 x-data，也不加载 Alpine.js。仅在经过您审查并信任的使用方应用中使用此固定标识符。',
+  'Check class names: up to 8 names, each 1 to 64 ASCII characters.':
+    '请检查类名：最多 8 个名称，每个名称使用 1 至 64 个 ASCII 字符。',
+  'Shorten the title or accessibility label to 160 UTF-8 bytes.':
+    '请将标题或无障碍标签缩短至 160 个 UTF-8 字节以内。',
+  'These settings are too large. Remove some settings.':
+    '这些设置过大。请删除部分设置。',
+
+  'Item {index}': '项 {index}',
+
+  'Rich-text field': '富文本字段',
+  'Generate HTML preview': '生成 HTML 预览',
+  'HTML source': 'HTML 源码',
+  'Rendered HTML preview': 'HTML 渲染预览',
+  'Visual preview only. Links are inactive. HTML source is available below.':
+    '仅供查看预览。链接不可打开。HTML 源码在下方。',
+  'HTML preview generated.': 'HTML 预览已生成。',
+  'Could not generate HTML preview.': '无法生成 HTML 预览。',
+  'Could not verify this HTML preview. Generate it again.':
+    '无法验证此 HTML 预览。请重新生成。',
+  'Content entry changed. Reload before previewing.':
+    '内容条目已更改。请重新加载后再预览。',
+
+  'Preview HTML': '预览 HTML',
+  'Private HTML preview': '私有 HTML 预览',
+  'Rich-text fields': '富文本字段',
+  'Review the saved entry and fields. This does not save or publish content.':
+    '查看已保存的条目和字段。此操作不会保存或发布内容。',
+  'Close HTML preview': '关闭 HTML 预览',
+
   'This list item cannot be outdented safely.':
     '无法安全地减少此列表项的缩进。',
 
@@ -77,8 +134,8 @@ const messages: Record<string, string> = {
   'Invalid formatted text.': '带格式文本无效。',
 
   'Rich text': '富文本',
-  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
-    '仅支持段落文本。文本按原样保存；暂不支持格式设置或 HTML 渲染。',
+  'Paragraph text only. Text is stored literally; preview saved HTML from Content.':
+    '仅支持段落文本。文本按原样保存；可在“内容”中预览已保存的 HTML。',
   '{field} · Paragraph {index}': '{field} · 第 {index} 段',
   '{field} · Paragraph {paragraph} · Text {text}':
     '{field} · 第 {paragraph} 段 · 文本 {text}',

@@ -12,6 +12,8 @@ import { useStudio } from './store'
 import { useCollectionDraft } from './collection-store'
 import { useDateTime, useTranslation } from './i18n'
 import { ContentFields } from './content-fields'
+import { ContentHtmlPreview } from './content-html-preview'
+import { savedHtmlFields } from './content-html-fields'
 import { prepareEntry, useContentEntryDraft } from './content-entry-store'
 
 type EntryError = {
@@ -28,6 +30,9 @@ export function ContentEntries({ collection }: { collection: Collection }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<EntryError | null>(null)
   const [reviewRequired, setReviewRequired] = useState(false)
+  const [htmlReviewIdentity, setHtmlReviewIdentity] = useState<string | null>(
+    null,
+  )
   const currentError = useRef<EntryError | null>(null)
   const mounted = useRef(false)
   const operation = useRef(0)
@@ -36,6 +41,23 @@ export function ContentEntries({ collection }: { collection: Collection }) {
   const sessionId = state.sessionId
   const token = state.token
   const collectionId = collection.id
+  const htmlIdentity = JSON.stringify([
+    collectionId,
+    memberId,
+    role,
+    sessionId,
+    token,
+    collection.version,
+    collection.struct.id,
+    collection.struct.version,
+    draft.entry?.id,
+    draft.entry?.version,
+    draft.epoch,
+  ])
+
+  useEffect(() => {
+    setHtmlReviewIdentity(null)
+  }, [htmlIdentity, reviewRequired])
 
   useEffect(() => {
     mounted.current = true
@@ -384,6 +406,50 @@ export function ContentEntries({ collection }: { collection: Collection }) {
   const active = draft.collectionId === collectionId && draft.active
   const disabled = loading || state.busy
   const editable = !draft.entry || draft.editing
+  const htmlFields = draft.entry
+    ? savedHtmlFields(collection.struct.fields, draft.entry.data)
+    : []
+  const canReviewHtml =
+    role === 'owner' &&
+    active &&
+    !!draft.entry &&
+    !draft.editing &&
+    !draft.dirty &&
+    htmlFields.length > 0
+
+  function openHtmlReview() {
+    const current = useContentEntryDraft.getState()
+
+    if (
+      !ownsReply(undefined, draft.epoch) ||
+      useStudio.getState().busy ||
+      loading ||
+      reviewRequired ||
+      !canReviewHtml ||
+      current.editing ||
+      current.dirty ||
+      current.entry?.id !== draft.entry?.id ||
+      current.entry?.version !== draft.entry?.version
+    )
+      return
+
+    setHtmlReviewIdentity(htmlIdentity)
+  }
+
+  function ownsHtmlReview() {
+    const current = useContentEntryDraft.getState()
+
+    return (
+      ownsReply(undefined, draft.epoch) &&
+      htmlReviewIdentity === htmlIdentity &&
+      !reviewRequired &&
+      !current.editing &&
+      !current.dirty &&
+      current.entry?.id === draft.entry?.id &&
+      current.entry?.version === draft.entry?.version
+    )
+  }
+
   const validation =
     active && editable
       ? prepareEntry(collection.struct.fields, draft.fields).error
@@ -529,6 +595,23 @@ export function ContentEntries({ collection }: { collection: Collection }) {
                 {t('Delete entry')}
               </Button>
             </div>
+          ) : null}
+          {canReviewHtml && draft.entry ? (
+            <ContentHtmlPreview
+              fields={htmlFields}
+              collection={collection}
+              entry={draft.entry}
+              identity={htmlIdentity}
+              open={htmlReviewIdentity === htmlIdentity && !reviewRequired}
+              disabled={disabled || reviewRequired}
+              isCurrent={ownsHtmlReview}
+              onOpen={openHtmlReview}
+              onClose={() => setHtmlReviewIdentity(null)}
+              onConflict={(message) => {
+                setReviewRequired(true)
+                reportError(new Error(message), message, 'detail')
+              }}
+            />
           ) : null}
           {draft.entry ? <code>{draft.entry.id}</code> : null}
           <p className="field-help">

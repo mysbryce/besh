@@ -228,7 +228,7 @@ function SchemaEditor({
         <p className="field-help">
           {t(
             schema.schemaVersion === 1
-              ? 'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.'
+              ? 'Paragraph text only. Text is stored literally; preview saved HTML from Content.'
               : 'Formatted text supports headings and emphasis. Pasted content is plain text.',
           )}
         </p>

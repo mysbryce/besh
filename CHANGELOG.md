@@ -4,6 +4,27 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.24.0-alpha.0 — 2026-10-11
+
+### Added
+
+- Owner-only HTML previews for saved literal and formatted rich text, including labelled fields inside frozen collection groups and lists.
+- Reviewed semantic element classes, literal titles and accessibility labels, with a fixed heading identifier for explicitly compatible clients.
+- An inert isolated visual preview, escaped copyable HTML source, seven-language controls and 22 page/action previews.
+- Strict renderer validation, configuration hashes, bounded HTML output and current-owner checks without saving preview settings or changing content.
+
+### Fixed
+
+- Require explicit entry reload after a concurrent change and block conflicting actions while HTML requests or copying remain pending.
+- Keep reviewed settings and source through language changes; invalidate them after field, entry or settings changes.
+- Keep HTML source readable on small light/dark screens and explain paragraph-only fields without obsolete conversion guidance.
+- Keep the fixed-heading checkbox square with a large labelled hit area, and capture actual rendered iframe content after viewport readiness.
+- Keep member role selection and New role unavailable until their current workspace catalogs finish loading.
+
+### Changed
+
+- Persistent renderer settings and generated collection endpoints remain separate upcoming milestones. This delivery previews private saved content only.
+
 ## 0.23.0-alpha.0 — 2026-10-11
 
 ### Added

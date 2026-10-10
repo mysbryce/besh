@@ -404,18 +404,20 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     expect(new URL(page.url()).hash.length === 0).toBe(true)
     await appearance(page, 'Light')
 
-    const capture = async (file: string, title: string) => {
+    const capture = async (file: string, title: string, fullPage = true) => {
       const url = new URL(page.url())
       expect(url.origin === knownOrigin && !url.search && !url.hash).toBe(true)
-      await page.evaluate(() => {
-        window.scrollTo({ top: 0, behavior: 'instant' })
-      })
+      if (fullPage)
+        await page.evaluate(() => {
+          window.scrollTo({ top: 0, behavior: 'instant' })
+        })
       await page.screenshot({
         path: join(previews, file),
-        fullPage: true,
+        fullPage,
         animations: 'disabled',
-        style:
-          'html { scrollbar-gutter: stable !important; scroll-behavior: auto !important }',
+        style: fullPage
+          ? 'html { scrollbar-gutter: stable !important; scroll-behavior: auto !important }'
+          : undefined,
         maskColor: '#101820',
         mask: [
           page.locator('[data-private="true"]'),
@@ -566,6 +568,306 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     await page.setViewportSize({ width: 1440, height: 900 })
     await appearance(page, 'Light')
 
+    const contentHeaders = {
+      origin: knownOrigin,
+      authorization: 'Bearer ' + owner,
+    }
+    const contentModelResponse = await page.request.post(
+      knownOrigin + '/api/structs',
+      {
+        headers: contentHeaders,
+        data: {
+          name: 'Portable HTML model ไทย',
+          fields: [
+            {
+              key: 'body',
+              label: 'Body',
+              required: true,
+              schema: { type: 'richText', schemaVersion: 2, astVersion: 2 },
+            },
+            {
+              key: 'summary',
+              label: 'Summary',
+              required: true,
+              schema: { type: 'richText', schemaVersion: 1, astVersion: 1 },
+            },
+          ],
+        },
+      },
+    )
+    expect(contentModelResponse.status()).toBe(200)
+
+    const contentModel = await contentModelResponse.json()
+    const contentCollectionName = 'Portable HTML articles ไทย'
+    const contentCollectionResponse = await page.request.post(
+      knownOrigin + '/api/collections',
+      {
+        headers: contentHeaders,
+        data: {
+          name: contentCollectionName,
+          structId: contentModel.id,
+          structVersion: contentModel.version,
+        },
+      },
+    )
+    expect(contentCollectionResponse.status()).toBe(200)
+
+    const contentCollection = await contentCollectionResponse.json()
+    const contentData = {
+      body: {
+        type: 'document',
+        astVersion: 2,
+        children: [
+          {
+            type: 'heading',
+            level: 1,
+            children: [
+              { type: 'text', text: 'Portable heading ไทย', marks: [] },
+            ],
+          },
+          {
+            type: 'paragraph',
+            children: [
+              {
+                type: 'text',
+                text: '<script>literal</script> & ไทย',
+                marks: [],
+              },
+            ],
+          },
+        ],
+      },
+      summary: {
+        type: 'document',
+        astVersion: 1,
+        children: [
+          {
+            type: 'paragraph',
+            children: [
+              { type: 'text', text: '  Summary <em>literal</em> & ไทย  ' },
+            ],
+          },
+        ],
+      },
+    }
+    const contentEntriesPath =
+      knownOrigin + '/api/collections/' + contentCollection.id + '/entries'
+    const contentEntryResponse = await page.request.post(contentEntriesPath, {
+      headers: contentHeaders,
+      data: { data: contentData },
+    })
+    expect(contentEntryResponse.status()).toBe(200)
+
+    const contentEntry = await contentEntryResponse.json()
+    const contentEntryPath = contentEntriesPath + '/' + contentEntry.id
+    const savedContentResponse = await page.request.get(contentEntryPath, {
+      headers: contentHeaders,
+    })
+    expect(savedContentResponse.status()).toBe(200)
+
+    const savedContent = await savedContentResponse.json()
+    expect(savedContent.version).toBe(1)
+    expect(savedContent.data).toEqual(contentData)
+
+    const contentPaths = [
+      knownOrigin + '/api/collections/' + contentCollection.id,
+      contentEntryPath,
+      knownOrigin + '/api/audit',
+    ]
+    const contentBefore: unknown[] = []
+
+    for (const path of contentPaths) {
+      const response = await page.request.get(path, { headers: contentHeaders })
+      expect(response.status()).toBe(200)
+      contentBefore.push(await response.json())
+    }
+
+    await page.getByRole('button', { name: 'Content', exact: true }).click()
+    await page
+      .getByRole('combobox', { name: 'Choose a collection', exact: true })
+      .click()
+    await page
+      .getByRole('option', { name: contentCollectionName, exact: true })
+      .click()
+    await page
+      .locator('.content-entry-row')
+      .filter({ hasText: contentEntry.id })
+      .click()
+    await browserExpect(
+      page.getByRole('heading', { name: 'Saved entry', exact: true }),
+    ).toBeVisible()
+    await page
+      .getByRole('button', { name: 'Preview HTML', exact: true })
+      .click()
+
+    const htmlReview = page.getByRole('region', {
+      name: 'Private HTML preview',
+      exact: true,
+    })
+    const generateHTML = htmlReview.getByRole('button', {
+      name: 'Generate HTML preview',
+      exact: true,
+    })
+    const htmlSource = htmlReview.getByRole('textbox', {
+      name: 'HTML source',
+      exact: true,
+    })
+    const htmlField = htmlReview.getByRole('combobox', {
+      name: 'Rich-text field',
+      exact: true,
+    })
+    const htmlPreviewPath = contentEntryPath + '/render-preview'
+    const htmlIdentity = {
+      collectionId: contentCollection.id,
+      collectionVersion: contentCollection.version,
+      structId: contentModel.id,
+      structVersion: contentModel.version,
+      entryId: savedContent.id,
+      entryVersion: savedContent.version,
+      rendererSchemaVersion: 1,
+      consumerContract: null,
+    }
+    const formattedHTML =
+      '<h1>Portable heading ไทย</h1><p>&lt;script&gt;literal&lt;/script&gt; &amp; ไทย</p>'
+    const formattedReply = page.waitForResponse(
+      (response) =>
+        response.url() === htmlPreviewPath &&
+        response.request().method() === 'POST',
+    )
+
+    await generateHTML.click()
+
+    const formattedResponse = await formattedReply
+    expect(formattedResponse.status()).toBe(200)
+    expect(formattedResponse.request().postDataJSON()).toEqual({
+      entryVersion: 1,
+      fieldKey: 'body',
+      renderer: { schemaVersion: 1, elements: {} },
+    })
+    expect(await formattedResponse.json()).toMatchObject({
+      ...htmlIdentity,
+      fieldKey: 'body',
+      schemaVersion: 2,
+      astVersion: 2,
+      html: formattedHTML,
+    })
+    await browserExpect(htmlSource).toHaveValue(formattedHTML)
+    await browserExpect(htmlSource).toHaveAttribute('readonly', '')
+    await browserExpect(
+      htmlReview.locator('iframe[title="Rendered HTML preview"]'),
+    ).toHaveAttribute('sandbox', '')
+
+    await htmlField.click()
+    await page.getByRole('option', { name: 'Summary', exact: true }).click()
+    await browserExpect(htmlSource).toHaveCount(0)
+
+    const literalHTML =
+      '<p>  Summary &lt;em&gt;literal&lt;/em&gt; &amp; ไทย  </p>'
+    const literalReply = page.waitForResponse(
+      (response) =>
+        response.url() === htmlPreviewPath &&
+        response.request().method() === 'POST',
+    )
+
+    await generateHTML.click()
+
+    const literalResponse = await literalReply
+    expect(literalResponse.status()).toBe(200)
+    expect(literalResponse.request().postDataJSON()).toEqual({
+      entryVersion: 1,
+      fieldKey: 'summary',
+      renderer: { schemaVersion: 1, elements: {} },
+    })
+    expect(await literalResponse.json()).toMatchObject({
+      ...htmlIdentity,
+      fieldKey: 'summary',
+      schemaVersion: 1,
+      astVersion: 1,
+      html: literalHTML,
+    })
+    await browserExpect(htmlSource).toHaveValue(literalHTML)
+
+    await htmlField.click()
+    await page.getByRole('option', { name: 'Body', exact: true }).click()
+    await browserExpect(htmlSource).toHaveCount(0)
+    await htmlReview
+      .getByRole('button', { name: 'Advanced element settings', exact: true })
+      .click()
+    await htmlReview
+      .getByRole('combobox', { name: 'Element', exact: true })
+      .click()
+    await page
+      .getByRole('option', { name: 'Heading 1 (h1)', exact: true })
+      .click()
+    await htmlReview
+      .getByLabel('CSS classes', { exact: true })
+      .fill('portable-heading')
+    await htmlReview
+      .getByLabel('Title attribute', { exact: true })
+      .fill('Portable "ไทย" & <saved>')
+
+    const mappedHTML =
+      '<h1 class="portable-heading" title="Portable &quot;ไทย&quot; &amp; &lt;saved&gt;">Portable heading ไทย</h1><p>&lt;script&gt;literal&lt;/script&gt; &amp; ไทย</p>'
+    const mappedReply = page.waitForResponse(
+      (response) =>
+        response.url() === htmlPreviewPath &&
+        response.request().method() === 'POST',
+    )
+
+    await generateHTML.click()
+
+    const mappedResponse = await mappedReply
+    expect(mappedResponse.status()).toBe(200)
+    expect(mappedResponse.request().postDataJSON()).toEqual({
+      entryVersion: 1,
+      fieldKey: 'body',
+      renderer: {
+        schemaVersion: 1,
+        elements: {
+          h1: {
+            classes: ['portable-heading'],
+            attributes: { title: 'Portable "ไทย" & <saved>' },
+          },
+        },
+      },
+    })
+    expect(await mappedResponse.json()).toMatchObject({
+      ...htmlIdentity,
+      fieldKey: 'body',
+      schemaVersion: 2,
+      astVersion: 2,
+      html: mappedHTML,
+    })
+    await browserExpect(htmlSource).toHaveValue(mappedHTML)
+    const renderedContent = htmlReview.locator('iframe')
+    await browserExpect(
+      renderedContent.contentFrame().locator('h1'),
+    ).toHaveText('Portable heading ไทย')
+    await browserExpect(renderedContent.contentFrame().locator('p')).toHaveText(
+      '<script>literal</script> & ไทย',
+    )
+    await renderedContent.scrollIntoViewIfNeeded()
+    await browserExpect(renderedContent).toBeInViewport()
+
+    await capture(
+      '08-private-html-review.png',
+      'Compiled saved HTML with reviewed transient heading settings',
+      false,
+    )
+
+    const contentAfter: unknown[] = []
+
+    for (const path of contentPaths) {
+      const response = await page.request.get(path, { headers: contentHeaders })
+      expect(response.status()).toBe(200)
+      contentAfter.push(await response.json())
+    }
+
+    expect(contentAfter).toEqual(contentBefore)
+    await htmlReview
+      .getByRole('button', { name: 'Close HTML preview', exact: true })
+      .click()
+
     await page.getByRole('button', { name: 'API keys', exact: true }).click()
     await page
       .getByLabel('Key name', { exact: true })
@@ -664,7 +966,7 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     expect(
       pageErrors === 0 && networkErrors === 0 && policyViolations === 0,
     ).toBe(true)
-    expect(captures.length).toBe(7)
+    expect(captures.length).toBe(8)
     await writeFile(
       join(previews, 'manifest.json'),
       JSON.stringify({ captures }, null, 2) + '\n',

@@ -51,12 +51,34 @@ import { formattedRichTextPreviews } from './formatted-rich-text-previews'
 import { richTextBlockPreviews } from './rich-text-block-previews'
 import { richTextInteractionPreviews } from './rich-text-interaction-previews'
 import { richTextLocalePreviews } from './rich-text-locale-previews'
+import { richTextHtmlPreviews } from './rich-text-html-previews'
+import { richTextHtmlGuardPreviews } from './rich-text-html-guard-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
 } from './locale-startup-previews'
 
 test.describe.configure({ mode: 'parallel' })
+
+for (const [id, run] of [
+  ['rich-text-html', richTextHtmlPreviews],
+  ['rich-text-html-guards', richTextHtmlGuardPreviews],
+] as const) {
+  test.describe(id, () => {
+    test.use({ locale: 'en-US' })
+
+    test(id, async ({ page, previewWorkspace }) => {
+      const { owner, origin } = previewWorkspace
+      const errors: string[] = []
+      page.on('pageerror', (error) => errors.push(error.message))
+      const { capture, complete } = storyCapture(page, id)
+
+      await run({ page, owner, origin, capture })
+      expect(errors).toEqual([])
+      complete()
+    })
+  })
+}
 
 for (const [id, run] of [
   ['rich-text', richTextPreviews],
@@ -4380,6 +4402,8 @@ for (const story of previewStories) {
     story.id === 'rich-text-blocks' ||
     story.id === 'rich-text-interactions' ||
     story.id === 'rich-text-locales' ||
+    story.id === 'rich-text-html' ||
+    story.id === 'rich-text-html-guards' ||
     story.id === 'management-data-api-generation'
   )
     continue

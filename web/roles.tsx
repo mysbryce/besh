@@ -128,9 +128,11 @@ export function MemberAssignment({
 
 export function Roles({
   roles,
+  recordsLoading,
   onChanged,
 }: {
   roles: Role[]
+  recordsLoading: boolean
   onChanged: () => Promise<void>
 }) {
   const state = useStudio()
@@ -173,7 +175,9 @@ export function Roles({
         <h2>{t('Custom roles')}</h2>
         <Button
           variant="outline"
-          disabled={state.busy || !!draft || loading || !!catalogError}
+          disabled={
+            state.busy || !!draft || loading || recordsLoading || !!catalogError
+          }
           onClick={() => {
             setError('')
             setDraft({ role: null, name: '', permissions: [] })

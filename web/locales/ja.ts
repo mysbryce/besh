@@ -1,4 +1,61 @@
 const messages: Record<string, string> = {
+  'Copy HTML': 'HTML をコピー',
+  'HTML copied': 'HTML をコピーしました',
+  'Could not copy HTML. Select and copy the HTML source.':
+    'HTML をコピーできませんでした。HTML ソースを選択してコピーしてください。',
+
+  'Advanced element settings': '要素の詳細設定',
+  Element: '要素',
+  'CSS classes': 'CSS クラス',
+  'Title attribute': 'title 属性',
+  'Accessibility label': 'アクセシビリティラベル',
+  'Use fixed heading identifier': '固定の見出し識別子を使用',
+  Link: 'リンク',
+  'List item': 'リスト項目',
+  Divider: '区切り線',
+  'Line break': '改行',
+  Table: '表',
+  'Table body': '表の本体',
+  'Table row': '表の行',
+  'Header cell': '見出しセル',
+  'Table cell': '表のセル',
+  'The preview uses default styles. Custom classes need CSS in your client.':
+    'プレビューには標準のスタイルを使用します。独自のクラスにはクライアントアプリ側の CSS が必要です。',
+  'Use up to 8 class names. Start with a letter or underscore; use letters, numbers, underscores or hyphens. Each name uses up to 64 characters.':
+    'クラス名は最大 8 個です。英字かアンダースコアで始め、英字、数字、アンダースコア、ハイフンを使います。各名前は最大 64 文字です。',
+  'Title and accessibility labels use up to 160 UTF-8 bytes.':
+    'タイトルとアクセシビリティラベルは UTF-8 で最大 160 バイトです。',
+  'Besh does not run x-data or load Alpine.js. Use this fixed identifier only with a trusted consumer that you have reviewed.':
+    'Besh は x-data を実行せず、Alpine.js も読み込みません。この固定識別子は、自分で確認した信頼できる利用先アプリでのみ使用してください。',
+  'Check class names: up to 8 names, each 1 to 64 ASCII characters.':
+    'クラス名を確認してください。最大 8 個で、各名前は 1～64 文字の ASCII です。',
+  'Shorten the title or accessibility label to 160 UTF-8 bytes.':
+    'タイトルまたはアクセシビリティラベルを UTF-8 で 160 バイト以内に短くしてください。',
+  'These settings are too large. Remove some settings.':
+    '設定が大きすぎます。一部の設定を削除してください。',
+
+  'Item {index}': '項目 {index}',
+
+  'Rich-text field': 'リッチテキストフィールド',
+  'Generate HTML preview': 'HTML プレビューを生成',
+  'HTML source': 'HTML ソース',
+  'Rendered HTML preview': 'HTML の表示プレビュー',
+  'Visual preview only. Links are inactive. HTML source is available below.':
+    '表示確認専用です。リンクは開けません。HTML ソースは下にあります。',
+  'HTML preview generated.': 'HTML プレビューを生成しました。',
+  'Could not generate HTML preview.': 'HTML プレビューを生成できませんでした。',
+  'Could not verify this HTML preview. Generate it again.':
+    'この HTML プレビューを検証できませんでした。もう一度生成してください。',
+  'Content entry changed. Reload before previewing.':
+    'コンテンツ項目が変更されました。プレビュー前に再読み込みしてください。',
+
+  'Preview HTML': 'HTML をプレビュー',
+  'Private HTML preview': '非公開 HTML プレビュー',
+  'Rich-text fields': 'リッチテキストフィールド',
+  'Review the saved entry and fields. This does not save or publish content.':
+    '保存済みの項目とフィールドを確認します。この操作ではコンテンツを保存・公開しません。',
+  'Close HTML preview': 'HTML プレビューを閉じる',
+
   'This list item cannot be outdented safely.':
     'このリスト項目のインデントを安全に減らすことはできません。',
 
@@ -78,8 +135,8 @@ const messages: Record<string, string> = {
   'Invalid formatted text.': '書式付きテキストが無効です。',
 
   'Rich text': 'リッチテキスト',
-  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
-    '段落のテキストのみ対応しています。テキストはそのまま保存され、書式設定や HTML の描画は利用できません。',
+  'Paragraph text only. Text is stored literally; preview saved HTML from Content.':
+    '段落のテキストのみ対応しています。テキストはそのまま保存され、保存済みの HTML は「コンテンツ」でプレビューできます。',
   '{field} · Paragraph {index}': '{field} · 段落 {index}',
   '{field} · Paragraph {paragraph} · Text {text}':
     '{field} · 段落 {paragraph} · テキスト {text}',

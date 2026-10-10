@@ -1,4 +1,61 @@
 const messages: Record<string, string> = {
+  'Copy HTML': 'HTML 복사',
+  'HTML copied': 'HTML 복사됨',
+  'Could not copy HTML. Select and copy the HTML source.':
+    'HTML을 복사하지 못했습니다. HTML 소스를 선택하여 복사하세요.',
+
+  'Advanced element settings': '고급 요소 설정',
+  Element: '요소',
+  'CSS classes': 'CSS 클래스',
+  'Title attribute': 'title 속성',
+  'Accessibility label': '접근성 레이블',
+  'Use fixed heading identifier': '고정 제목 식별자 사용',
+  Link: '링크',
+  'List item': '목록 항목',
+  Divider: '구분선',
+  'Line break': '줄바꿈',
+  Table: '표',
+  'Table body': '표 본문',
+  'Table row': '표 행',
+  'Header cell': '머리글 셀',
+  'Table cell': '표 셀',
+  'The preview uses default styles. Custom classes need CSS in your client.':
+    '미리보기는 기본 스타일을 사용합니다. 사용자 지정 클래스에는 클라이언트 앱의 CSS가 필요합니다.',
+  'Use up to 8 class names. Start with a letter or underscore; use letters, numbers, underscores or hyphens. Each name uses up to 64 characters.':
+    '클래스 이름은 최대 8개입니다. 영문자나 밑줄로 시작하고 영문자, 숫자, 밑줄 또는 하이픈을 사용하세요. 각 이름은 최대 64자입니다.',
+  'Title and accessibility labels use up to 160 UTF-8 bytes.':
+    '제목과 접근성 레이블은 UTF-8 기준 최대 160바이트입니다.',
+  'Besh does not run x-data or load Alpine.js. Use this fixed identifier only with a trusted consumer that you have reviewed.':
+    'Besh는 x-data를 실행하거나 Alpine.js를 불러오지 않습니다. 이 고정 식별자는 직접 검토하고 신뢰하는 사용처 앱에서만 사용하세요.',
+  'Check class names: up to 8 names, each 1 to 64 ASCII characters.':
+    '클래스 이름을 확인하세요. 최대 8개이며 각 이름은 ASCII 문자 1~64자입니다.',
+  'Shorten the title or accessibility label to 160 UTF-8 bytes.':
+    '제목 또는 접근성 레이블을 UTF-8 기준 160바이트 이내로 줄이세요.',
+  'These settings are too large. Remove some settings.':
+    '설정이 너무 큽니다. 일부 설정을 삭제하세요.',
+
+  'Item {index}': '항목 {index}',
+
+  'Rich-text field': '서식 있는 텍스트 필드',
+  'Generate HTML preview': 'HTML 미리보기 생성',
+  'HTML source': 'HTML 소스',
+  'Rendered HTML preview': '렌더링된 HTML 미리보기',
+  'Visual preview only. Links are inactive. HTML source is available below.':
+    '화면 확인용 미리보기입니다. 링크는 열리지 않습니다. HTML 소스는 아래에 있습니다.',
+  'HTML preview generated.': 'HTML 미리보기를 생성했습니다.',
+  'Could not generate HTML preview.': 'HTML 미리보기를 생성할 수 없습니다.',
+  'Could not verify this HTML preview. Generate it again.':
+    '이 HTML 미리보기를 확인할 수 없습니다. 다시 생성하세요.',
+  'Content entry changed. Reload before previewing.':
+    '콘텐츠 항목이 변경되었습니다. 미리보기 전에 다시 불러오세요.',
+
+  'Preview HTML': 'HTML 미리보기',
+  'Private HTML preview': '비공개 HTML 미리보기',
+  'Rich-text fields': '서식 있는 텍스트 필드',
+  'Review the saved entry and fields. This does not save or publish content.':
+    '저장된 항목과 필드를 확인하세요. 이 작업은 콘텐츠를 저장하거나 게시하지 않습니다.',
+  'Close HTML preview': 'HTML 미리보기 닫기',
+
   'This list item cannot be outdented safely.':
     '이 목록 항목은 안전하게 내어쓰기할 수 없습니다.',
 
@@ -78,8 +135,8 @@ const messages: Record<string, string> = {
   'Invalid formatted text.': '서식 있는 텍스트가 올바르지 않습니다.',
 
   'Rich text': '서식 있는 텍스트',
-  'Paragraph text only. Text is stored literally; formatting and HTML rendering are not available.':
-    '문단 텍스트만 지원합니다. 텍스트는 입력한 그대로 저장되며 서식 지정과 HTML 렌더링은 사용할 수 없습니다.',
+  'Paragraph text only. Text is stored literally; preview saved HTML from Content.':
+    '문단 텍스트만 지원합니다. 텍스트는 입력한 그대로 저장되며 저장된 HTML은 콘텐츠에서 미리 볼 수 있습니다.',
   '{field} · Paragraph {index}': '{field} · 문단 {index}',
   '{field} · Paragraph {paragraph} · Text {text}':
     '{field} · 문단 {paragraph} · 텍스트 {text}',

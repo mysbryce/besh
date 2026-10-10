@@ -478,6 +478,15 @@ export function createApp(options: AppOptions) {
       allow(member, ['owner'])
       return entries.get(params.id, params.entryId)
     })
+    .post(
+      '/collections/:id/entries/:entryId/render-preview',
+      ({ member, params, body, request }) => {
+        allow(member, ['owner'])
+        return entries.preview(member.id, params.id, params.entryId, body, () =>
+          currentMember(request),
+        )
+      },
+    )
     .put(
       '/collections/:id/entries/:entryId',
       ({ member, params, body, request }) => {

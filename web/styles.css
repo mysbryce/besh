@@ -3802,3 +3802,9 @@ input[type='file']::file-selector-button {
   font-size: 12px;
   line-height: 1.6;
 }
+
+@media (max-width: 700px) {
+  .content-html-source {
+    font-size: 16px;
+  }
+}
