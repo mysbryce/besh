@@ -1,4 +1,20 @@
 const messages: Record<string, string> = {
+  'Live · v{version}': '已上线 · v{version}',
+  'Saved · revision {revision}': '已保存 · 修订版 {revision}',
+  '{nodes} nodes · {connections} connections':
+    '{nodes} 个节点 · {connections} 个连接',
+  'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.':
+    '使用 /v1/customers/:id 创建带版本号和路径参数的路由。每个 :name 必须占据一个完整的路由段。',
+  'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.':
+    '所有者密钥和成员密钥用于管理草稿。在 API 密钥页面创建 API 密钥，以调用已发布的端点。',
+  'REQUEST DETAILS': '请求详情',
+  '// Save your draft, then run a test.\n// Your response will appear here.':
+    '// 保存草稿，然后运行测试。\n// 响应将显示在这里。',
+  'Discard unsaved draft changes?': '放弃未保存的草稿更改？',
+  'Start with your spreadsheet, or build a blank API using the request and response below. Opening either path does not save or publish an API. You choose when to create or save its draft.':
+    '从你的电子表格开始，或使用下方的请求和响应构建空白 API。打开任一路径都不会保存或发布 API。由你决定何时创建或保存草稿。',
+  'Your next idea starts here.': '你的下一个想法从这里开始。',
+  'Create your first API.': '创建你的第一个 API。',
   'Your team': '你的团队',
   'WORKSPACE CONTROL': '工作区管理',
   'Member keys manage the workspace. Use API keys for published endpoint callers.':

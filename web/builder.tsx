@@ -875,7 +875,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             {t('API Studio')}{' '}
             <Badge variant="outline">
               {state.publishedRevision
-                ? `Live · v${state.publishedRevision}`
+                ? t('Live · v{version}', { version: state.publishedRevision })
                 : t('Draft')}
             </Badge>
           </h1>
@@ -915,9 +915,9 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
         >
           <h2>{t('Create your first API')}</h2>
           <p>
-            Start with your spreadsheet, or build a blank API using the request
-            and response below. Opening either path does not save or publish an
-            API. You choose when to create or save its draft.
+            {t(
+              'Start with your spreadsheet, or build a blank API using the request and response below. Opening either path does not save or publish an API. You choose when to create or save its draft.',
+            )}
           </p>
           <div className="title-actions">
             {can(state.member, 'sources.read') &&
@@ -1050,11 +1050,14 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
           ? 'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.'
           : state.graphql
             ? 'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.'
-            : 'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.'}
+            : t(
+                'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.',
+              )}
       </p>
       <p className="credential-note endpoint-credential-note">
-        Owner and member keys manage drafts. Create an API key in API keys to
-        call a published endpoint.
+        {t(
+          'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.',
+        )}
       </p>
       {publishedEndpoint ? (
         <div className="runtime-endpoint studio-runtime-endpoint">
@@ -1145,14 +1148,17 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             <span className="live-dot" />
             <strong>{t('Flow canvas')}</strong>
             <span className="muted">
-              {state.nodes.length} nodes · {state.edges.length} connections
+              {t('{nodes} nodes · {connections} connections', {
+                nodes: state.nodes.length,
+                connections: state.edges.length,
+              })}
             </span>
           </div>
           <span className="draft-state">
             {state.dirty
               ? t('Unsaved changes')
               : state.id
-                ? `Saved · revision ${state.revision}`
+                ? t('Saved · revision {revision}', { revision: state.revision })
                 : t('New draft')}
           </span>
         </div>
@@ -1170,7 +1176,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             <div className="panel-heading">
               <strong>{t('Try it out')}</strong>
               <span>
-                {state.graphql ? 'GRAPHQL OPERATION' : 'REQUEST DETAILS'}
+                {state.graphql ? 'GRAPHQL OPERATION' : t('REQUEST DETAILS')}
               </span>
             </div>
             {socialFlow ? (
@@ -1321,7 +1327,9 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
             <pre data-testid="test-result">
               {state.result
                 ? JSON.stringify(maskedLoginResult(state.result), null, 2)
-                : '// Save your draft, then run a test.\n// Your response will appear here.'}
+                : t(
+                    '// Save your draft, then run a test.\n// Your response will appear here.',
+                  )}
             </pre>
             {socialFlow && state.result ? (
               <LoginResultActions

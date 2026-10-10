@@ -197,7 +197,7 @@
 
 ## Next Steps
 
-1. Finish the member/role language delivery through its exact-head PR and main checks, then continue basic Studio guidance and other panels. The maintainer authorizes ordinary tested PR merges without another confirmation. Keep invitation, node-picker and isolated worker boundaries intact. Exact completed checks belong in [testing](testing.md). Package publication, deployment and live providers require their own verification.
+1. Member/role PR #5 and its main checks passed at `50495bd`. Basic Studio language journeys and local acceptance now pass in 0.18.4. Finish its ordinary PR/check/merge cycle, then continue protocol-specific guidance and other panels through separate public RED/GREEN slices. The maintainer authorizes tested merges without another confirmation. Keep invitation, node-picker and isolated worker boundaries intact. Exact completed checks belong in [testing](testing.md). Package publication, deployment and live providers require their own verification.
 2. After GitHub account/service capacity permits artifact uploads, rerun the candidate and inspect the actual downloaded inventory/digest. Local archive inspection does not prove remote delivery. See [releases](releases.md).
 3. Follow the [remaining roadmap](roadmap.md#next-steps): broader product authorization, external data/query/migration tools, graph extensions/plugins, verified product providers/AI tools, realtime event/subscription work, and operations/releases. None is completed by the WebSocket delivery.
 

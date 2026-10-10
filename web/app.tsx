@@ -298,7 +298,8 @@ export function App({
             : 'Owner access required'
 
   function switchFlow(action: () => void) {
-    if (state.dirty && !window.confirm('Discard unsaved draft changes?')) return
+    if (state.dirty && !window.confirm(t('Discard unsaved draft changes?')))
+      return
     action()
     setPage('builder')
   }
@@ -395,9 +396,9 @@ export function App({
                   )
                 ) : (
                   <>
-                    Your next idea starts here.
+                    {t('Your next idea starts here.')}
                     <br />
-                    Create your first API.
+                    {t('Create your first API.')}
                   </>
                 )}
               </p>
@@ -416,7 +417,7 @@ export function App({
             onClick={() => {
               if (
                 state.dirty &&
-                !window.confirm('Discard unsaved draft changes?')
+                !window.confirm(t('Discard unsaved draft changes?'))
               )
                 return
               void state.task(state.logout)

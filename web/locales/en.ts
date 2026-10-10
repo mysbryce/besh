@@ -653,6 +653,10 @@ const messages: Record<string, string> = {
   'Bootstrap owner': 'Bootstrap owner',
   'Revoke access for {name}?': 'Revoke access for {name}?',
   'Member access revoked.': 'Member access revoked.',
+  'Start with your spreadsheet, or build a blank API using the request and response below. Opening either path does not save or publish an API. You choose when to create or save its draft.':
+    'Start with your spreadsheet, or build a blank API using the request and response below. Opening either path does not save or publish an API. You choose when to create or save its draft.',
+  'Your next idea starts here.': 'Your next idea starts here.',
+  'Create your first API.': 'Create your first API.',
   'Selected APIs · {count}': 'Selected APIs · {count}',
   'Manage APIs for {name}': 'Manage APIs for {name}',
   'Owner access cannot be restricted.': 'Owner access cannot be restricted.',
@@ -696,6 +700,18 @@ const messages: Record<string, string> = {
     '{count} dependencies allowed for USE.',
   'All current and future APIs. Actions still follow the assigned role.':
     'All current and future APIs. Actions still follow the assigned role.',
+  'Live · v{version}': 'Live · v{version}',
+  'Saved · revision {revision}': 'Saved · revision {revision}',
+  '{nodes} nodes · {connections} connections':
+    '{nodes} nodes · {connections} connections',
+  'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.':
+    'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.',
+  'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.':
+    'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.',
+  'REQUEST DETAILS': 'REQUEST DETAILS',
+  '// Save your draft, then run a test.\n// Your response will appear here.':
+    '// Save your draft, then run a test.\n// Your response will appear here.',
+  'Discard unsaved draft changes?': 'Discard unsaved draft changes?',
 }
 
 export default messages

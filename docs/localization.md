@@ -4,9 +4,13 @@ Besh supports English, Thai, Mandarin Chinese, Russian, Japanese, Korean and Por
 
 Use **Language** beside **Appearance** to choose a language. The custom selector supports keyboard navigation. An explicit choice survives reload and overrides the device language. Besh stores only its language code, never a credential or form payload.
 
-Translations cover setup, workspace sign-in, invitations, navigation, appearance, common Studio form labels, the categorized step picker, account/session management, update settings and basic member/role management. Some Studio helper text, other management and advanced policy panels, technical editors and server errors still use English. This is language support for these workflows, not a claim that every existing message has been translated.
+Translations cover setup, workspace sign-in, invitations, navigation, appearance, common Studio form labels, first-task guidance, REST draft guidance and metadata, the categorized step picker, account/session management, update settings and basic member/role management. Other Studio helper text, management and advanced policy panels, technical editors and server errors still use English. This is language support for these workflows, not a claim that every existing message has been translated.
 
 Authored API/member names, routes, field keys, data, response text, GraphQL schemas and generated client code are not translated. Changing the dashboard language never changes an API contract or grants access.
+
+Studio first-task guidance translates both the spreadsheet and blank-API paths, including the reminder that opening either path does not save or publish an API. Empty-list guidance follows the selected language while starter names, paths and unsaved defaults stay unchanged. A member without source grants retains only the permitted blank-API path.
+
+REST draft guidance translates versioned-route and whole-segment parameter instructions, the distinction between workspace and published-caller keys, request headings, empty-response guidance, node/connection counts and saved/live revision labels. Discard confirmation uses the current language; canceling preserves the unsaved draft. GraphQL/WebSocket helper text, advanced editors, Inspector guidance, server errors and footer notices remain outside this slice.
 
 Account and update screens keep unsaved fields when you switch languages. Saving credentials, revoking a session, saving update settings and checking releases remain explicit actions. Their confirmations and guidance follow the current language; raw server errors remain unchanged.
 
@@ -18,7 +22,7 @@ Session and release-check times use the selected language, the browser's current
 
 ## Development
 
-`web/i18n.ts` owns language selection and the memoized `useDateTime` formatter used by account/update screens. `web/locales/` keeps matching message keys for each language. English loads with the dashboard; other dictionaries load on demand before their first screen. Missing keys use English. A failed download or five-second loading deadline leaves English available with an error. Late responses never change the active language; an explicit retry can use the arrived dictionary.
+`web/i18n.ts` owns language selection and the memoized `useDateTime` formatter used by account/update screens. `web/locales/` keeps 572 matching message keys for each language. English loads with the dashboard; other dictionaries load on demand before their first screen. Missing keys use English. A failed download or five-second loading deadline leaves English available with an error. Late responses never change the active language; an explicit retry can use the arrived dictionary.
 
 Keep text lookups explicit at the rendering boundary. Do not translate arbitrary user data, rewrite the DOM, or derive permissions from translated labels. Reuse stable descriptor IDs for node categories and favorites. Preserve interpolation names in every dictionary.
 
@@ -27,5 +31,7 @@ Run `bun run test:e2e e2e/locales.spec.ts`. It uses real Thai and unsupported Sp
 The language stories also exercise all seven account/update screens, preserve unsaved form values, perform real account save/current-session revocation and owner settings writes, and deny private update reads for a viewer. The provider-boundary update story keeps an authored release title unchanged while translating its status and check time. These controlled provider replies do not prove a live GitHub release check. See [testing](testing.md) and [page previews](preview.md).
 
 Team stories use actual role/member saves and compare their stable grants and access IDs through the public API. Canceled assignment, permission and deletion confirmations perform no write. Native 390px Russian and Thai forms exercise light/dark readability, with a language-independent private marker on the member receipt.
+
+Focused Studio stories verify all seven languages without a flow read or write caused by switching language. The first-task story passed in 5.3 seconds. The draft-metadata story passed in 7.3 seconds, with 9.2 seconds total command time. It performs an actual dashboard save, a draft test returning status 200 and the authored response `Publish`, and publication with revision-1 metadata. The authored name `Save draft` and path `/v1/Members` stay unchanged. Native 390px Russian light and Thai dark views pass visible-control geometry checks; hidden elements with zero-size rectangles are excluded from that assertion. No product CSS change was needed. This story does not prove a live call to the published endpoint. All 44 normal browser cases and the complete 1008-image walkthrough passed. Independent review inspected all 20 new originals and 15 affected legacy originals; all 15 lossless native-width phone slices passed independent review. See [testing](testing.md) for the recorded checks and limits.
 
 Remaining work: translate remaining Studio guidance, other management panels and technical errors, extend reviewed number/date formatting, and verify translations with native speakers. Native-speaker review is still pending.
