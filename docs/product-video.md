@@ -2,9 +2,17 @@
 
 The [Besh product film](assets/besh-product.mp4) is an original, local English 60-second presentation with music and interaction sounds. React/SVG interfaces use continuing simulated state, without screenshot swaps. They illustrate implemented workflows; they do not call a real backend or provide browser execution proof.
 
-The maintainer approved this final cut and requested README placement on 2026-10-10. Clicks highlight controls; drops pulse existing ports and animate edges without moving endpoints. These effects add no product capabilities. The README links the tracked MP4; editable marketing files remain local.
+The maintainer approved this final cut and requested README placement on 2026-10-10. Clicks highlight controls; drops pulse existing ports and animate edges without moving endpoints. These effects add no product capabilities. The README embeds the approved MP4 through a GitHub attachment; the original remains tracked and editable marketing files remain local.
 
 [PR #13](https://github.com/mysbryce/besh/pull/13) delivered the approved README link and film as source version `0.20.4-alpha.0`. Its [exact-head CI](https://github.com/mysbryce/besh/actions/runs/38054518624) and [post-merge main CI](https://github.com/mysbryce/besh/actions/runs/38054945566) passed core, browser and compiled-portable jobs. This does not publish a new executable release or establish continuous audio/video playback verification.
+
+## GitHub player
+
+The maintainer subsequently requested an inline player. Source `0.20.6-alpha.0` replaces the README download link with the [GitHub attachment](https://github.com/user-attachments/assets/15d58a79-3a1c-4dad-93f8-c1918cfddcd8) on its own line. GitHub renders standalone video attachment URLs as players; see [attachment instructions](https://docs.github.com/en/github-cli/github-cli/attaching-files-with-github-cli).
+
+The unchanged approved MP4 was attached to PR #13 using GitHub CLI `--attach`. An anonymous download returned 14,006,330 bytes with the SHA-256 recorded below. No re-encoding or new cut was required. The editable movie project stays ignored, and the public portable download stays at `0.19.0-alpha.0`.
+
+The public PR attachment rendered a visible player with controls in a headless Chromium check. Muted playback advanced beyond one second with 1920 × 1080 video, 60.011-second duration and no media error. This verifies decoding and initial playback, not full-length playback or listening.
 
 ## Sequence
 

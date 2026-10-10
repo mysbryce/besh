@@ -4,6 +4,13 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.6-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Embed the approved product film in README using a GitHub video attachment, so readers can play it directly.
+- Keep the original tracked MP4 and verify that the anonymous attachment download matches its complete bytes and SHA-256.
+
 ## 0.20.5-alpha.1 — 2026-10-10
 
 ### Fixed

@@ -314,13 +314,13 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 ## Next Steps
 
-The maintainer-approved English [product film](product-video.md) and README link reached main through [PR #13](https://github.com/mysbryce/besh/pull/13), with all three head/main CI jobs passing. Keep `marketing/` local and ignored; Git receives the final MP4 under `docs/assets`. The presentation does not execute the backend or certify production capacity.
+The maintainer-approved English [product film](product-video.md) and README link reached main through [PR #13](https://github.com/mysbryce/besh/pull/13), with all three head/main CI jobs passing. The maintainer subsequently requested a GitHub attachment player directly in README; source `0.20.6-alpha.0` embeds the unchanged approved film. Keep `marketing/` local and ignored; Git receives the final MP4 under `docs/assets`. The presentation does not execute the backend or certify production capacity.
 
 Keep the requested [platform stages and public acceptance gates](platform-plan.md) linked to each new milestone. Media/CMS/Structs, adapter breadth, product providers and payments remain planned. No reference framework is installed by this plan.
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-Basic CSV import, uploaded replacement, spreadsheet API generation, public Google Sheets refresh and source deletion passed their separate public language journeys and combined local delivery checks. Next translate source status/version/date and manual list refresh through a public journey. Advanced protection, broader number/date formatting and native-speaker review remain separate. Preserve portable platform/browser/notice limits; native load-test shutdown needs separate evidence before any process-drain claim.
+Basic CSV import, uploaded replacement, spreadsheet API generation, public Google Sheets refresh and source deletion passed their separate public language journeys and combined local delivery checks. Saved-source refresh/deletion and development-readiness PR #14 also passed all three head/main CI jobs. Next translate source status/version/date and manual list refresh through a public journey. Advanced protection, broader number/date formatting and native-speaker review remain separate. Preserve portable platform/browser/notice limits; native load-test shutdown needs separate evidence before any process-drain claim.
 
 Continue data-source/database panels, backups and advanced sharing/protection languages through separate public journeys. Technical errors, remaining dynamic completion notices and native-speaker review remain separate. Basic Studio translation is complete in 0.18.4; member/role translation is complete in 0.18.3; account/session and update settings are complete in 0.18.2. Date/number formatting outside account/update screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
 

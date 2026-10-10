@@ -65,6 +65,8 @@ Hash comparison proves delivered-byte consistency, not publisher signing. Defaul
 
 ## Automated checks and candidate artifacts
 
+Saved-source language and development-readiness [PR #14](https://github.com/mysbryce/besh/pull/14) merged normally as source `0.20.5-alpha.1` at `709eba9aabe2dcaaa7069f7f5d7962e70026b8c6`. [Exact-head run 38059504175](https://github.com/mysbryce/besh/actions/runs/38059504175) and [main run 38060044677](https://github.com/mysbryce/besh/actions/runs/38060044677) passed core, all 51 browser cases and compiled-portable jobs. The earlier failed candidate remains documented in [testing evidence](testing.md). This source patch does not publish new executable assets.
+
 Approved product-film [PR #13](https://github.com/mysbryce/besh/pull/13) merged normally as source version `0.20.4-alpha.0` at `a3f859f9ac758f9b824f35d13a586e27e4edfc29`. [Exact-head run 38054518624](https://github.com/mysbryce/besh/actions/runs/38054518624) and [main run 38054945566](https://github.com/mysbryce/besh/actions/runs/38054945566) passed core, browser and portable jobs. The source delivery links the tracked film from README and preserves ignored marketing tooling; it does not publish new executable assets.
 
 Protocol-language [PR #7](https://github.com/mysbryce/besh/pull/7) merged as `0.18.5-alpha.0` after [head run 38029443242](https://github.com/mysbryce/besh/actions/runs/38029443242) passed at `239403a`. The resulting [main run 38029705349](https://github.com/mysbryce/besh/actions/runs/38029705349) at `08e4484` also passed before local portable work resumed: 361 backend and 46 browser cases.
