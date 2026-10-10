@@ -6,8 +6,11 @@ import { Select } from './components/ui/select'
 import { Badge } from './components/ui/badge'
 import { api, type SessionRecord } from './lib/api'
 import { useStudio } from './store'
+import { translateMessage, useDateTime, useTranslation } from './i18n'
 
 export function Account() {
+  const { t } = useTranslation()
+  const dateTime = useDateTime()
   const { member, expiresAt, busy, task, message, clearSession } = useStudio()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -49,9 +52,9 @@ export function Account() {
     <>
       <div className="page-title">
         <div>
-          <div className="eyebrow">YOUR WORKSPACE ACCESS</div>
-          <h1>Account & sessions</h1>
-          <p>Manage your email sign-in and active browser sessions.</p>
+          <div className="eyebrow">{t('YOUR WORKSPACE ACCESS')}</div>
+          <h1>{t('Account & sessions')}</h1>
+          <p>{t('Manage your email sign-in and active browser sessions.')}</p>
         </div>
       </div>
       {error ? (
@@ -59,7 +62,7 @@ export function Account() {
           {error}
         </p>
       ) : null}
-      {loading ? <p>Loading your account…</p> : null}
+      {loading ? <p>{t('Loading your account…')}</p> : null}
       <form
         className="account-form form-stack"
         onSubmit={(event) => {
@@ -84,25 +87,28 @@ export function Account() {
               setCredential('')
               await refresh()
               message(
-                'Sign-in details saved. Other browser sessions were revoked.',
+                translateMessage(
+                  'Sign-in details saved. Other browser sessions were revoked.',
+                ),
               )
             } catch (reason) {
               setSaveError(
                 reason instanceof Error
                   ? reason.message
-                  : 'Could not save sign-in details.',
+                  : translateMessage('Could not save sign-in details.'),
               )
               throw reason
             }
           })
         }}
       >
-        <h2>Email & password</h2>
+        <h2>{t('Email & password')}</h2>
         <p>
-          Optional. Your workspace key still works. Saving new details signs out
-          your other browser sessions.
+          {t(
+            'Optional. Your workspace key still works. Saving new details signs out your other browser sessions.',
+          )}
         </p>
-        <label htmlFor="account-email">Account email</label>
+        <label htmlFor="account-email">{t('Account email')}</label>
         <Input
           id="account-email"
           type="email"
@@ -113,7 +119,7 @@ export function Account() {
           disabled={busy || loading}
           required
         />
-        <label htmlFor="account-password">New password</label>
+        <label htmlFor="account-password">{t('New password')}</label>
         <Input
           id="account-password"
           type="password"
@@ -125,11 +131,11 @@ export function Account() {
           disabled={busy || loading}
           required
         />
-        <small>Use 12 to 128 characters.</small>
-        <label htmlFor="account-proof">Confirm your identity</label>
+        <small>{t('Use 12 to 128 characters.')}</small>
+        <label htmlFor="account-proof">{t('Confirm your identity')}</label>
         <Select
           id="account-proof"
-          label="Confirm your identity"
+          label={t('Confirm your identity')}
           value={proof}
           disabled={busy || loading}
           onValueChange={(value) => {
@@ -137,12 +143,12 @@ export function Account() {
             setCredential('')
           }}
           options={[
-            { value: 'key', label: 'Workspace key' },
-            { value: 'password', label: 'Current password' },
+            { value: 'key', label: t('Workspace key') },
+            { value: 'password', label: t('Current password') },
           ]}
         />
         <label htmlFor="account-credential">
-          {proof === 'key' ? 'Your workspace key' : 'Current password'}
+          {t(proof === 'key' ? 'Your workspace key' : 'Current password')}
         </label>
         <Input
           id="account-credential"
@@ -158,20 +164,22 @@ export function Account() {
             {saveError}
           </p>
         ) : null}
-        <Button disabled={busy || loading}>Save sign-in details</Button>
+        <Button disabled={busy || loading}>{t('Save sign-in details')}</Button>
       </form>
       <div className="page-title session-heading">
         <div>
-          <h2>Active sessions</h2>
+          <h2>{t('Active sessions')}</h2>
           <p>
-            {member?.role === 'owner'
-              ? 'Owners can revoke sessions across this workspace.'
-              : 'Only your own active sessions appear here.'}
+            {t(
+              member?.role === 'owner'
+                ? 'Owners can revoke sessions across this workspace.'
+                : 'Only your own active sessions appear here.',
+            )}
           </p>
           {expiresAt ? (
             <p>
-              <ShieldCheck size={14} /> Session expires{' '}
-              {new Date(expiresAt).toLocaleString()}.
+              <ShieldCheck size={14} />{' '}
+              {t('Session expires {date}.', { date: dateTime(expiresAt) })}
             </p>
           ) : null}
         </div>
@@ -181,18 +189,18 @@ export function Account() {
           onClick={() => void task(refresh)}
         >
           <RefreshCw />
-          Refresh sessions
+          {t('Refresh sessions')}
         </Button>
       </div>
       <div className="data-table">
         <table>
           <thead>
             <tr>
-              <th>Member</th>
-              <th>Device</th>
-              <th>Last active</th>
-              <th>Expires</th>
-              <th>Access</th>
+              <th>{t('Member')}</th>
+              <th>{t('Device')}</th>
+              <th>{t('Last active')}</th>
+              <th>{t('Expires')}</th>
+              <th>{t('Access')}</th>
             </tr>
           </thead>
           <tbody>
@@ -201,25 +209,33 @@ export function Account() {
                 <td>{session.memberName}</td>
                 <td>
                   {session.current ? (
-                    <Badge variant="secondary">This device</Badge>
+                    <Badge variant="secondary">{t('This device')}</Badge>
                   ) : (
-                    'Other browser session'
+                    t('Other browser session')
                   )}
                 </td>
-                <td>{new Date(session.lastSeenAt).toLocaleString()}</td>
-                <td>{new Date(session.expiresAt).toLocaleString()}</td>
+                <td>{dateTime(session.lastSeenAt)}</td>
+                <td>{dateTime(session.expiresAt)}</td>
                 <td>
                   <Button
                     variant="ghost"
                     size="sm"
                     disabled={busy}
-                    aria-label={`Revoke session for ${session.memberName}${session.current ? ' on this device' : ''}`}
+                    aria-label={t(
+                      session.current
+                        ? 'Revoke session for {name} on this device'
+                        : 'Revoke session for {name}',
+                      { name: session.memberName },
+                    )}
                     onClick={() => {
                       if (
                         !window.confirm(
-                          session.current
-                            ? 'Revoke this session and sign out?'
-                            : `Revoke this browser session for ${session.memberName}?`,
+                          t(
+                            session.current
+                              ? 'Revoke this session and sign out?'
+                              : 'Revoke this browser session for {name}?',
+                            { name: session.memberName },
+                          ),
                         )
                       )
                         return
@@ -227,17 +243,19 @@ export function Account() {
                         await api(`/api/sessions/${session.id}`, '', 'DELETE')
                         if (session.current)
                           clearSession(
-                            'This session was revoked. Sign in again.',
+                            translateMessage(
+                              'This session was revoked. Sign in again.',
+                            ),
                           )
                         else {
                           await refresh()
-                          message('Browser session revoked.')
+                          message(translateMessage('Browser session revoked.'))
                         }
                       })
                     }}
                   >
                     <Trash2 />
-                    Revoke
+                    {t('Revoke')}
                   </Button>
                 </td>
               </tr>
@@ -245,7 +263,7 @@ export function Account() {
           </tbody>
         </table>
         {!sessions.length && !loading ? (
-          <p className="table-empty">No active sessions.</p>
+          <p className="table-empty">{t('No active sessions.')}</p>
         ) : null}
       </div>
     </>

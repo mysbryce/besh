@@ -488,7 +488,9 @@ export function App({
                   {page === 'members'
                     ? 'Only the owner can manage members and roles.'
                     : page === 'updates'
-                      ? 'Only the owner can manage Besh release settings and update notices.'
+                      ? t(
+                          'Only the owner can manage Besh release settings and update notices.',
+                        )
                       : page === 'tenant-protection'
                         ? 'Only the owner can approve tenant identities and row protection.'
                         : page === 'load-tests' &&

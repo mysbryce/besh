@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { create } from 'zustand'
 import { loadMessages, messagesByLanguage } from './locales'
 
@@ -116,4 +116,26 @@ export function useTranslation() {
     language,
     t,
   }
+}
+
+export function useDateTime() {
+  const language = useLanguage((state) => state.language)
+  const formatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(language, {
+        calendar: 'gregory',
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }),
+    [language],
+  )
+  return useCallback(
+    (value: string | number) => {
+      const date = new Date(value)
+      return Number.isNaN(date.getTime())
+        ? date.toLocaleString(language)
+        : formatter.format(date)
+    },
+    [formatter, language],
+  )
 }

@@ -1,4 +1,83 @@
 const messages: Record<string, string> = {
+  'Update available': '有新版本可用',
+  'No newer release found': '未找到更新的版本',
+  'No matching releases found': '未找到符合设置的版本',
+  'Release check failed': '版本检查失败',
+  'Owner access required to manage Besh updates.':
+    '管理 Besh 更新需要所有者权限。',
+  'Could not load update information.': '无法加载更新信息。',
+  'YOUR BESH INSTALLATION': '你安装的 Besh',
+  'Besh updates': 'Besh 更新',
+  'Check public GitHub releases when you are ready.':
+    '准备就绪后，检查 GitHub 上的公开发布版本。',
+  'Discard unsaved update settings and refresh?':
+    '放弃未保存的更新设置并刷新？',
+  'Refresh update settings': '刷新更新设置',
+  'Loading update settings…': '正在加载更新设置…',
+  'Update settings saved. Check releases to get a fresh result.':
+    '更新设置已保存。检查版本以获取最新结果。',
+  'Release settings': '版本设置',
+  'GitHub repository': 'GitHub 仓库',
+  'Use a public repository URL. Private repositories and access tokens are not supported.':
+    '请使用公开仓库的 URL。不支持私有仓库和访问令牌。',
+  'Include preview releases': '包含预览版本',
+  'Show alpha, beta and other prereleases alongside stable versions.':
+    '同时显示稳定版本以及 alpha、beta 和其他预发布版本。',
+  'Save update settings': '保存更新设置',
+  'Save your changes before checking releases.': '请先保存更改，再检查版本。',
+  'Release status': '版本状态',
+  'Installed {version}': '已安装 {version}',
+  'No release check yet': '尚未检查版本',
+  'Last checked {date}': '上次检查：{date}',
+  'Preview release': '预览版本',
+  'View GitHub release': '查看 GitHub 发布版本',
+  'A check runs only when you choose it. Opening this page uses saved information.':
+    '只有你主动选择时才会检查。打开此页面使用已保存的信息。',
+  'Release check finished. Review the result below.':
+    '版本检查已完成。请查看下方结果。',
+  'Check releases': '检查版本',
+  'One check per minute. Checks inspect the first 20 published GitHub releases.':
+    '每分钟可检查一次。检查范围为 GitHub 上前 20 个已发布版本。',
+  'This page reports versions. It does not install updates or verify release compatibility. Review release notes and back up data before upgrading.':
+    '此页面仅报告版本信息，不会安装更新或验证版本兼容性。升级前请阅读版本说明并备份数据。',
+  'Only the owner can manage Besh release settings and update notices.':
+    '只有所有者可以管理 Besh 版本设置和更新通知。',
+  'YOUR WORKSPACE ACCESS': '你的工作区访问权限',
+  'Manage your email sign-in and active browser sessions.':
+    '管理你的邮箱登录信息和活跃浏览器会话。',
+  'Loading your account…': '正在加载你的账户…',
+  'Sign-in details saved. Other browser sessions were revoked.':
+    '登录信息已保存。其他浏览器会话已撤销。',
+  'Could not save sign-in details.': '无法保存登录信息。',
+  'Optional. Your workspace key still works. Saving new details signs out your other browser sessions.':
+    '此设置可选。你的工作区密钥仍然有效。保存新信息会退出你的其他浏览器会话。',
+  'Account email': '账户邮箱',
+  'Use 12 to 128 characters.': '使用 12 到 128 个字符。',
+  'Confirm your identity': '确认你的身份',
+  'Current password': '当前密码',
+  'Your workspace key': '你的工作区密钥',
+  'Save sign-in details': '保存登录信息',
+  'Active sessions': '活跃会话',
+  'Owners can revoke sessions across this workspace.':
+    '所有者可以撤销此工作区内的会话。',
+  'Only your own active sessions appear here.': '此处仅显示你自己的活跃会话。',
+  'Session expires {date}.': '会话将于 {date} 到期。',
+  'Refresh sessions': '刷新会话',
+  Member: '成员',
+  Device: '设备',
+  'Last active': '最近活跃时间',
+  Expires: '到期时间',
+  Access: '访问权限',
+  'This device': '此设备',
+  'Other browser session': '其他浏览器会话',
+  'Revoke session for {name} on this device': '撤销 {name} 在此设备上的会话',
+  'Revoke session for {name}': '撤销 {name} 的会话',
+  'Revoke this session and sign out?': '撤销此会话并退出登录？',
+  'Revoke this browser session for {name}?': '撤销 {name} 的此浏览器会话？',
+  'This session was revoked. Sign in again.': '此会话已撤销。请重新登录。',
+  'Browser session revoked.': '浏览器会话已撤销。',
+  Revoke: '撤销',
+  'No active sessions.': '没有活跃会话。',
   Language: '语言',
   'Use device language': '使用设备语言',
   Appearance: '外观',

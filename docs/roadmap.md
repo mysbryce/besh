@@ -2,12 +2,20 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.18.2: account and update languages
+
+- All seven supported languages cover account/session guidance, proof choices, actions, confirmations and update settings/status labels.
+- Session and release-check dates use the selected language and browser timezone with a Gregorian calendar. Exact server deadlines and stored timestamps are unchanged.
+- Language selection preserves unsaved inputs and authored names/titles, performs no account/settings write or release check, and never changes owner-only update access.
+- Real browser journeys and light/dark native phone previews cover these workflows. Technical server errors and other management panels still need translation; native-speaker review remains pending. See [languages](localization.md) and [testing](testing.md).
+- The complete preview passed all 24 stories and captured 961 states, retaining all 937 previous identities. All 24 new Account/Updates originals passed independent visual review.
+
 ## Implemented in 0.18.1: compact navigation and controls
 
 - Desktop sidebar and dropdown rows use 36px sizing with centered chevrons. Full authored and translated labels wrap; phone controls retain 44px targets.
 - Light/dark dashboard and gallery scrollbars use narrow rounded thumbs without native arrow buttons. High-contrast mode retains operating-system controls. Keyboard selection, focus return and Radix scrolling remain available.
 - Public geometry reproduced oversized controls and a member-form cascade override before correction. The two focused browser stories and all 36 normal stories passed; four-worker acceptance took 107.97 seconds. See [design](design.md) and [testing](testing.md).
-- The closing-menu capture race passed its exact regression before the complete 22-story walkthrough passed. The gallery has 937 screenshots, retaining all previous 927 identities and adding ten navigation/menu states.
+- The closing-menu capture race passed its exact regression before the complete 22-story walkthrough passed. That delivery captured 937 screenshots, retaining all previous 927 identities and adding ten navigation/menu states.
 - Main requires a PR. Dependency deliveries also need version/changelog updates before merging; preserve this policy and runner serialization. See [release workflow](releases.md).
 - Reviewed checkout/artifact action updates were normally merged with patch release history. Exact-head checks passed; remote candidate delivery remains blocked by GitHub's reported storage quota, with separate local bundle inspection. Rerun the candidate after account/service capacity is available; no successful remote artifact is claimed.
 
@@ -256,7 +264,7 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-First finish translation of remaining Studio guidance, management panels and technical errors, then obtain native-speaker review. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
+Next translate remaining Studio guidance, member/role controls, data-source/database panels, backups and advanced protection panels, then technical errors and native-speaker review. Account/session and update settings translation is complete in 0.18.2; date/number formatting outside these screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
 
 1. **Product authorization and shared resources.** Preserve member-field intersections and the narrow workspace invitation lifecycle. Next add reviewed product accounts/sessions/linking, workspace email verification/recovery, resource-management sharing and multi-workspace isolation through separate lifecycles. Joins, social effects, public endpoints and broader WS graphs remain separate. Caller fields and static projections never establish identity or authorization.
 2. **Data connections and query tools.** Extend reviewed adapter capabilities and encrypted server-held credentials to PostgreSQL and MySQL/MariaDB; add MongoDB, Supabase, and Firebase with their own transaction, identity, query, and backup semantics. Add live SQLite connection/write capabilities separately from the uploaded-copy read adapter. Ship bounded parameterized read/write forms, pagination, previews, and explicit transactions one adapter at a time. Add migration dry runs, backup gates, restoration checks, and destructive-change review before schema changes. Private Sheets OAuth, write-back, and scheduled synchronization follow their connection/permission work.

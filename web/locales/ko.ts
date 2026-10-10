@@ -1,4 +1,86 @@
 const messages: Record<string, string> = {
+  'Update available': '새 버전 사용 가능',
+  'No newer release found': '더 새로운 릴리스가 없습니다',
+  'No matching releases found': '설정에 맞는 릴리스가 없습니다',
+  'Release check failed': '릴리스 확인 실패',
+  'Owner access required to manage Besh updates.':
+    'Besh 업데이트를 관리하려면 소유자 권한이 필요합니다.',
+  'Could not load update information.': '업데이트 정보를 불러오지 못했습니다.',
+  'YOUR BESH INSTALLATION': '설치된 BESH',
+  'Besh updates': 'Besh 업데이트',
+  'Check public GitHub releases when you are ready.':
+    '준비되면 GitHub의 공개 릴리스를 확인하세요.',
+  'Discard unsaved update settings and refresh?':
+    '저장하지 않은 업데이트 설정을 버리고 새로 고칠까요?',
+  'Refresh update settings': '업데이트 설정 새로 고침',
+  'Loading update settings…': '업데이트 설정을 불러오는 중…',
+  'Update settings saved. Check releases to get a fresh result.':
+    '업데이트 설정을 저장했습니다. 최신 결과를 보려면 릴리스를 확인하세요.',
+  'Release settings': '릴리스 설정',
+  'GitHub repository': 'GitHub 저장소',
+  'Use a public repository URL. Private repositories and access tokens are not supported.':
+    '공개 저장소 URL을 사용하세요. 비공개 저장소와 접근 토큰은 지원하지 않습니다.',
+  'Include preview releases': '미리 보기 릴리스 포함',
+  'Show alpha, beta and other prereleases alongside stable versions.':
+    '안정 버전과 함께 alpha, beta 및 기타 사전 릴리스를 표시합니다.',
+  'Save update settings': '업데이트 설정 저장',
+  'Save your changes before checking releases.':
+    '릴리스를 확인하기 전에 변경 사항을 저장하세요.',
+  'Release status': '릴리스 상태',
+  'Installed {version}': '설치된 버전: {version}',
+  'No release check yet': '아직 릴리스를 확인하지 않았습니다',
+  'Last checked {date}': '마지막 확인: {date}',
+  'Preview release': '미리 보기 릴리스',
+  'View GitHub release': 'GitHub 릴리스 보기',
+  'A check runs only when you choose it. Opening this page uses saved information.':
+    '직접 선택할 때만 확인합니다. 이 페이지를 열면 저장된 정보를 사용합니다.',
+  'Release check finished. Review the result below.':
+    '릴리스 확인을 마쳤습니다. 아래 결과를 검토하세요.',
+  'Check releases': '릴리스 확인',
+  'One check per minute. Checks inspect the first 20 published GitHub releases.':
+    '1분에 한 번 확인할 수 있습니다. GitHub에 게시된 처음 20개 릴리스를 확인합니다.',
+  'This page reports versions. It does not install updates or verify release compatibility. Review release notes and back up data before upgrading.':
+    '이 페이지는 버전 정보를 알려줍니다. 업데이트를 설치하거나 릴리스 호환성을 검증하지 않습니다. 업그레이드 전에 릴리스 노트를 검토하고 데이터를 백업하세요.',
+  'Only the owner can manage Besh release settings and update notices.':
+    '소유자만 Besh 릴리스 설정과 업데이트 알림을 관리할 수 있습니다.',
+  'YOUR WORKSPACE ACCESS': '내 작업 공간 접근',
+  'Manage your email sign-in and active browser sessions.':
+    '이메일 로그인 정보와 활성 브라우저 세션을 관리하세요.',
+  'Loading your account…': '계정을 불러오는 중…',
+  'Sign-in details saved. Other browser sessions were revoked.':
+    '로그인 정보를 저장했습니다. 다른 브라우저 세션은 해제되었습니다.',
+  'Could not save sign-in details.': '로그인 정보를 저장하지 못했습니다.',
+  'Optional. Your workspace key still works. Saving new details signs out your other browser sessions.':
+    '선택 사항입니다. 작업 공간 키는 계속 사용할 수 있습니다. 새 정보를 저장하면 다른 브라우저 세션에서 로그아웃됩니다.',
+  'Account email': '계정 이메일',
+  'Use 12 to 128 characters.': '12~128자를 사용하세요.',
+  'Confirm your identity': '본인 확인',
+  'Current password': '현재 비밀번호',
+  'Your workspace key': '내 작업 공간 키',
+  'Save sign-in details': '로그인 정보 저장',
+  'Active sessions': '활성 세션',
+  'Owners can revoke sessions across this workspace.':
+    '소유자는 이 작업 공간의 세션을 해제할 수 있습니다.',
+  'Only your own active sessions appear here.': '내 활성 세션만 표시됩니다.',
+  'Session expires {date}.': '세션 만료: {date}.',
+  'Refresh sessions': '세션 새로 고침',
+  Member: '멤버',
+  Device: '기기',
+  'Last active': '최근 활동',
+  Expires: '만료',
+  Access: '접근',
+  'This device': '이 기기',
+  'Other browser session': '다른 브라우저 세션',
+  'Revoke session for {name} on this device': '이 기기의 {name} 세션 해제',
+  'Revoke session for {name}': '{name} 세션 해제',
+  'Revoke this session and sign out?': '이 세션을 해제하고 로그아웃할까요?',
+  'Revoke this browser session for {name}?':
+    '{name}의 이 브라우저 세션을 해제할까요?',
+  'This session was revoked. Sign in again.':
+    '이 세션이 해제되었습니다. 다시 로그인하세요.',
+  'Browser session revoked.': '브라우저 세션을 해제했습니다.',
+  Revoke: '해제',
+  'No active sessions.': '활성 세션이 없습니다.',
   Language: '언어',
   'Use device language': '기기 언어 사용',
   Appearance: '화면 스타일',

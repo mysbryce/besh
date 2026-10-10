@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { chooseManagementLanguage } from './management-locale-previews'
 
 test.describe.configure({ lock: 'port-4318' })
 
@@ -122,6 +123,33 @@ test('owners save release settings and check notices without installing updates'
     const settings = await (
       await page.request.get(`${backend}/api/updates`, { headers })
     ).json()
+    await chooseManagementLanguage(page, 'ไทย')
+    await expect(page.locator('html')).toHaveAttribute('lang', 'th')
+    await expect(
+      page.getByText('มีเวอร์ชันใหม่', { exact: true }),
+    ).toBeVisible()
+    await expect(
+      page.getByText('Release status', { exact: true }),
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'ดูเวอร์ชันบน GitHub', exact: true }),
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/example/besh/releases/tag/v0.99.0-beta.2',
+    )
+    const checkedAt = await page.evaluate(
+      (timestamp) =>
+        new Intl.DateTimeFormat('th', {
+          calendar: 'gregory',
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }).format(new Date(timestamp)),
+      settings.lastCheck.checkedAt,
+    )
+    await expect(
+      page.locator('section.load-test-card p').first(),
+    ).toContainText(checkedAt)
+    await chooseManagementLanguage(page, 'English')
     await page.request.put(`${backend}/api/updates`, {
       headers,
       data: {

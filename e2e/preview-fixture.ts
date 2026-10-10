@@ -10,7 +10,7 @@ export type PreviewCapture = (
   group: string,
   title: string,
   detail: string,
-  options?: { fullPage?: boolean },
+  options?: { fullPage?: boolean; region?: 'listbox' },
 ) => Promise<void>
 
 type Workspace = {
@@ -126,26 +126,38 @@ export function storyCapture(page: Page, story: PreviewStory) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/-$/, '')}.png`
     const fullPage = options?.fullPage ?? !dropdownOpen
-    await page.screenshot({
-      path: join(directory, image),
-      fullPage,
-      // Full-page compositing must not reflow controls after masks are measured.
-      style: fullPage
-        ? 'html { scrollbar-gutter: stable !important }'
-        : undefined,
-      animations: 'disabled',
-      mask: [
-        page.locator('input[type="password"]'),
-        page.locator('[data-private="true"]'),
-        page.getByLabel('Your owner key', { exact: true }),
-        page.getByLabel('Workspace token', { exact: true }),
-        page.getByLabel('Setup key', { exact: true }),
-        page.getByLabel('New member token', { exact: true }),
-        page.getByLabel('New API key', { exact: true }),
-        page.getByLabel('Invitation link', { exact: true }),
-      ],
-      maskColor: '#dfe4ec',
-    })
+    if (options?.region === 'listbox') {
+      const menu = page.getByRole('listbox')
+      await menu.screenshot({
+        path: join(directory, image),
+        animations: 'disabled',
+        mask: [
+          menu.locator('input[type="password"]'),
+          menu.locator('[data-private="true"]'),
+        ],
+        maskColor: '#dfe4ec',
+      })
+    } else
+      await page.screenshot({
+        path: join(directory, image),
+        fullPage,
+        // Full-page compositing must not reflow controls after masks are measured.
+        style: fullPage
+          ? 'html { scrollbar-gutter: stable !important }'
+          : undefined,
+        animations: 'disabled',
+        mask: [
+          page.locator('input[type="password"]'),
+          page.locator('[data-private="true"]'),
+          page.getByLabel('Your owner key', { exact: true }),
+          page.getByLabel('Workspace token', { exact: true }),
+          page.getByLabel('Setup key', { exact: true }),
+          page.getByLabel('New member token', { exact: true }),
+          page.getByLabel('New API key', { exact: true }),
+          page.getByLabel('Invitation link', { exact: true }),
+        ],
+        maskColor: '#dfe4ec',
+      })
     records.push({ page: group, title, detail, image })
     writeFileSync(
       join(directory, 'manifest.json'),

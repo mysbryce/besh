@@ -565,6 +565,13 @@ export async function tenantFieldProfilePreviews({
       exact: true,
     }),
   ).toContainText('Unprotected')
+  // The selected text already matches before the global refresh completes.
+  await expect(
+    resource.getByRole('combobox', {
+      name: 'Row protection mode',
+      exact: true,
+    }),
+  ).toBeEnabled()
   expect(automaticProfileReads).toBe(0)
   await refreshSourceProfile()
   await expect(profile).toContainText('Prospective API fields')
