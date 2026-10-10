@@ -4,6 +4,21 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.18.3-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Translate member forms, role assignments, permission descriptions and confirmations in all seven dashboard languages.
+- Preserve authored names, credentials, API selections and dependency choices when switching languages; save and revoke actions remain explicit.
+- Mask one-time member tokens in previews independently of their translated label.
+- Keep long translated role headings and actions inside their phone cards.
+- Mint the development WebSocket ticket after the browser interface is ready, keeping cold page loading outside its existing lifetime.
+- Drain forwarded generated-backend browser requests before stopping their isolated server, releasing held responses even when a preview capture fails.
+
+### Changed
+
+- Add real member/role language journeys and light/dark phone previews, including selected access and owner-only boundaries.
+
 ## 0.18.2-alpha.0 — 2026-10-10
 
 ### Fixed

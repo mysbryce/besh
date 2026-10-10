@@ -1,4 +1,174 @@
 const messages: Record<string, string> = {
+  'Your team': 'Ваша команда',
+  'WORKSPACE CONTROL': 'УПРАВЛЕНИЕ РАБОЧИМ ПРОСТРАНСТВОМ',
+  'Member keys manage the workspace. Use API keys for published endpoint callers.':
+    'Ключи участников управляют рабочим пространством. Для вызова опубликованных эндпоинтов используйте ключи API.',
+  'Loading workspace records…': 'Загрузка записей рабочего пространства…',
+  'Only the owner can manage members and roles.':
+    'Только владелец может управлять участниками и ролями.',
+  'Refresh Members and review an active tenant before creating this member.':
+    'Обновите страницу участников и проверьте активного арендатора перед созданием этого участника.',
+  'Create {name} with assigned tenant {tenant}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.':
+    'Создать участника {name} с назначенным арендатором {tenant}? Защищённые действия API используют эту идентичность. Разрешения API и разрешения USE для зависимостей остаются независимыми. Назначение и учётные данные участника создаются вместе.',
+  'Member created. Save their token; it is shown once.':
+    'Участник создан. Сохраните его токен: он показывается только один раз.',
+  Name: 'Имя',
+  'Member name': 'Имя участника',
+  Role: 'Роль',
+  'Member role': 'Роль участника',
+  'Member email (optional)': 'Электронная почта участника (необязательно)',
+  'Member password': 'Пароль участника',
+  '12 to 128 characters. Leave email blank for key-only access.':
+    'От 12 до 128 символов. Оставьте электронную почту пустой для доступа только по ключу.',
+  'New member API access': 'Доступ нового участника к API',
+  'New member tenant': 'Арендатор нового участника',
+  'No tenant assigned': 'Арендатор не назначен',
+  'Optional initial assignment. Review before adding the member; no separate credential creation and reassignment occurs.':
+    'Необязательное первоначальное назначение. Проверьте его до добавления участника; отдельного создания учётных данных с последующим переназначением не происходит.',
+  'Add member': 'Добавить участника',
+  'Save this member token': 'Сохраните этот токен участника',
+  'New member token': 'Новый токен участника',
+  'Member token copied.': 'Токен участника скопирован.',
+  Copy: 'Копировать',
+  'I saved it': 'Я сохранил',
+  'Opening invitations…': 'Открытие приглашений…',
+  'API access': 'Доступ к API',
+  'Tenant identity': 'Идентичность арендатора',
+  'Invite sign-in': 'Пригласить настроить вход',
+  'Bootstrap owner': 'Первоначальный владелец',
+  'Revoke access for {name}?': 'Отозвать доступ участника {name}?',
+  'Member access revoked.': 'Доступ участника отозван.',
+  'Selected APIs · {count}': 'Выбранные API · {count}',
+  'Manage APIs for {name}': 'Управлять API участника {name}',
+  'Owner access cannot be restricted.': 'Доступ владельца нельзя ограничить.',
+  'Owner reviews a tenant for each protected action.':
+    'Владелец проверяет арендатора для каждого защищённого действия.',
+  'Assigned tenant': 'Назначенный арендатор',
+  'Manage tenant for {name}': 'Управлять арендатором участника {name}',
+  'Viewer · read APIs': 'Наблюдатель · чтение API',
+  'Editor · build and test': 'Редактор · создание и тестирование',
+  '{name} · custom role': '{name} · пользовательская роль',
+  'Role for {name}': 'Роль участника {name}',
+  "Change {name}'s role from {current} to {next}? This ends their active browser sessions. Their member key immediately uses the new permissions.":
+    'Изменить роль участника {name} с {current} на {next}? Это завершит его активные сеансы браузера. Его ключ участника немедленно начнёт использовать новые разрешения.',
+  'Member role updated. Their browser sessions were ended.':
+    'Роль участника обновлена. Его сеансы браузера завершены.',
+  'Could not update member role.': 'Не удалось обновить роль участника.',
+  'Change role': 'Изменить роль',
+  'Selected APIs only': 'Только выбранные API',
+  'Selected sharing limits API scope. Use Viewer or a custom role with only API, runtime-key and load-test actions. Actions still require separate role grants. It grants no API creation or global resource management.':
+    'Выборочный общий доступ ограничивает область API. Используйте роль наблюдателя или пользовательскую роль только с действиями API, ключей для вызовов и нагрузочных тестов. Для действий по-прежнему нужны отдельные разрешения роли. Это не даёт права создавать API или управлять глобальными ресурсами.',
+  'This role has actions beyond Read APIs and selected API operations. Choose an eligible custom role or Viewer, or explicitly select All APIs before continuing.':
+    'Эта роль содержит действия помимо чтения API и операций с выбранными API. Выберите подходящую пользовательскую роль или роль наблюдателя либо явно выберите все API перед продолжением.',
+  'Choose APIs to share': 'Выберите API для общего доступа',
+  'Share {name}': 'Поделиться {name}',
+  '{count} APIs selected.': 'Выбрано API: {count}.',
+  'No APIs selected. This member can sign in, but sees no APIs.':
+    'API не выбраны. Этот участник может войти, но не видит API.',
+  'Dependencies these APIs may use':
+    'Зависимости, которые могут использовать эти API',
+  'USE permits these selected APIs to read chosen dependency data or trigger product login when the role allows testing, publishing or callers. It can expose stored data through the API. It grants no dependency preview or management. Row, column and tenant authorization remain separate; selecting APIs or dependencies does not provide them.':
+    'Разрешение USE позволяет выбранным API читать данные выбранных зависимостей или запускать вход в продукт, когда роль разрешает тестирование, публикацию или вызовы API. Оно может раскрывать сохранённые данные через API, но не даёт доступа к просмотру или управлению зависимостями. Авторизация строк, столбцов и арендаторов остаётся отдельной; выбор API или зависимостей её не предоставляет.',
+  'Use spreadsheet sources': 'Использовать источники таблиц',
+  'Use SQLite copies': 'Использовать копии SQLite',
+  'Use product login connections': 'Использовать подключения входа в продукт',
+  'Use spreadsheet {name}': 'Использовать таблицу {name}',
+  'Use SQLite copy {name}': 'Использовать копию SQLite {name}',
+  'Use product login {name}': 'Использовать вход в продукт {name}',
+  'Structure only · version {version}': 'Только структура · версия {version}',
+  'No saved dependencies in this group.':
+    'В этой группе нет сохранённых зависимостей.',
+  '{count} dependencies allowed for USE.':
+    'Зависимостей с разрешением USE: {count}.',
+  'All current and future APIs. Actions still follow the assigned role.':
+    'Все существующие и будущие API. Действия по-прежнему определяются назначенной ролью.',
+  'Custom roles': 'Пользовательские роли',
+  'New role': 'Новая роль',
+  'Choose actions for this local workspace. Every member can manage their own account and sessions. Member and role administration stays with the owner.':
+    'Выберите действия для этого локального рабочего пространства. Каждый участник может управлять своим аккаунтом и сеансами. Управление участниками и ролями остаётся у владельца.',
+  'Actions are separate: editing, testing, and publication each need their own grant. Reading related APIs or connections is needed to choose them in forms.':
+    'Действия независимы: для редактирования, тестирования и публикации нужны отдельные разрешения. Для выбора связанных API или подключений в формах нужен доступ к их чтению.',
+  'Loading permission choices…': 'Загрузка доступных разрешений…',
+  'Retry permission choices': 'Загрузить разрешения повторно',
+  'Save changes to {name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.':
+    'Сохранить изменения роли {name}? Изменённые разрешения немедленно применяются к ключам участников и завершают затронутые сеансы браузера. Перед продолжением проверьте все выбранные разрешения.',
+  'Role updated. Changed grants end affected browser sessions.':
+    'Роль обновлена. Изменённые разрешения завершают затронутые сеансы браузера.',
+  'Role created. Assign it to a member when ready.':
+    'Роль создана. Назначьте её участнику, когда будете готовы.',
+  'Could not save role.': 'Не удалось сохранить роль.',
+  'Edit {name} · version {version}': 'Изменить {name} · версия {version}',
+  'Create custom role': 'Создать пользовательскую роль',
+  'Role name': 'Название роли',
+  'No workspace action grants. Members with this role can still sign in and manage their own account.':
+    'Разрешения на действия в рабочем пространстве не выданы. Участники с этой ролью по-прежнему могут входить и управлять своим аккаунтом.',
+  'Backup access exposes the entire workspace, including saved data and sensitive credential records. Keep downloads private.':
+    'Доступ к резервным копиям раскрывает всё рабочее пространство, включая сохранённые данные и конфиденциальные записи учётных данных. Не передавайте скачанные файлы посторонним.',
+  'Load testing repeatedly executes live APIs. Configured writes can change product data. Grant only to trusted operators.':
+    'Нагрузочное тестирование многократно выполняет действующие API. Настроенные операции записи могут менять данные продукта. Выдавайте разрешение только доверенным операторам.',
+  'Save role': 'Сохранить роль',
+  'Cancel role changes': 'Отменить изменения роли',
+  'If another owner session changes this role, refresh the members page and reopen the role before saving again.':
+    'Если другой сеанс владельца изменит эту роль, обновите страницу участников и заново откройте роль перед повторным сохранением.',
+  'Custom · v{version}': 'Пользовательская · v{version}',
+  'Account and own sessions only': 'Только свой аккаунт и сеансы',
+  'Edit {name}': 'Изменить {name}',
+  'Delete role {name}? This cannot be undone. Roles assigned to members cannot be deleted.':
+    'Удалить роль {name}? Это действие нельзя отменить. Роли, назначенные участникам, удалить нельзя.',
+  'Role deleted.': 'Роль удалена.',
+  'Could not delete role.': 'Не удалось удалить роль.',
+  'Delete {name}': 'Удалить {name}',
+  'No custom roles yet. Built-in owner, editor, and viewer roles stay available.':
+    'Пользовательских ролей пока нет. Встроенные роли владельца, редактора и наблюдателя остаются доступны.',
+  'Read APIs': 'Читать API',
+  'Edit APIs': 'Редактировать API',
+  'Test drafts': 'Тестировать черновики',
+  'Publish and roll back': 'Публиковать и откатывать',
+  'Read data sources': 'Читать источники данных',
+  'Manage data sources': 'Управлять источниками данных',
+  'Read database copies': 'Читать копии баз данных',
+  'Manage database copies': 'Управлять копиями баз данных',
+  'Read product login connections': 'Читать подключения входа в продукт',
+  'Manage product login connections': 'Управлять подключениями входа в продукт',
+  'Manage runtime API keys': 'Управлять ключами API для вызовов',
+  'Read audit history': 'Читать историю аудита',
+  'Manage workspace backups':
+    'Управлять резервными копиями рабочего пространства',
+  'Read migration history': 'Читать историю миграций',
+  'Run load tests': 'Запускать нагрузочные тесты',
+  APIs: 'API',
+  Databases: 'Базы данных',
+  Security: 'Безопасность',
+  'Read authorized API drafts, release history, OpenAPI documents, client examples, and generated backend source.':
+    'Читать разрешённые черновики API, историю выпусков, документы OpenAPI, примеры клиентов и сгенерированный исходный код серверной части.',
+  'Create and save API drafts. Selected access permits editing existing shared APIs with explicit dependency use, but cannot create APIs.':
+    'Создавать и сохранять черновики API. Выборочный доступ позволяет редактировать существующие общие API при явном разрешении на использование зависимостей, но не позволяет создавать API.',
+  'Execute saved REST and GraphQL drafts, including their configured data and product-login steps. Selected access also requires explicit dependency use.':
+    'Выполнять сохранённые черновики REST и GraphQL, включая настроенные шаги чтения данных и входа в продукт. Выборочный доступ также требует явного разрешения на использование зависимостей.',
+  'Change live API behavior by publishing drafts or rolling back releases.':
+    'Менять поведение действующих API, публикуя черновики или откатывая выпуски.',
+  'Read source metadata and saved rows.':
+    'Читать метаданные источников и сохранённые строки.',
+  'Import, replace, refresh, and delete sources. Replacing data changes what published APIs read.':
+    'Импортировать, заменять, обновлять и удалять источники. Замена данных меняет содержимое, которое читают опубликованные API.',
+  'Read uploaded SQLite copy metadata and selected rows. Generated APIs may expose their configured data.':
+    'Читать метаданные загруженных копий SQLite и выбранные строки. Сгенерированные API могут раскрывать настроенные в них данные.',
+  'Upload, check, and delete immutable SQLite copies. Workspace backups include all uploaded data.':
+    'Загружать, проверять и удалять неизменяемые копии SQLite. Резервные копии рабочего пространства включают все загруженные данные.',
+  'Read product-login connection metadata without provider secrets.':
+    'Читать метаданные подключений входа в продукт без секретов провайдера.',
+  'Create, update, and delete server-held provider credentials. Changes affect live product login.':
+    'Создавать, обновлять и удалять учётные данные провайдера, хранящиеся на сервере. Изменения влияют на действующий вход в продукт.',
+  'Issue, list, replace, and revoke runtime keys. Selected access manages issuer-bound keys for shared APIs; issuance and replacement require dependency use and preserve release pins.':
+    'Выдавать, перечислять, заменять и отзывать ключи для вызовов API. Выборочный доступ позволяет управлять ключами общих API, привязанными к выдавшему их участнику; выдача и замена требуют разрешения на использование зависимостей и сохраняют привязки к выпускам.',
+  'Read workspace activity and security events.':
+    'Читать события активности и безопасности рабочего пространства.',
+  'Create, list, and download complete workspace backups containing saved data and sensitive credential records.':
+    'Создавать, перечислять и скачивать полные резервные копии рабочего пространства, содержащие сохранённые данные и конфиденциальные записи учётных данных.',
+  'Read the control database migration history.':
+    'Читать историю миграций управляющей базы данных.',
+  'List published targets and load-test history; start and cancel bounded local runs. Runs execute published APIs and may cause their configured writes.':
+    'Просматривать опубликованные цели и историю нагрузочных тестов; запускать и отменять ограниченные локальные запуски. Запуски выполняют опубликованные API и могут вызывать настроенные в них операции записи.',
   'Update available': 'Доступно обновление',
   'No newer release found': 'Более новый выпуск не найден',
   'No matching releases found': 'Подходящие выпуски не найдены',

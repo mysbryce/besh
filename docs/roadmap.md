@@ -2,6 +2,14 @@
 
 This is the product plan. Planned features are not implementation claims.
 
+## Implemented in 0.18.3: member and role languages
+
+- Basic member/role forms, all permission descriptions, initial API/dependency choices and confirmations support all seven languages.
+- Language changes preserve authored names, credentials, grants and selected resource IDs without reading or writing team state. Built-in roles translate by their identity; custom role names remain literal.
+- Explicit saves use the actual API. Canceled changes preserve stored permissions; selected navigation and owner-only administration remain enforced. Member receipts use a language-independent preview mask.
+- All 42 normal browser cases and the complete 26-story, 988-state preview passed. All 27 new team originals and affected legacy/phone frames passed independent visual review after correcting a narrow Russian header.
+- Studio guidance, advanced sharing/tenant editors, other management panels and technical errors remain next work. Native-speaker review remains pending. See [languages](localization.md) and [testing](testing.md).
+
 ## Implemented in 0.18.2: account and update languages
 
 - All seven supported languages cover account/session guidance, proof choices, actions, confirmations and update settings/status labels.
@@ -264,7 +272,7 @@ Each feature needs observable acceptance criteria, a failing test followed by a 
 
 Execute the remaining platform in this order. Finish each public-interface test and implementation before moving to the next slice. Keep completed behavior separate from configured or planned integrations.
 
-Next translate remaining Studio guidance, member/role controls, data-source/database panels, backups and advanced protection panels, then technical errors and native-speaker review. Account/session and update settings translation is complete in 0.18.2; date/number formatting outside these screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
+Next translate remaining Studio guidance, data-source/database panels, backups and advanced sharing/protection panels, then technical errors and native-speaker review. Basic member/role translation is complete in 0.18.3; account/session and update settings are complete in 0.18.2. Date/number formatting outside account/update screens remains separate. Preserve authored data, contracts, current permission checks and the compact phone-safe layout. See [language coverage](localization.md).
 
 1. **Product authorization and shared resources.** Preserve member-field intersections and the narrow workspace invitation lifecycle. Next add reviewed product accounts/sessions/linking, workspace email verification/recovery, resource-management sharing and multi-workspace isolation through separate lifecycles. Joins, social effects, public endpoints and broader WS graphs remain separate. Caller fields and static projections never establish identity or authorization.
 2. **Data connections and query tools.** Extend reviewed adapter capabilities and encrypted server-held credentials to PostgreSQL and MySQL/MariaDB; add MongoDB, Supabase, and Firebase with their own transaction, identity, query, and backup semantics. Add live SQLite connection/write capabilities separately from the uploaded-copy read adapter. Ship bounded parameterized read/write forms, pagination, previews, and explicit transactions one adapter at a time. Add migration dry runs, backup gates, restoration checks, and destructive-change review before schema changes. Private Sheets OAuth, write-back, and scheduled synchronization follow their connection/permission work.

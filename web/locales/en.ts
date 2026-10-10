@@ -528,6 +528,174 @@ const messages: Record<string, string> = {
     'Source access is required. Ask the owner to review your permissions and source USE.',
   'No sources are available to this account. Ask the owner to provide a source.':
     'No sources are available to this account. Ask the owner to provide a source.',
+  'Custom roles': 'Custom roles',
+  'New role': 'New role',
+  'Choose actions for this local workspace. Every member can manage their own account and sessions. Member and role administration stays with the owner.':
+    'Choose actions for this local workspace. Every member can manage their own account and sessions. Member and role administration stays with the owner.',
+  'Actions are separate: editing, testing, and publication each need their own grant. Reading related APIs or connections is needed to choose them in forms.':
+    'Actions are separate: editing, testing, and publication each need their own grant. Reading related APIs or connections is needed to choose them in forms.',
+  'Loading permission choices…': 'Loading permission choices…',
+  'Retry permission choices': 'Retry permission choices',
+  'Save changes to {name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.':
+    'Save changes to {name}? Changed grants apply immediately to member keys and end affected browser sessions. Review all selected permissions before continuing.',
+  'Role updated. Changed grants end affected browser sessions.':
+    'Role updated. Changed grants end affected browser sessions.',
+  'Role created. Assign it to a member when ready.':
+    'Role created. Assign it to a member when ready.',
+  'Could not save role.': 'Could not save role.',
+  'Edit {name} · version {version}': 'Edit {name} · version {version}',
+  'Create custom role': 'Create custom role',
+  'Role name': 'Role name',
+  'No workspace action grants. Members with this role can still sign in and manage their own account.':
+    'No workspace action grants. Members with this role can still sign in and manage their own account.',
+  'Backup access exposes the entire workspace, including saved data and sensitive credential records. Keep downloads private.':
+    'Backup access exposes the entire workspace, including saved data and sensitive credential records. Keep downloads private.',
+  'Load testing repeatedly executes live APIs. Configured writes can change product data. Grant only to trusted operators.':
+    'Load testing repeatedly executes live APIs. Configured writes can change product data. Grant only to trusted operators.',
+  'Save role': 'Save role',
+  'Cancel role changes': 'Cancel role changes',
+  'If another owner session changes this role, refresh the members page and reopen the role before saving again.':
+    'If another owner session changes this role, refresh the members page and reopen the role before saving again.',
+  'Custom · v{version}': 'Custom · v{version}',
+  'Account and own sessions only': 'Account and own sessions only',
+  'Edit {name}': 'Edit {name}',
+  'Delete role {name}? This cannot be undone. Roles assigned to members cannot be deleted.':
+    'Delete role {name}? This cannot be undone. Roles assigned to members cannot be deleted.',
+  'Role deleted.': 'Role deleted.',
+  'Could not delete role.': 'Could not delete role.',
+  'Delete {name}': 'Delete {name}',
+  'No custom roles yet. Built-in owner, editor, and viewer roles stay available.':
+    'No custom roles yet. Built-in owner, editor, and viewer roles stay available.',
+  'Read APIs': 'Read APIs',
+  'Edit APIs': 'Edit APIs',
+  'Test drafts': 'Test drafts',
+  'Publish and roll back': 'Publish and roll back',
+  'Read data sources': 'Read data sources',
+  'Manage data sources': 'Manage data sources',
+  'Read database copies': 'Read database copies',
+  'Manage database copies': 'Manage database copies',
+  'Read product login connections': 'Read product login connections',
+  'Manage product login connections': 'Manage product login connections',
+  'Manage runtime API keys': 'Manage runtime API keys',
+  'Read audit history': 'Read audit history',
+  'Manage workspace backups': 'Manage workspace backups',
+  'Read migration history': 'Read migration history',
+  'Run load tests': 'Run load tests',
+  APIs: 'APIs',
+  Databases: 'Databases',
+  Security: 'Security',
+  'Read authorized API drafts, release history, OpenAPI documents, client examples, and generated backend source.':
+    'Read authorized API drafts, release history, OpenAPI documents, client examples, and generated backend source.',
+  'Create and save API drafts. Selected access permits editing existing shared APIs with explicit dependency use, but cannot create APIs.':
+    'Create and save API drafts. Selected access permits editing existing shared APIs with explicit dependency use, but cannot create APIs.',
+  'Execute saved REST and GraphQL drafts, including their configured data and product-login steps. Selected access also requires explicit dependency use.':
+    'Execute saved REST and GraphQL drafts, including their configured data and product-login steps. Selected access also requires explicit dependency use.',
+  'Change live API behavior by publishing drafts or rolling back releases.':
+    'Change live API behavior by publishing drafts or rolling back releases.',
+  'Read source metadata and saved rows.':
+    'Read source metadata and saved rows.',
+  'Import, replace, refresh, and delete sources. Replacing data changes what published APIs read.':
+    'Import, replace, refresh, and delete sources. Replacing data changes what published APIs read.',
+  'Read uploaded SQLite copy metadata and selected rows. Generated APIs may expose their configured data.':
+    'Read uploaded SQLite copy metadata and selected rows. Generated APIs may expose their configured data.',
+  'Upload, check, and delete immutable SQLite copies. Workspace backups include all uploaded data.':
+    'Upload, check, and delete immutable SQLite copies. Workspace backups include all uploaded data.',
+  'Read product-login connection metadata without provider secrets.':
+    'Read product-login connection metadata without provider secrets.',
+  'Create, update, and delete server-held provider credentials. Changes affect live product login.':
+    'Create, update, and delete server-held provider credentials. Changes affect live product login.',
+  'Issue, list, replace, and revoke runtime keys. Selected access manages issuer-bound keys for shared APIs; issuance and replacement require dependency use and preserve release pins.':
+    'Issue, list, replace, and revoke runtime keys. Selected access manages issuer-bound keys for shared APIs; issuance and replacement require dependency use and preserve release pins.',
+  'Read workspace activity and security events.':
+    'Read workspace activity and security events.',
+  'Create, list, and download complete workspace backups containing saved data and sensitive credential records.':
+    'Create, list, and download complete workspace backups containing saved data and sensitive credential records.',
+  'Read the control database migration history.':
+    'Read the control database migration history.',
+  'List published targets and load-test history; start and cancel bounded local runs. Runs execute published APIs and may cause their configured writes.':
+    'List published targets and load-test history; start and cancel bounded local runs. Runs execute published APIs and may cause their configured writes.',
+  'Your team': 'Your team',
+  'WORKSPACE CONTROL': 'WORKSPACE CONTROL',
+  'Member keys manage the workspace. Use API keys for published endpoint callers.':
+    'Member keys manage the workspace. Use API keys for published endpoint callers.',
+  'Loading workspace records…': 'Loading workspace records…',
+  'Only the owner can manage members and roles.':
+    'Only the owner can manage members and roles.',
+  'Refresh Members and review an active tenant before creating this member.':
+    'Refresh Members and review an active tenant before creating this member.',
+  'Create {name} with assigned tenant {tenant}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.':
+    'Create {name} with assigned tenant {tenant}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.',
+  'Member created. Save their token; it is shown once.':
+    'Member created. Save their token; it is shown once.',
+  Name: 'Name',
+  'Member name': 'Member name',
+  Role: 'Role',
+  'Member role': 'Member role',
+  'Member email (optional)': 'Member email (optional)',
+  'Member password': 'Member password',
+  '12 to 128 characters. Leave email blank for key-only access.':
+    '12 to 128 characters. Leave email blank for key-only access.',
+  'New member API access': 'New member API access',
+  'New member tenant': 'New member tenant',
+  'No tenant assigned': 'No tenant assigned',
+  'Optional initial assignment. Review before adding the member; no separate credential creation and reassignment occurs.':
+    'Optional initial assignment. Review before adding the member; no separate credential creation and reassignment occurs.',
+  'Add member': 'Add member',
+  'Save this member token': 'Save this member token',
+  'New member token': 'New member token',
+  'Member token copied.': 'Member token copied.',
+  Copy: 'Copy',
+  'I saved it': 'I saved it',
+  'Opening invitations…': 'Opening invitations…',
+  'API access': 'API access',
+  'Tenant identity': 'Tenant identity',
+  'Invite sign-in': 'Invite sign-in',
+  'Bootstrap owner': 'Bootstrap owner',
+  'Revoke access for {name}?': 'Revoke access for {name}?',
+  'Member access revoked.': 'Member access revoked.',
+  'Selected APIs · {count}': 'Selected APIs · {count}',
+  'Manage APIs for {name}': 'Manage APIs for {name}',
+  'Owner access cannot be restricted.': 'Owner access cannot be restricted.',
+  'Owner reviews a tenant for each protected action.':
+    'Owner reviews a tenant for each protected action.',
+  'Assigned tenant': 'Assigned tenant',
+  'Manage tenant for {name}': 'Manage tenant for {name}',
+  'Viewer · read APIs': 'Viewer · read APIs',
+  'Editor · build and test': 'Editor · build and test',
+  '{name} · custom role': '{name} · custom role',
+  'Role for {name}': 'Role for {name}',
+  "Change {name}'s role from {current} to {next}? This ends their active browser sessions. Their member key immediately uses the new permissions.":
+    "Change {name}'s role from {current} to {next}? This ends their active browser sessions. Their member key immediately uses the new permissions.",
+  'Member role updated. Their browser sessions were ended.':
+    'Member role updated. Their browser sessions were ended.',
+  'Could not update member role.': 'Could not update member role.',
+  'Change role': 'Change role',
+  'Selected APIs only': 'Selected APIs only',
+  'Selected sharing limits API scope. Use Viewer or a custom role with only API, runtime-key and load-test actions. Actions still require separate role grants. It grants no API creation or global resource management.':
+    'Selected sharing limits API scope. Use Viewer or a custom role with only API, runtime-key and load-test actions. Actions still require separate role grants. It grants no API creation or global resource management.',
+  'This role has actions beyond Read APIs and selected API operations. Choose an eligible custom role or Viewer, or explicitly select All APIs before continuing.':
+    'This role has actions beyond Read APIs and selected API operations. Choose an eligible custom role or Viewer, or explicitly select All APIs before continuing.',
+  'Choose APIs to share': 'Choose APIs to share',
+  'Share {name}': 'Share {name}',
+  '{count} APIs selected.': '{count} APIs selected.',
+  'No APIs selected. This member can sign in, but sees no APIs.':
+    'No APIs selected. This member can sign in, but sees no APIs.',
+  'Dependencies these APIs may use': 'Dependencies these APIs may use',
+  'USE permits these selected APIs to read chosen dependency data or trigger product login when the role allows testing, publishing or callers. It can expose stored data through the API. It grants no dependency preview or management. Row, column and tenant authorization remain separate; selecting APIs or dependencies does not provide them.':
+    'USE permits these selected APIs to read chosen dependency data or trigger product login when the role allows testing, publishing or callers. It can expose stored data through the API. It grants no dependency preview or management. Row, column and tenant authorization remain separate; selecting APIs or dependencies does not provide them.',
+  'Use spreadsheet sources': 'Use spreadsheet sources',
+  'Use SQLite copies': 'Use SQLite copies',
+  'Use product login connections': 'Use product login connections',
+  'Use spreadsheet {name}': 'Use spreadsheet {name}',
+  'Use SQLite copy {name}': 'Use SQLite copy {name}',
+  'Use product login {name}': 'Use product login {name}',
+  'Structure only · version {version}': 'Structure only · version {version}',
+  'No saved dependencies in this group.':
+    'No saved dependencies in this group.',
+  '{count} dependencies allowed for USE.':
+    '{count} dependencies allowed for USE.',
+  'All current and future APIs. Actions still follow the assigned role.':
+    'All current and future APIs. Actions still follow the assigned role.',
 }
 
 export default messages

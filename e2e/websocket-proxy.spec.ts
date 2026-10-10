@@ -186,13 +186,16 @@ test('development proxies carry actual published and original-cookie draft WebSo
     })
     expect(issued.status()).toBe(200)
     const key = await issued.json()
+    await page.goto(webOrigin)
+    await expect(
+      page.getByLabel('Workspace token', { exact: true }),
+    ).toBeVisible()
     const minted = await call(
       '/ws/browser-proxy/ticket',
       { revision: 1, origin: webOrigin },
       key.token,
     )
     expect(minted.status()).toBe(200)
-    await page.goto(webOrigin)
     expect(await exchange(page, await minted.json(), 'published')).toEqual({
       opened: true,
       matched: true,

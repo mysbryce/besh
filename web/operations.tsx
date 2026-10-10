@@ -19,7 +19,6 @@ import {
   type Member,
   type Role,
   type SavedFlow,
-  memberRoleName,
   type Migration,
 } from './lib/api'
 import { useStudio } from './store'
@@ -41,6 +40,7 @@ import type {
 import type { Tenant } from '../src/workspace/tenant-model'
 import { TenantAssignmentEditor } from './tenant-assignment'
 import { useTenantContext } from './tenant-context'
+import { translateMessage, useTranslation } from './i18n'
 
 const Invitations = lazy(() =>
   import('./invitations').then((module) => ({ default: module.Invitations })),
@@ -52,6 +52,7 @@ export function Operations({
   page: 'audit' | 'members' | 'backups'
 }) {
   const { token, member, sessionId, task, busy, message } = useStudio()
+  const { t } = useTranslation()
   const [audit, setAudit] = useState<AuditEvent[]>([])
   const [members, setMembers] = useState<Member[]>([])
   const [backups, setBackups] = useState<Backup[]>([])
@@ -223,16 +224,22 @@ export function Operations({
     page === 'audit'
       ? 'Audit trail'
       : page === 'members'
-        ? 'Your team'
+        ? t('Your team')
         : 'Data & backups'
 
   if (!allowed)
     return (
       <div className="empty-panel">
         <ShieldCheck />
-        <h1>Owner access required</h1>
+        <h1>
+          {page === 'members'
+            ? t('Owner access required')
+            : 'Owner access required'}
+        </h1>
         <p>
-          Your {member?.role} role does not include workspace administration.
+          {page === 'members'
+            ? t('Only the owner can manage members and roles.')
+            : `Your ${member?.role} role does not include workspace administration.`}
         </p>
       </div>
     )
@@ -241,13 +248,17 @@ export function Operations({
     <>
       <div className="page-title">
         <div>
-          <div className="eyebrow">WORKSPACE CONTROL</div>
+          <div className="eyebrow">
+            {page === 'members' ? t('WORKSPACE CONTROL') : 'WORKSPACE CONTROL'}
+          </div>
           <h1>{title}</h1>
           <p>
             {page === 'audit'
               ? 'A record of changes, runs, and access decisions. Latest 200 events.'
               : page === 'members'
-                ? 'Member keys manage the workspace. Use API keys for published endpoint callers.'
+                ? t(
+                    'Member keys manage the workspace. Use API keys for published endpoint callers.',
+                  )
                 : 'Keep a consistent copy of your workspace. Restore offline.'}
           </p>
         </div>
@@ -257,7 +268,7 @@ export function Operations({
           onClick={() => void task(refresh)}
         >
           <RefreshCw />
-          Refresh
+          {page === 'members' ? t('Refresh') : 'Refresh'}
         </Button>
       </div>
       {error ? (
@@ -265,7 +276,13 @@ export function Operations({
           {error}
         </p>
       ) : null}
-      {loading ? <p>Loading workspace records…</p> : null}
+      {loading ? (
+        <p>
+          {page === 'members'
+            ? t('Loading workspace records…')
+            : 'Loading workspace records…'}
+        </p>
+      ) : null}
       {page === 'members' ? (
         <>
           <Roles roles={roles} onChanged={refresh} />
@@ -286,7 +303,9 @@ export function Operations({
               )
               if (newTenantId !== 'none' && !initialTenant) {
                 message(
-                  'Refresh Members and review an active tenant before creating this member.',
+                  t(
+                    'Refresh Members and review an active tenant before creating this member.',
+                  ),
                   true,
                 )
                 return
@@ -294,7 +313,10 @@ export function Operations({
               if (
                 initialTenant &&
                 !window.confirm(
-                  `Create ${name} with assigned tenant ${initialTenant.label}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.`,
+                  t(
+                    'Create {name} with assigned tenant {tenant}? Protected API actions derive this identity. API permissions and dependency USE remain separate. This assignment and member credential are created together.',
+                    { name, tenant: initialTenant.label },
+                  ),
                 )
               )
                 return
@@ -318,14 +340,18 @@ export function Operations({
                 setFlowAccess({ mode: 'all' })
                 setNewTenantId('none')
                 await refresh()
-                message('Member created. Save their token; it is shown once.')
+                message(
+                  translateMessage(
+                    'Member created. Save their token; it is shown once.',
+                  ),
+                )
               })
             }}
           >
             <label>
-              Name
+              {t('Name')}
               <Input
-                aria-label="Member name"
+                aria-label={t('Member name')}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
                 maxLength={80}
@@ -334,19 +360,19 @@ export function Operations({
               />
             </label>
             <label>
-              Role
+              {t('Role')}
               <Select
-                label="Member role"
+                label={t('Member role')}
                 value={role}
                 disabled={busy || !!issued}
                 onValueChange={setRole}
-                options={roleOptions(roles)}
+                options={roleOptions(roles, t)}
               />
             </label>
             <label>
-              Member email (optional)
+              {t('Member email (optional)')}
               <Input
-                aria-label="Member email (optional)"
+                aria-label={t('Member email (optional)')}
                 type="email"
                 autoComplete="off"
                 maxLength={254}
@@ -359,9 +385,9 @@ export function Operations({
               />
             </label>
             <label>
-              Member password
+              {t('Member password')}
               <Input
-                aria-label="Member password"
+                aria-label={t('Member password')}
                 type="password"
                 autoComplete="new-password"
                 minLength={12}
@@ -372,11 +398,13 @@ export function Operations({
                 onChange={(event) => setPassword(event.target.value)}
               />
               <small>
-                12 to 128 characters. Leave email blank for key-only access.
+                {t(
+                  '12 to 128 characters. Leave email blank for key-only access.',
+                )}
               </small>
             </label>
             <FlowAccessFields
-              label="New member API access"
+              label={t('New member API access')}
               value={flowAccess}
               onChange={setFlowAccess}
               flows={flows}
@@ -385,14 +413,14 @@ export function Operations({
               disabled={busy || loading || !!issued}
             />
             <label>
-              New member tenant
+              {t('New member tenant')}
               <Select
-                label="New member tenant"
+                label={t('New member tenant')}
                 value={newTenantId}
                 onValueChange={setNewTenantId}
                 disabled={busy || loading || !!issued}
                 options={[
-                  { value: 'none', label: 'No tenant assigned' },
+                  { value: 'none', label: t('No tenant assigned') },
                   ...tenants
                     .filter((tenant) => tenant.state === 'active')
                     .map((tenant) => ({
@@ -402,8 +430,9 @@ export function Operations({
                 ]}
               />
               <small>
-                Optional initial assignment. Review before adding the member; no
-                separate credential creation and reassignment occurs.
+                {t(
+                  'Optional initial assignment. Review before adding the member; no separate credential creation and reassignment occurs.',
+                )}
               </small>
             </label>
             <Button
@@ -415,27 +444,32 @@ export function Operations({
               }
             >
               <Plus />
-              Add member
+              {t('Add member')}
             </Button>
           </form>
           {issued ? (
             <div className="issued-token">
-              <strong>Save this member token</strong>
-              <Input aria-label="New member token" readOnly value={issued} />
+              <strong>{t('Save this member token')}</strong>
+              <Input
+                data-private="true"
+                aria-label={t('New member token')}
+                readOnly
+                value={issued}
+              />
               <Button
                 variant="outline"
                 onClick={() =>
                   void task(async () => {
                     await navigator.clipboard.writeText(issued)
-                    message('Member token copied.')
+                    message(translateMessage('Member token copied.'))
                   })
                 }
               >
                 <Copy />
-                Copy
+                {t('Copy')}
               </Button>
               <Button variant="ghost" onClick={() => setIssued('')}>
-                I saved it
+                {t('I saved it')}
               </Button>
             </div>
           ) : null}
@@ -469,7 +503,9 @@ export function Operations({
             />
           ) : null}
           {invitedMember ? (
-            <Suspense fallback={<p role="status">Opening invitations…</p>}>
+            <Suspense
+              fallback={<p role="status">{t('Opening invitations…')}</p>}
+            >
               <Invitations
                 key={`${invitedMember.id}:${member?.id}:${sessionId}`}
                 memberId={invitedMember.id}
@@ -481,11 +517,11 @@ export function Operations({
             <table>
               <thead>
                 <tr>
-                  <th>Member</th>
-                  <th>Role</th>
-                  <th>Access</th>
-                  <th>API access</th>
-                  <th>Tenant identity</th>
+                  <th>{t('Member')}</th>
+                  <th>{t('Role')}</th>
+                  <th>{t('Access')}</th>
+                  <th>{t('API access')}</th>
+                  <th>{t('Tenant identity')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -494,7 +530,9 @@ export function Operations({
                     <td>{person.name}</td>
                     <td>
                       <Badge variant="secondary">
-                        {memberRoleName(person)}
+                        {person.role === 'custom'
+                          ? (person.roleName ?? t('Custom role'))
+                          : t(person.role)}
                       </Badge>
                       {person.role !== 'owner' ? (
                         <MemberAssignment
@@ -513,11 +551,11 @@ export function Operations({
                           disabled={busy || loading || !!issued}
                           onClick={() => setInvitedMember(person)}
                         >
-                          Invite sign-in
+                          {t('Invite sign-in')}
                         </Button>
                       ) : null}
                       {person.role === 'owner' ? (
-                        'Bootstrap owner'
+                        t('Bootstrap owner')
                       ) : (
                         <Button
                           variant="ghost"
@@ -526,7 +564,9 @@ export function Operations({
                           onClick={() => {
                             if (
                               window.confirm(
-                                `Revoke access for ${person.name}?`,
+                                t('Revoke access for {name}?', {
+                                  name: person.name,
+                                }),
                               )
                             )
                               void task(async () => {
@@ -536,19 +576,23 @@ export function Operations({
                                   'DELETE',
                                 )
                                 await refresh()
-                                message('Member access revoked.')
+                                message(
+                                  translateMessage('Member access revoked.'),
+                                )
                               })
                           }}
                         >
                           <Trash2 />
-                          Revoke
+                          {t('Revoke')}
                         </Button>
                       )}
                     </td>
                     <td>
                       {person.flowAccess?.mode === 'selected'
-                        ? `Selected APIs · ${person.flowAccess.flowIds.length}`
-                        : 'All APIs'}
+                        ? t('Selected APIs · {count}', {
+                            count: person.flowAccess.flowIds.length,
+                          })
+                        : t('All APIs')}
                       {person.role !== 'owner' ? (
                         <Button
                           variant="outline"
@@ -561,15 +605,19 @@ export function Operations({
                           }
                           onClick={() => setSharingMember(person)}
                         >
-                          Manage APIs for {person.name}
+                          {t('Manage APIs for {name}', { name: person.name })}
                         </Button>
                       ) : (
-                        <p>Owner access cannot be restricted.</p>
+                        <p>{t('Owner access cannot be restricted.')}</p>
                       )}
                     </td>
                     <td>
                       {person.role === 'owner' ? (
-                        <p>Owner reviews a tenant for each protected action.</p>
+                        <p>
+                          {t(
+                            'Owner reviews a tenant for each protected action.',
+                          )}
+                        </p>
                       ) : (
                         <>
                           <p>
@@ -578,8 +626,8 @@ export function Operations({
                                   (tenant) =>
                                     tenant.id ===
                                     person.tenantAssignment.tenantId,
-                                )?.label ?? 'Assigned tenant')
-                              : 'No tenant assigned'}
+                                )?.label ?? t('Assigned tenant'))
+                              : t('No tenant assigned')}
                           </p>
                           <Button
                             variant="outline"
@@ -592,7 +640,9 @@ export function Operations({
                             }
                             onClick={() => setTenantMember(person)}
                           >
-                            Manage tenant for {person.name}
+                            {t('Manage tenant for {name}', {
+                              name: person.name,
+                            })}
                           </Button>
                         </>
                       )}

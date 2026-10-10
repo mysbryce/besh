@@ -3202,6 +3202,9 @@ input[type='file']::file-selector-button {
 .roles-panel h2 {
   font-size: 20px;
 }
+.roles-panel > .panel-heading {
+  flex-wrap: wrap;
+}
 .roles-panel p,
 .role-card p {
   font-size: 12px;

@@ -30,6 +30,10 @@ import {
   updateLocalePreviews,
 } from './management-locale-previews'
 import {
+  memberLocalePreviews,
+  roleLocalePreviews,
+} from './team-locale-previews'
+import {
   localeStartupPreviews,
   localeBootstrapPreviews,
 } from './locale-startup-previews'
@@ -1149,6 +1153,7 @@ test(
       'Members',
       'Custom role dropdown',
       'Member roles use the shared styled dropdown with accessible option labels.',
+      { fullPage: false, region: 'listbox' },
     )
     await page
       .getByRole('option', { name: 'Editor · build and test', exact: true })
@@ -4251,7 +4256,9 @@ for (const story of previewStories) {
     story.id === 'locale-startup' ||
     story.id === 'locale-bootstrap' ||
     story.id === 'management-account' ||
-    story.id === 'management-updates'
+    story.id === 'management-updates' ||
+    story.id === 'management-roles' ||
+    story.id === 'management-members'
   )
     continue
   const helper = featureHelpers[story.id]
@@ -4279,6 +4286,8 @@ for (const [story, locale, helper] of [
   ['locale-bootstrap', 'th-TH', localeBootstrapPreviews],
   ['management-account', 'en-US', accountLocalePreviews],
   ['management-updates', 'en-US', updateLocalePreviews],
+  ['management-roles', 'en-US', roleLocalePreviews],
+  ['management-members', 'en-US', memberLocalePreviews],
 ] as const) {
   test.describe(story, () => {
     test.use({ locale })
