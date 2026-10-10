@@ -7,6 +7,7 @@ import { Badge } from './components/ui/badge'
 import { api } from './lib/api'
 import { useStudio } from './store'
 import type { UpdateState } from '../src/updates/model'
+import { translateMessage, useDateTime, useTranslation } from './i18n'
 
 const labels = {
   available: 'Update available',
@@ -16,6 +17,8 @@ const labels = {
 }
 
 export function Updates() {
+  const { t } = useTranslation()
+  const dateTime = useDateTime()
   const { member, busy, task, message } = useStudio()
   const [state, setState] = useState<UpdateState | null>(null)
   const [repositoryUrl, setRepositoryUrl] = useState('')
@@ -52,7 +55,8 @@ export function Updates() {
     }
   }, [allowed])
 
-  if (!allowed) return <p>Owner access required to manage Besh updates.</p>
+  if (!allowed)
+    return <p>{t('Owner access required to manage Besh updates.')}</p>
 
   const dirty =
     !!state &&
@@ -69,7 +73,7 @@ export function Updates() {
         setError(
           reason instanceof Error
             ? reason.message
-            : 'Could not load update information.',
+            : translateMessage('Could not load update information.'),
         )
       }
     })
@@ -79,9 +83,9 @@ export function Updates() {
     <>
       <div className="page-title">
         <div>
-          <div className="eyebrow">YOUR BESH INSTALLATION</div>
-          <h1>Besh updates</h1>
-          <p>Check public GitHub releases when you are ready.</p>
+          <div className="eyebrow">{t('YOUR BESH INSTALLATION')}</div>
+          <h1>{t('Besh updates')}</h1>
+          <p>{t('Check public GitHub releases when you are ready.')}</p>
         </div>
         <Button
           variant="outline"
@@ -89,7 +93,7 @@ export function Updates() {
           onClick={() => {
             if (
               dirty &&
-              !confirm('Discard unsaved update settings and refresh?')
+              !confirm(t('Discard unsaved update settings and refresh?'))
             )
               return
             perform(async () => {
@@ -97,7 +101,7 @@ export function Updates() {
             })
           }}
         >
-          <RefreshCw /> Refresh update settings
+          <RefreshCw /> {t('Refresh update settings')}
         </Button>
       </div>
       {error ? (
@@ -105,7 +109,7 @@ export function Updates() {
           {error}
         </p>
       ) : null}
-      {loading ? <p role="status">Loading update settings…</p> : null}
+      {loading ? <p role="status">{t('Loading update settings…')}</p> : null}
       <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         <form
           className="load-test-card form-stack min-w-0"
@@ -121,13 +125,15 @@ export function Updates() {
                 }),
               )
               message(
-                'Update settings saved. Check releases to get a fresh result.',
+                translateMessage(
+                  'Update settings saved. Check releases to get a fresh result.',
+                ),
               )
             })
           }}
         >
-          <h2>Release settings</h2>
-          <label htmlFor="update-repository">GitHub repository</label>
+          <h2>{t('Release settings')}</h2>
+          <label htmlFor="update-repository">{t('GitHub repository')}</label>
           <Input
             id="update-repository"
             type="url"
@@ -139,8 +145,9 @@ export function Updates() {
             placeholder="https://github.com/owner/repository"
           />
           <small>
-            Use a public repository URL. Private repositories and access tokens
-            are not supported.
+            {t(
+              'Use a public repository URL. Private repositories and access tokens are not supported.',
+            )}
           </small>
           <label className="flex items-center gap-3">
             <Checkbox
@@ -149,40 +156,47 @@ export function Updates() {
                 setIncludePrereleases(checked === true)
               }
               disabled={disabled || !state}
-              aria-label="Include preview releases"
+              aria-label={t('Include preview releases')}
             />
-            Include preview releases
+            {t('Include preview releases')}
           </label>
           <small>
-            Show alpha, beta and other prereleases alongside stable versions.
+            {t(
+              'Show alpha, beta and other prereleases alongside stable versions.',
+            )}
           </small>
           <Button disabled={disabled || !state || !dirty}>
-            Save update settings
+            {t('Save update settings')}
           </Button>
-          {dirty ? <p>Save your changes before checking releases.</p> : null}
+          {dirty ? (
+            <p>{t('Save your changes before checking releases.')}</p>
+          ) : null}
         </form>
         <section
           className="load-test-card form-stack min-w-0"
-          aria-label="Release status"
+          aria-label={t('Release status')}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2>Release status</h2>
+            <h2>{t('Release status')}</h2>
             {state ? (
               <Badge variant="secondary">
-                Installed {state.currentVersion}
+                {t('Installed {version}', { version: state.currentVersion })}
               </Badge>
             ) : null}
           </div>
           <h3>
-            {state?.lastCheck
-              ? labels[state.lastCheck.status]
-              : 'No release check yet'}
+            {t(
+              state?.lastCheck
+                ? labels[state.lastCheck.status]
+                : 'No release check yet',
+            )}
           </h3>
           {state?.lastCheck ? (
             <>
               <p>
-                Last checked{' '}
-                {new Date(state.lastCheck.checkedAt).toLocaleString()}
+                {t('Last checked {date}', {
+                  date: dateTime(state.lastCheck.checkedAt),
+                })}
               </p>
               {state.lastCheck.error ? (
                 <p className="form-error">{state.lastCheck.error}</p>
@@ -192,7 +206,7 @@ export function Updates() {
                   <div className="flex flex-wrap items-center gap-3">
                     <strong>{state.lastCheck.release.version}</strong>
                     {state.lastCheck.release.prerelease ? (
-                      <Badge variant="outline">Preview release</Badge>
+                      <Badge variant="outline">{t('Preview release')}</Badge>
                     ) : null}
                   </div>
                   <p className="break-words">{state.lastCheck.release.name}</p>
@@ -202,7 +216,7 @@ export function Updates() {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      View GitHub release <ArrowUpRight />
+                      {t('View GitHub release')} <ArrowUpRight />
                     </a>
                   </Button>
                 </>
@@ -210,8 +224,9 @@ export function Updates() {
             </>
           ) : (
             <p>
-              A check runs only when you choose it. Opening this page uses saved
-              information.
+              {t(
+                'A check runs only when you choose it. Opening this page uses saved information.',
+              )}
             </p>
           )}
           <Button
@@ -224,22 +239,27 @@ export function Updates() {
                     revision: state.settings.revision,
                   }),
                 )
-                message('Release check finished. Review the result below.')
+                message(
+                  translateMessage(
+                    'Release check finished. Review the result below.',
+                  ),
+                )
               })
             }}
           >
-            <RefreshCw /> Check releases
+            <RefreshCw /> {t('Check releases')}
           </Button>
           <small>
-            One check per minute. Checks inspect the first 20 published GitHub
-            releases.
+            {t(
+              'One check per minute. Checks inspect the first 20 published GitHub releases.',
+            )}
           </small>
           <p className="flex items-start gap-2">
             <ShieldCheck className="mt-1 shrink-0" size={16} />
             <span>
-              This page reports versions. It does not install updates or verify
-              release compatibility. Review release notes and back up data
-              before upgrading.
+              {t(
+                'This page reports versions. It does not install updates or verify release compatibility. Review release notes and back up data before upgrading.',
+              )}
             </span>
           </p>
         </section>

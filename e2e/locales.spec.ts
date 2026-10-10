@@ -8,6 +8,10 @@ import {
   localeBootstrapPreviews,
   localeStartupPreviews,
 } from './locale-startup-previews'
+import {
+  accountLocalePreviews,
+  updateLocalePreviews,
+} from './management-locale-previews'
 
 const test = base.extend<{ workspace: { origin: string; owner: string } }>({
   workspace: async ({ page }, use) => {
@@ -67,6 +71,78 @@ function masked(page: Page) {
     page.locator('[data-private]'),
   ]
 }
+
+test('account forms and session actions follow language without editing credentials', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let captureNumber = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+  await accountLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title, _detail, options) => {
+      if (options?.region === 'listbox') {
+        const menu = page.getByRole('listbox')
+        await menu.screenshot({
+          path: info.outputPath(
+            `${++captureNumber}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+          ),
+          animations: 'disabled',
+          mask: [
+            menu.locator('input[type="password"]'),
+            menu.locator('[data-private]'),
+          ],
+        })
+        return
+      }
+      await page.screenshot({
+        path: info.outputPath(
+          `${++captureNumber}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: options?.fullPage ?? true,
+        style:
+          options?.fullPage === false
+            ? undefined
+            : 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+  expect(errors).toEqual([])
+})
+
+test('update settings follow language without automatic writes or release checks', async ({
+  page,
+  workspace,
+}, info) => {
+  const errors: string[] = []
+  let captureNumber = 0
+  page.on('pageerror', (error) => errors.push(error.message))
+  await updateLocalePreviews({
+    page,
+    owner: workspace.owner,
+    apiOrigin: workspace.origin,
+    capture: async (_group, title, _detail, options) => {
+      await page.screenshot({
+        path: info.outputPath(
+          `${++captureNumber}-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
+        ),
+        fullPage: options?.fullPage ?? true,
+        style:
+          options?.fullPage === false
+            ? undefined
+            : 'html { scrollbar-gutter: stable !important }',
+        animations: 'disabled',
+        mask: masked(page),
+      })
+    },
+  })
+  expect(errors).toEqual([])
+})
 
 for (const locale of ['th-TH', 'es-MX']) {
   test.describe(locale, () => {

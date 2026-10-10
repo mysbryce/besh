@@ -4,6 +4,19 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.18.2-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Translate account, session and update settings guidance, action labels and confirmations in all seven dashboard languages.
+- Format session and release-check dates in the selected language, keeping the browser timezone and Gregorian calendar.
+- Keep unsaved inputs, authored names, release titles and existing permission boundaries unchanged when choosing a language.
+- Wait for current global policy controls before refreshing a tenant profile in the preview walkthrough.
+
+### Changed
+
+- Add real account/save/revoke and update-settings language journeys, with light/dark phone previews.
+
 ## 0.18.1-alpha.0 — 2026-10-10
 
 ### Fixed

@@ -11,7 +11,7 @@ const { app, close } = createApp({
     return Response.json([
       {
         tag_name: 'v0.99.0-beta.2',
-        name: 'Release fixture',
+        name: 'Release status',
         draft: false,
         prerelease: true,
         published_at: '2026-10-08T12:00:00Z',

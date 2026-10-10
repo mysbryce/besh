@@ -1,4 +1,90 @@
 const messages: Record<string, string> = {
+  'Update available': 'Atualização disponível',
+  'No newer release found': 'Nenhuma versão mais recente encontrada',
+  'No matching releases found': 'Nenhuma versão corresponde às configurações',
+  'Release check failed': 'Falha ao verificar versões',
+  'Owner access required to manage Besh updates.':
+    'É necessário acesso de proprietário para gerenciar as atualizações do Besh.',
+  'Could not load update information.':
+    'Não foi possível carregar as informações de atualização.',
+  'YOUR BESH INSTALLATION': 'SUA INSTALAÇÃO DO BESH',
+  'Besh updates': 'Atualizações do Besh',
+  'Check public GitHub releases when you are ready.':
+    'Verifique as versões públicas no GitHub quando estiver pronto.',
+  'Discard unsaved update settings and refresh?':
+    'Descartar as configurações de atualização não salvas e recarregar?',
+  'Refresh update settings': 'Recarregar configurações de atualização',
+  'Loading update settings…': 'Carregando configurações de atualização…',
+  'Update settings saved. Check releases to get a fresh result.':
+    'Configurações de atualização salvas. Verifique as versões para obter um novo resultado.',
+  'Release settings': 'Configurações de versões',
+  'GitHub repository': 'Repositório do GitHub',
+  'Use a public repository URL. Private repositories and access tokens are not supported.':
+    'Use a URL de um repositório público. Repositórios privados e tokens de acesso não são suportados.',
+  'Include preview releases': 'Incluir versões de prévia',
+  'Show alpha, beta and other prereleases alongside stable versions.':
+    'Mostrar alpha, beta e outras pré-versões junto com as versões estáveis.',
+  'Save update settings': 'Salvar configurações de atualização',
+  'Save your changes before checking releases.':
+    'Salve suas alterações antes de verificar as versões.',
+  'Release status': 'Status da versão',
+  'Installed {version}': 'Versão instalada: {version}',
+  'No release check yet': 'Nenhuma verificação de versões realizada',
+  'Last checked {date}': 'Última verificação: {date}',
+  'Preview release': 'Versão de prévia',
+  'View GitHub release': 'Ver versão no GitHub',
+  'A check runs only when you choose it. Opening this page uses saved information.':
+    'A verificação só é executada quando você a solicita. Abrir esta página usa as informações salvas.',
+  'Release check finished. Review the result below.':
+    'Verificação de versões concluída. Confira o resultado abaixo.',
+  'Check releases': 'Verificar versões',
+  'One check per minute. Checks inspect the first 20 published GitHub releases.':
+    'Uma verificação por minuto. As verificações examinam as primeiras 20 versões publicadas no GitHub.',
+  'This page reports versions. It does not install updates or verify release compatibility. Review release notes and back up data before upgrading.':
+    'Esta página informa as versões. Ela não instala atualizações nem verifica a compatibilidade das versões. Leia as notas de versão e faça backup dos dados antes de atualizar.',
+  'Only the owner can manage Besh release settings and update notices.':
+    'Somente o proprietário pode gerenciar as configurações de versões do Besh e os avisos de atualização.',
+  'YOUR WORKSPACE ACCESS': 'SEU ACESSO AO ESPAÇO DE TRABALHO',
+  'Manage your email sign-in and active browser sessions.':
+    'Gerencie seu acesso por e-mail e as sessões ativas do navegador.',
+  'Loading your account…': 'Carregando sua conta…',
+  'Sign-in details saved. Other browser sessions were revoked.':
+    'Dados de acesso salvos. As outras sessões do navegador foram revogadas.',
+  'Could not save sign-in details.':
+    'Não foi possível salvar os dados de acesso.',
+  'Optional. Your workspace key still works. Saving new details signs out your other browser sessions.':
+    'Opcional. Sua chave do espaço de trabalho continua funcionando. Salvar novos dados encerra suas outras sessões do navegador.',
+  'Account email': 'E-mail da conta',
+  'Use 12 to 128 characters.': 'Use de 12 a 128 caracteres.',
+  'Confirm your identity': 'Confirme sua identidade',
+  'Current password': 'Senha atual',
+  'Your workspace key': 'Sua chave do espaço de trabalho',
+  'Save sign-in details': 'Salvar dados de acesso',
+  'Active sessions': 'Sessões ativas',
+  'Owners can revoke sessions across this workspace.':
+    'Proprietários podem revogar sessões em todo este espaço de trabalho.',
+  'Only your own active sessions appear here.':
+    'Somente suas próprias sessões ativas aparecem aqui.',
+  'Session expires {date}.': 'A sessão expira em {date}.',
+  'Refresh sessions': 'Atualizar sessões',
+  Member: 'Membro',
+  Device: 'Dispositivo',
+  'Last active': 'Última atividade',
+  Expires: 'Expira',
+  Access: 'Acesso',
+  'This device': 'Este dispositivo',
+  'Other browser session': 'Outra sessão do navegador',
+  'Revoke session for {name} on this device':
+    'Revogar sessão de {name} neste dispositivo',
+  'Revoke session for {name}': 'Revogar sessão de {name}',
+  'Revoke this session and sign out?': 'Revogar esta sessão e sair?',
+  'Revoke this browser session for {name}?':
+    'Revogar esta sessão do navegador de {name}?',
+  'This session was revoked. Sign in again.':
+    'Esta sessão foi revogada. Entre novamente.',
+  'Browser session revoked.': 'Sessão do navegador revogada.',
+  Revoke: 'Revogar',
+  'No active sessions.': 'Nenhuma sessão ativa.',
   Language: 'Idioma',
   'Use device language': 'Usar idioma do dispositivo',
   Appearance: 'Aparência',

@@ -1,4 +1,89 @@
 const messages: Record<string, string> = {
+  'Update available': 'Доступно обновление',
+  'No newer release found': 'Более новый выпуск не найден',
+  'No matching releases found': 'Подходящие выпуски не найдены',
+  'Release check failed': 'Не удалось проверить выпуски',
+  'Owner access required to manage Besh updates.':
+    'Для управления обновлениями Besh нужны права владельца.',
+  'Could not load update information.':
+    'Не удалось загрузить сведения об обновлениях.',
+  'YOUR BESH INSTALLATION': 'ВАША УСТАНОВКА BESH',
+  'Besh updates': 'Обновления Besh',
+  'Check public GitHub releases when you are ready.':
+    'Проверьте общедоступные выпуски GitHub, когда будете готовы.',
+  'Discard unsaved update settings and refresh?':
+    'Отменить несохранённые настройки обновлений и загрузить заново?',
+  'Refresh update settings': 'Обновить настройки обновлений',
+  'Loading update settings…': 'Загрузка настроек обновлений…',
+  'Update settings saved. Check releases to get a fresh result.':
+    'Настройки обновлений сохранены. Проверьте выпуски, чтобы получить новый результат.',
+  'Release settings': 'Настройки выпусков',
+  'GitHub repository': 'Репозиторий GitHub',
+  'Use a public repository URL. Private repositories and access tokens are not supported.':
+    'Укажите URL общедоступного репозитория. Приватные репозитории и токены доступа не поддерживаются.',
+  'Include preview releases': 'Включать предварительные выпуски',
+  'Show alpha, beta and other prereleases alongside stable versions.':
+    'Показывать alpha, beta и другие предварительные выпуски вместе со стабильными версиями.',
+  'Save update settings': 'Сохранить настройки обновлений',
+  'Save your changes before checking releases.':
+    'Сохраните изменения перед проверкой выпусков.',
+  'Release status': 'Статус выпуска',
+  'Installed {version}': 'Установлена версия {version}',
+  'No release check yet': 'Выпуски ещё не проверялись',
+  'Last checked {date}': 'Последняя проверка: {date}',
+  'Preview release': 'Предварительный выпуск',
+  'View GitHub release': 'Посмотреть выпуск на GitHub',
+  'A check runs only when you choose it. Opening this page uses saved information.':
+    'Проверка запускается только по вашему выбору. При открытии страницы используются сохранённые сведения.',
+  'Release check finished. Review the result below.':
+    'Проверка выпусков завершена. Посмотрите результат ниже.',
+  'Check releases': 'Проверить выпуски',
+  'One check per minute. Checks inspect the first 20 published GitHub releases.':
+    'Одна проверка в минуту. Проверяются первые 20 опубликованных выпусков GitHub.',
+  'This page reports versions. It does not install updates or verify release compatibility. Review release notes and back up data before upgrading.':
+    'Эта страница сообщает о версиях. Она не устанавливает обновления и не проверяет совместимость выпусков. Перед обновлением прочитайте примечания к выпуску и создайте резервную копию данных.',
+  'Only the owner can manage Besh release settings and update notices.':
+    'Только владелец может управлять настройками выпусков Besh и уведомлениями об обновлениях.',
+  'YOUR WORKSPACE ACCESS': 'ВАШ ДОСТУП К РАБОЧЕМУ ПРОСТРАНСТВУ',
+  'Manage your email sign-in and active browser sessions.':
+    'Управляйте входом по электронной почте и активными сеансами браузера.',
+  'Loading your account…': 'Загрузка вашего аккаунта…',
+  'Sign-in details saved. Other browser sessions were revoked.':
+    'Данные входа сохранены. Другие сеансы браузера отозваны.',
+  'Could not save sign-in details.': 'Не удалось сохранить данные входа.',
+  'Optional. Your workspace key still works. Saving new details signs out your other browser sessions.':
+    'Необязательно. Ваш ключ рабочего пространства по-прежнему работает. Сохранение новых данных завершит ваши другие сеансы браузера.',
+  'Account email': 'Электронная почта аккаунта',
+  'Use 12 to 128 characters.': 'Используйте от 12 до 128 символов.',
+  'Confirm your identity': 'Подтвердите свою личность',
+  'Current password': 'Текущий пароль',
+  'Your workspace key': 'Ваш ключ рабочего пространства',
+  'Save sign-in details': 'Сохранить данные входа',
+  'Active sessions': 'Активные сеансы',
+  'Owners can revoke sessions across this workspace.':
+    'Владельцы могут отзывать сеансы во всём рабочем пространстве.',
+  'Only your own active sessions appear here.':
+    'Здесь показаны только ваши активные сеансы.',
+  'Session expires {date}.': 'Сеанс истекает {date}.',
+  'Refresh sessions': 'Обновить сеансы',
+  Member: 'Участник',
+  Device: 'Устройство',
+  'Last active': 'Последняя активность',
+  Expires: 'Истекает',
+  Access: 'Доступ',
+  'This device': 'Это устройство',
+  'Other browser session': 'Другой сеанс браузера',
+  'Revoke session for {name} on this device':
+    'Отозвать сеанс участника {name} на этом устройстве',
+  'Revoke session for {name}': 'Отозвать сеанс участника {name}',
+  'Revoke this session and sign out?': 'Отозвать этот сеанс и выйти?',
+  'Revoke this browser session for {name}?':
+    'Отозвать этот сеанс браузера участника {name}?',
+  'This session was revoked. Sign in again.':
+    'Этот сеанс отозван. Войдите снова.',
+  'Browser session revoked.': 'Сеанс браузера отозван.',
+  Revoke: 'Отозвать',
+  'No active sessions.': 'Нет активных сеансов.',
   Language: 'Язык',
   'Use device language': 'Использовать язык устройства',
   Appearance: 'Оформление',

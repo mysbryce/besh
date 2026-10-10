@@ -1,4 +1,88 @@
 const messages: Record<string, string> = {
+  'Update available': 'Update available',
+  'No newer release found': 'No newer release found',
+  'No matching releases found': 'No matching releases found',
+  'Release check failed': 'Release check failed',
+  'Owner access required to manage Besh updates.':
+    'Owner access required to manage Besh updates.',
+  'Could not load update information.': 'Could not load update information.',
+  'YOUR BESH INSTALLATION': 'YOUR BESH INSTALLATION',
+  'Besh updates': 'Besh updates',
+  'Check public GitHub releases when you are ready.':
+    'Check public GitHub releases when you are ready.',
+  'Discard unsaved update settings and refresh?':
+    'Discard unsaved update settings and refresh?',
+  'Refresh update settings': 'Refresh update settings',
+  'Loading update settings…': 'Loading update settings…',
+  'Update settings saved. Check releases to get a fresh result.':
+    'Update settings saved. Check releases to get a fresh result.',
+  'Release settings': 'Release settings',
+  'GitHub repository': 'GitHub repository',
+  'Use a public repository URL. Private repositories and access tokens are not supported.':
+    'Use a public repository URL. Private repositories and access tokens are not supported.',
+  'Include preview releases': 'Include preview releases',
+  'Show alpha, beta and other prereleases alongside stable versions.':
+    'Show alpha, beta and other prereleases alongside stable versions.',
+  'Save update settings': 'Save update settings',
+  'Save your changes before checking releases.':
+    'Save your changes before checking releases.',
+  'Release status': 'Release status',
+  'Installed {version}': 'Installed {version}',
+  'No release check yet': 'No release check yet',
+  'Last checked {date}': 'Last checked {date}',
+  'Preview release': 'Preview release',
+  'View GitHub release': 'View GitHub release',
+  'A check runs only when you choose it. Opening this page uses saved information.':
+    'A check runs only when you choose it. Opening this page uses saved information.',
+  'Release check finished. Review the result below.':
+    'Release check finished. Review the result below.',
+  'Check releases': 'Check releases',
+  'One check per minute. Checks inspect the first 20 published GitHub releases.':
+    'One check per minute. Checks inspect the first 20 published GitHub releases.',
+  'This page reports versions. It does not install updates or verify release compatibility. Review release notes and back up data before upgrading.':
+    'This page reports versions. It does not install updates or verify release compatibility. Review release notes and back up data before upgrading.',
+  'Only the owner can manage Besh release settings and update notices.':
+    'Only the owner can manage Besh release settings and update notices.',
+  'YOUR WORKSPACE ACCESS': 'YOUR WORKSPACE ACCESS',
+  'Manage your email sign-in and active browser sessions.':
+    'Manage your email sign-in and active browser sessions.',
+  'Loading your account…': 'Loading your account…',
+  'Sign-in details saved. Other browser sessions were revoked.':
+    'Sign-in details saved. Other browser sessions were revoked.',
+  'Could not save sign-in details.': 'Could not save sign-in details.',
+  'Optional. Your workspace key still works. Saving new details signs out your other browser sessions.':
+    'Optional. Your workspace key still works. Saving new details signs out your other browser sessions.',
+  'Account email': 'Account email',
+  'Use 12 to 128 characters.': 'Use 12 to 128 characters.',
+  'Confirm your identity': 'Confirm your identity',
+  'Current password': 'Current password',
+  'Your workspace key': 'Your workspace key',
+  'Save sign-in details': 'Save sign-in details',
+  'Active sessions': 'Active sessions',
+  'Owners can revoke sessions across this workspace.':
+    'Owners can revoke sessions across this workspace.',
+  'Only your own active sessions appear here.':
+    'Only your own active sessions appear here.',
+  'Session expires {date}.': 'Session expires {date}.',
+  'Refresh sessions': 'Refresh sessions',
+  Member: 'Member',
+  Device: 'Device',
+  'Last active': 'Last active',
+  Expires: 'Expires',
+  Access: 'Access',
+  'This device': 'This device',
+  'Other browser session': 'Other browser session',
+  'Revoke session for {name} on this device':
+    'Revoke session for {name} on this device',
+  'Revoke session for {name}': 'Revoke session for {name}',
+  'Revoke this session and sign out?': 'Revoke this session and sign out?',
+  'Revoke this browser session for {name}?':
+    'Revoke this browser session for {name}?',
+  'This session was revoked. Sign in again.':
+    'This session was revoked. Sign in again.',
+  'Browser session revoked.': 'Browser session revoked.',
+  Revoke: 'Revoke',
+  'No active sessions.': 'No active sessions.',
   'nodePicker.open': 'Add step',
   'nodePicker.title': 'Choose a step',
   'nodePicker.search': 'Search steps',

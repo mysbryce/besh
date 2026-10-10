@@ -1,4 +1,89 @@
 const messages: Record<string, string> = {
+  'Update available': '新しいバージョンがあります',
+  'No newer release found': '新しいリリースは見つかりませんでした',
+  'No matching releases found': '設定に一致するリリースは見つかりませんでした',
+  'Release check failed': 'リリースの確認に失敗しました',
+  'Owner access required to manage Besh updates.':
+    'Besh の更新管理にはオーナー権限が必要です。',
+  'Could not load update information.': '更新情報を読み込めませんでした。',
+  'YOUR BESH INSTALLATION': 'インストール済みの BESH',
+  'Besh updates': 'Besh の更新',
+  'Check public GitHub releases when you are ready.':
+    '準備ができたら GitHub の公開リリースを確認してください。',
+  'Discard unsaved update settings and refresh?':
+    '未保存の更新設定を破棄して再読み込みしますか？',
+  'Refresh update settings': '更新設定を再読み込み',
+  'Loading update settings…': '更新設定を読み込み中…',
+  'Update settings saved. Check releases to get a fresh result.':
+    '更新設定を保存しました。最新の結果を取得するにはリリースを確認してください。',
+  'Release settings': 'リリース設定',
+  'GitHub repository': 'GitHub リポジトリ',
+  'Use a public repository URL. Private repositories and access tokens are not supported.':
+    '公開リポジトリの URL を使用してください。非公開リポジトリやアクセストークンには対応していません。',
+  'Include preview releases': 'プレビューリリースを含める',
+  'Show alpha, beta and other prereleases alongside stable versions.':
+    '安定版とともに alpha、beta などのプレリリースを表示します。',
+  'Save update settings': '更新設定を保存',
+  'Save your changes before checking releases.':
+    'リリースを確認する前に変更を保存してください。',
+  'Release status': 'リリースの状態',
+  'Installed {version}': 'インストール済み：{version}',
+  'No release check yet': 'リリースはまだ確認していません',
+  'Last checked {date}': '最終確認：{date}',
+  'Preview release': 'プレビューリリース',
+  'View GitHub release': 'GitHub のリリースを見る',
+  'A check runs only when you choose it. Opening this page uses saved information.':
+    '確認は自分で選んだときだけ実行されます。このページを開くと保存済みの情報が表示されます。',
+  'Release check finished. Review the result below.':
+    'リリースの確認が完了しました。以下の結果を確認してください。',
+  'Check releases': 'リリースを確認',
+  'One check per minute. Checks inspect the first 20 published GitHub releases.':
+    '確認は1分に1回です。GitHub に公開された最初の20件のリリースを調べます。',
+  'This page reports versions. It does not install updates or verify release compatibility. Review release notes and back up data before upgrading.':
+    'このページはバージョン情報を表示します。更新のインストールやリリースの互換性確認は行いません。アップグレード前にリリースノートを読み、データをバックアップしてください。',
+  'Only the owner can manage Besh release settings and update notices.':
+    'Besh のリリース設定と更新通知を管理できるのはオーナーのみです。',
+  'YOUR WORKSPACE ACCESS': 'ワークスペースへのアクセス',
+  'Manage your email sign-in and active browser sessions.':
+    'メールでのログイン情報と有効なブラウザーセッションを管理します。',
+  'Loading your account…': 'アカウントを読み込み中…',
+  'Sign-in details saved. Other browser sessions were revoked.':
+    'ログイン情報を保存しました。他のブラウザーセッションは失効しました。',
+  'Could not save sign-in details.': 'ログイン情報を保存できませんでした。',
+  'Optional. Your workspace key still works. Saving new details signs out your other browser sessions.':
+    '設定は任意です。ワークスペースキーは引き続き使えます。新しい情報を保存すると、他のブラウザーセッションからログアウトします。',
+  'Account email': 'アカウントのメールアドレス',
+  'Use 12 to 128 characters.': '12〜128文字で入力してください。',
+  'Confirm your identity': '本人確認',
+  'Current password': '現在のパスワード',
+  'Your workspace key': 'ワークスペースキー',
+  'Save sign-in details': 'ログイン情報を保存',
+  'Active sessions': '有効なセッション',
+  'Owners can revoke sessions across this workspace.':
+    'オーナーはこのワークスペース内のセッションを失効させることができます。',
+  'Only your own active sessions appear here.':
+    '自分の有効なセッションのみが表示されます。',
+  'Session expires {date}.': 'セッションの有効期限：{date}。',
+  'Refresh sessions': 'セッションを更新',
+  Member: 'メンバー',
+  Device: '端末',
+  'Last active': '最終利用日時',
+  Expires: '有効期限',
+  Access: 'アクセス',
+  'This device': 'この端末',
+  'Other browser session': '他のブラウザーセッション',
+  'Revoke session for {name} on this device':
+    'この端末での {name} のセッションを失効',
+  'Revoke session for {name}': '{name} のセッションを失効',
+  'Revoke this session and sign out?':
+    'このセッションを失効させてログアウトしますか？',
+  'Revoke this browser session for {name}?':
+    '{name} のこのブラウザーセッションを失効させますか？',
+  'This session was revoked. Sign in again.':
+    'このセッションは失効しました。再度ログインしてください。',
+  'Browser session revoked.': 'ブラウザーセッションを失効させました。',
+  Revoke: '失効',
+  'No active sessions.': '有効なセッションはありません。',
   Language: '言語',
   'Use device language': '端末の言語を使用',
   Appearance: '外観',

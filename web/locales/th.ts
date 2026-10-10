@@ -1,4 +1,88 @@
 const messages: Record<string, string> = {
+  'Update available': 'มีเวอร์ชันใหม่',
+  'No newer release found': 'ไม่พบเวอร์ชันที่ใหม่กว่า',
+  'No matching releases found': 'ไม่พบเวอร์ชันที่ตรงกับการตั้งค่า',
+  'Release check failed': 'ตรวจสอบเวอร์ชันไม่สำเร็จ',
+  'Owner access required to manage Besh updates.':
+    'ต้องมีสิทธิ์เจ้าของเพื่อจัดการการอัปเดต Besh',
+  'Could not load update information.': 'โหลดข้อมูลอัปเดตไม่สำเร็จ',
+  'YOUR BESH INSTALLATION': 'Besh ที่คุณติดตั้ง',
+  'Besh updates': 'อัปเดต Besh',
+  'Check public GitHub releases when you are ready.':
+    'ตรวจสอบเวอร์ชันที่เผยแพร่บน GitHub สาธารณะเมื่อคุณพร้อม',
+  'Discard unsaved update settings and refresh?':
+    'ทิ้งการตั้งค่าอัปเดตที่ยังไม่บันทึกและโหลดใหม่หรือไม่?',
+  'Refresh update settings': 'โหลดการตั้งค่าอัปเดตใหม่',
+  'Loading update settings…': 'กำลังโหลดการตั้งค่าอัปเดต…',
+  'Update settings saved. Check releases to get a fresh result.':
+    'บันทึกการตั้งค่าอัปเดตแล้ว ตรวจสอบเวอร์ชันเพื่อรับผลล่าสุด',
+  'Release settings': 'การตั้งค่าเวอร์ชัน',
+  'GitHub repository': 'คลังโค้ด GitHub',
+  'Use a public repository URL. Private repositories and access tokens are not supported.':
+    'ใช้ URL ของคลังโค้ดสาธารณะ ไม่รองรับคลังโค้ดส่วนตัวและโทเค็นเข้าถึง',
+  'Include preview releases': 'รวมเวอร์ชันทดลอง',
+  'Show alpha, beta and other prereleases alongside stable versions.':
+    'แสดงเวอร์ชัน alpha, beta และเวอร์ชันทดลองอื่นร่วมกับเวอร์ชันเสถียร',
+  'Save update settings': 'บันทึกการตั้งค่าอัปเดต',
+  'Save your changes before checking releases.':
+    'บันทึกการเปลี่ยนแปลงก่อนตรวจสอบเวอร์ชัน',
+  'Release status': 'สถานะเวอร์ชัน',
+  'Installed {version}': 'ติดตั้งแล้ว {version}',
+  'No release check yet': 'ยังไม่ได้ตรวจสอบเวอร์ชัน',
+  'Last checked {date}': 'ตรวจสอบล่าสุด {date}',
+  'Preview release': 'เวอร์ชันทดลอง',
+  'View GitHub release': 'ดูเวอร์ชันบน GitHub',
+  'A check runs only when you choose it. Opening this page uses saved information.':
+    'ตรวจสอบเมื่อคุณเลือกเท่านั้น การเปิดหน้านี้ใช้ข้อมูลที่บันทึกไว้',
+  'Release check finished. Review the result below.':
+    'ตรวจสอบเวอร์ชันเสร็จแล้ว ตรวจดูผลด้านล่าง',
+  'Check releases': 'ตรวจสอบเวอร์ชัน',
+  'One check per minute. Checks inspect the first 20 published GitHub releases.':
+    'ตรวจสอบได้หนึ่งครั้งต่อนาที โดยตรวจดู 20 เวอร์ชันแรกที่เผยแพร่บน GitHub',
+  'This page reports versions. It does not install updates or verify release compatibility. Review release notes and back up data before upgrading.':
+    'หน้านี้รายงานเวอร์ชันเท่านั้น ไม่ติดตั้งอัปเดตหรือตรวจสอบความเข้ากันได้ของเวอร์ชัน อ่านบันทึกประจำเวอร์ชันและสำรองข้อมูลก่อนอัปเกรด',
+  'Only the owner can manage Besh release settings and update notices.':
+    'เฉพาะเจ้าของเท่านั้นที่จัดการการตั้งค่าเวอร์ชัน Besh และประกาศอัปเดตได้',
+  'YOUR WORKSPACE ACCESS': 'การเข้าถึงพื้นที่ทำงานของคุณ',
+  'Manage your email sign-in and active browser sessions.':
+    'จัดการการเข้าสู่ระบบด้วยอีเมลและเซสชันเบราว์เซอร์ที่ใช้งานอยู่',
+  'Loading your account…': 'กำลังโหลดบัญชีของคุณ…',
+  'Sign-in details saved. Other browser sessions were revoked.':
+    'บันทึกข้อมูลเข้าสู่ระบบแล้ว เซสชันบนเบราว์เซอร์อื่นถูกเพิกถอน',
+  'Could not save sign-in details.': 'บันทึกข้อมูลเข้าสู่ระบบไม่สำเร็จ',
+  'Optional. Your workspace key still works. Saving new details signs out your other browser sessions.':
+    'ไม่จำเป็นต้องตั้งค่า คีย์พื้นที่ทำงานของคุณยังใช้งานได้ การบันทึกข้อมูลใหม่จะออกจากระบบบนเบราว์เซอร์อื่นของคุณ',
+  'Account email': 'อีเมลบัญชี',
+  'Use 12 to 128 characters.': 'ใช้ 12 ถึง 128 อักขระ',
+  'Confirm your identity': 'ยืนยันตัวตนของคุณ',
+  'Current password': 'รหัสผ่านปัจจุบัน',
+  'Your workspace key': 'คีย์พื้นที่ทำงานของคุณ',
+  'Save sign-in details': 'บันทึกข้อมูลเข้าสู่ระบบ',
+  'Active sessions': 'เซสชันที่ใช้งานอยู่',
+  'Owners can revoke sessions across this workspace.':
+    'เจ้าของสามารถเพิกถอนเซสชันทั้งหมดในพื้นที่ทำงานนี้ได้',
+  'Only your own active sessions appear here.':
+    'แสดงเฉพาะเซสชันที่ใช้งานอยู่ของคุณที่นี่',
+  'Session expires {date}.': 'เซสชันหมดอายุ {date}',
+  'Refresh sessions': 'รีเฟรชเซสชัน',
+  Member: 'สมาชิก',
+  Device: 'อุปกรณ์',
+  'Last active': 'ใช้งานล่าสุด',
+  Expires: 'หมดอายุ',
+  Access: 'การเข้าถึง',
+  'This device': 'อุปกรณ์นี้',
+  'Other browser session': 'เซสชันเบราว์เซอร์อื่น',
+  'Revoke session for {name} on this device':
+    'เพิกถอนเซสชันของ {name} บนอุปกรณ์นี้',
+  'Revoke session for {name}': 'เพิกถอนเซสชันของ {name}',
+  'Revoke this session and sign out?': 'เพิกถอนเซสชันนี้และออกจากระบบหรือไม่?',
+  'Revoke this browser session for {name}?':
+    'เพิกถอนเซสชันเบราว์เซอร์นี้ของ {name} หรือไม่?',
+  'This session was revoked. Sign in again.':
+    'เซสชันนี้ถูกเพิกถอนแล้ว กรุณาเข้าสู่ระบบอีกครั้ง',
+  'Browser session revoked.': 'เพิกถอนเซสชันเบราว์เซอร์แล้ว',
+  Revoke: 'เพิกถอน',
+  'No active sessions.': 'ไม่มีเซสชันที่ใช้งานอยู่',
   Language: 'ภาษา',
   'Use device language': 'ใช้ภาษาของอุปกรณ์',
   Appearance: 'รูปแบบการแสดงผล',

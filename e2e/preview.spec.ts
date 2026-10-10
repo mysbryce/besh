@@ -26,6 +26,10 @@ import { nodePickerPreviews } from './node-picker-preview'
 import { navigationPreviews } from './navigation-preview'
 import { localePreviews, localeFallbackPreviews } from './locale-previews'
 import {
+  accountLocalePreviews,
+  updateLocalePreviews,
+} from './management-locale-previews'
+import {
   localeStartupPreviews,
   localeBootstrapPreviews,
 } from './locale-startup-previews'
@@ -4245,7 +4249,9 @@ for (const story of previewStories) {
     story.id === 'locales' ||
     story.id === 'locale-fallback' ||
     story.id === 'locale-startup' ||
-    story.id === 'locale-bootstrap'
+    story.id === 'locale-bootstrap' ||
+    story.id === 'management-account' ||
+    story.id === 'management-updates'
   )
     continue
   const helper = featureHelpers[story.id]
@@ -4271,6 +4277,8 @@ for (const [story, locale, helper] of [
   ['locale-fallback', 'es-MX', localeFallbackPreviews],
   ['locale-startup', 'th-TH', localeStartupPreviews],
   ['locale-bootstrap', 'th-TH', localeBootstrapPreviews],
+  ['management-account', 'en-US', accountLocalePreviews],
+  ['management-updates', 'en-US', updateLocalePreviews],
 ] as const) {
   test.describe(story, () => {
     test.use({ locale })
