@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Replacement spreadsheet': 'Planilha de substituição',
+  'Replace spreadsheet': 'Substituir planilha',
+  'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':
+    'Substitui as linhas salvas usadas pelas suas APIs. Mantenha a compatibilidade das colunas publicadas e de seus tipos.',
+  'Replace saved data for {source}? APIs using this source will read the new snapshot.':
+    'Substituir os dados salvos de {source}? As APIs que usam esta fonte lerão a nova cópia dos dados.',
+  'Spreadsheet replaced. Your APIs now use the saved data.':
+    'Planilha substituída. Suas APIs agora usam os dados salvos.',
   'FROM SPREADSHEET TO API': 'DA PLANILHA À API',
   'Bring your data. Preview its columns. Build an API without writing JSON.':
     'Traga seus dados, confira as colunas e crie uma API sem escrever JSON.',

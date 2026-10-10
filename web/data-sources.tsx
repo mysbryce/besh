@@ -286,6 +286,8 @@ function SourceActions({
   onDelete: () => void
   onRefresh: () => void
 }) {
+  const { t } = useTranslation()
+
   const [file, setFile] = useState<File | null>(null)
 
   return (
@@ -299,7 +301,7 @@ function SourceActions({
           }}
         >
           <label htmlFor="replacement-spreadsheet">
-            Replacement spreadsheet
+            {t('Replacement spreadsheet')}
             <Input
               id="replacement-spreadsheet"
               type="file"
@@ -310,11 +312,12 @@ function SourceActions({
           </label>
           <Button variant="outline" disabled={busy || !file}>
             <Upload />
-            Replace spreadsheet
+            {t('Replace spreadsheet')}
           </Button>
           <p className="field-help">
-            Replaces saved rows used by your APIs. Keep published columns and
-            their types compatible.
+            {t(
+              'Replaces saved rows used by your APIs. Keep published columns and their types compatible.',
+            )}
           </p>
         </form>
       ) : (
@@ -732,7 +735,10 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
               onReplace={(replacement) => {
                 if (
                   !window.confirm(
-                    `Replace saved data for ${detail.name}? APIs using this source will read the new snapshot.`,
+                    t(
+                      'Replace saved data for {source}? APIs using this source will read the new snapshot.',
+                      { source: detail.name },
+                    ),
                   )
                 )
                   return

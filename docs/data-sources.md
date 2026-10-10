@@ -20,6 +20,8 @@ Uploads save a local snapshot. Replacement imports a new snapshot for the same s
 
 Published APIs read the latest saved source snapshot. Refreshing or replacing a source can change live response values without republishing the graph; review the confirmation before proceeding. Owners, editors, and custom members granted source-write permission can make these changes for unprotected sources; protected full/raw changes require the owner. Release history preserves graph definitions, while source snapshots are mutable data.
 
+Uploaded-file replacement labels, compatibility guidance, confirmation and completion follow your dashboard language. Switching language preserves the chosen file and saved data; replacement requires explicit confirmation. Canceling makes no request. A rejected import keeps the last valid snapshot, with the server error shown unchanged.
+
 Deleting a source used by a current draft or currently published API returns `409`. Remove those references first. Older release history does not retain the source snapshot or block deletion; rollback to an old graph can fail when its source is missing. Import/refresh/replacement failure leaves the last valid snapshot intact. Workspace backups include source data; store them privately and review restored credentials before serving callers.
 
 ## Generated APIs

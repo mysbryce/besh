@@ -1,7 +1,11 @@
 import { existsSync, mkdirSync, renameSync } from 'node:fs'
 import { resolve, join, sep } from 'node:path'
 import { renderPreview, type PreviewRecord } from './preview-report'
-import { previewStories } from '../e2e/preview-order'
+import {
+  previewStories,
+  sqlitePreviewStories,
+  type PreviewStory,
+} from '../e2e/preview-order'
 import { getPreviewWorkers } from './test-workers'
 
 const root = resolve('.preview')
@@ -41,35 +45,63 @@ if (process.argv.includes('--open')) {
     existsSync('C:/Program Files/Google/Chrome/Application/chrome.exe')
       ? 'chrome'
       : undefined)
-  const check = Bun.spawn(
-    [
-      process.execPath,
-      'x',
-      'playwright',
-      'test',
-      '--config',
-      'playwright.preview.config.ts',
-      `--workers=${workers}`,
-    ],
+  const sqliteStories = new Set<PreviewStory>(sqlitePreviewStories)
+  const phases = [
     {
-      env: {
-        ...process.env,
-        BESH_PREVIEW_DIR: directory,
-        ...(channel ? { PLAYWRIGHT_CHANNEL: channel } : {}),
-      },
-      stdout: 'inherit',
-      stderr: 'inherit',
+      name: 'sqlite',
+      stories: previewStories.filter((story) => sqliteStories.has(story.id)),
+      workers: Math.min(workers, 2),
     },
-  )
+    {
+      name: 'regular',
+      stories: previewStories.filter((story) => !sqliteStories.has(story.id)),
+      workers,
+    },
+  ]
+  const deadline = performance.now() + 900_000
 
-  const stopCheck = () => check.kill()
-  process.on('SIGINT', stopCheck)
-  process.on('SIGTERM', stopCheck)
+  // Native readers finish before other browser work; both phases share a budget.
+  for (const phase of phases) {
+    const remaining = Math.ceil(deadline - performance.now())
 
-  const exitCode = await check.exited
-  process.off('SIGINT', stopCheck)
-  process.off('SIGTERM', stopCheck)
-  if (exitCode !== 0) process.exit(exitCode)
+    if (remaining <= 0) throw new Error('Preview capture exceeded its deadline')
+
+    const titles = phase.stories.map((story) => story.id).join('|')
+    const check = Bun.spawn(
+      [
+        process.execPath,
+        'x',
+        '--no-install',
+        'playwright',
+        'test',
+        '--config',
+        'playwright.preview.config.ts',
+        `--workers=${phase.workers}`,
+        `--grep=(?:^|\\s)(?:${titles})$`,
+        `--global-timeout=${remaining}`,
+        `--output=${join(directory, 'test-output', phase.name)}`,
+      ],
+      {
+        env: {
+          ...process.env,
+          BESH_PREVIEW_DIR: directory,
+          ...(channel ? { PLAYWRIGHT_CHANNEL: channel } : {}),
+        },
+        stdout: 'inherit',
+        stderr: 'inherit',
+      },
+    )
+
+    const stopCheck = () => check.kill()
+    process.on('SIGINT', stopCheck)
+    process.on('SIGTERM', stopCheck)
+
+    const exitCode = await check.exited
+    process.off('SIGINT', stopCheck)
+    process.off('SIGTERM', stopCheck)
+
+    if (exitCode !== 0) process.exit(exitCode)
+  }
 
   const records: PreviewRecord[] = []
   mkdirSync(join(directory, 'images'), { recursive: true })

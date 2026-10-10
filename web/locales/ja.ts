@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Replacement spreadsheet': '置き換え用スプレッドシート',
+  'Replace spreadsheet': 'スプレッドシートを置き換え',
+  'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':
+    'API が使用する保存済みの行を置き換えます。公開済みの列とその型の互換性を保ってください。',
+  'Replace saved data for {source}? APIs using this source will read the new snapshot.':
+    '{source} の保存済みデータを置き換えますか？このデータソースを使用する API は新しいスナップショットを読み取ります。',
+  'Spreadsheet replaced. Your APIs now use the saved data.':
+    'スプレッドシートを置き換えました。API は保存済みデータを使用するようになりました。',
   'FROM SPREADSHEET TO API': 'スプレッドシートから API へ',
   'Bring your data. Preview its columns. Build an API without writing JSON.':
     'データを取り込み、列を確認して、JSON を書かずに API を作成できます。',

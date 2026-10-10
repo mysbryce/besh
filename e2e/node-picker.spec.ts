@@ -48,17 +48,8 @@ test('owner finds and adds a step from the categorized picker', async ({
     await nodePickerPreviews({
       page,
       owner,
-      capture: async (_group, title, _detail, options) => {
-        await page.screenshot({
-          path: testInfo.outputPath(
-            `${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`,
-          ),
-          fullPage: options?.fullPage ?? true,
-          animations: 'disabled',
-          mask: [page.getByLabel('Workspace token', { exact: true })],
-          maskColor: '#dfe4ec',
-        })
-      },
+      // The canonical gallery captures every state; this story keeps assertions.
+      capture: async () => {},
     })
     expect(browserErrors).toEqual([])
   } catch (error) {

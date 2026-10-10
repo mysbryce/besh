@@ -10,7 +10,7 @@ import { relative, resolve, sep, join, isAbsolute } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { previewStories } from '../e2e/preview-order'
-import { getPreviewWorkers, getTestWorkers } from './test-workers'
+import { getPreviewWorkers, getBrowserWorkers } from './test-workers'
 import type { PreviewRecord } from './preview-report'
 
 const root = fileURLToPath(new URL('..', import.meta.url))
@@ -114,7 +114,7 @@ try {
   process.exit(1)
 }
 
-const workers = preview ? getPreviewWorkers() : getTestWorkers()
+const workers = preview ? getPreviewWorkers() : getBrowserWorkers()
 if (!explicitFiles) {
   const changed = [
     [
@@ -209,6 +209,7 @@ if (e2e || preview) {
     {
       ...process.env,
       BESH_E2E_SKIP_PROXY: '',
+      BESH_E2E_SKIP_SQLITE: '',
       ...(preview ? { BESH_PREVIEW_DIR: directory } : {}),
     },
   )

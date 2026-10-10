@@ -4,6 +4,16 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.1-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Translate uploaded spreadsheet replacement forms, complete confirmation warnings and completion notices across all seven dashboard languages.
+- Preserve selected files, authored data, current permissions and published API behavior while changing presentation language or canceling replacement.
+- Run product SQLite preview stories in a bounded phase before other browser captures, preserving reader deadlines, all stories and the last successful gallery on failure.
+- Bound product SQLite browser work and run the startup-sensitive member-field story alone. Cap the default dashboard phase at four workers after higher-worker failures; preserve explicit CPU/count overrides and the separate Vite/WebSocket phase.
+- Keep routine step-picker assertions and masked failure diagnostics while capturing its complete visual inventory only in the gallery.
+
 ## 0.20.0-alpha.0 — 2026-10-10
 
 ### Added

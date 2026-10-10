@@ -1,7 +1,9 @@
-import { getTestWorkers } from './test-workers'
+import { getBrowserWorkers } from './test-workers'
+import { sqlitePreviewStories } from '../e2e/preview-order'
+import { cpus } from 'node:os'
 
 const arguments_ = process.argv.slice(2)
-const workers = getTestWorkers()
+const workers = getBrowserWorkers()
 
 async function run(arguments_: string[], env: NodeJS.ProcessEnv) {
   const child = Bun.spawn(
@@ -29,6 +31,7 @@ async function run(arguments_: string[], env: NodeJS.ProcessEnv) {
 
 const env = { ...process.env }
 delete env.BESH_E2E_SKIP_PROXY
+delete env.BESH_E2E_SKIP_SQLITE
 
 const valueOptions = new Set([
   '-j',
@@ -55,6 +58,7 @@ const valueOptions = new Set([
   '--update-source-method',
 ])
 let focused = false
+let workerOverride: string | undefined
 
 for (let index = 0; index < arguments_.length; index++) {
   const argument = arguments_[index]!
@@ -69,6 +73,14 @@ for (let index = 0; index < arguments_.length; index++) {
     break
   }
 
+  if (argument === '--workers' || argument === '-j')
+    workerOverride = arguments_[index + 1] ?? ''
+  else {
+    const override = argument.match(/^--workers=(.*)$|^-j(.+)$/)
+
+    if (override) workerOverride = override[1] ?? override[2]
+  }
+
   if (valueOptions.has(argument)) index++
 }
 
@@ -76,11 +88,42 @@ const started = performance.now()
 
 if (focused) await run(arguments_, env)
 else {
-  // Cold Vite startup competes with browser workers and short-lived WS proofs.
+  let nativeWorkers = workers
+
+  if (workerOverride !== undefined) {
+    const selected = Number.parseInt(workerOverride, 10)
+
+    if (!Number.isSafeInteger(selected) || selected < 1)
+      throw new Error('Workers must be a positive number or percentage')
+
+    nativeWorkers = workerOverride.endsWith('%')
+      ? Math.max(1, Math.floor((cpus().length * selected) / 100))
+      : selected
+  }
+
+  const sqliteFiles = sqlitePreviewStories
+    .filter((story) => story !== 'member-field-profiles')
+    .map((story) => `e2e/${story}.spec.ts`)
+
+  // Native reader work finishes before the CPU-adaptive dashboard phase.
+  await run(
+    [...arguments_, ...sqliteFiles, `--workers=${Math.min(nativeWorkers, 2)}`],
+    env,
+  )
+
   await run([`--workers=${workers}`, ...arguments_], {
     ...env,
     BESH_E2E_SKIP_PROXY: '1',
+    BESH_E2E_SKIP_SQLITE: '1',
   })
+
+  // This native fixture's short readiness check failed under parallel startup.
+  await run(
+    [...arguments_, 'e2e/member-field-profiles.spec.ts', '--workers=1'],
+    env,
+  )
+
+  // Cold Vite startup competes with browser workers and short-lived WS proofs.
   await run([...arguments_, 'e2e/websocket-proxy.spec.ts', '--workers=1'], env)
 }
 
