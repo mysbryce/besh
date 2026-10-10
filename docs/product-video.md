@@ -4,6 +4,8 @@ The [Besh product film](assets/besh-product.mp4) is an original, local English 6
 
 The maintainer approved this final cut and requested README placement on 2026-10-10. Clicks highlight controls; drops pulse existing ports and animate edges without moving endpoints. These effects add no product capabilities. The README links the tracked MP4; editable marketing files remain local.
 
+[PR #13](https://github.com/mysbryce/besh/pull/13) delivered the approved README link and film as source version `0.20.4-alpha.0`. Its [exact-head CI](https://github.com/mysbryce/besh/actions/runs/38054518624) and [post-merge main CI](https://github.com/mysbryce/besh/actions/runs/38054945566) passed core, browser and compiled-portable jobs. This does not publish a new executable release or establish continuous audio/video playback verification.
+
 ## Sequence
 
 | Time        | Composition and action                                                          |

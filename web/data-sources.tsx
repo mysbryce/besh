@@ -351,16 +351,17 @@ function SourceActions({
               target="_blank"
               rel="noreferrer"
             >
-              Open Google Sheet <ArrowUpRight size={15} />
+              {t('Open Google Sheet')} <ArrowUpRight size={15} />
             </a>
           ) : null}
           <Button variant="outline" disabled={busy} onClick={onRefresh}>
             <RefreshCw />
-            Refresh saved data
+            {t('Refresh saved data')}
           </Button>
           <p className="field-help">
-            This is a saved snapshot. Refresh imports changes from Google Sheets
-            for APIs using this source.
+            {t(
+              'This is a saved snapshot. Refresh imports changes from Google Sheets for APIs using this source.',
+            )}
           </p>
         </>
       )}
@@ -371,10 +372,10 @@ function SourceActions({
         onClick={onDelete}
       >
         <Trash2 />
-        Delete data source
+        {t('Delete data source')}
       </Button>
       <p className="field-help">
-        Data sources used by a draft or published API cannot be deleted.
+        {t('Data sources used by a draft or published API cannot be deleted.')}
       </p>
     </div>
   )
@@ -624,7 +625,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
               </label>
             ) : (
               <label key="google" htmlFor="google-sheet-link">
-                Google Sheets link
+                {t('Google Sheets link')}
                 <Input
                   id="google-sheet-link"
                   type="url"
@@ -648,7 +649,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
               <Upload />
               {importMethod === 'file'
                 ? t('Import spreadsheet')
-                : 'Import Google Sheet'}
+                : t('Import Google Sheet')}
             </Button>
           </form>
           <p className="source-note" id="import-source-help">
@@ -656,13 +657,17 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
               ? t(
                   'CSV or Excel (.xlsx), up to 2 MB. Put column names in the first row. Imports save a snapshot of your data.',
                 )
-              : 'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.'}
+              : t(
+                  'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.',
+                )}
           </p>
         </section>
       </fieldset>
       {!writable ? (
         <p>
-          Manage data sources access is needed to import or change saved rows.
+          {t(
+            'Manage data sources access is needed to import or change saved rows.',
+          )}
         </p>
       ) : null}
       {!readable ? (
@@ -783,7 +788,10 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
               onRefresh={() => {
                 if (
                   !window.confirm(
-                    `Refresh saved data for ${detail.name}? APIs using this source will read the new Google Sheets snapshot.`,
+                    t(
+                      'Refresh saved data for {source}? APIs using this source will read the new Google Sheets snapshot.',
+                      { source: detail.name },
+                    ),
                   )
                 )
                   return
@@ -804,18 +812,23 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
               onDelete={() => {
                 if (
                   !window.confirm(
-                    `Delete data source ${detail.name}? This cannot be undone.`,
+                    t('Delete data source {source}? This cannot be undone.', {
+                      source: detail.name,
+                    }),
                   )
                 )
                   return
 
                 perform(async () => {
                   await api(`/api/data-sources/${detail.id}`, token, 'DELETE')
+
                   const remaining = sources.filter(
                     (source) => source.id !== detail.id,
                   )
+
                   setSources(remaining)
                   setDetail(null)
+
                   if (readable && remaining[0])
                     setDetail(
                       await api<DataSourceDetail>(
@@ -823,6 +836,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
                         token,
                       ),
                     )
+
                   message('Data source deleted.')
                 })
               }}

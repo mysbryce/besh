@@ -1,4 +1,24 @@
 const messages: Record<string, string> = {
+  'Delete data source': 'Удалить источник данных',
+  'Data sources used by a draft or published API cannot be deleted.':
+    'Источники данных, используемые черновиком или текущим опубликованным API, нельзя удалить.',
+  'Delete data source {source}? This cannot be undone.':
+    'Удалить источник данных {source}? Это действие нельзя отменить.',
+  'Data source deleted.': 'Источник данных удалён.',
+  'Google Sheets link': 'Ссылка на Google Таблицу',
+  'Import Google Sheet': 'Импортировать Google Таблицу',
+  'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.':
+    'Откройте доступ к таблице для просмотра всем, у кого есть ссылка. Мы сохраняем текущие строки; изменения импортируются только при обновлении сохранённых данных. Для закрытой таблицы загрузите Excel или CSV.',
+  'Open Google Sheet': 'Открыть Google Таблицу',
+  'Refresh saved data': 'Обновить сохранённые данные',
+  'This is a saved snapshot. Refresh imports changes from Google Sheets for APIs using this source.':
+    'Это сохранённый снимок данных. Обновление импортирует изменения из Google Таблиц для API, использующих этот источник.',
+  'Refresh saved data for {source}? APIs using this source will read the new Google Sheets snapshot.':
+    'Обновить сохранённые данные источника {source}? API, использующие этот источник, будут читать новый снимок Google Таблицы.',
+  'Google Sheet refreshed. Your APIs now use the saved data.':
+    'Google Таблица обновлена. Ваши API теперь используют сохранённые данные.',
+  'Manage data sources access is needed to import or change saved rows.':
+    'Для импорта или изменения сохранённых строк требуется право управления источниками данных.',
   'Replacement spreadsheet': 'Таблица для замены',
   'Replace spreadsheet': 'Заменить таблицу',
   'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':

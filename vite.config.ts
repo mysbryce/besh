@@ -10,6 +10,9 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
+    warmup: {
+      clientFiles: ['./web/main.tsx', './web/builder.tsx'],
+    },
     watch: {
       ignored: ['**/.preview/**', '**/test-results/**', '**/docs/**'],
     },

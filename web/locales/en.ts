@@ -1,4 +1,24 @@
 const messages: Record<string, string> = {
+  'Delete data source': 'Delete data source',
+  'Data sources used by a draft or published API cannot be deleted.':
+    'Data sources used by a draft or published API cannot be deleted.',
+  'Delete data source {source}? This cannot be undone.':
+    'Delete data source {source}? This cannot be undone.',
+  'Data source deleted.': 'Data source deleted.',
+  'Google Sheets link': 'Google Sheets link',
+  'Import Google Sheet': 'Import Google Sheet',
+  'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.':
+    'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.',
+  'Open Google Sheet': 'Open Google Sheet',
+  'Refresh saved data': 'Refresh saved data',
+  'This is a saved snapshot. Refresh imports changes from Google Sheets for APIs using this source.':
+    'This is a saved snapshot. Refresh imports changes from Google Sheets for APIs using this source.',
+  'Refresh saved data for {source}? APIs using this source will read the new Google Sheets snapshot.':
+    'Refresh saved data for {source}? APIs using this source will read the new Google Sheets snapshot.',
+  'Google Sheet refreshed. Your APIs now use the saved data.':
+    'Google Sheet refreshed. Your APIs now use the saved data.',
+  'Manage data sources access is needed to import or change saved rows.':
+    'Manage data sources access is needed to import or change saved rows.',
   'Replacement spreadsheet': 'Replacement spreadsheet',
   'Replace spreadsheet': 'Replace spreadsheet',
   'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':

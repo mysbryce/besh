@@ -1,4 +1,24 @@
 const messages: Record<string, string> = {
+  'Delete data source': '데이터 소스 삭제',
+  'Data sources used by a draft or published API cannot be deleted.':
+    '초안 또는 현재 게시된 API에서 사용하는 데이터 소스는 삭제할 수 없습니다.',
+  'Delete data source {source}? This cannot be undone.':
+    '데이터 소스 {source}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+  'Data source deleted.': '데이터 소스를 삭제했습니다.',
+  'Google Sheets link': 'Google 스프레드시트 링크',
+  'Import Google Sheet': 'Google 스프레드시트 가져오기',
+  'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.':
+    '링크가 있는 모든 사용자가 볼 수 있도록 시트를 공유하세요. 현재 행을 저장하며, 저장된 데이터를 새로고침할 때만 변경 사항을 가져옵니다. 비공개 시트는 Excel 또는 CSV로 업로드하세요.',
+  'Open Google Sheet': 'Google 스프레드시트 열기',
+  'Refresh saved data': '저장된 데이터 새로고침',
+  'This is a saved snapshot. Refresh imports changes from Google Sheets for APIs using this source.':
+    '저장된 데이터 스냅샷입니다. 새로고침하면 Google 스프레드시트의 변경 사항을 가져와 이 데이터 소스를 사용하는 API에 반영합니다.',
+  'Refresh saved data for {source}? APIs using this source will read the new Google Sheets snapshot.':
+    '{source}의 저장된 데이터를 새로고침하시겠습니까? 이 데이터 소스를 사용하는 API는 새 Google 스프레드시트 스냅샷을 읽습니다.',
+  'Google Sheet refreshed. Your APIs now use the saved data.':
+    'Google 스프레드시트를 새로고침했습니다. 이제 API는 저장된 데이터를 사용합니다.',
+  'Manage data sources access is needed to import or change saved rows.':
+    '저장된 행을 가져오거나 변경하려면 데이터 소스 관리 권한이 필요합니다.',
   'Replacement spreadsheet': '교체할 스프레드시트',
   'Replace spreadsheet': '스프레드시트 교체',
   'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':

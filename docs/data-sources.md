@@ -22,7 +22,11 @@ Published APIs read the latest saved source snapshot. Refreshing or replacing a 
 
 Uploaded-file replacement labels, compatibility guidance, confirmation and completion follow your dashboard language. Switching language preserves the chosen file and saved data; replacement requires explicit confirmation. Canceling makes no request. A rejected import keeps the last valid snapshot, with the server error shown unchanged.
 
+Public Google Sheets import and manual-refresh guidance also follow your dashboard language, including the sharing requirement, private-sheet alternative and confirmation. Switching language does not fetch the sheet. Canceling refresh keeps the snapshot; a confirmed refresh updates the same source. Changing language while delivery is pending keeps controls disabled and shows completion in the current language.
+
 Deleting a source used by a current draft or currently published API returns `409`. Remove those references first. Older release history does not retain the source snapshot or block deletion; rollback to an old graph can fail when its source is missing. Import/refresh/replacement failure leaves the last valid snapshot intact. Workspace backups include source data; store them privately and review restored credentials before serving callers.
+
+Deletion uses a translated irreversible confirmation. Canceling or switching language sends no deletion request. The server checks references and permissions before deleting an unused source and recording its audit event.
 
 ## Generated APIs
 

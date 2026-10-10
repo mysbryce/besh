@@ -177,6 +177,21 @@ test('development proxies carry actual published and original-cookie draft WebSo
     expect(
       (await call(`/api/flows/${flow.id}/publish`, { revision: 1 })).status(),
     ).toBe(200)
+
+    await page.goto(webOrigin)
+    await expect(
+      page.getByLabel('Workspace token', { exact: true }),
+    ).toBeVisible()
+    await page.getByLabel('Workspace token', { exact: true }).fill(owner)
+    await page
+      .getByRole('button', { name: 'Open workspace', exact: true })
+      .click()
+
+    // Cold Vite compilation finishes before any short-lived proof is issued.
+    await expect(page.getByRole('heading', { name: /API Studio/ })).toBeVisible(
+      { timeout: 30_000 },
+    )
+
     const issued = await call('/api/runtime-keys', {
       name: 'Proxy product server',
       flowId: flow.id,
@@ -186,10 +201,7 @@ test('development proxies carry actual published and original-cookie draft WebSo
     })
     expect(issued.status()).toBe(200)
     const key = await issued.json()
-    await page.goto(webOrigin)
-    await expect(
-      page.getByLabel('Workspace token', { exact: true }),
-    ).toBeVisible()
+
     const minted = await call(
       '/ws/browser-proxy/ticket',
       { revision: 1, origin: webOrigin },
@@ -201,15 +213,13 @@ test('development proxies carry actual published and original-cookie draft WebSo
       matched: true,
       protocol: 'besh.ws.v1',
     })
+
     const draft = await page.evaluate(
-      async ({ owner, flowId }) => {
-        const login = await fetch('/auth/login', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ token: owner }),
-        })
-        if (login.status !== 200) return null
-        const session = await login.json()
+      async ({ flowId }) => {
+        const current = await fetch('/auth/session')
+        if (current.status !== 200) return null
+
+        const session = await current.json()
         const response = await fetch(`/api/flows/${flowId}/ws/test-ticket`, {
           method: 'POST',
           headers: {
@@ -218,9 +228,10 @@ test('development proxies carry actual published and original-cookie draft WebSo
           },
           body: JSON.stringify({ revision: 1 }),
         })
+
         return response.status === 200 ? response.json() : null
       },
-      { owner, flowId: flow.id },
+      { flowId: flow.id },
     )
     expect(Boolean(draft?.ticket)).toBe(true)
     expect(await exchange(page, draft, 'draft')).toEqual({
@@ -228,10 +239,12 @@ test('development proxies carry actual published and original-cookie draft WebSo
       matched: true,
       protocol: 'besh.ws.v1',
     })
+
     await page.reload()
     await expect(
       page.getByRole('heading', { name: /API Studio/ }),
     ).toBeVisible()
+
     const documentationPath = resolve('docs/repository.md')
     const documentation = readFileSync(documentationPath, 'utf8')
     const reloaded = page

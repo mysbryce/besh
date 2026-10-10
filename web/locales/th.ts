@@ -1,4 +1,24 @@
 const messages: Record<string, string> = {
+  'Delete data source': 'ลบแหล่งข้อมูล',
+  'Data sources used by a draft or published API cannot be deleted.':
+    'แหล่งข้อมูลที่ใช้โดย API ฉบับร่างหรือ API ที่เผยแพร่อยู่ไม่สามารถลบได้',
+  'Delete data source {source}? This cannot be undone.':
+    'ลบแหล่งข้อมูล {source} หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้',
+  'Data source deleted.': 'ลบแหล่งข้อมูลแล้ว',
+  'Google Sheets link': 'ลิงก์ Google Sheets',
+  'Import Google Sheet': 'นำเข้า Google Sheet',
+  'Share the sheet for anyone with the link to view. We save its current rows; changes are imported only when you refresh saved data. For a private sheet, upload Excel or CSV instead.':
+    'แชร์ชีตให้ทุกคนที่มีลิงก์ดูได้ เราบันทึกแถวข้อมูลปัจจุบันไว้ การเปลี่ยนแปลงจะนำเข้าเมื่อคุณรีเฟรชข้อมูลที่บันทึกไว้เท่านั้น หากเป็นชีตส่วนตัว ให้อัปโหลด Excel หรือ CSV แทน',
+  'Open Google Sheet': 'เปิด Google Sheet',
+  'Refresh saved data': 'รีเฟรชข้อมูลที่บันทึกไว้',
+  'This is a saved snapshot. Refresh imports changes from Google Sheets for APIs using this source.':
+    'นี่คือข้อมูลที่บันทึกไว้ การรีเฟรชจะนำเข้าการเปลี่ยนแปลงจาก Google Sheets ให้ API ที่ใช้แหล่งข้อมูลนี้',
+  'Refresh saved data for {source}? APIs using this source will read the new Google Sheets snapshot.':
+    'รีเฟรชข้อมูลที่บันทึกไว้ของ {source} หรือไม่? API ที่ใช้แหล่งข้อมูลนี้จะอ่านข้อมูลชุดใหม่จาก Google Sheets',
+  'Google Sheet refreshed. Your APIs now use the saved data.':
+    'รีเฟรช Google Sheet แล้ว ตอนนี้ API ของคุณใช้ข้อมูลที่บันทึกไว้',
+  'Manage data sources access is needed to import or change saved rows.':
+    'ต้องมีสิทธิ์จัดการแหล่งข้อมูลเพื่อนำเข้าหรือเปลี่ยนแถวข้อมูลที่บันทึกไว้',
   'Replacement spreadsheet': 'ไฟล์สเปรดชีตใหม่',
   'Replace spreadsheet': 'แทนที่สเปรดชีต',
   'Replaces saved rows used by your APIs. Keep published columns and their types compatible.':

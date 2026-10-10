@@ -4,6 +4,27 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.5-alpha.1 — 2026-10-10
+
+### Fixed
+
+- Wait for completed workspace sign-in before saved-source permission and language assertions, preventing initial API loading from being mistaken for a language-change request.
+- Open the actual development Studio before creating short-lived WebSocket proofs, with bounded cold-compilation readiness; retain the current browser session and existing reload checks.
+- Warm the dashboard entry and Studio modules during Vite startup to reduce first-load transform waterfalls.
+
+## 0.20.5-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Translate public Google Sheets import, manual refresh guidance, confirmations and completion across all seven dashboard languages.
+- Translate source deletion actions, complete irreversible confirmations and completion without changing current draft/publication guards or member permissions.
+- Preserve authored source names, URLs, columns and cells when choosing a language; refreshing and deleting remain explicit actions.
+
+### Changed
+
+- Add real public browser journeys and masked previews for saved-source refresh and deletion, with only the external Google CSV provider simulated.
+- Record the approved film's completed README delivery and passing head/main CI.
+
 ## 0.20.4-alpha.0 — 2026-10-10
 
 ### Changed
