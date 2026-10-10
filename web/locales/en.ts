@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Loading data sources…': 'Loading data sources…',
+  'Read data sources access is needed to browse saved sources.':
+    'Read data sources access is needed to browse saved sources.',
+  'Choose a data source': 'Choose a data source',
+  'Showing {shown} of {total} rows. Version {version} · Saved {saved}':
+    'Showing {shown} of {total} rows. Version {version} · Saved {saved}',
+  'Sheet: {sheet}': 'Sheet: {sheet}',
+  'Data sources refreshed.': 'Data sources refreshed.',
   'Delete data source': 'Delete data source',
   'Data sources used by a draft or published API cannot be deleted.':
     'Data sources used by a draft or published API cannot be deleted.',

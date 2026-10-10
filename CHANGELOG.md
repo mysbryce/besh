@@ -4,6 +4,18 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.20.7-alpha.0 — 2026-10-10
+
+### Fixed
+
+- Translate saved-source loading, selection, read-access guidance, rows/version/saved-time status, sheet prefixes and catalog-refresh completion in all seven dashboard languages.
+- Format saved-source times in the selected language and browser timezone without changing stored dates, authored data or permissions. Refresh list remains an explicit catalog action, separate from fetching Google Sheets.
+
+### Changed
+
+- Add a real CSV/Excel browser journey and 22 page/action previews for source status, explicit refresh and permission boundaries.
+- Record completed head/main validation for the preceding inline README video delivery.
+
 ## 0.20.6-alpha.0 — 2026-10-10
 
 ### Fixed

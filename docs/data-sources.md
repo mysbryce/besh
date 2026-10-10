@@ -12,6 +12,10 @@ Create an API from a spreadsheet without writing JSON. Owners and editors can re
 
 Column names become safe, unique API field names. Text, numbers, true/false values, and blank cells are represented explicitly; Excel dates become ISO strings. Mixed-type columns become text. Nested output and custom graph behavior remain available through optional advanced configuration.
 
+Saved-source loading, read-access guidance, selection, rows/version/saved-time status, sheet prefixes and catalog-refresh completion follow all seven dashboard languages. Saved times use the selected language, the Gregorian calendar and the browser's timezone, to the minute. Numeric counts and versions keep their existing representation; source, file and sheet names, columns, cells and raw errors stay literal. Switching language does not read, write or refresh data. See [testing evidence](testing.md) for the real CSV/Excel journey and UTC/Bangkok checks.
+
+**Refresh list** requests only the catalog and the selected saved snapshot. It does not import new Google rows; use **Refresh saved data** for that explicit operation. Pending refresh actions stay disabled, and completion follows the current language. Source-read, source-write and selected-access boundaries remain unchanged.
+
 ## Snapshots and access
 
 Selected access separates **USE** from source reads/management. It permits choosing granted source structure and executing it through an existing authorized API, without direct row previews, uploads, refresh, or API generation. USE can expose stored rows through that API and is not record/column/tenant isolation. See [selected actions and USE](roles.md#selected-api-actions-and-dependency-use).

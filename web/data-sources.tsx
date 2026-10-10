@@ -13,7 +13,7 @@ import { Button } from './components/ui/button'
 import { Checkbox } from './components/ui/checkbox'
 import { Input } from './components/ui/input'
 import { Select } from './components/ui/select'
-import { useTranslation } from './i18n'
+import { useDateTime, useTranslation } from './i18n'
 import {
   api,
   authenticatedFetch,
@@ -383,6 +383,7 @@ function SourceActions({
 
 export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
   const { t } = useTranslation()
+  const dateTime = useDateTime()
 
   const token = useStudio((state) => state.token)
   const member = useStudio((state) => state.member)
@@ -523,7 +524,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
           {error}
         </p>
       ) : null}
-      {loading ? <p>Loading data sources…</p> : null}
+      {loading ? <p>{t('Loading data sources…')}</p> : null}
       <fieldset className="source-write-fields" disabled={!writable || busy}>
         <legend className="sr-only">{t('Manage data sources')}</legend>
         <section className="source-preview source-import">
@@ -671,7 +672,9 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
         </p>
       ) : null}
       {!readable ? (
-        <p>Read data sources access is needed to browse saved sources.</p>
+        <p>
+          {t('Read data sources access is needed to browse saved sources.')}
+        </p>
       ) : null}
       {sources.length ? (
         <div className="source-selector">
@@ -680,7 +683,7 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
             id="saved-source"
             label={t('Saved data source')}
             value={detail?.id ?? ''}
-            placeholder="Choose a data source"
+            placeholder={t('Choose a data source')}
             disabled={busy || loading || !readable}
             options={sources.map((source) => ({
               value: source.id,
@@ -715,10 +718,19 @@ export function DataSources({ onOpenApi }: { onOpenApi: () => void }) {
               </Badge>
             </div>
             <p className="source-note">
-              Showing {detail.rows.length} of {detail.rowCount} rows. Version{' '}
-              {detail.version} · Saved{' '}
-              {new Date(detail.updatedAt).toLocaleString()}
-              {detail.sheetName ? ` · Sheet: ${detail.sheetName}` : ''}.
+              {t(
+                'Showing {shown} of {total} rows. Version {version} · Saved {saved}',
+                {
+                  shown: detail.rows.length,
+                  total: detail.rowCount,
+                  version: detail.version,
+                  saved: dateTime(detail.updatedAt),
+                },
+              )}
+              {detail.sheetName
+                ? ` · ${t('Sheet: {sheet}', { sheet: detail.sheetName })}`
+                : ''}
+              .
             </p>
             <div className="data-table source-table">
               <table>

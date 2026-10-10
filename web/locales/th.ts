@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Loading data sources…': 'กำลังโหลดแหล่งข้อมูล…',
+  'Read data sources access is needed to browse saved sources.':
+    'ต้องมีสิทธิ์อ่านแหล่งข้อมูลเพื่อดูแหล่งข้อมูลที่บันทึกไว้',
+  'Choose a data source': 'เลือกแหล่งข้อมูล',
+  'Showing {shown} of {total} rows. Version {version} · Saved {saved}':
+    'แสดง {shown} จาก {total} แถว เวอร์ชัน {version} · บันทึกเมื่อ {saved}',
+  'Sheet: {sheet}': 'ชีต: {sheet}',
+  'Data sources refreshed.': 'รีเฟรชรายการแหล่งข้อมูลแล้ว',
   'Delete data source': 'ลบแหล่งข้อมูล',
   'Data sources used by a draft or published API cannot be deleted.':
     'แหล่งข้อมูลที่ใช้โดย API ฉบับร่างหรือ API ที่เผยแพร่อยู่ไม่สามารถลบได้',

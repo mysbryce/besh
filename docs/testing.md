@@ -2,6 +2,22 @@
 
 User approved all three interfaces on 2026-10-08.
 
+## Saved-source status and catalog-refresh languages — 0.20.7-alpha.0
+
+The public browser RED failed in 6.9 seconds on untranslated Thai loading guidance while a real successful catalog response was held. The first GREEN attempt reached the translated Excel state but searched for the English appearance option after choosing Thai; its original 30-second case budget expired. Correcting the fixture to choose the real Thai option preserved that budget and all assertions. The focused GREEN then passed in 12.4 seconds, with 16.12 seconds for the browser wrapper, after whole-project types, changed-file formatting and a fresh build.
+
+Native browser CSV and checked-in Excel imports persist real snapshots. All seven languages retain literal source/file/sheet names, column headers/keys and typed cells while translating loading, selection, read guidance, rows/version/time and completion. An independent date oracle checks actual server timestamps in UTC and a separate Bangkok browser context. The Gregorian display changes neither timestamps nor authored date cells. Counts keep their existing representation.
+
+A compatible public HTTP replacement advances the CSV to version two while the dashboard still displays version one. Only explicit **Refresh list** requests the catalog and selected snapshot; language changes make no extra source/flow requests. Its held real catalog response preserves old rows and disabled controls until delivery, then shows the changed version and current-language completion. This action does not fetch Google Sheets. The held request settles its owned browser response or failure before the route handler is removed.
+
+Reader, write-only and selected-access members exercise real management HTTP permissions. Readers can refresh but cannot replace; write-only members cannot read the catalog; selected access hides raw sources and rejects catalog/detail reads. Owner snapshots remain unchanged by language and permission checks, and no API is created. Seven dictionaries preserve all 637 prior values and add the same six keys, reaching 643 with no duplicates or interpolation drift. Native-speaker review and other management panels remain separate.
+
+Full core checks passed whole-project types, all 361 backend cases and 6,368 assertions, production build and whole-project formatting; backend time was 35.94 seconds. The complete staged browser command passed all 52 cases without retries: six native cases at two workers in 57.4 seconds, 44 dashboard cases at four workers in 2.2 minutes, the isolated member-field case in 18.2 seconds and the isolated Vite/WebSocket case in 24.2 seconds. Wrapper time was 237.35 seconds; the new status journey passed in 14.1 seconds within that run.
+
+Focused visual review inspected all three diagnostics and nine lossless native-width sections from the Thai light/dark phone originals. Status, dates, the literal Excel sheet, actions and warnings remain readable; the wide table stays inside its horizontal scroll viewport.
+
+The complete gallery passed seven native stories at two workers in 1.7 minutes and all 29 remaining tests at four workers in 4.3 minutes. Its 1,142 images and 37 completion receipts preserve every prior 1,120 identity/caption; all referenced PNGs and receipts exist. Independent review inspected all 22 new originals, eight affected legacy originals and 18 lossless phone sections. Gallery phone originals are 382 pixels wide from a 390-pixel viewport with its existing scrollbar gutter; they were inspected at their captured width. No material wrapping, contrast or privacy defect was found. This is scoped screenshot review, not individual review of all older images or native-speaker certification. Exact-head and post-merge CI remain separate delivery gates.
+
 ## Saved-source provider and deletion languages — 0.20.5-alpha.1
 
 Two separate public RED/GREEN journeys preceded implementation. Google import first persisted real typed CSV rows, then exposed the missing Thai link label in 7.9 seconds. Its focused GREEN passed in 13.1 seconds (17.37 seconds wrapper time). Native CSV import then preceded the deletion RED's missing Thai action in 7.5 seconds; deletion GREEN passed in 9.6 seconds (13.01 seconds wrapper time). Both focused commands checked whole-project types, changed-file formatting and fresh dashboard assets.

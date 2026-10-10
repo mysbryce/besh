@@ -1,4 +1,12 @@
 const messages: Record<string, string> = {
+  'Loading data sources…': '正在加载数据源…',
+  'Read data sources access is needed to browse saved sources.':
+    '需要读取数据源权限才能浏览已保存的数据源。',
+  'Choose a data source': '选择数据源',
+  'Showing {shown} of {total} rows. Version {version} · Saved {saved}':
+    '显示 {shown} 行，共 {total} 行。版本 {version} · 保存于 {saved}',
+  'Sheet: {sheet}': '工作表：{sheet}',
+  'Data sources refreshed.': '数据源列表已刷新。',
   'Delete data source': '删除数据源',
   'Data sources used by a draft or published API cannot be deleted.':
     '草稿 API 或当前已发布 API 使用的数据源无法删除。',
