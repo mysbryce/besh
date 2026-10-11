@@ -40,6 +40,7 @@ Open `http://127.0.0.1:5173` and sign in with your workspace key or configured e
 - [Member invitations](docs/workspace-invitations.md) with one-use password setup links.
 - [Visual content model drafts](docs/structs.md) with nested fields and versioned saving.
 - [Private collections](docs/collections.md) with typed forms, [rich-text editing](docs/rich-text.md), [private HTML preview](docs/rich-text-html.md) and confirmed deletion.
+- [Content snapshot APIs](docs/content-snapshots.md): owner-reviewed sealed drafts, explicit fixed REST publication and pinned callers; full 0.27 delivery checks remain pending.
 - [CSV, Excel, public Sheets](docs/data-sources.md), uploaded SQLite copies, and GitHub product-login templates.
 - Audit logs, migrations, tested backups, and GitHub update notices.
 - Light/dark themes, [seven languages in main workflows](docs/localization.md), custom controls and page/action previews.

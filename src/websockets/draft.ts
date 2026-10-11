@@ -43,14 +43,20 @@ export function draftTicketService(
   function authorize(snapshot: RuntimeRelease, binding: DraftBinding) {
     return store.db.transaction(() => {
       const member = current(binding.proof)
-      authorizeFlow(member, snapshot.flowId, 'flows.test')
+      authorizeFlow(store, member, snapshot.flowId, 'flows.test')
       const saved = dependencies.snapshot(snapshot.flowId)
       if (saved.revision !== snapshot.revision || !saved.definition.websocket)
         throw new ApiError(
           409,
           'Saved draft changed. Review it before connecting.',
         )
-      authorizeGraph(member, snapshot.flowId, 'flows.test', snapshot.definition)
+      authorizeGraph(
+        store,
+        member,
+        snapshot.flowId,
+        'flows.test',
+        snapshot.definition,
+      )
       const principal = memberRowPrincipal(
         store,
         member,
@@ -109,7 +115,7 @@ export function draftTicketService(
         }
       } else throw new ApiError(401, 'Authentication required')
       const member = current(proof)
-      authorizeFlow(member, id, 'flows.test')
+      authorizeFlow(store, member, id, 'flows.test')
       const snapshot = dependencies.snapshot(id)
       if (snapshot.revision !== ticket.revision)
         throw new ApiError(
@@ -128,7 +134,7 @@ export function draftTicketService(
           ? store.authenticate(bearerProof(request))
           : dependencies.sessions.restore(sessionCookie(request))?.member
         if (!member) throw new ApiError(401, 'Authentication required')
-        authorizeFlow(member, id, 'flows.test')
+        authorizeFlow(store, member, id, 'flows.test')
         const parsed = z
           .object({
             revision: z.number().int().positive().safe(),
@@ -147,7 +153,7 @@ export function draftTicketService(
             409,
             'Saved draft changed. Review it before connecting.',
           )
-        authorizeGraph(member, id, 'flows.test', snapshot.definition)
+        authorizeGraph(store, member, id, 'flows.test', snapshot.definition)
         const principal = memberRowPrincipal(
           store,
           member,

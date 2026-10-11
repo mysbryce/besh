@@ -5,7 +5,7 @@
 - **Flow**: a saved graph that defines an API operation.
 - **Node**: one step in a flow, such as checking input or returning a response.
 - **Edge**: a connection that chooses which node runs next.
-- **Draft**: an editable flow. Saving a draft does not change a published endpoint.
+- **Draft**: a saved API awaiting explicit publication; ordinary drafts are editable, while Content snapshot drafts are sealed. Saving a draft does not change a published endpoint.
 - **Release**: a validated, immutable copy of a flow used by callers.
 - **Backend artifact**: generated CommonJS source and hashes for a validated published graph; it requires Besh runtime services rather than running as a standalone server.
 - **Runtime generation**: a persisted publication-change counter used to reconstruct current registered handlers and reject requests crossing an activation change.
@@ -26,6 +26,8 @@
 - **Renderer configuration hash**: SHA-256 of the normalized reviewed element settings, binding returned HTML to that configuration; it is not a credential, signature, publication pin or permission grant.
 - **Collection renderer revision**: the independent version of owner-reviewed HTML settings saved for a private collection; absence is an unsaved virtual version zero. It does not change the frozen content model, entry revision or published API.
 - **Typed saved field path**: one to six declared field names and actual zero-based array indexes selecting a present rich-text value under the immutable collection model; it is not a dotted expression or a path inside the rich-text AST. Dashboard item labels start at one.
+- **Content snapshot API**: an owner-created sealed draft that explicitly publishes one reviewed saved rich-text document, HTML result and provenance through a fixed GET route; it does not query live entries.
+- **Snapshot seal**: canonical stored document/rendered-result bytes and SHA-256 bound to one flow, terminal and revision outside editable graph JSON; it is not a credential or archive-authenticity signature.
 - **Client code example**: generated request source for a selected saved draft or published revision, using an environment-based runtime-key placeholder; generating it does not call the API.
 - **Client code target**: one supported language and HTTP-client combination, with its own dependencies, filename, and escaping rules.
 - **OpenAPI document**: a downloadable description of one saved REST draft or published release, including its route, rules, and runtime-key authentication.

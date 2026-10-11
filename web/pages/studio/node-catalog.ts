@@ -1,7 +1,7 @@
 import type { FlowNode } from '../../../src/flows/model'
 import type { FlowTransport } from '../../../src/flows/transport'
 
-export type BuiltinNodeKind = FlowNode['type']
+export type BuiltinNodeKind = Exclude<FlowNode['type'], 'cmsSnapshotResponse'>
 export type NodeCategory = 'api' | 'logic' | 'data' | 'product-login'
 export type BuiltinNodeId = `builtin.${BuiltinNodeKind}`
 export type NodeCatalogEntry = {
@@ -98,7 +98,7 @@ export function nodeUnavailableReason(
   context: {
     editable: boolean
     transport: FlowTransport
-    nodeKinds: readonly BuiltinNodeKind[]
+    nodeKinds: readonly FlowNode['type'][]
   },
 ): string | null {
   if (!context.editable) return 'API editing is unavailable.'

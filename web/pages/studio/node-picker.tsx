@@ -9,6 +9,7 @@ import {
   X,
 } from 'lucide-react'
 import type { FlowTransport } from '../../../src/flows/transport'
+import type { FlowNode } from '../../../src/flows/model'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { GitHubIcon } from '../../components/github-icon'
@@ -43,7 +44,7 @@ export function NodePicker({
   editable: boolean
   pending: boolean
   transport: FlowTransport
-  nodeKinds: readonly BuiltinNodeKind[]
+  nodeKinds: readonly FlowNode['type'][]
   onChoose: (kind: BuiltinNodeKind) => void
   onClose: () => void
 }) {

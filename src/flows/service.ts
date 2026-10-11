@@ -1,5 +1,8 @@
 import { ApiError } from '../errors'
+import { createHash } from 'node:crypto'
 import type { Store, RuntimeKey } from '../workspace/store'
+import type { PreparedCollectionSnapshot } from '../collections/snapshots'
+import { ownerManagedFlow } from '../workspace/cms-authority'
 import { can } from '../workspace/permissions'
 import { assertJsonLimit, executeFlow, validateFlow } from './engine'
 import { flowSchema, type Flow, type FlowInput } from './model'
@@ -13,6 +16,7 @@ import type { databaseConnectionService } from '../databases/service'
 import { clientCodeTargets } from './client-code-model'
 import { clientCodeSchema, flowClientCode } from './client-code'
 import type { RuntimeRelease, RuntimeService } from './runtime'
+import { hasCmsSnapshot, readCmsSnapshot } from './cms-snapshot'
 import { assertGraphFields } from '../workspace/field-policy'
 import { mixedReadGraph } from './read-graph'
 import {
@@ -36,6 +40,7 @@ type Row = {
   revision: number
   published: string | null
   published_revision: number | null
+  cms: number
 }
 
 type ReleaseRow = { revision: number; definition: string; created_at: string }
@@ -78,6 +83,19 @@ export function flowService(
     if (!result.success) throw new ApiError(400, 'Invalid flow definition')
 
     return result.data
+  }
+
+  function ordinaryDraft(value: unknown) {
+    const definition = draft(value)
+    if (definition.nodes.some((node) => node.type === 'cmsSnapshotResponse'))
+      throw new ApiError(400, 'CMS snapshot nodes are server-owned')
+
+    return definition
+  }
+
+  function ordinaryFlow(id: string) {
+    if (ownerManagedFlow(store, id))
+      throw new ApiError(503, 'CMS snapshot operation is not available')
   }
 
   function valid(value: unknown) {
@@ -175,6 +193,8 @@ export function flowService(
   }
 
   function codeSource(id: string, source: unknown) {
+    ordinaryFlow(id)
+
     if (source !== undefined && source !== 'draft' && source !== 'published')
       throw new ApiError(400, 'Choose draft or published example source')
     const selected: 'draft' | 'published' = source ?? 'published'
@@ -293,6 +313,8 @@ export function flowService(
 
   return {
     websocketDraft(id: string): RuntimeRelease {
+      ordinaryFlow(id)
+
       const row = get(id)
       return {
         flowId: id,
@@ -318,7 +340,7 @@ export function flowService(
         can(member, permission),
       )
       if (!permitted.length) throw new ApiError(403, 'Permission denied')
-      authorizeFlow(member, id, permitted[0]!)
+      authorizeFlow(store, member, id, permitted[0]!)
       const row = get(id)
       if (
         url.searchParams.getAll('source').length > 1 ||
@@ -339,7 +361,7 @@ export function flowService(
       const definition = draft(
         JSON.parse(source === 'draft' ? row.definition : row.published!),
       )
-      authorizeGraph(member, id, permission, definition)
+      authorizeGraph(store, member, id, permission, definition)
       return {
         source,
         revision: source === 'draft' ? row.revision : row.published_revision!,
@@ -365,6 +387,8 @@ export function flowService(
         .immediate()
     },
     clientCode(id: string, value: unknown) {
+      ordinaryFlow(id)
+
       const parsed = clientCodeSchema.safeParse(value)
       if (!parsed.success)
         throw new ApiError(
@@ -394,14 +418,25 @@ export function flowService(
         selected.mixedProtectedRead,
       )
     },
-    list(selectedMemberId?: string) {
+    list(memberId?: string) {
+      const member = memberId === undefined ? undefined : store.member(memberId)
+      if (member === null) throw new ApiError(401, 'Authentication required')
+
       const rows =
-        selectedMemberId === undefined
+        member?.access.mode !== 'selected'
           ? query<Row, []>('SELECT * FROM flows ORDER BY rowid DESC').all()
           : query<Row, [string]>(
               'SELECT flows.* FROM flows JOIN member_flow_grants ON member_flow_grants.flow_id = flows.id WHERE member_flow_grants.member_id = ? ORDER BY flows.rowid DESC',
-            ).all(selectedMemberId)
-      return rows.map(present)
+            ).all(member.id)
+
+      return rows
+        .filter((row) => {
+          if (row.cms !== 0 && row.cms !== 1)
+            throw new ApiError(503, 'Flow classification is invalid')
+
+          return row.cms === 0 || !member || member.role === 'owner'
+        })
+        .map(present)
     },
     get(id: string) {
       return present(get(id))
@@ -448,7 +483,10 @@ export function flowService(
       let stage: ReturnType<RuntimeService['stage']> | undefined
       try {
         db.transaction(() => {
-          if (currentMember) authorizeFlow(currentMember(), id, 'flows.publish')
+          if (currentMember)
+            authorizeFlow(store, currentMember(), id, 'flows.publish')
+          ordinaryFlow(id)
+
           const row = get(id)
           if (row.published_revision !== publishedRevision)
             throw new ApiError(
@@ -461,7 +499,7 @@ export function flowService(
           const target = release(id, revision)
           const saved = draft(JSON.parse(target.definition))
           if (currentMember)
-            authorizeGraph(currentMember(), id, 'flows.publish', saved)
+            authorizeGraph(store, currentMember(), id, 'flows.publish', saved)
           const definition = valid(saved)
           routeAvailable(id, definition)
           stage = runtime.stage({ flowId: id, revision, definition })
@@ -480,6 +518,8 @@ export function flowService(
       return publicationResult(id, currentMember)
     },
     openapi(id: string, source: unknown) {
+      ordinaryFlow(id)
+
       if (source !== undefined && source !== 'draft' && source !== 'published')
         throw new ApiError(400, 'Choose draft or published OpenAPI source')
       const selected = source ?? 'published'
@@ -498,7 +538,7 @@ export function flowService(
       )
     },
     create(actor: string, value: unknown) {
-      const definition = draft(value)
+      const definition = ordinaryDraft(value)
       const id = crypto.randomUUID()
 
       db.transaction(() => {
@@ -510,6 +550,71 @@ export function flowService(
 
       return present(get(id))
     },
+    createContentSnapshot(
+      actor: string,
+      currentMember: CurrentMember,
+      prepare: () => PreparedCollectionSnapshot,
+    ) {
+      return db
+        .transaction(() => {
+          const member = currentMember()
+          if (member.id !== actor || member.role !== 'owner')
+            throw new ApiError(403, 'Permission denied')
+
+          active()
+          const prepared = prepare()
+          const bytes = Buffer.byteLength(prepared.payload, 'utf8')
+          const sha256 = createHash('sha256')
+            .update(prepared.payload, 'utf8')
+            .digest('hex')
+          if (bytes > 262_144 || sha256 !== prepared.sha256)
+            throw new ApiError(503, 'Prepared CMS snapshot is invalid')
+
+          const id = crypto.randomUUID()
+          const snapshotId = crypto.randomUUID()
+          const requestId = crypto.randomUUID()
+          const nodeId = crypto.randomUUID()
+          const definition = validateFlow({
+            name: prepared.name,
+            method: 'GET',
+            path: prepared.path,
+            nodes: [
+              {
+                id: requestId,
+                type: 'request',
+                position: { x: 0, y: 0 },
+                config: {},
+              },
+              {
+                id: nodeId,
+                type: 'cmsSnapshotResponse',
+                position: { x: 360, y: 0 },
+                config: { snapshotId, snapshotSha256: sha256 },
+              },
+            ],
+            edges: [
+              { id: crypto.randomUUID(), source: requestId, target: nodeId },
+            ],
+          })
+
+          query(
+            'INSERT INTO flows (id, definition, revision, cms) VALUES (?, ?, 1, 1)',
+          ).run(id, JSON.stringify(definition))
+          query(`INSERT INTO cms_snapshots
+            (snapshot_id, flow_id, node_id, draft_revision, sha256, payload)
+            VALUES (?, ?, ?, 1, ?, ?)`).run(
+            snapshotId,
+            id,
+            nodeId,
+            sha256,
+            prepared.payload,
+          )
+          audit(actor, 'flow.created', id)
+
+          return present(get(id))
+        })
+        .immediate()
+    },
     update(
       actor: string,
       id: string,
@@ -517,12 +622,21 @@ export function flowService(
       value: unknown,
       currentMember?: CurrentMember,
     ) {
-      const definition = draft(value)
-
       return db
         .transaction(() => {
           if (currentMember)
-            authorizeGraph(currentMember(), id, 'flows.write', definition)
+            authorizeFlow(store, currentMember(), id, 'flows.write')
+          ordinaryFlow(id)
+
+          const definition = ordinaryDraft(value)
+          if (currentMember)
+            authorizeGraph(
+              store,
+              currentMember(),
+              id,
+              'flows.write',
+              definition,
+            )
           assertGraphFields(store, definition, 403, true)
           get(id)
           const change = query(
@@ -545,16 +659,30 @@ export function flowService(
       let stage: ReturnType<RuntimeService['stage']> | undefined
       try {
         db.transaction(() => {
-          if (currentMember) authorizeFlow(currentMember(), id, 'flows.publish')
+          const member = currentMember?.()
+          if (member) authorizeFlow(store, member, id, 'flows.publish')
+
+          const cms = ownerManagedFlow(store, id)
+          if (
+            cms &&
+            (!member || member.id !== actor || member.role !== 'owner')
+          )
+            throw new ApiError(403, 'Permission denied')
+
           const row = get(id)
           publicationUnlocked(id)
           if (row.revision !== revision)
             throw new ApiError(409, 'Draft changed. Reload before publishing.')
 
           const saved = draft(JSON.parse(row.definition))
+          if (cms !== hasCmsSnapshot(saved))
+            throw new ApiError(503, 'CMS snapshot classification is invalid')
+
           if (currentMember)
-            authorizeGraph(currentMember(), id, 'flows.publish', saved)
-          const definition = valid(saved)
+            authorizeGraph(store, currentMember(), id, 'flows.publish', saved)
+          const definition = cms ? validateFlow(saved) : valid(saved)
+          if (cms) readCmsSnapshot(store, { flowId: id, revision, definition })
+
           routeAvailable(id, definition)
           stage = runtime.stage({ flowId: id, revision, definition })
 
@@ -587,6 +715,10 @@ export function flowService(
       currentMember?: CurrentMember,
       tenantId?: string,
     ) {
+      if (currentMember) authorizeFlow(store, currentMember(), id, 'flows.test')
+
+      ordinaryFlow(id)
+
       const row = get(id)
       const saved = draft(JSON.parse(row.definition))
       const principal = () =>
@@ -602,7 +734,7 @@ export function flowService(
         () => {
           active()
           if (currentMember)
-            authorizeGraph(currentMember(), id, 'flows.test', saved)
+            authorizeGraph(store, currentMember(), id, 'flows.test', saved)
           principal()
         },
         principal,
@@ -639,6 +771,10 @@ export function flowService(
       currentMember?: CurrentMember,
       tenantId?: string,
     ) {
+      if (currentMember) authorizeFlow(store, currentMember(), id, 'flows.test')
+
+      ordinaryFlow(id)
+
       const row = get(id)
       const saved = draft(JSON.parse(row.definition))
       const principal = () =>
@@ -654,7 +790,7 @@ export function flowService(
         () => {
           active()
           if (currentMember)
-            authorizeGraph(currentMember(), id, 'flows.test', saved)
+            authorizeGraph(store, currentMember(), id, 'flows.test', saved)
           principal()
         },
         principal,
@@ -704,6 +840,52 @@ export function flowService(
           403,
           'Runtime key is pinned to a release that is not currently published',
         )
+
+      const cms = ownerManagedFlow(store, release.flowId)
+      if (cms !== hasCmsSnapshot(release.definition))
+        throw new ApiError(503, 'CMS snapshot classification is invalid')
+
+      if (cms) {
+        return runtime.readAdmission(release, () => {
+          active()
+          if (signal?.aborted)
+            throw new ApiError(503, 'CMS snapshot read was cancelled')
+
+          const current = store.runtimeCredential(key.id)
+          if (!current) throw new ApiError(401, 'Authentication required')
+          if (
+            current.flowId !== release.flowId ||
+            !current.permissions.includes('rest') ||
+            (current.releaseRevision !== null &&
+              current.releaseRevision !== release.revision)
+          )
+            throw new ApiError(403, 'Runtime key does not allow this endpoint')
+
+          store.checkRuntimeAuthority(current, release.definition)
+          if (!matchRoute(release.definition.path, segments))
+            throw new ApiError(404, 'Endpoint not found')
+
+          try {
+            assertJsonLimit(input)
+          } catch {
+            throw new ApiError(400, 'Request size or nesting limit exceeded')
+          }
+
+          const body = readCmsSnapshot(store, release)
+          active()
+          if (signal?.aborted)
+            throw new ApiError(503, 'CMS snapshot read was cancelled')
+
+          store.checkRuntimeAuthority(current, release.definition)
+          audit(`runtime:${current.id}`, 'flow.executed', release.flowId)
+
+          return {
+            status: 200,
+            body,
+            visited: release.definition.nodes.map((node) => node.id),
+          }
+        })
+      }
 
       const checkpoint = rowCheckpoint(store, release.definition, () => {
         active()

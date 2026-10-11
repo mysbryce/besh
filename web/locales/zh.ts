@@ -1,4 +1,25 @@
 const messages: Record<string, string> = {
+  'Content snapshot APIs stay owner-only.': '内容快照 API 仍仅限所有者。',
+
+  'Create Content API': '创建内容 API',
+  'Creates a sealed draft. This does not publish an API.':
+    '创建内容已固定的草稿。这不会发布 API。',
+  'Content API draft created.': '内容 API 草稿已创建。',
+  'Open API Studio': '打开 API Studio',
+  'Save or discard unsaved changes before creating a Content API.':
+    '创建内容 API 前，请保存或放弃未保存的更改。',
+  'The reviewed content changed. Review it again before creating a Content API.':
+    '已检查的内容发生了变化。创建内容 API 前，请再次检查。',
+  'Creation could not be confirmed. Review the API list before creating again.':
+    '无法确认是否创建成功。再次创建前，请检查 API 列表。',
+
+  'nodes.cmsSnapshotResponse.label': '内容快照',
+  'contentSnapshot.nodeDescription': '已保存的富文本和 HTML',
+  'contentSnapshot.snapshotId': '快照 ID',
+  'contentSnapshot.snapshotSha256': '快照 SHA-256',
+  'contentSnapshot.locked':
+    '此快照已封存。要使用更改后的内容或 HTML 设置，请创建新的内容 API。',
+
   'Copy HTML': '复制 HTML',
   'HTML copied': 'HTML 已复制',
   'Could not copy HTML. Select and copy the HTML source.':

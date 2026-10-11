@@ -22,6 +22,7 @@ import {
 } from './authorization'
 import type { Flow } from '../flows/model'
 import { flowTransport } from '../flows/transport'
+import { ownerManagedFlow } from './cms-authority'
 import type { TenantAssignment } from './tenant-model'
 import {
   memberRowPrincipal,
@@ -756,6 +757,24 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 28').get()) {
+      db.run(`ALTER TABLE flows ADD COLUMN cms INTEGER NOT NULL DEFAULT 0
+        CHECK(typeof(cms) = 'integer' AND cms IN (0, 1));
+        CREATE TABLE cms_snapshots (
+          snapshot_id TEXT PRIMARY KEY,
+          flow_id TEXT NOT NULL REFERENCES flows(id) ON DELETE CASCADE,
+          node_id TEXT NOT NULL,
+          draft_revision INTEGER NOT NULL CHECK(typeof(draft_revision) = 'integer' AND draft_revision > 0 AND draft_revision <= 9007199254740991),
+          sha256 TEXT NOT NULL CHECK(length(sha256) = 64),
+          payload TEXT NOT NULL CHECK(json_valid(payload) AND json_type(payload) = 'object' AND length(CAST(payload AS BLOB)) <= 262144),
+          UNIQUE(flow_id, draft_revision, node_id)
+        )`)
+      query('INSERT INTO migrations VALUES (28, ?, ?)').run(
+        'owner-managed sealed literal CMS snapshot drafts',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,
@@ -964,7 +983,7 @@ export function openStore(path: string, adminToken?: string) {
         'Selected API access requires scoped API actions only',
       )
     for (const id of input.flowIds)
-      if (!query('SELECT id FROM flows WHERE id = ?').get(id))
+      if (!query('SELECT id FROM flows WHERE id = ? AND cms = 0').get(id))
         throw new ApiError(404, 'Flow not found')
   }
 
@@ -1104,7 +1123,7 @@ export function openStore(path: string, adminToken?: string) {
 
   function assertKeyAccess(member: Member, key: RuntimeKey) {
     try {
-      authorizeFlow(member, key.flowId, 'runtime-keys.manage')
+      authorizeFlow({ query }, member, key.flowId, 'runtime-keys.manage')
     } catch (error) {
       if (error instanceof ApiError && error.status === 404)
         throw new ApiError(404, 'Runtime key not found')
@@ -1125,6 +1144,26 @@ export function openStore(path: string, adminToken?: string) {
   }
 
   function issuerAuthority(key: RuntimeKey, definition: Flow, status = 403) {
+    const cms = ownerManagedFlow({ query }, key.flowId)
+    if (cms) {
+      const published = query<
+        { published: string | null; published_revision: number | null },
+        [string]
+      >('SELECT published, published_revision FROM flows WHERE id = ?').get(
+        key.flowId,
+      )
+      if (
+        !key.issuerBinding ||
+        key.releaseRevision === null ||
+        !published?.published ||
+        published.published_revision !== key.releaseRevision
+      )
+        throw new ApiError(
+          status,
+          'CMS runtime keys require a live owner issuer and current release pin',
+        )
+    }
+
     runtimeRowPrincipal(
       { db, query, member: resolveMember },
       key,
@@ -1133,13 +1172,19 @@ export function openStore(path: string, adminToken?: string) {
     )
     if (!key.issuerBinding) return
     const issuer = resolveMember(key.issuerBinding.memberId)
-    if (!issuer)
+    if (!issuer || (cms && issuer.role !== 'owner'))
       throw new ApiError(
         status,
         'Runtime key issuer no longer authorizes this API',
       )
     try {
-      authorizeGraph(issuer, key.flowId, key.issuerBinding.action, definition)
+      authorizeGraph(
+        { query },
+        issuer,
+        key.flowId,
+        key.issuerBinding.action,
+        definition,
+      )
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       throw new ApiError(
@@ -1166,7 +1211,13 @@ export function openStore(path: string, adminToken?: string) {
       const definition = JSON.parse(release.definition) as Flow
       issuerAuthority(key, definition)
       if (member)
-        authorizeGraph(member, key.flowId, 'runtime-keys.manage', definition)
+        authorizeGraph(
+          { query },
+          member,
+          key.flowId,
+          'runtime-keys.manage',
+          definition,
+        )
       return false
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
@@ -1190,6 +1241,12 @@ export function openStore(path: string, adminToken?: string) {
         if (!keyWindow(row).accepted)
           throw new ApiError(401, 'Authentication required')
         const current = runtimeKey(row)
+
+        if (ownerManagedFlow({ query }, current.flowId)) {
+          issuerAuthority(current, definition)
+          return
+        }
+
         if (
           current.issuerBinding === null &&
           current.tenantId === null &&
@@ -1556,7 +1613,7 @@ export function openStore(path: string, adminToken?: string) {
     listRuntimeKeys(member?: Member) {
       const selected = member?.access.mode === 'selected'
       return query<RuntimeKeyRow & { managed: number }>(
-        `SELECT ${runtimeKeyColumns}, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys ${runtimeKeyJoins} WHERE 1 = 1 ${selected ? 'AND issuer_member_id IS NOT NULL AND flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)' : ''} ${member && member.role !== 'owner' ? 'AND (tenant_id IS NULL OR issuer_member_id = ? OR (issuer_member_id IS NOT NULL AND tenant_id = ?))' : ''} ORDER BY runtime_keys.rowid DESC`,
+        `SELECT ${runtimeKeyColumns}, EXISTS (SELECT 1 FROM load_tests WHERE runtime_key_id = runtime_keys.id) AS managed FROM runtime_keys ${runtimeKeyJoins} WHERE 1 = 1 ${selected ? 'AND issuer_member_id IS NOT NULL AND flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)' : ''} ${member && member.role !== 'owner' ? 'AND flow_id IN (SELECT id FROM flows WHERE cms = 0) AND (tenant_id IS NULL OR issuer_member_id = ? OR (issuer_member_id IS NOT NULL AND tenant_id = ?))' : ''} ORDER BY runtime_keys.rowid DESC`,
       )
         .all(
           ...(selected ? [member!.id] : []),
@@ -1585,7 +1642,7 @@ export function openStore(path: string, adminToken?: string) {
         'flowId' in input &&
         typeof input.flowId === 'string'
       )
-        authorizeFlow(currentMember(), input.flowId, action)
+        authorizeFlow({ query }, currentMember(), input.flowId, action)
       const parsed = z
         .object({
           name: z.string().max(500),
@@ -1641,9 +1698,22 @@ export function openStore(path: string, adminToken?: string) {
       const token = `besh_${randomBytes(32).toString('base64url')}`
 
       db.transaction(() => {
-        if (currentMember) {
-          const member = currentMember()
-          authorizeFlow(member, key.flowId, action)
+        const member = currentMember?.()
+        const cms = ownerManagedFlow({ query }, key.flowId)
+        if (cms) {
+          if (!member || member.id !== actor || member.role !== 'owner')
+            throw new ApiError(403, 'Permission denied')
+          if (value.releaseRevision === undefined)
+            throw new ApiError(
+              400,
+              'CMS runtime keys require the current published release pin',
+            )
+
+          key.issuerBinding = { memberId: member.id, action }
+        }
+
+        if (member) {
+          authorizeFlow({ query }, member, key.flowId, action)
           const published = query<
             { published: string | null; published_revision: number | null },
             [string]
@@ -1665,6 +1735,7 @@ export function openStore(path: string, adminToken?: string) {
               'Publish this API before issuing a runtime key',
             )
           authorizeGraph(
+            { query },
             member,
             key.flowId,
             action,
@@ -1788,6 +1859,7 @@ export function openStore(path: string, adminToken?: string) {
             const graph = JSON.parse(definition) as Flow
             if (currentMember)
               authorizeGraph(
+                { query },
                 currentMember(),
                 key.flowId,
                 'runtime-keys.manage',

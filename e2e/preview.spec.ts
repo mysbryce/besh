@@ -55,6 +55,7 @@ import { richTextHtmlPreviews } from './rich-text-html-previews'
 import { richTextHtmlGuardPreviews } from './rich-text-html-guard-previews'
 import { collectionRendererPreviews } from './collection-renderer-previews'
 import { savedRendererPreviews } from './saved-renderer-preview-previews'
+import { contentSnapshotPreviews } from './content-snapshot-previews'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
@@ -67,6 +68,7 @@ for (const [id, run] of [
   ['rich-text-html-guards', richTextHtmlGuardPreviews],
   ['collection-renderers', collectionRendererPreviews],
   ['saved-renderer-preview', savedRendererPreviews],
+  ['content-snapshot', contentSnapshotPreviews],
 ] as const) {
   test.describe(id, () => {
     test.use({ locale: 'en-US' })
@@ -4410,6 +4412,7 @@ for (const story of previewStories) {
     story.id === 'rich-text-html-guards' ||
     story.id === 'collection-renderers' ||
     story.id === 'saved-renderer-preview' ||
+    story.id === 'content-snapshot' ||
     story.id === 'management-data-api-generation'
   )
     continue

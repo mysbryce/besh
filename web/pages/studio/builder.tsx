@@ -13,6 +13,7 @@ import {
   ArrowDownToLine,
   Braces,
   Database,
+  FileText,
   GitBranch,
   MousePointer2,
   Plus,
@@ -44,7 +45,8 @@ import { useStudio, type CanvasNode } from '../../stores/studio-store'
 import { runtimeEndpointUrl } from '../../lib/api'
 import { can } from '../../../src/workspace/permissions'
 import { useTranslation } from '../../i18n'
-import { nodeUnavailableReason } from './node-catalog'
+import { nodeUnavailableReason, type BuiltinNodeKind } from './node-catalog'
+import { hasContentSnapshot } from '../../lib/content-snapshot'
 import { canReadDependencyStructure } from '../../lib/dependency-access'
 import { TenantReview, useTenantReview } from '../../components/tenant-review'
 import { ReleaseHistory } from './release-history'
@@ -75,6 +77,11 @@ const nodeInfo = {
     label: 'JSON response',
     description: 'Send something back',
     icon: Braces,
+  },
+  cmsSnapshotResponse: {
+    label: 'Content snapshot',
+    description: 'contentSnapshot.nodeDescription',
+    icon: FileText,
   },
   data: {
     label: 'Spreadsheet rows',
@@ -128,7 +135,9 @@ const FlowCard = memo(function FlowCard({
         <span className="node-dot" />
       </div>
       <div className="flow-card-detail">
-        {data.kind === 'response' ? (
+        {data.kind === 'cmsSnapshotResponse' ? (
+          <span>{t('contentSnapshot.nodeDescription')}</span>
+        ) : data.kind === 'response' ? (
           <>
             <span>{websocket ? 'REPLY' : 'STATUS'}</span>
             <code>
@@ -242,9 +251,52 @@ function Inspector({ node }: { node: CanvasNode }) {
     ),
   )
   const remove = useStudio((state) => state.onNodesChange)
+  const sealed = useStudio((state) => hasContentSnapshot(state.nodes))
   const readonly = useStudio(
-    (state) => !can(state.member, 'flows.write') || state.busy,
+    (state) =>
+      !can(state.member, 'flows.write') ||
+      state.busy ||
+      hasContentSnapshot(state.nodes),
   )
+
+  if (sealed) {
+    return (
+      <aside className="inspector">
+        <div className="panel-heading">
+          <strong>{t('NODE SETTINGS')}</strong>
+          <Badge variant="outline">{node.data.kind}</Badge>
+        </div>
+        <h3>{t(`nodes.${node.data.kind}.label`)}</h3>
+        <p>{t('contentSnapshot.locked')}</p>
+        {node.data.kind === 'cmsSnapshotResponse' ? (
+          <div className="form-stack">
+            <label>
+              {t('contentSnapshot.snapshotId')}
+              <Input
+                readOnly
+                value={
+                  'snapshotId' in node.data.config
+                    ? node.data.config.snapshotId
+                    : ''
+                }
+              />
+            </label>
+            <label>
+              {t('contentSnapshot.snapshotSha256')}
+              <Input
+                readOnly
+                value={
+                  'snapshotSha256' in node.data.config
+                    ? node.data.config.snapshotSha256
+                    : ''
+                }
+              />
+            </label>
+          </div>
+        ) : null}
+      </aside>
+    )
+  }
 
   function apply() {
     try {
@@ -496,8 +548,10 @@ function Canvas() {
   } = useStudio()
   const { screenToFlowPosition } = useReactFlow()
   const node = nodes.find((item) => item.id === selected)
-  const editable = can(member, 'flows.write') && !busy
-  function canAdd(kind: FlowNode['type']) {
+  const sealed = hasContentSnapshot(nodes)
+  const editable = can(member, 'flows.write') && !busy && !sealed
+
+  function canAdd(kind: BuiltinNodeKind) {
     return !nodeUnavailableReason(kind, {
       editable,
       transport: websocket ? 'websocket' : 'rest',
@@ -519,7 +573,11 @@ function Canvas() {
           const kind = event.dataTransfer.getData(
             'application/besh-node',
           ) as FlowNode['type']
-          if (Object.hasOwn(nodeInfo, kind) && canAdd(kind))
+          if (
+            kind !== 'cmsSnapshotResponse' &&
+            Object.hasOwn(nodeInfo, kind) &&
+            canAdd(kind)
+          )
             addNode(
               kind,
               screenToFlowPosition({ x: event.clientX, y: event.clientY }),
@@ -578,8 +636,10 @@ function Canvas() {
           <Controls showInteractive={false} />
         </ReactFlow>
         <div className="canvas-hint">
-          <MousePointer2 size={13} /> Drag steps. Connect handles. Select to
-          configure.
+          <MousePointer2 size={13} />
+          {sealed
+            ? t('contentSnapshot.locked')
+            : 'Drag steps. Connect handles. Select to configure.'}
         </div>
       </div>
       {node ? (
@@ -641,7 +701,8 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
     socialFlow ? '{"action":"BEGIN"}' : '{}',
   )
   const [operationName, setOperationName] = useState('')
-  const writable = can(state.member, 'flows.write')
+  const sealed = hasContentSnapshot(state.nodes)
+  const writable = can(state.member, 'flows.write') && !sealed
   const firstTask =
     writable &&
     state.member?.access.mode !== 'selected' &&
@@ -649,7 +710,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
     !state.flows.length &&
     !state.dirty &&
     !firstTaskChosen
-  const testable = can(state.member, 'flows.test')
+  const testable = can(state.member, 'flows.test') && !sealed
   const tenantReview = useTenantReview(
     state.id,
     'draft',
@@ -828,7 +889,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
   }
 
   function testFlow() {
-    if (!tenantReview.ready || transport === 'websocket') return
+    if (!testable || !tenantReview.ready || transport === 'websocket') return
     void state.task(async () => {
       if (socialFlow) {
         const values =
@@ -1046,17 +1107,19 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
         </div>
       </div>
       <p className="field-help">
-        {state.websocket
-          ? t(
-              'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.',
-            )
-          : state.graphql
+        {sealed
+          ? t('contentSnapshot.locked')
+          : state.websocket
             ? t(
-                'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.',
+                'Use an exact path, such as /v1/messages. WebSocket messages carry input values; named path parameters are not supported.',
               )
-            : t(
-                'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.',
-              )}
+            : state.graphql
+              ? t(
+                  'Use an exact path, such as /v1/customers. GraphQL arguments carry input values.',
+                )
+              : t(
+                  'Use /v1/customers/:id for a versioned route with a path parameter. Each :name occupies a whole route segment.',
+                )}
       </p>
       <p className="credential-note endpoint-credential-note">
         {t(
@@ -1079,7 +1142,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
           />
         </div>
       ) : null}
-      {state.websocket ? (
+      {sealed ? null : state.websocket ? (
         <Suspense fallback={<p>Loading WebSocket message rules…</p>}>
           <WebSocketForms
             definition={state.websocket}
@@ -1279,6 +1342,7 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
                   variant="ghost"
                   className="advanced-toggle"
                   aria-expanded={advancedInput}
+                  disabled={sealed}
                   onClick={() => {
                     if (advancedInput) {
                       try {
@@ -1348,12 +1412,12 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
         variant="outline"
         aria-expanded={apiTools}
         aria-controls="api-tools"
-        disabled={state.busy}
+        disabled={state.busy || sealed}
         onClick={() => setApiTools(!apiTools)}
       >
         {t('API tools')}
       </Button>
-      {apiTools ? (
+      {apiTools && !sealed ? (
         <section
           id="api-tools"
           aria-label={t('API tools')}

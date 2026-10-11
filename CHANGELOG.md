@@ -4,6 +4,23 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.27.0-alpha.0 — 2026-10-11
+
+### Added
+
+- Create an owner-only Content API draft from one reviewed saved rich-text field and collection HTML settings.
+- Publish an actual generated GET route returning literal structured content, escaped HTML and reviewed provenance.
+- Require a current release pin and original owner authority for Content API callers and bounded local load tests.
+- Guided creation and read-only Studio controls, with explicit publication, stale-review checks and pending-action guards.
+- Seventeen page/action previews covering seven languages, phone forms, creation and publication.
+
+### Fixed
+
+- Conceal Content APIs and their caller/load-job metadata from non-owner management catalogs.
+- Explain the owner-only Content API exception when reviewing all-API sharing.
+- Keep uncertain creation blocked across local preview resets instead of repeating a possibly committed request.
+- Wait for public dropdown focus and confirmed selection in browser language journeys.
+
 ## 0.26.0-alpha.0 — 2026-10-11
 
 ### Added

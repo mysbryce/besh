@@ -31,7 +31,13 @@ const accountChoices = [
 
 export async function chooseManagementLanguage(page: Page, name: string) {
   await page.locator('#language').click()
+
+  // Wait for positioned popup focus before sending the next pointer action.
+  await expect(page.getByRole('option', { selected: true })).toBeFocused()
+
   await page.getByRole('option', { name, exact: true }).click()
+  await expect(page.getByRole('listbox')).toHaveCount(0)
+  await expect(page.locator('#language')).toHaveText(name)
 }
 
 async function contained(page: Page) {

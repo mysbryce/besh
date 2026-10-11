@@ -97,6 +97,9 @@ export function FlowAccessFields({
   label: string
 }) {
   const { t } = useTranslation()
+  const shareableFlows = flows.filter(
+    (flow) => !flow.nodes.some((node) => node.type === 'cmsSnapshotResponse'),
+  )
 
   return (
     <section className="role-editor" aria-label={label}>
@@ -137,7 +140,7 @@ export function FlowAccessFields({
           ) : null}
           <fieldset className="role-grant-groups">
             <legend>{t('Choose APIs to share')}</legend>
-            {flows.map((flow) => (
+            {shareableFlows.map((flow) => (
               <label key={flow.id} className="permission-option">
                 <Checkbox
                   aria-label={t('Share {name}', { name: flow.name })}
@@ -251,7 +254,8 @@ export function FlowAccessFields({
         <p>
           {t(
             'All current and future APIs. Actions still follow the assigned role.',
-          )}
+          )}{' '}
+          {t('Content snapshot APIs stay owner-only.')}
         </p>
       )}
     </section>
@@ -270,6 +274,7 @@ export function FlowAccessEditor({
   onClose: () => void
 }) {
   const state = useStudio()
+  const { t } = useTranslation()
   const [person, setPerson] = useState(member)
   const [value, setValue] = useState<MemberAccessInput>(() =>
     memberAccessInput(member),
@@ -418,6 +423,7 @@ export function FlowAccessEditor({
                     .join(' · ')
                 : 'No APIs selected'}
           </p>
+          <p>{t('Content snapshot APIs stay owner-only.')}</p>
           {value.mode === 'selected' ? (
             <p>
               Dependency USE:{' '}
