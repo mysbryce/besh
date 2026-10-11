@@ -334,15 +334,34 @@ export async function formattedRichTextPreviews({
   await editor.press('Home')
   await expect
     .poll(() =>
-      editor.evaluate((element) => {
-        const selection = window.getSelection()
+      editor.locator('ol ol li').evaluate(async (element) => {
+        function atFirstText() {
+          const selection = window.getSelection()
+          const first = document
+            .createTreeWalker(element, NodeFilter.SHOW_TEXT)
+            .nextNode()
 
-        return Boolean(
-          selection?.isCollapsed &&
-          selection.anchorOffset === 0 &&
-          selection.anchorNode?.textContent === 'Test before publishing' &&
-          element.contains(selection.anchorNode),
-        )
+          return Boolean(
+            first &&
+            document.activeElement ===
+              element.closest('.formatted-text-surface') &&
+            selection?.isCollapsed &&
+            selection.anchorNode === first &&
+            selection.focusNode === first &&
+            selection.anchorOffset === 0 &&
+            selection.focusOffset === 0,
+          )
+        }
+
+        if (!atFirstText()) return false
+
+        // Undo restores list structure before its native caret has settled.
+        for (let frame = 0; frame < 2; frame++) {
+          await new Promise<void>((done) => requestAnimationFrame(() => done()))
+          if (!atFirstText()) return false
+        }
+
+        return true
       }),
     )
     .toBe(true)

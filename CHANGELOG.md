@@ -4,6 +4,12 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.27.3-alpha.0 — 2026-10-11
+
+### Fixed
+
+- Wait for the focused native list caret after Undo before browser tests press Backspace; retain exact list ownership, history and saved-content assertions.
+
 ## 0.27.2-alpha.0 — 2026-10-11
 
 ### Fixed
