@@ -1162,6 +1162,20 @@ const messages: Record<string, string> = {
 
   'Save could not be confirmed. Reload HTML settings before trying again.':
     '저장 여부를 확인할 수 없습니다. 다시 시도하기 전에 HTML 설정을 다시 불러오세요.',
+
+  'HTML settings': 'HTML 설정',
+  'Temporary settings': '임시 설정',
+  'Reviewed collection settings': '검토한 컬렉션 설정',
+  'Review collection settings': '컬렉션 설정 검토',
+
+  'Review saved collection settings before using them. Reviewing does not save settings or generate HTML.':
+    '사용하기 전에 저장된 컬렉션 설정을 검토하세요. 검토는 설정을 저장하거나 HTML을 생성하지 않습니다.',
+
+  'Saved HTML settings changed. Review collection settings again.':
+    '저장된 HTML 설정이 변경되었습니다. 컬렉션 설정을 다시 검토하세요.',
+
+  'These are the last reviewed settings. Other sessions may have changed them.':
+    '마지막으로 검토한 설정입니다. 다른 세션에서 변경되었을 수 있습니다.',
 }
 
 export default messages

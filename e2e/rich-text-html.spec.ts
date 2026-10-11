@@ -1,10 +1,434 @@
 import { expect } from '@playwright/test'
+import { createHash } from 'node:crypto'
 import { signInPreview } from './preview-fixture'
 import { htmlPreviewOrigin, test } from './rich-text-html-fixture'
 import { richTextHtmlPreviews } from './rich-text-html-previews'
 import { richTextHtmlGuardPreviews } from './rich-text-html-guard-previews'
 
 test.use({ baseURL: htmlPreviewOrigin, locale: 'en-US' })
+
+test.describe.configure({ lock: 'port-4395' })
+
+test('owner explicitly selects reviewed collection settings for private HTML preview', async ({
+  page,
+  htmlWorkspace,
+}) => {
+  const collectionPath = '/api/collections/' + htmlWorkspace.collectionId
+  const entryPath = collectionPath + '/entries/' + htmlWorkspace.entryId
+  const rendererPath = htmlPreviewOrigin + collectionPath + '/renderer'
+  const previewPath = htmlPreviewOrigin + entryPath + '/render-preview'
+  const headers = {
+    origin: htmlPreviewOrigin,
+    authorization: 'Bearer ' + htmlWorkspace.owner,
+  }
+  const renderer = {
+    schemaVersion: 1,
+    elements: {
+      h1: {
+        classes: ['reviewed-heading'],
+        attributes: { title: 'Saved <heading> & ไทย' },
+      },
+    },
+  }
+  const rendererSha256 = createHash('sha256')
+    .update(
+      '{"consumerContract":null,"elements":{"h1":{"attributes":{"title":"Saved <heading> & ไทย"},"classes":["reviewed-heading"]}},"schemaVersion":1}',
+    )
+    .digest('hex')
+  const savedResponse = await page.request.put(rendererPath, {
+    headers,
+    data: { version: 0, renderer },
+  })
+  expect(savedResponse.status()).toBe(200)
+  const savedRenderer = await savedResponse.json()
+  expect(savedRenderer.version).toBe(1)
+  expect(savedRenderer.renderer).toEqual(renderer)
+  expect(savedRenderer.rendererSha256).toBe(rendererSha256)
+
+  let rendererReads = 0
+  let previewRequests = 0
+  page.on('request', (request) => {
+    if (request.url() === rendererPath && request.method() === 'GET')
+      rendererReads += 1
+    if (request.url() === previewPath && request.method() === 'POST')
+      previewRequests += 1
+  })
+
+  await signInPreview(page, htmlWorkspace.owner)
+  await expect(
+    page.getByRole('button', { name: 'Sign out', exact: true }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Content', exact: true }).click()
+  await page
+    .getByRole('combobox', { name: 'Choose a collection', exact: true })
+    .click()
+  await page
+    .getByRole('option', { name: htmlWorkspace.collectionName, exact: true })
+    .click()
+  await page
+    .locator('.content-entry-row')
+    .filter({ hasText: htmlWorkspace.entryId })
+    .click()
+  await page.getByRole('button', { name: 'Preview HTML', exact: true }).click()
+
+  const review = page.getByRole('region', {
+    name: 'Private HTML preview',
+    exact: true,
+  })
+  await expect(review).toBeVisible()
+  expect(rendererReads).toBe(0)
+  expect(previewRequests).toBe(0)
+  const reviewSettings = review.getByRole('button', {
+    name: 'Review collection settings',
+    exact: true,
+  })
+  await expect(reviewSettings).toBeVisible()
+
+  async function snapshot() {
+    const values = []
+    for (const path of [
+      '/api/structs/' + htmlWorkspace.structId,
+      collectionPath,
+      collectionPath + '/entries',
+      entryPath,
+      collectionPath + '/renderer',
+      '/api/audit',
+    ]) {
+      const response = await page.request.get(htmlPreviewOrigin + path, {
+        headers,
+      })
+      expect(response.status()).toBe(200)
+      values.push(await response.json())
+    }
+
+    return values
+  }
+
+  const before = await snapshot()
+  const reviewedResponse = page.waitForResponse(
+    (response) =>
+      response.url() === rendererPath && response.request().method() === 'GET',
+  )
+  await reviewSettings.click()
+  expect(await (await reviewedResponse).json()).toEqual(savedRenderer)
+  await expect(reviewSettings).toBeEnabled()
+  expect(rendererReads).toBe(1)
+  expect(previewRequests).toBe(0)
+
+  const settingsChoice = review.getByRole('combobox', {
+    name: 'HTML settings',
+    exact: true,
+  })
+  await expect(settingsChoice).toHaveText('Temporary settings')
+  await settingsChoice.click()
+  await page
+    .getByRole('option', { name: 'Reviewed collection settings', exact: true })
+    .click()
+  expect(rendererReads).toBe(1)
+  expect(previewRequests).toBe(0)
+
+  const generate = review.getByRole('button', {
+    name: 'Generate HTML preview',
+    exact: true,
+  })
+  const savedPreview = page.waitForResponse(
+    (response) =>
+      response.url() === previewPath && response.request().method() === 'POST',
+  )
+  await generate.click()
+  const savedHtmlResponse = await savedPreview
+  expect(savedHtmlResponse.status()).toBe(200)
+  expect(savedHtmlResponse.request().postDataJSON()).toEqual({
+    entryVersion: 1,
+    fieldKey: 'body',
+    rendererVersion: 1,
+  })
+
+  const rest =
+    '<p>&lt;script&gt;literal&lt;/script&gt; &amp; text <a href="https://example.invalid/preview?note=a&amp;tag=b">Open article</a></p>'
+  const mappedHtml =
+    '<h1 class="reviewed-heading" title="Saved &lt;heading&gt; &amp; ไทย">Saved heading ไทย</h1>' +
+    rest
+  const identity = {
+    collectionId: htmlWorkspace.collectionId,
+    collectionVersion: 1,
+    structId: htmlWorkspace.structId,
+    structVersion: 1,
+    entryId: htmlWorkspace.entryId,
+    entryVersion: 1,
+    fieldKey: 'body',
+    schemaVersion: 2,
+    astVersion: 2,
+    rendererSchemaVersion: 1,
+    consumerContract: null,
+  }
+  expect(await savedHtmlResponse.json()).toEqual({
+    ...identity,
+    rendererVersion: 1,
+    rendererSha256,
+    html: mappedHtml,
+  })
+  await expect(
+    review.getByRole('textbox', { name: 'HTML source', exact: true }),
+  ).toHaveValue(mappedHtml)
+  await expect(review.frameLocator('iframe').locator('h1')).toHaveAttribute(
+    'class',
+    'reviewed-heading',
+  )
+  expect(await snapshot()).toEqual(before)
+
+  await settingsChoice.click()
+  await page
+    .getByRole('option', { name: 'Temporary settings', exact: true })
+    .click()
+  expect(rendererReads).toBe(1)
+  expect(previewRequests).toBe(1)
+  const temporaryPreview = page.waitForResponse(
+    (response) =>
+      response.url() === previewPath && response.request().method() === 'POST',
+  )
+  await generate.click()
+  const temporaryResponse = await temporaryPreview
+  expect(temporaryResponse.status()).toBe(200)
+  expect(temporaryResponse.request().postDataJSON()).toEqual({
+    entryVersion: 1,
+    fieldKey: 'body',
+    renderer: { schemaVersion: 1, elements: {} },
+  })
+  const temporaryHtml = '<h1>Saved heading ไทย</h1>' + rest
+  expect(await temporaryResponse.json()).toEqual({
+    ...identity,
+    rendererSha256: createHash('sha256')
+      .update('{"consumerContract":null,"elements":{},"schemaVersion":1}')
+      .digest('hex'),
+    html: temporaryHtml,
+  })
+  await expect(
+    review.getByRole('textbox', { name: 'HTML source', exact: true }),
+  ).toHaveValue(temporaryHtml)
+  expect(rendererReads).toBe(1)
+  expect(previewRequests).toBe(2)
+  expect(await snapshot()).toEqual(before)
+
+  await review
+    .getByRole('button', { name: 'Advanced element settings', exact: true })
+    .click()
+  await review.getByRole('combobox', { name: 'Element', exact: true }).click()
+  await page
+    .getByRole('option', { name: 'Heading 1 (h1)', exact: true })
+    .click()
+  await review
+    .getByLabel('CSS classes', { exact: true })
+    .fill('temporary-authored')
+  await review
+    .getByLabel('Title attribute', { exact: true })
+    .fill('Temporary <title> ไทย')
+  await settingsChoice.click()
+  await page
+    .getByRole('option', { name: 'Reviewed collection settings', exact: true })
+    .click()
+  expect(rendererReads).toBe(1)
+  expect(previewRequests).toBe(2)
+
+  const editorResponse = page.waitForResponse(
+    (response) =>
+      response.url() === rendererPath && response.request().method() === 'GET',
+  )
+  await page
+    .getByRole('button', { name: 'Review HTML settings', exact: true })
+    .click()
+  expect(await (await editorResponse).json()).toEqual(savedRenderer)
+  const editor = page.getByRole('region', {
+    name: 'Collection HTML settings',
+    exact: true,
+  })
+  await editor
+    .getByRole('button', { name: 'Advanced element settings', exact: true })
+    .click()
+  await editor.getByRole('combobox', { name: 'Element', exact: true }).click()
+  await page
+    .getByRole('option', { name: 'Heading 1 (h1)', exact: true })
+    .click()
+  await editor
+    .getByLabel('CSS classes', { exact: true })
+    .fill('unsaved-local-heading')
+  await editor
+    .getByLabel('Title attribute', { exact: true })
+    .fill('Local <title> ไทย')
+  const saveSettings = editor.getByRole('button', {
+    name: 'Save HTML settings',
+    exact: true,
+  })
+  await expect(saveSettings).toBeEnabled()
+  expect(rendererReads).toBe(2)
+
+  const peerRenderer = {
+    schemaVersion: 1,
+    elements: {
+      h1: {
+        classes: ['peer-heading'],
+        attributes: { title: 'Peer <title> ไทย' },
+      },
+    },
+  }
+  const peerResponse = await page.request.put(rendererPath, {
+    headers,
+    data: { version: 1, renderer: peerRenderer },
+  })
+  expect(peerResponse.status()).toBe(200)
+  const peerSaved = await peerResponse.json()
+  expect(peerSaved.version).toBe(2)
+  const afterPeer = await snapshot()
+
+  const staleResponse = page.waitForResponse(
+    (response) =>
+      response.url() === previewPath && response.request().method() === 'POST',
+  )
+  await generate.click()
+  const stale = await staleResponse
+  expect(stale.status()).toBe(409)
+  expect(stale.request().postDataJSON()).toEqual({
+    entryVersion: 1,
+    fieldKey: 'body',
+    rendererVersion: 1,
+  })
+  await expect(review.getByRole('alert')).toHaveText(
+    'Saved HTML settings changed. Review collection settings again.',
+  )
+  await expect(generate).toBeDisabled()
+  await expect(
+    review.getByRole('textbox', { name: 'HTML source', exact: true }),
+  ).toHaveCount(0)
+  expect(rendererReads).toBe(2)
+  expect(previewRequests).toBe(3)
+  expect(await snapshot()).toEqual(afterPeer)
+
+  await settingsChoice.click()
+  await page
+    .getByRole('option', { name: 'Temporary settings', exact: true })
+    .click()
+  await expect(generate).toBeEnabled()
+  await review
+    .getByRole('button', { name: 'Advanced element settings', exact: true })
+    .click()
+  await review.getByRole('combobox', { name: 'Element', exact: true }).click()
+  await page
+    .getByRole('option', { name: 'Heading 1 (h1)', exact: true })
+    .click()
+  await expect(review.getByLabel('CSS classes', { exact: true })).toHaveValue(
+    'temporary-authored',
+  )
+  await expect(
+    review.getByLabel('Title attribute', { exact: true }),
+  ).toHaveValue('Temporary <title> ไทย')
+  await settingsChoice.click()
+  await page
+    .getByRole('option', { name: 'Reviewed collection settings', exact: true })
+    .click()
+  await expect(generate).toBeDisabled()
+  expect(rendererReads).toBe(2)
+  expect(previewRequests).toBe(3)
+
+  let release = () => {}
+  let entered = () => {}
+  let completed = () => {}
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const serverRead = new Promise<void>((resolve) => {
+    entered = resolve
+  })
+  const finished = new Promise<void>((resolve) => {
+    completed = resolve
+  })
+  await page.route(rendererPath, async (route) => {
+    try {
+      expect(route.request().method()).toBe('GET')
+      const response = await route.fetch()
+      expect(response.status()).toBe(200)
+      expect(await response.json()).toEqual(peerSaved)
+      entered()
+      await held
+      await route.fulfill({ response })
+    } finally {
+      completed()
+    }
+  })
+  try {
+    await reviewSettings.click()
+    await serverRead
+    await expect(review.getByRole('status')).toHaveText(
+      'Loading HTML settings…',
+    )
+    for (const control of [
+      reviewSettings,
+      settingsChoice,
+      generate,
+      review.getByRole('combobox', { name: 'Rich-text field', exact: true }),
+      review.getByRole('button', { name: 'Close HTML preview', exact: true }),
+      saveSettings,
+      editor.getByLabel('Title attribute', { exact: true }),
+      page.getByRole('button', { name: 'API Studio', exact: true }),
+    ])
+      await expect(control).toBeDisabled()
+    expect(rendererReads).toBe(3)
+    expect(previewRequests).toBe(3)
+  } finally {
+    release()
+    await finished
+    await page.unroute(rendererPath)
+  }
+  await expect(reviewSettings).toBeEnabled()
+  await expect(generate).toBeEnabled()
+  await expect(
+    review.getByText('Renderer revision 2', { exact: true }),
+  ).toBeVisible()
+  await expect(
+    editor.getByText('Renderer revision 1', { exact: true }),
+  ).toBeVisible()
+  await expect(editor.getByLabel('CSS classes', { exact: true })).toHaveValue(
+    'unsaved-local-heading',
+  )
+  await expect(
+    editor.getByLabel('Title attribute', { exact: true }),
+  ).toHaveValue('Local <title> ไทย')
+  await expect(saveSettings).toBeEnabled()
+
+  const recoveredResponse = page.waitForResponse(
+    (response) =>
+      response.url() === previewPath && response.request().method() === 'POST',
+  )
+  await generate.click()
+  const recovered = await recoveredResponse
+  expect(recovered.status()).toBe(200)
+  expect(recovered.request().postDataJSON()).toEqual({
+    entryVersion: 1,
+    fieldKey: 'body',
+    rendererVersion: 2,
+  })
+  const recoveredHtml =
+    '<h1 class="peer-heading" title="Peer &lt;title&gt; ไทย">Saved heading ไทย</h1>' +
+    rest
+  expect(await recovered.json()).toEqual({
+    ...identity,
+    rendererVersion: 2,
+    rendererSha256: createHash('sha256')
+      .update(
+        '{"consumerContract":null,"elements":{"h1":{"attributes":{"title":"Peer <title> ไทย"},"classes":["peer-heading"]}},"schemaVersion":1}',
+      )
+      .digest('hex'),
+    html: recoveredHtml,
+  })
+  await expect(
+    review.getByRole('textbox', { name: 'HTML source', exact: true }),
+  ).toHaveValue(recoveredHtml)
+  expect(rendererReads).toBe(3)
+  expect(previewRequests).toBe(4)
+  expect(await snapshot()).toEqual(afterPeer)
+  await expect(editor.getByLabel('CSS classes', { exact: true })).toHaveValue(
+    'unsaved-local-heading',
+  )
+})
 
 test('owner can choose HTML preview for a reviewed saved formatted entry', async ({
   page,

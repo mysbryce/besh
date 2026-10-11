@@ -1126,6 +1126,20 @@ const messages: Record<string, string> = {
 
   'Save could not be confirmed. Reload HTML settings before trying again.':
     '无法确认是否保存成功。请重新加载 HTML 设置后再试。',
+
+  'HTML settings': 'HTML 设置',
+  'Temporary settings': '临时设置',
+  'Reviewed collection settings': '已查看的集合设置',
+  'Review collection settings': '查看集合设置',
+
+  'Review saved collection settings before using them. Reviewing does not save settings or generate HTML.':
+    '使用前请查看集合已保存的设置。查看不会保存设置或生成 HTML。',
+
+  'Saved HTML settings changed. Review collection settings again.':
+    '已保存的 HTML 设置已更改。请重新查看集合设置。',
+
+  'These are the last reviewed settings. Other sessions may have changed them.':
+    '这些是上次查看的设置。其他会话可能已更改它们。',
 }
 
 export default messages

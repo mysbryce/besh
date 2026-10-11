@@ -78,6 +78,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Save audit events with state changes. Keep migration history and test backup restoration.
 - Separate editable drafts from published releases.
 - Collection HTML settings use independent safe renderer revisions and original-owner transaction checks. Absence is virtual zero; malformed stored records fail closed. Preserve accepted wire shapes and untouched values through form edits. Conflicts or unconfirmed delivery require explicit verified reload before saving. Keep persisted settings separate from temporary preview and future CMS publication.
+- Private saved-renderer preview requires explicit review and exact current renderer selection independently of entry versions. Preserve temporary request/reply shapes, literal content, original-owner transaction authority and bounded rendering. Never silently select the latest settings, mutate the separate settings draft, or turn preview into publication.
 - Use parameterized queries. Keep product database connections separate from Besh's control database.
 - SQLite product reads use immutable uploaded copies, inspected identifiers, bound values, and the trusted child reader. Preserve its deadline, output, storage, and process-wide concurrency limits. Never accept caller SQL or filesystem paths.
 - Dispatch the trusted compiled SQLite reader before portable CLI modes. Portable license export must work offline and preserve the embedded inventory and full original notice bytes.
