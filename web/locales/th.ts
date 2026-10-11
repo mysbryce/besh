@@ -1,4 +1,10 @@
 const messages: Record<string, string> = {
+  'Text style': 'รูปแบบข้อความ',
+  Lists: 'รายการ',
+  Insert: 'แทรก',
+  'Table tools': 'เครื่องมือตาราง',
+  'Undo and redo': 'เลิกทำและทำซ้ำ',
+
   'Content snapshot APIs stay owner-only.':
     'API สำเนาเนื้อหายังจำกัดเฉพาะเจ้าของ',
 

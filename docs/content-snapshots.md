@@ -1,8 +1,8 @@
 # Content snapshot APIs
 
-The active 0.27 work lets an owner create and explicitly publish a fixed REST API from one reviewed saved rich-text field. Callers receive its sealed document, escaped HTML and provenance. Later entry, model or renderer edits do not update that response. This is a snapshot API, not a live collection query.
+Delivered source `0.27.0-alpha.0` lets an owner create and explicitly publish a fixed REST API from one reviewed saved rich-text field. Callers receive its sealed document, escaped HTML and provenance. Later entry, model or renderer edits do not update that response. This is a snapshot API, not a live collection query.
 
-Public HTTP and browser checks, complete suites, the final gallery and rebuilt portable acceptance pass. The complete suites precede only the sharing-copy clarification; post-copy focused browser and artifact checks pass. Final formatting passes. Source commit and hosted CI remain pending. The preceding saved-renderer preview completed [PR #24](https://github.com/mysbryce/besh/pull/24); no new public executable release follows from this working feature. See [current receipts](testing.md#sealed-content-snapshot-draft--active-027-work) and [roadmap](roadmap.md).
+Public HTTP/browser checks, complete local suites, the final gallery and rebuilt portable acceptance pass. [PR #25](https://github.com/mysbryce/besh/pull/25) completed source delivery with matching reviewed/merged trees and all three exact-head/main CI jobs passing before delivery-branch cleanup. Hosted checks pass 411 backend cases/9,415 assertions, 78 browser cases and ten portable cases/1,202 assertions; historical local chronology remains in [exact receipts](testing.md#sealed-content-snapshot-draft--active-027-work). No tag, new public executable or deployment is published; the public executable remains 0.19. See [roadmap](roadmap.md) for the separate toolbar patch and planned GraphQL slice.
 
 ## Create and publish
 

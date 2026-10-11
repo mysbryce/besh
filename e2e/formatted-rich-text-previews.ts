@@ -85,7 +85,32 @@ export async function formattedRichTextPreviews({
   const editor = page.getByRole('textbox', { name: 'Body', exact: true })
   await editor.fill('<script>literal</script> & ไทย')
   await editor.press('ControlOrMeta+a')
-  await page.getByRole('button', { name: 'Bold', exact: true }).click()
+  await expect
+    .poll(() => page.evaluate(() => window.getSelection()?.toString()))
+    .toBe('<script>literal</script> & ไทย')
+
+  const bold = page.getByRole('button', { name: 'Bold', exact: true })
+  await bold.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Bold')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect
+    .poll(() => page.evaluate(() => window.getSelection()?.toString()))
+    .toBe('<script>literal</script> & ไทย')
+
+  await editor.press('Alt+F10')
+  await expect(
+    page.getByRole('combobox', { name: 'Body block style', exact: true }),
+  ).toBeFocused()
+  await page.keyboard.press('ArrowRight')
+  await expect(bold).toBeFocused()
+  await expect(page.getByRole('tooltip')).toHaveText('Bold')
+  await page.keyboard.press('Enter')
+  await expect(editor).toBeFocused()
+  await expect(bold).toHaveAttribute('aria-pressed', 'true')
+  await expect(editor.locator('p strong')).toHaveText(
+    '<script>literal</script> & ไทย',
+  )
   await page
     .getByRole('combobox', { name: 'Body block style', exact: true })
     .click()

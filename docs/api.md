@@ -51,13 +51,13 @@ Delivered 0.26 adds a mutually exclusive preview request: `{ entryVersion, field
 
 Collection CRUD and HTML preview add no implicit runtime publication, API dependency USE or shared CMS permission. Structured content and reviewed renderer settings remain separate; private HTML preview does not create a public content route. Ordinary full unencrypted backups contain entries and keep their existing `backups.manage` authority; owner-only direct access does not exclude authorized backup operators.
 
-## Content snapshot APIs — active 0.27
+## Content snapshot APIs — delivered 0.27
 
 Owner-only `POST /api/collections/:id/entries/:entryId/snapshot-flow` accepts exactly `{ name, path, collectionVersion, entryVersion, rendererVersion, fieldPath }`. It rechecks the original same-actor current owner first inside the acquired write transaction, verifies those reviewed versions and frozen typed selection, then returns an unpublished sealed revision-one `SavedFlow`. It accepts no caller AST, HTML, renderer map, code or seal identifier. Invalid input returns `400`, stale reviewed versions `409`, and malformed stored content/settings `503`. Creation records metadata-only `flow.created` without changing content or settings.
 
 Explicit ordinary flow publication registers this sealed API's fixed `GET /run/<literal-path>`. A separate REST caller key must have the current release pin and original live owner issuer. Its exact JSON result is `{ document, html, provenance }`; source edits or entry deletion do not update that response. Ordinary flow writes cannot copy a seal or remove its private CMS classification. Missing or mismatched sealed state fails closed, without a live-content fallback.
 
-Focused HTTP and browser acceptance passes, including downloaded backup reopen, creation/publication/caller UI and stale, held and unconfirmed responses. Full 0.27 delivery gates remain pending. The uncertainty guard is memory-only, not crash-safe idempotency. CMS GraphQL, live reads, mutations, rollback, draft tests and client exports remain planned. See [Content snapshot APIs](content-snapshots.md) for exact bounds, output identities and recovery limits.
+Focused HTTP and browser acceptance passes, including downloaded backup reopen, creation/publication/caller UI and stale, held and unconfirmed responses. PR #25 completed local and hosted delivery; see the [exact receipt](testing.md#sealed-content-snapshot-draft--active-027-work). The uncertainty guard is memory-only, not crash-safe idempotency. CMS GraphQL, live reads, mutations, rollback, draft tests and client exports remain planned. See [Content snapshot APIs](content-snapshots.md) for exact bounds, output identities and recovery limits.
 
 ## Tenant row protection
 

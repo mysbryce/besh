@@ -4,6 +4,16 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.27.1-alpha.0 — 2026-10-11
+
+### Fixed
+
+- Replace rich-text action labels with compact grouped icons, translated tooltips and clear selected states.
+- Keep the visible block-style selector and native keyboard navigation across formatting groups.
+- Dismiss hovered tooltips without clearing selected text, preserving keyboard formatting and native history.
+- Keep touch-sized controls on phones and readable toolbar states in light and dark themes.
+- Show list and table tools in their editing context to keep narrow screens clear.
+
 ## 0.27.0-alpha.0 — 2026-10-11
 
 ### Added

@@ -838,6 +838,61 @@ test('copied executable renders real setup, signs in and publishes a callable RE
       page.getByRole('heading', { name: 'Saved entry', exact: true }),
     ).toBeVisible()
 
+    await page.getByRole('button', { name: 'Edit entry', exact: true }).click()
+
+    const portableEditor = page.getByRole('textbox', {
+      name: 'Body',
+      exact: true,
+    })
+    const portableHeading = portableEditor.locator('h1')
+    const portableBold = page.getByRole('button', { name: 'Bold', exact: true })
+    await portableHeading.click()
+    await portableEditor.press('Home')
+    await portableEditor.press('Shift+End')
+    await browserExpect
+      .poll(() => page.evaluate(() => window.getSelection()?.toString()))
+      .toBe('Portable heading ไทย')
+    await portableBold.hover()
+    await browserExpect(page.getByRole('tooltip')).toHaveText('Bold')
+    await page.keyboard.press('Escape')
+    await browserExpect(page.getByRole('tooltip')).toHaveCount(0)
+    await portableEditor.press('Alt+F10')
+    await browserExpect(
+      page.getByRole('combobox', { name: 'Body block style', exact: true }),
+    ).toBeFocused()
+    await page.keyboard.press('ArrowRight')
+    await browserExpect(portableBold).toBeFocused()
+    await browserExpect(page.getByRole('tooltip')).toHaveText('Bold')
+    await capture(
+      '14-rich-text-toolbar-focused.png',
+      'Copied executable grouped rich-text toolbar with keyboard-focused Bold',
+      false,
+    )
+    await page.keyboard.press('Enter')
+    await browserExpect(portableHeading.locator('strong')).toHaveText(
+      'Portable heading ไทย',
+    )
+    await portableEditor.press('ControlOrMeta+z')
+    await browserExpect(portableHeading.locator('strong')).toHaveCount(0)
+    await browserExpect(
+      page.getByRole('button', { name: 'Save entry', exact: true }),
+    ).toBeDisabled()
+
+    const reloadedContentReply = page.waitForResponse(
+      (response) =>
+        response.url() === contentEntryPath &&
+        response.request().method() === 'GET',
+    )
+    await page
+      .getByRole('button', { name: 'Reload entry', exact: true })
+      .click()
+    const reloadedContent = await reloadedContentReply
+    expect(reloadedContent.status()).toBe(200)
+    expect(await reloadedContent.json()).toEqual(savedContent)
+    await browserExpect(
+      page.getByRole('heading', { name: 'Saved entry', exact: true }),
+    ).toBeVisible()
+
     const htmlPreviewPath = contentEntryPath + '/render-preview'
     let reviewedRendererReads = 0
     let portableHtmlPosts = 0
@@ -1527,7 +1582,7 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     expect(
       pageErrors === 0 && networkErrors === 0 && policyViolations === 0,
     ).toBe(true)
-    expect(captures.length).toBe(13)
+    expect(captures.length).toBe(14)
     await writeFile(
       join(previews, 'manifest.json'),
       JSON.stringify({ captures }, null, 2) + '\n',
