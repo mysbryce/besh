@@ -264,6 +264,7 @@ test('copied executable renders real setup, signs in and publishes a callable RE
   const captures: { file: string; title: string; width: number }[] = []
   let owner = ''
   let runtime = ''
+  let contentRuntime = ''
   let setupURL = ''
   let challenge = ''
   let knownOrigin = ''
@@ -294,7 +295,8 @@ test('copied executable renders real setup, signs in and publishes a callable RE
           !text.includes('setup=') &&
           (!challenge || !text.includes(challenge)) &&
           (!owner || !text.includes(owner)) &&
-          (!runtime || !text.includes(runtime)),
+          (!runtime || !text.includes(runtime)) &&
+          (!contentRuntime || !text.includes(contentRuntime)),
       ),
     ).toBe(true)
   }
@@ -1157,9 +1159,275 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     expect(portableHtmlPosts).toBe(4)
     page.off('request', observePrivatePreview)
 
-    await htmlReview
-      .getByRole('button', { name: 'Close HTML preview', exact: true })
+    // Creation uses a fresh explicit saved-settings review, never the temporary map.
+    await htmlSettings.click()
+    await page
+      .getByRole('option', {
+        name: 'Reviewed collection settings',
+        exact: true,
+      })
       .click()
+    await browserExpect(htmlSource).toHaveCount(0)
+    await browserExpect(htmlField).toHaveText('Body')
+
+    const contentSettingsReview = page.waitForResponse(
+      (response) =>
+        response.url() === collectionRendererPath &&
+        response.request().method() === 'GET',
+    )
+    await reviewCollectionSettings.click()
+
+    const contentSettingsResponse = await contentSettingsReview
+    expect(contentSettingsResponse.status()).toBe(200)
+    expect(await contentSettingsResponse.json()).toEqual(acceptedRenderer)
+    await browserExpect(reviewCollectionSettings).toBeEnabled()
+
+    const contentPreviewResponse = page.waitForResponse(
+      (response) =>
+        response.url() === htmlPreviewPath &&
+        response.request().method() === 'POST',
+    )
+    await generateHTML.click()
+
+    const contentPreview = await contentPreviewResponse
+    expect(contentPreview.status()).toBe(200)
+    expect(contentPreview.request().postDataJSON()).toEqual({
+      entryVersion: 1,
+      fieldKey: 'body',
+      rendererVersion: 1,
+    })
+    expect(await contentPreview.json()).toEqual({
+      ...htmlIdentity,
+      fieldKey: 'body',
+      schemaVersion: 2,
+      astVersion: 2,
+      rendererVersion: 1,
+      rendererSha256: collectionRendererHash,
+      html: reviewedCollectionHTML,
+    })
+    await browserExpect(htmlSource).toHaveValue(reviewedCollectionHTML)
+    expect(await snapshotPrivatePreviewState()).toEqual(privatePreviewBefore)
+
+    const contentApiName = 'Portable Content API ไทย'
+    const contentApiPath = '/portable-content-snapshot'
+    const snapshotFlowPath = contentEntryPath + '/snapshot-flow'
+    const contentCreate = htmlReview.getByRole('group', {
+      name: 'Create Content API',
+      exact: true,
+    })
+    await contentCreate
+      .getByLabel('API name', { exact: true })
+      .fill(contentApiName)
+    await contentCreate
+      .getByLabel('Endpoint path', { exact: true })
+      .fill(contentApiPath)
+
+    const contentCreationResponse = page.waitForResponse(
+      (response) =>
+        response.url() === snapshotFlowPath &&
+        response.request().method() === 'POST',
+    )
+    await contentCreate
+      .getByRole('button', { name: 'Create Content API', exact: true })
+      .click()
+
+    const contentCreatedResponse = await contentCreationResponse
+    expect(contentCreatedResponse.status()).toBe(200)
+    expect(contentCreatedResponse.request().postDataJSON()).toEqual({
+      name: contentApiName,
+      path: contentApiPath,
+      collectionVersion: contentCollection.version,
+      entryVersion: savedContent.version,
+      rendererVersion: acceptedRenderer.version,
+      fieldPath: ['body'],
+    })
+    const contentFlow = await contentCreatedResponse.json()
+    expect(contentFlow).toMatchObject({
+      name: contentApiName,
+      path: contentApiPath,
+      method: 'GET',
+      revision: 1,
+      publishedRevision: null,
+      publishedEndpoint: null,
+    })
+    expect(contentFlow.nodes).toHaveLength(2)
+    expect(
+      contentFlow.nodes.map((node: { type: string }) => node.type),
+    ).toEqual(['request', 'cmsSnapshotResponse'])
+    const contentTerminal = contentFlow.nodes[1]
+    expect(contentFlow.nodes[0].config).toEqual({})
+    expect(Object.keys(contentTerminal.config).sort()).toEqual([
+      'snapshotId',
+      'snapshotSha256',
+    ])
+    expect(contentTerminal.config.snapshotId).toMatch(/^[A-Za-z0-9_-]{1,80}$/)
+    expect(contentTerminal.config.snapshotSha256).toMatch(/^[a-f0-9]{64}$/)
+    expect(contentFlow.edges).toHaveLength(1)
+    expect(contentFlow.edges[0].source).toBe(contentFlow.nodes[0].id)
+    expect(contentFlow.edges[0].target).toBe(contentTerminal.id)
+
+    const contentFlowResponse = await page.request.get(
+      knownOrigin + '/api/flows/' + contentFlow.id,
+      { headers: contentHeaders },
+    )
+    expect(contentFlowResponse.status()).toBe(200)
+    expect(await contentFlowResponse.json()).toEqual(contentFlow)
+    await browserExpect(contentCreate.getByRole('status')).toHaveText(
+      'Content API draft created.',
+    )
+    await browserExpect(
+      contentCreate.getByRole('button', {
+        name: 'Create Content API',
+        exact: true,
+      }),
+    ).toBeDisabled()
+    await contentCreate
+      .getByRole('button', { name: 'Open API Studio', exact: true })
+      .scrollIntoViewIfNeeded()
+    await capture(
+      '11-content-api-draft-created.png',
+      'Compiled Content API draft created from explicitly reviewed saved content and settings',
+      false,
+    )
+
+    await contentCreate
+      .getByRole('button', { name: 'Open API Studio', exact: true })
+      .click()
+    const contentCard = page.locator('.flow-card.cmsSnapshotResponse')
+    await browserExpect(contentCard).toBeVisible()
+    await browserExpect(
+      page.getByLabel('API name', { exact: true }),
+    ).toHaveValue(contentApiName)
+    await browserExpect(
+      page.getByLabel('API name', { exact: true }),
+    ).toBeDisabled()
+    await browserExpect(
+      page.getByLabel('Endpoint path', { exact: true }),
+    ).toHaveValue(contentApiPath)
+    await browserExpect(
+      page.getByLabel('Endpoint path', { exact: true }),
+    ).toBeDisabled()
+    await browserExpect(
+      page.getByRole('button', { name: 'Save draft', exact: true }),
+    ).toBeDisabled()
+    await browserExpect(
+      page.getByRole('button', { name: 'Add step', exact: true }),
+    ).toBeDisabled()
+    await contentCard.click()
+    await browserExpect(
+      page.locator('.inspector').getByRole('heading', {
+        name: 'Content snapshot',
+        exact: true,
+      }),
+    ).toBeVisible()
+    await contentCard.scrollIntoViewIfNeeded()
+    await capture(
+      '12-content-api-readonly-studio.png',
+      'Compiled read-only sealed Content snapshot Studio before explicit publication',
+      false,
+    )
+
+    const contentPublishPath =
+      knownOrigin + '/api/flows/' + contentFlow.id + '/publish'
+    const contentPublicationResponse = page.waitForResponse(
+      (response) =>
+        response.url() === contentPublishPath &&
+        response.request().method() === 'POST',
+    )
+    await page.getByRole('button', { name: 'Publish', exact: true }).click()
+
+    const contentPublishedResponse = await contentPublicationResponse
+    expect(contentPublishedResponse.status()).toBe(200)
+    expect(contentPublishedResponse.request().postDataJSON()).toEqual({
+      revision: 1,
+    })
+    const contentPublished = await contentPublishedResponse.json()
+    expect(contentPublished).toEqual({
+      ...contentFlow,
+      publishedRevision: 1,
+      publishedEndpoint: {
+        method: 'GET',
+        path: contentApiPath,
+        graphql: false,
+        transport: 'rest',
+      },
+    })
+    const contentEndpoint = knownOrigin + '/run' + contentApiPath
+    const contentEndpointField = page.getByLabel('Published endpoint URL', {
+      exact: true,
+    })
+    await browserExpect(contentEndpointField).toHaveValue(contentEndpoint)
+    await browserExpect(
+      page.getByText('Live · v1', { exact: true }),
+    ).toBeVisible()
+    await contentEndpointField.scrollIntoViewIfNeeded()
+    await capture(
+      '13-content-api-published-route.png',
+      'Compiled published Content API exact GET route at release one',
+      false,
+    )
+
+    const contentKeyResponse = await page.request.post(
+      knownOrigin + '/api/runtime-keys',
+      {
+        headers: contentHeaders,
+        data: {
+          name: 'Portable Content caller',
+          flowId: contentFlow.id,
+          releaseRevision: 1,
+          permissions: ['rest'],
+          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        },
+      },
+    )
+    expect(contentKeyResponse.status()).toBe(200)
+    const contentKey = await contentKeyResponse.json()
+    if (typeof contentKey.token !== 'string' || contentKey.token.length < 32)
+      throw new Error('Content API key did not return its one-use receipt')
+    contentRuntime = contentKey.token
+    contentKey.token = undefined
+    expect(contentKey).toMatchObject({
+      flowId: contentFlow.id,
+      releaseRevision: 1,
+      permissions: ['rest'],
+      issuerBinding: { memberId: 'owner', action: 'runtime-keys.manage' },
+    })
+    safeCLI(launch)
+
+    const contentDenied = await fetch(contentEndpoint, {
+      headers: { authorization: 'Bearer ' + owner },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(3_000),
+    })
+    expect(contentDenied.status).toBe(401)
+    await contentDenied.body?.cancel()
+
+    const contentLive = await fetch(contentEndpoint, {
+      headers: { authorization: 'Bearer ' + contentRuntime },
+      redirect: 'manual',
+      signal: AbortSignal.timeout(3_000),
+    })
+    expect(contentLive.status).toBe(200)
+    expect(await boundedBody(contentLive)).toEqual({
+      document: contentData.body,
+      html: reviewedCollectionHTML,
+      provenance: {
+        ...htmlIdentity,
+        fieldKey: 'body',
+        fieldPath: ['body'],
+        schemaVersion: 2,
+        astVersion: 2,
+        rendererVersion: 1,
+        rendererSha256: collectionRendererHash,
+        flowId: contentFlow.id,
+        releaseRevision: 1,
+        snapshotId: contentTerminal.config.snapshotId,
+        snapshotSha256: contentTerminal.config.snapshotSha256,
+      },
+    })
+    expect((await snapshotPrivatePreviewState()).slice(0, 5)).toEqual(
+      privatePreviewBefore.slice(0, 5),
+    )
 
     await page.getByRole('button', { name: 'API keys', exact: true }).click()
     await page
@@ -1259,7 +1527,7 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     expect(
       pageErrors === 0 && networkErrors === 0 && policyViolations === 0,
     ).toBe(true)
-    expect(captures.length).toBe(10)
+    expect(captures.length).toBe(13)
     await writeFile(
       join(previews, 'manifest.json'),
       JSON.stringify({ captures }, null, 2) + '\n',
@@ -1301,6 +1569,7 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     }
     owner = ''
     runtime = ''
+    contentRuntime = ''
     setupURL = ''
     challenge = ''
     delete env.BESH_TEST_UI_BROWSER_NONCE

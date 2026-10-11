@@ -1,4 +1,26 @@
 const messages: Record<string, string> = {
+  'Content snapshot APIs stay owner-only.':
+    'コンテンツのスナップショット API は引き続き所有者専用です。',
+
+  'Create Content API': 'コンテンツ API を作成',
+  'Creates a sealed draft. This does not publish an API.':
+    '内容を固定した下書きを作成します。API は公開されません。',
+  'Content API draft created.': 'コンテンツ API の下書きを作成しました。',
+  'Open API Studio': 'API Studio を開く',
+  'Save or discard unsaved changes before creating a Content API.':
+    'コンテンツ API を作成する前に、未保存の変更を保存するか破棄してください。',
+  'The reviewed content changed. Review it again before creating a Content API.':
+    '確認済みのコンテンツが変更されました。コンテンツ API を作成する前に再確認してください。',
+  'Creation could not be confirmed. Review the API list before creating again.':
+    '作成を確認できませんでした。再作成する前に API 一覧を確認してください。',
+
+  'nodes.cmsSnapshotResponse.label': 'コンテンツのスナップショット',
+  'contentSnapshot.nodeDescription': '保存済みリッチテキストと HTML',
+  'contentSnapshot.snapshotId': 'スナップショット ID',
+  'contentSnapshot.snapshotSha256': 'スナップショット SHA-256',
+  'contentSnapshot.locked':
+    'このスナップショットは固定されています。変更したコンテンツや HTML 設定を使うには、新しいコンテンツ API を作成してください。',
+
   'Copy HTML': 'HTML をコピー',
   'HTML copied': 'HTML をコピーしました',
   'Could not copy HTML. Select and copy the HTML source.':

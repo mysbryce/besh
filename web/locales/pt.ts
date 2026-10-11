@@ -1,4 +1,26 @@
 const messages: Record<string, string> = {
+  'Content snapshot APIs stay owner-only.':
+    'APIs de instantâneos de conteúdo continuam restritas ao proprietário.',
+
+  'Create Content API': 'Criar API de conteúdo',
+  'Creates a sealed draft. This does not publish an API.':
+    'Cria um rascunho com conteúdo fixo. Isso não publica uma API.',
+  'Content API draft created.': 'Rascunho da API de conteúdo criado.',
+  'Open API Studio': 'Abrir API Studio',
+  'Save or discard unsaved changes before creating a Content API.':
+    'Salve ou descarte as alterações não salvas antes de criar uma API de conteúdo.',
+  'The reviewed content changed. Review it again before creating a Content API.':
+    'O conteúdo revisado mudou. Revise-o novamente antes de criar uma API de conteúdo.',
+  'Creation could not be confirmed. Review the API list before creating again.':
+    'Não foi possível confirmar a criação. Revise a lista de APIs antes de criar novamente.',
+
+  'nodes.cmsSnapshotResponse.label': 'Instantâneo de conteúdo',
+  'contentSnapshot.nodeDescription': 'Texto formatado e HTML salvos',
+  'contentSnapshot.snapshotId': 'ID do instantâneo',
+  'contentSnapshot.snapshotSha256': 'SHA-256 do instantâneo',
+  'contentSnapshot.locked':
+    'Este instantâneo está fixado. Para usar conteúdo ou configurações de HTML alterados, crie uma nova API de conteúdo.',
+
   'Copy HTML': 'Copiar HTML',
   'HTML copied': 'HTML copiado',
   'Could not copy HTML. Select and copy the HTML source.':

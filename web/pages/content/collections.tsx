@@ -10,6 +10,7 @@ import type {
   CollectionSummary,
   StructDraft,
   StructSummary,
+  SavedFlow,
 } from '../../types/api'
 import type { StructField, StructSchema } from '../../../src/structs/model'
 import { useStudio } from '../../stores/studio-store'
@@ -30,7 +31,13 @@ const typeLabels = {
   select: 'Choice',
 } as const
 
-export function Collections() {
+export function Collections({
+  onCreated,
+  onOpenSnapshot,
+}: {
+  onCreated?: (flow: SavedFlow) => void
+  onOpenSnapshot?: (flow: SavedFlow) => void
+}) {
   const state = useStudio()
   const draft = useCollectionDraft()
   const { t } = useTranslation()
@@ -469,7 +476,11 @@ export function Collections() {
         <ContentRendererSettings collection={draft.collection} />
       ) : null}
       {draft.collection ? (
-        <ContentEntries collection={draft.collection} />
+        <ContentEntries
+          collection={draft.collection}
+          onCreated={onCreated}
+          onOpenSnapshot={onOpenSnapshot}
+        />
       ) : null}
     </div>
   )

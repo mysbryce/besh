@@ -44,6 +44,12 @@ function releaseLabel(key: { releaseRevision: number | null }) {
     : `Only release ${key.releaseRevision}`
 }
 
+function isContentSnapshot(flow: SavedFlow | undefined) {
+  return (
+    flow?.nodes.some((node) => node.type === 'cmsSnapshotResponse') ?? false
+  )
+}
+
 function issuerLabel(
   key: Pick<RuntimeKey, 'issuerBinding'>,
   member: Member | null,
@@ -117,6 +123,7 @@ export function RuntimeKeys() {
   const websocket = endpoint?.transport === 'websocket'
   const currentWebSocket =
     selected?.publishedEndpoint?.transport === 'websocket'
+  const currentContentSnapshot = isContentSnapshot(selected)
   const permissions: RuntimePermission[] =
     scope && scope.flowId === selected?.id
       ? scope.permissions
@@ -137,12 +144,15 @@ export function RuntimeKeys() {
     readable && !!selected?.publishedRevision,
   )
   const requiresPin =
-    selectedAccess || tenantReview.required || currentWebSocket
+    selectedAccess ||
+    tenantReview.required ||
+    currentWebSocket ||
+    currentContentSnapshot
   const ownTenantContext = useTenantContext(can(member, 'runtime-keys.manage'))
 
   useEffect(() => {
     if (
-      (tenantReview.required || currentWebSocket) &&
+      (tenantReview.required || currentWebSocket || currentContentSnapshot) &&
       selected?.publishedRevision &&
       selected.publishedEndpoint
     )
@@ -158,6 +168,7 @@ export function RuntimeKeys() {
   }, [
     tenantReview.required,
     currentWebSocket,
+    currentContentSnapshot,
     selected?.id,
     selected?.publishedRevision,
   ])
@@ -216,22 +227,25 @@ export function RuntimeKeys() {
     ) {
       useStudio.setState({ flows: metadata.value })
       setMetadataKnown(true)
-      if (selectedAccess) {
-        const publishedFlows = metadata.value.filter(
-          (flow) => flow.publishedEndpoint,
+      const publishedFlows = metadata.value.filter(
+        (flow) => flow.publishedEndpoint,
+      )
+      const choice =
+        publishedFlows.find((flow) => flow.id === flowId) ?? publishedFlows[0]
+
+      if (
+        (selectedAccess || isContentSnapshot(choice)) &&
+        choice?.publishedRevision &&
+        choice.publishedEndpoint
+      )
+        setPin(
+          (previous) =>
+            previous ?? {
+              flowId: choice.id,
+              revision: choice.publishedRevision!,
+              endpoint: choice.publishedEndpoint!,
+            },
         )
-        const choice =
-          publishedFlows.find((flow) => flow.id === flowId) ?? publishedFlows[0]
-        if (choice?.publishedRevision && choice.publishedEndpoint)
-          setPin(
-            (previous) =>
-              previous ?? {
-                flowId: choice.id,
-                revision: choice.publishedRevision!,
-                endpoint: choice.publishedEndpoint!,
-              },
-          )
-      }
     }
     if (records.status === 'rejected') throw records.reason
     if (metadata.status === 'rejected')
@@ -596,7 +610,8 @@ export function RuntimeKeys() {
                   const choice = published.find((flow) => flow.id === value)
                   setPin(
                     (selectedAccess ||
-                      choice?.publishedEndpoint?.transport === 'websocket') &&
+                      choice?.publishedEndpoint?.transport === 'websocket' ||
+                      isContentSnapshot(choice)) &&
                       choice?.publishedRevision &&
                       choice.publishedEndpoint
                       ? {

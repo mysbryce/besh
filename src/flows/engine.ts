@@ -30,6 +30,28 @@ export function validateFlow(value: unknown) {
     throw new Error('Edge IDs must be unique')
   const roots = flow.nodes.filter((node) => node.type === 'request')
   if (roots.length !== 1) throw new Error('Use exactly one request node')
+
+  const snapshots = flow.nodes.filter(
+    (node) => node.type === 'cmsSnapshotResponse',
+  )
+  if (
+    snapshots.length &&
+    (snapshots.length !== 1 ||
+      flow.nodes.length !== 2 ||
+      flow.edges.length !== 1 ||
+      flow.method !== 'GET' ||
+      flow.graphql ||
+      flow.websocket ||
+      flow.contract ||
+      !/^\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(flow.path) ||
+      flow.edges[0].source !== roots[0].id ||
+      flow.edges[0].target !== snapshots[0].id ||
+      flow.edges[0].sourceHandle != null)
+  )
+    throw new Error(
+      'CMS snapshots require one fixed GET request and sealed response',
+    )
+
   for (const edge of flow.edges) {
     if (!nodes.has(edge.source) || !nodes.has(edge.target))
       throw new Error('Edge references a missing node')
@@ -46,7 +68,10 @@ export function validateFlow(value: unknown) {
       )
         throw new Error('Conditions need true and false connections')
       readPath({}, node.config.field)
-    } else if (outgoing.length !== (node.type === 'response' ? 0 : 1))
+    } else if (
+      outgoing.length !==
+      (node.type === 'response' || node.type === 'cmsSnapshotResponse' ? 0 : 1)
+    )
       throw new Error('Each path must end with a response')
     if (node.type === 'response')
       resolveValue(node.config.body, { body: null, query: {} })
@@ -143,6 +168,10 @@ export async function executeFlow(
 ): Promise<FlowResult> {
   assertJsonLimit(input)
   const flow = validateFlow(value)
+
+  if (flow.nodes.some((node) => node.type === 'cmsSnapshotResponse'))
+    throw new ApiError(503, 'CMS snapshot execution is not available')
+
   concreteRoute(flow.path, input.params)
   const prepared = prepareInput(flow.contract, input)
   let node: FlowNode | undefined = flow.nodes.find(

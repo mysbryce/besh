@@ -1,4 +1,26 @@
 const messages: Record<string, string> = {
+  'Content snapshot APIs stay owner-only.':
+    'API สำเนาเนื้อหายังจำกัดเฉพาะเจ้าของ',
+
+  'Create Content API': 'สร้าง API เนื้อหา',
+  'Creates a sealed draft. This does not publish an API.':
+    'สร้างฉบับร่างที่ล็อกเนื้อหาไว้ ยังไม่เผยแพร่ API',
+  'Content API draft created.': 'สร้างฉบับร่าง API เนื้อหาแล้ว',
+  'Open API Studio': 'เปิด API Studio',
+  'Save or discard unsaved changes before creating a Content API.':
+    'บันทึกหรือละทิ้งการเปลี่ยนแปลงที่ยังไม่ได้บันทึกก่อนสร้าง API เนื้อหา',
+  'The reviewed content changed. Review it again before creating a Content API.':
+    'เนื้อหาที่ตรวจสอบไว้เปลี่ยนไปแล้ว ตรวจสอบอีกครั้งก่อนสร้าง API เนื้อหา',
+  'Creation could not be confirmed. Review the API list before creating again.':
+    'ยังยืนยันไม่ได้ว่าสร้างสำเร็จ ตรวจสอบรายการ API ก่อนสร้างอีกครั้ง',
+
+  'nodes.cmsSnapshotResponse.label': 'สำเนาเนื้อหา',
+  'contentSnapshot.nodeDescription': 'ข้อความแบบมีรูปแบบและ HTML ที่บันทึกไว้',
+  'contentSnapshot.snapshotId': 'รหัสสำเนา',
+  'contentSnapshot.snapshotSha256': 'SHA-256 ของสำเนา',
+  'contentSnapshot.locked':
+    'สำเนานี้ถูกล็อกไว้แล้ว หากต้องการใช้เนื้อหาหรือการตั้งค่า HTML ที่เปลี่ยนไป ให้สร้าง API เนื้อหาใหม่',
+
   'Copy HTML': 'คัดลอก HTML',
   'HTML copied': 'คัดลอก HTML แล้ว',
   'Could not copy HTML. Select and copy the HTML source.':

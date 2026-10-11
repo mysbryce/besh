@@ -7,6 +7,7 @@ import type {
   Collection,
   ContentEntry,
   ContentEntryPage,
+  SavedFlow,
 } from '../../types/api'
 import { useStudio } from '../../stores/studio-store'
 import { useCollectionDraft } from '../../stores/collection-store'
@@ -24,7 +25,15 @@ type EntryError = {
   origin: 'catalog' | 'detail' | 'write'
 }
 
-export function ContentEntries({ collection }: { collection: Collection }) {
+export function ContentEntries({
+  collection,
+  onCreated,
+  onOpenSnapshot,
+}: {
+  collection: Collection
+  onCreated?: (flow: SavedFlow) => void
+  onOpenSnapshot?: (flow: SavedFlow) => void
+}) {
   const state = useStudio()
   const draft = useContentEntryDraft()
   const { t } = useTranslation()
@@ -601,6 +610,8 @@ export function ContentEntries({ collection }: { collection: Collection }) {
           ) : null}
           {canReviewHtml && draft.entry ? (
             <ContentHtmlPreview
+              onCreated={onCreated}
+              onOpenSnapshot={onOpenSnapshot}
               fields={htmlFields}
               collection={collection}
               entry={draft.entry}

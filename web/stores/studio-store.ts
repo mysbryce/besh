@@ -19,6 +19,7 @@ import {
   setSessionCredential,
 } from '../lib/api'
 import type { Member, SavedFlow, WorkspaceSession } from '../types/api'
+import { hasContentSnapshot } from '../lib/content-snapshot'
 
 export type CanvasNode = Node<
   { kind: FlowNode['type']; config: FlowNode['config'] },
@@ -92,7 +93,10 @@ type Studio = {
   onNodesChange: (changes: NodeChange<CanvasNode>[]) => void
   onEdgesChange: (changes: EdgeChange[]) => void
   connect: (connection: Connection) => void
-  addNode: (kind: FlowNode['type'], position?: { x: number; y: number }) => void
+  addNode: (
+    kind: Exclude<FlowNode['type'], 'cmsSnapshotResponse'>,
+    position?: { x: number; y: number },
+  ) => void
   configure: (id: string, config: FlowNode['config']) => void
   select: (id: string | null) => void
   save: () => Promise<SavedFlow>
@@ -262,6 +266,8 @@ export const useStudio = create<Studio>((set, get) => ({
     }))
   },
   edit(fields) {
+    if (hasContentSnapshot(get().nodes)) return
+
     set({ ...fields, dirty: true })
   },
   select(selected) {
@@ -273,7 +279,14 @@ export const useStudio = create<Studio>((set, get) => ({
 
   onNodesChange(changes) {
     set((state) => {
-      const nodes = applyNodeChanges(changes, state.nodes)
+      const accepted = hasContentSnapshot(state.nodes)
+        ? changes.filter(
+            (change) =>
+              change.type === 'select' || change.type === 'dimensions',
+          )
+        : changes
+      const nodes = applyNodeChanges(accepted, state.nodes)
+
       return {
         nodes,
         edges: state.edges.filter(
@@ -283,7 +296,7 @@ export const useStudio = create<Studio>((set, get) => ({
         ),
         dirty:
           state.dirty ||
-          changes.some(
+          accepted.some(
             (change) =>
               change.type !== 'select' && change.type !== 'dimensions',
           ),
@@ -292,17 +305,39 @@ export const useStudio = create<Studio>((set, get) => ({
   },
 
   onEdgesChange(changes) {
-    set((state) => ({
-      edges: applyEdgeChanges(changes, state.edges),
-      dirty: state.dirty || changes.some((change) => change.type !== 'select'),
-    }))
+    set((state) => {
+      const accepted = hasContentSnapshot(state.nodes)
+        ? changes.filter((change) => change.type === 'select')
+        : changes
+
+      return {
+        edges: applyEdgeChanges(accepted, state.edges),
+        dirty:
+          state.dirty || accepted.some((change) => change.type !== 'select'),
+      }
+    })
   },
 
   connect(connection) {
+    if (hasContentSnapshot(get().nodes)) return
+
     set((state) => ({ edges: addEdge(connection, state.edges), dirty: true }))
   },
 
   addNode(kind, position) {
+    if (
+      hasContentSnapshot(get().nodes) ||
+      ![
+        'request',
+        'response',
+        'condition',
+        'data',
+        'database',
+        'social',
+      ].includes(kind)
+    )
+      return
+
     const id = crypto.randomUUID()
     const config: FlowNode['config'] =
       kind === 'condition'
@@ -332,6 +367,8 @@ export const useStudio = create<Studio>((set, get) => ({
   },
 
   configure(id, config) {
+    if (hasContentSnapshot(get().nodes)) return
+
     set((state) => ({
       nodes: state.nodes.map((node) =>
         node.id === id ? { ...node, data: { ...node.data, config } } : node,
@@ -342,6 +379,9 @@ export const useStudio = create<Studio>((set, get) => ({
 
   async save() {
     const state = get()
+    if (hasContentSnapshot(state.nodes))
+      throw new Error('contentSnapshot.locked')
+
     if (!state.id && state.member?.access.mode === 'selected')
       throw new Error('Selected API access permits existing APIs only.')
     const ruleError = await apiRulesError(state.contract)
@@ -386,6 +426,9 @@ export const useStudio = create<Studio>((set, get) => ({
 
   async test(body, query, params, tenantId) {
     const state = get()
+    if (hasContentSnapshot(state.nodes))
+      throw new Error('contentSnapshot.locked')
+
     if (!state.id || state.dirty) throw new Error('Save draft before testing.')
     set({ result: null })
     const result = await api<FlowResult>(
@@ -426,6 +469,9 @@ export const useStudio = create<Studio>((set, get) => ({
 
   async testGraphql(input, tenantId) {
     const state = get()
+    if (hasContentSnapshot(state.nodes))
+      throw new Error('contentSnapshot.locked')
+
     if (!state.id || state.dirty) throw new Error('Save draft before testing.')
     set({ result: null })
     const result = await api<FlowResult>(

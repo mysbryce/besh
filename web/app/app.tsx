@@ -692,7 +692,17 @@ export function App({
             ) : page === 'structs' ? (
               <Structs />
             ) : page === 'content' ? (
-              <Collections />
+              <Collections
+                onCreated={(flow) => {
+                  useStudio.setState((current) => ({
+                    flows: [
+                      flow,
+                      ...current.flows.filter((item) => item.id !== flow.id),
+                    ],
+                  }))
+                }}
+                onOpenSnapshot={(flow) => switchFlow(() => state.load(flow))}
+              />
             ) : page === 'database' ? (
               <DatabaseConnections onOpenApi={() => setPage('builder')} />
             ) : page === 'product-login' ? (

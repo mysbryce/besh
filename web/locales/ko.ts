@@ -1,4 +1,26 @@
 const messages: Record<string, string> = {
+  'Content snapshot APIs stay owner-only.':
+    '콘텐츠 스냅샷 API는 계속 소유자 전용입니다.',
+
+  'Create Content API': '콘텐츠 API 만들기',
+  'Creates a sealed draft. This does not publish an API.':
+    '내용이 고정된 초안을 만듭니다. API는 게시되지 않습니다.',
+  'Content API draft created.': '콘텐츠 API 초안을 만들었습니다.',
+  'Open API Studio': 'API Studio 열기',
+  'Save or discard unsaved changes before creating a Content API.':
+    '콘텐츠 API를 만들기 전에 저장하지 않은 변경 사항을 저장하거나 버리세요.',
+  'The reviewed content changed. Review it again before creating a Content API.':
+    '검토한 콘텐츠가 변경되었습니다. 콘텐츠 API를 만들기 전에 다시 검토하세요.',
+  'Creation could not be confirmed. Review the API list before creating again.':
+    '생성을 확인할 수 없습니다. 다시 만들기 전에 API 목록을 검토하세요.',
+
+  'nodes.cmsSnapshotResponse.label': '콘텐츠 스냅샷',
+  'contentSnapshot.nodeDescription': '저장된 서식 있는 텍스트와 HTML',
+  'contentSnapshot.snapshotId': '스냅샷 ID',
+  'contentSnapshot.snapshotSha256': '스냅샷 SHA-256',
+  'contentSnapshot.locked':
+    '이 스냅샷은 고정되어 있습니다. 변경된 콘텐츠나 HTML 설정을 사용하려면 새 콘텐츠 API를 만드세요.',
+
   'Copy HTML': 'HTML 복사',
   'HTML copied': 'HTML 복사됨',
   'Could not copy HTML. Select and copy the HTML source.':

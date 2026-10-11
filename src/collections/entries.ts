@@ -297,7 +297,7 @@ function fieldKey(value: unknown): value is string {
   )
 }
 
-function fieldPath(value: unknown): FieldPath | null {
+export function parseContentFieldPath(value: unknown): FieldPath | null {
   if (!Array.isArray(value) || value.length < 1 || value.length > 6) return null
 
   const descriptors = Object.getOwnPropertyDescriptors(value)
@@ -396,7 +396,7 @@ function previewInput(value: unknown): PreviewInput | null {
     return { entryVersion, ...renderer, selector: 'key', fieldKey: selectedKey }
   }
 
-  const selectedPath = fieldPath(descriptors.fieldPath!.value)
+  const selectedPath = parseContentFieldPath(descriptors.fieldPath!.value)
   if (!selectedPath) return null
 
   return {
@@ -407,7 +407,7 @@ function previewInput(value: unknown): PreviewInput | null {
   }
 }
 
-function previewField(
+export function selectContentField(
   fields: StructField[],
   savedData: EntryData,
   path: readonly (string | number)[],
@@ -526,7 +526,7 @@ export function contentEntryService(
               'Content entry changed. Reload before previewing.',
             )
 
-          const selected = previewField(
+          const selected = selectContentField(
             collection.struct.fields,
             saved.data,
             input.selector === 'key' ? [input.fieldKey] : input.fieldPath,

@@ -36,6 +36,7 @@ import { structService } from './structs/service'
 import { collectionService } from './collections/service'
 import { contentEntryService } from './collections/entries'
 import { collectionRendererService } from './collections/renderers'
+import { collectionSnapshotService } from './collections/snapshots'
 import { timingSafeEqual } from 'node:crypto'
 import {
   sessionService,
@@ -137,6 +138,7 @@ export function createApp(options: AppOptions) {
   const collections = collectionService(store)
   const renderers = collectionRendererService(store, collections)
   const entries = contentEntryService(store, collections, renderers)
+  const snapshots = collectionSnapshotService(store, collections, entries)
   const dependencies = dependencyService(store)
   const rowPolicies = rowPolicyService(store)
   const tenantFields = tenantFieldPolicyService(store)
@@ -228,7 +230,7 @@ export function createApp(options: AppOptions) {
       throw new ApiError(403, 'Workspace backups require the owner')
   }
   function requireFlowRead(member: Member, id: string) {
-    authorizeFlow(member, id, 'flows.read')
+    authorizeFlow(store, member, id, 'flows.read')
   }
   function enforceSelectedAccess(member: Member, request: Request) {
     if (member.flowAccess.mode !== 'selected') return
@@ -244,7 +246,7 @@ export function createApp(options: AppOptions) {
       try {
         id = decodeURIComponent(draftSocket[1]!)
       } catch {}
-      authorizeFlow(member, id, 'flows.test')
+      authorizeFlow(store, member, id, 'flows.test')
       return
     }
     if (
@@ -323,7 +325,7 @@ export function createApp(options: AppOptions) {
       try {
         id = decodeURIComponent(operation[1])
       } catch {}
-      authorizeFlow(member, id, permission)
+      authorizeFlow(store, member, id, permission)
       return
     }
     const flow =
@@ -350,7 +352,7 @@ export function createApp(options: AppOptions) {
           ] as const
         ).find((permission) => can(member, permission))
         if (!permission) throw new ApiError(403, 'Permission denied')
-        authorizeFlow(member, id, permission)
+        authorizeFlow(store, member, id, permission)
       } else requireFlowRead(member, id)
       return
     }
@@ -499,6 +501,21 @@ export function createApp(options: AppOptions) {
         )
       },
     )
+    .post(
+      '/collections/:id/entries/:entryId/snapshot-flow',
+      ({ member, params, body, request }) => {
+        allow(member, ['owner'])
+
+        return flows.createContentSnapshot(
+          member.id,
+          () => currentMember(request),
+          () =>
+            snapshots.prepare(member.id, params.id, params.entryId, body, () =>
+              currentMember(request),
+            ),
+        )
+      },
+    )
     .put(
       '/collections/:id/entries/:entryId',
       ({ member, params, body, request }) => {
@@ -554,7 +571,7 @@ export function createApp(options: AppOptions) {
       )
     })
     .post('/flows/:id/ws/test-ticket', ({ member, params, request, body }) => {
-      authorizeFlow(member, params.id, 'flows.test')
+      authorizeFlow(store, member, params.id, 'flows.test')
       return websockets.mintDraft(params.id, request, body)
     })
     .ws('/flows/:id/ws/test', websockets.draftOptions())
@@ -1027,9 +1044,7 @@ export function createApp(options: AppOptions) {
     })
     .get('/flows', ({ member }) => {
       requirePermission(member, 'flows.read')
-      return flows.list(
-        member.flowAccess.mode === 'selected' ? member.id : undefined,
-      )
+      return flows.list(member.id)
     })
     .get('/flows/:id', ({ member, params }) => {
       requireFlowRead(member, params.id)

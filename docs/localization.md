@@ -8,6 +8,8 @@ Translations cover setup, workspace sign-in, invitations, navigation, appearance
 
 Authored API/member names, routes, field keys, data, response text, GraphQL schemas and generated client code are not translated. Changing the dashboard language never changes an API contract or grants access.
 
+Active 0.27 Content snapshot APIs add five sealed-terminal messages, seven creation messages and one owner-only sharing note across all seven dictionaries. The independent audit aligns 921 keys, preserving all 908 prior decoded values without duplicate keys or placeholder drift. Authored names/paths, saved documents, HTML, snapshot IDs and hashes remain literal. The final gallery includes seven desktop and seven phone creation forms; all 17 new and six affected legacy originals have scoped review and matching promoted hashes. This does not certify native-language accuracy or full iframe paint in scrolled creation views. See [Content snapshot APIs](content-snapshots.md) and [exact acceptance](testing.md#sealed-content-snapshot-draft--active-027-work).
+
 Studio first-task guidance translates both the spreadsheet and blank-API paths, including the reminder that opening either path does not save or publish an API. Empty-list guidance follows the selected language while starter names, paths and unsaved defaults stay unchanged. A member without source grants retains only the permitted blank-API path.
 
 REST draft guidance translates versioned-route and whole-segment parameter instructions, the distinction between workspace and published-caller keys, request headings, empty-response guidance, node/connection counts and saved/live revision labels. Discard confirmation uses the current language; canceling preserves the unsaved draft.

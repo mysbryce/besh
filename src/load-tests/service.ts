@@ -189,10 +189,24 @@ export function loadTestService(
     const row = get(id)
     const bound = store
       .query<
-        { issuer_member_id: string | null; tenant_id: string | null },
+        {
+          issuer_member_id: string | null
+          tenant_id: string | null
+          flow_cms: number | null
+          flow_cms_type: string
+        },
         [string]
-      >('SELECT issuer_member_id, tenant_id FROM runtime_keys WHERE id = ?')
+      >(
+        'SELECT runtime_keys.issuer_member_id, runtime_keys.tenant_id, flows.cms AS flow_cms, typeof(flows.cms) AS flow_cms_type FROM runtime_keys LEFT JOIN flows ON flows.id = runtime_keys.flow_id WHERE runtime_keys.id = ?',
+      )
       .get(row.runtime_key_id)
+
+    if (
+      member.role !== 'owner' &&
+      (!bound || bound.flow_cms !== 0 || bound.flow_cms_type !== 'integer')
+    )
+      throw new ApiError(404, 'Load test not found')
+
     if (
       member.role !== 'owner' &&
       bound?.tenant_id !== null &&
@@ -252,7 +266,13 @@ export function loadTestService(
           const definition = JSON.parse(release.definition) as Flow
           store.checkRuntimeIssuerAuthority(row.runtime_key_id, definition)
           if (member)
-            authorizeGraph(member, run.flowId, 'load-tests.run', definition)
+            authorizeGraph(
+              store,
+              member,
+              run.flowId,
+              'load-tests.run',
+              definition,
+            )
         } catch (error) {
           if (!(error instanceof ApiError)) throw error
           run.cleanupOnly = true
@@ -324,6 +344,7 @@ export function loadTestService(
             assertGraphFields(store, JSON.parse(row.published) as Flow)
             if (!member) return true
             authorizeGraph(
+              store,
               member!,
               row.id,
               'load-tests.run',
@@ -365,7 +386,7 @@ export function loadTestService(
       const selected = member?.access.mode === 'selected'
       return store
         .query<RunRow>(
-          `SELECT load_tests.* FROM load_tests JOIN runtime_keys ON runtime_keys.id = load_tests.runtime_key_id WHERE 1 = 1 ${selected ? "AND issuer_member_id IS NOT NULL AND issuer_action = 'load-tests.run' AND runtime_keys.flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)" : ''} ${member && member.role !== 'owner' ? 'AND (load_tests.tenant_id IS NULL OR issuer_member_id = ? OR (issuer_member_id IS NOT NULL AND load_tests.tenant_id = ?))' : ''} ORDER BY load_tests.rowid DESC LIMIT 100`,
+          `SELECT load_tests.* FROM load_tests JOIN runtime_keys ON runtime_keys.id = load_tests.runtime_key_id LEFT JOIN flows ON flows.id = runtime_keys.flow_id WHERE 1 = 1 ${selected ? "AND issuer_member_id IS NOT NULL AND issuer_action = 'load-tests.run' AND runtime_keys.flow_id IN (SELECT flow_id FROM member_flow_grants WHERE member_id = ?)" : ''} ${member && member.role !== 'owner' ? "AND typeof(flows.cms) = 'integer' AND flows.cms = 0 AND (load_tests.tenant_id IS NULL OR issuer_member_id = ? OR (issuer_member_id IS NOT NULL AND load_tests.tenant_id = ?))" : ''} ORDER BY load_tests.rowid DESC LIMIT 100`,
         )
         .all(
           ...(selected ? [member!.id] : []),
@@ -391,7 +412,7 @@ export function loadTestService(
         'flowId' in input &&
         typeof input.flowId === 'string'
       )
-        authorizeFlow(currentMember(), input.flowId, 'load-tests.run')
+        authorizeFlow(store, currentMember(), input.flowId, 'load-tests.run')
       const parsed = startSchema.safeParse(input)
       if (!parsed.success)
         throw new ApiError(400, 'Invalid load test configuration or request')
@@ -415,7 +436,12 @@ export function loadTestService(
       const { run, token, body, url } = store.db
         .transaction(() => {
           if (currentMember)
-            authorizeFlow(currentMember(), value.flowId, 'load-tests.run')
+            authorizeFlow(
+              store,
+              currentMember(),
+              value.flowId,
+              'load-tests.run',
+            )
           if (
             store
               .query("SELECT id FROM load_tests WHERE status = 'running'")
@@ -430,7 +456,13 @@ export function loadTestService(
           if (!row) throw new ApiError(400, 'Choose a published API')
           const flow = JSON.parse(row.published) as Flow
           if (currentMember)
-            authorizeGraph(currentMember(), row.id, 'load-tests.run', flow)
+            authorizeGraph(
+              store,
+              currentMember(),
+              row.id,
+              'load-tests.run',
+              flow,
+            )
           if (flowTransport(flow) === 'websocket')
             throw new ApiError(400, 'WebSocket APIs cannot use HTTP load tests')
           const principal = memberRowPrincipal(

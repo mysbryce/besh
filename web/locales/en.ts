@@ -1,4 +1,26 @@
 const messages: Record<string, string> = {
+  'Content snapshot APIs stay owner-only.':
+    'Content snapshot APIs stay owner-only.',
+
+  'Create Content API': 'Create Content API',
+  'Creates a sealed draft. This does not publish an API.':
+    'Creates a sealed draft. This does not publish an API.',
+  'Content API draft created.': 'Content API draft created.',
+  'Open API Studio': 'Open API Studio',
+  'Save or discard unsaved changes before creating a Content API.':
+    'Save or discard unsaved changes before creating a Content API.',
+  'The reviewed content changed. Review it again before creating a Content API.':
+    'The reviewed content changed. Review it again before creating a Content API.',
+  'Creation could not be confirmed. Review the API list before creating again.':
+    'Creation could not be confirmed. Review the API list before creating again.',
+
+  'nodes.cmsSnapshotResponse.label': 'Content snapshot',
+  'contentSnapshot.nodeDescription': 'Saved rich text and HTML',
+  'contentSnapshot.snapshotId': 'Snapshot ID',
+  'contentSnapshot.snapshotSha256': 'Snapshot SHA-256',
+  'contentSnapshot.locked':
+    'This snapshot is sealed. Create a new Content API to use changed content or HTML settings.',
+
   'Copy HTML': 'Copy HTML',
   'HTML copied': 'HTML copied',
   'Could not copy HTML. Select and copy the HTML source.':

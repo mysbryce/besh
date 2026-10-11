@@ -1,11 +1,13 @@
 import { ApiError, requirePermission } from '../errors'
-import type { Member } from './store'
+import type { Member, Store } from './store'
 import type { Permission } from './permissions'
 import type { Flow } from '../flows/model'
+import { assertCmsOwner } from './cms-authority'
 
 export type CurrentMember = () => Member
 
 export function authorizeFlow(
+  store: Pick<Store, 'query'>,
   member: Member,
   id: string,
   permission: Permission,
@@ -13,6 +15,8 @@ export function authorizeFlow(
   requirePermission(member, permission)
   if (member.access.mode === 'selected' && !member.access.flowIds.includes(id))
     throw new ApiError(404, 'Flow not found')
+
+  assertCmsOwner(store, member, id)
 }
 
 export function authorizeDependencies(member: Member, definition: Flow) {
@@ -45,11 +49,12 @@ export function authorizeDependencies(member: Member, definition: Flow) {
 }
 
 export function authorizeGraph(
+  store: Pick<Store, 'query'>,
   member: Member,
   id: string,
   permission: Permission,
   definition: Flow,
 ) {
-  authorizeFlow(member, id, permission)
+  authorizeFlow(store, member, id, permission)
   authorizeDependencies(member, definition)
 }

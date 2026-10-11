@@ -3,6 +3,7 @@ import { Check, Code2, Copy, X } from 'lucide-react'
 import type { HtmlField } from './content-html-fields'
 import { ContentHtmlSettings } from './content-html-settings'
 import { ContentHtmlReviewedSettings } from './content-html-reviewed-settings'
+import { ContentSnapshotCreate } from './content-snapshot-create'
 import { verifyCollectionRenderer } from './content-renderer-value'
 import {
   canonicalHtmlRenderer,
@@ -19,11 +20,12 @@ import type {
   Collection,
   CollectionRenderer,
   ContentEntry,
+  SavedFlow,
 } from '../../types/api'
 import { useStudio } from '../../stores/studio-store'
 import { useTranslation } from '../../i18n'
 
-type HtmlPreview = {
+export type HtmlPreview = {
   collectionId: string
   collectionVersion: number
   structId: string
@@ -178,6 +180,8 @@ export function ContentHtmlPreview({
   onOpen,
   onClose,
   onConflict,
+  onCreated,
+  onOpenSnapshot,
 }: {
   fields: HtmlField[]
   collection: Collection
@@ -189,6 +193,8 @@ export function ContentHtmlPreview({
   onOpen: () => void
   onClose: () => void
   onConflict: (message: string) => void
+  onCreated?: (flow: SavedFlow) => void
+  onOpenSnapshot?: (flow: SavedFlow) => void
 }) {
   const { t } = useTranslation()
   const state = useStudio()
@@ -525,6 +531,10 @@ export function ContentHtmlPreview({
       .join(' · ')
   }
 
+  const snapshotField = fields.find((field) => field.id === fieldId)
+  const snapshotOperation = operation.current
+  const snapshotSelection = selection.current
+
   return (
     <div className="collection-review">
       <div className="collection-actions">
@@ -715,6 +725,46 @@ export function ContentHtmlPreview({
                 <p className="form-error" role="alert">
                   {t('Could not copy HTML. Select and copy the HTML source.')}
                 </p>
+              ) : null}
+              {mode === 'reviewed' &&
+              reviewed &&
+              snapshotField &&
+              result.rendererVersion === reviewed.version &&
+              !reviewRequired ? (
+                <ContentSnapshotCreate
+                  key={JSON.stringify([
+                    identity,
+                    snapshotField.id,
+                    reviewed.version,
+                    result.rendererSha256,
+                  ])}
+                  collection={collection}
+                  entry={entry}
+                  field={snapshotField}
+                  preview={result}
+                  reviewed={reviewed}
+                  disabled={disabled || state.busy}
+                  isCurrent={() =>
+                    ownsRequest(
+                      snapshotOperation,
+                      snapshotField.id,
+                      snapshotSelection,
+                    ) &&
+                    snapshotSelection.mode === 'reviewed' &&
+                    !reviewRequired &&
+                    matchesPreview(
+                      result,
+                      collection,
+                      entry,
+                      snapshotField,
+                      reviewed.renderer,
+                      reviewed.rendererSha256,
+                      reviewed.version,
+                    )
+                  }
+                  onCreated={onCreated}
+                  onOpen={onOpenSnapshot}
+                />
               ) : null}
             </div>
           ) : null}

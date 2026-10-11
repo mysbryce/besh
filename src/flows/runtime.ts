@@ -22,6 +22,8 @@ import {
   verifyBackendCode,
 } from './backend-code'
 import type { BackendCodeArtifact } from './backend-code-model'
+import { ownerManagedFlow } from '../workspace/cms-authority'
+import { hasCmsSnapshot, readCmsSnapshot } from './cms-snapshot'
 
 export type RuntimeRelease = {
   flowId: string
@@ -253,12 +255,29 @@ export function runtimeService(
 
   function build(rows: Row[], epoch: number) {
     const app = factory()
-    const artifacts = rows.map((row) =>
-      generateBackendCode(
-        row.id,
-        row.published_revision,
-        JSON.parse(row.published),
-      ),
+    const definitions = rows.map((row) =>
+      validateFlow(JSON.parse(row.published)),
+    )
+
+    for (const [index, row] of rows.entries()) {
+      const definition = definitions[index]!
+      const cms = ownerManagedFlow(store, row.id)
+      if (cms !== hasCmsSnapshot(definition))
+        throw new ApiError(
+          503,
+          'Published CMS snapshot classification is invalid',
+        )
+
+      if (cms)
+        readCmsSnapshot(store, {
+          flowId: row.id,
+          revision: row.published_revision,
+          definition,
+        })
+    }
+
+    const artifacts = rows.map((row, index) =>
+      generateBackendCode(row.id, row.published_revision, definitions[index]!),
     )
     for (let index = 0; index < artifacts.length; index++) {
       const endpoint = artifacts[index].endpoint
@@ -280,18 +299,18 @@ export function runtimeService(
         throw new ApiError(503, 'Published runtime routes overlap')
     }
     for (const [index, artifact] of artifacts.entries()) {
-      verifyBackendCode(store, artifact, JSON.parse(rows[index]!.published))
+      verifyBackendCode(store, artifact, definitions[index]!)
       register(app, artifact, epoch)
     }
     appGenerations.set(app, epoch)
     app.compile()
     const releases = new Map(
-      rows.map((row) => [
+      rows.map((row, index) => [
         row.id,
         {
           flowId: row.id,
           revision: row.published_revision,
-          definition: validateFlow(JSON.parse(row.published)),
+          definition: definitions[index]!,
         },
       ]),
     )

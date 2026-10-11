@@ -1,4 +1,26 @@
 const messages: Record<string, string> = {
+  'Content snapshot APIs stay owner-only.':
+    'API снимков контента по-прежнему доступны только владельцу.',
+
+  'Create Content API': 'Создать API контента',
+  'Creates a sealed draft. This does not publish an API.':
+    'Создаёт черновик с зафиксированным содержимым. API не публикуется.',
+  'Content API draft created.': 'Черновик API контента создан.',
+  'Open API Studio': 'Открыть API Studio',
+  'Save or discard unsaved changes before creating a Content API.':
+    'Сохраните или отмените несохранённые изменения перед созданием API контента.',
+  'The reviewed content changed. Review it again before creating a Content API.':
+    'Проверенный контент изменился. Проверьте его ещё раз перед созданием API контента.',
+  'Creation could not be confirmed. Review the API list before creating again.':
+    'Не удалось подтвердить создание. Проверьте список API перед повторным созданием.',
+
+  'nodes.cmsSnapshotResponse.label': 'Снимок контента',
+  'contentSnapshot.nodeDescription': 'Сохранённый форматированный текст и HTML',
+  'contentSnapshot.snapshotId': 'ID снимка',
+  'contentSnapshot.snapshotSha256': 'SHA-256 снимка',
+  'contentSnapshot.locked':
+    'Этот снимок зафиксирован. Чтобы использовать изменённый контент или настройки HTML, создайте новый API контента.',
+
   'Copy HTML': 'Скопировать HTML',
   'HTML copied': 'HTML скопирован',
   'Could not copy HTML. Select and copy the HTML source.':

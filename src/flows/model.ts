@@ -103,6 +103,18 @@ export const flowSchema = z
               body: z.json(),
             }),
           }),
+          z
+            .object({
+              ...base,
+              type: z.literal('cmsSnapshotResponse'),
+              config: z
+                .object({
+                  snapshotId: z.string().regex(/^[A-Za-z0-9_-]{1,80}$/),
+                  snapshotSha256: z.string().regex(/^[a-f0-9]{64}$/),
+                })
+                .strict(),
+            })
+            .strict(),
         ]),
       )
       .max(64),
