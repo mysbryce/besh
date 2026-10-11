@@ -68,10 +68,10 @@ Delivered 0.26 [saved-settings preview](rich-text-html.md#choose-html-settings) 
 
 ## Create a sealed Content API
 
-Active 0.27 adds a separate explicit action after a verified saved-mode HTML result. Enter an API name and literal endpoint path, choose **Create Content API**, then **Open API Studio** and **Publish** separately. All management drafts must be clean. The server rechecks the original owner and reviewed collection, entry and renderer revisions before sealing one selected document, its HTML and provenance. Temporary preview cannot authorize creation.
+Delivered 0.27 adds a separate explicit action after a verified saved-mode HTML result. Enter an API name and literal endpoint path, choose **Create Content API**, then **Open API Studio** and **Publish** separately. All management drafts must be clean. The server rechecks the original owner and reviewed collection, entry and renderer revisions before sealing one selected document, its HTML and provenance. Temporary preview cannot authorize creation.
 
 Root literal paragraph and formatted rich-text contracts retain their existing model rules. Nested formatted selection is verified; version-one Struct rich text remains root-only. The published fixed GET response is immutable even after source entry deletion. Runtime callers need a separate current-release-pinned key with the original live owner issuer. This does not expose collection CRUD, a live query or shared CMS editing. Stale creation requires explicit review; unconfirmed delivery blocks blind retry through a memory-only latch. See [Content snapshot APIs](content-snapshots.md) for the workflow and recovery limits.
 
 ## Remaining work
 
-Complete the active 0.27 snapshot API's full verification and source delivery gates. Focused public HTTP/browser creation, fixed REST publication, pinned caller and backup checks pass; they do not complete those gates. CMS GraphQL, live collection queries, content mutations, shared CMS access, API dependency USE and media remain planned. See the [platform plan](platform-plan.md).
+REST Content snapshot APIs completed PR #25 with local and hosted delivery gates. The active 0.27.1 toolbar patch retains its remaining gallery-review, portable and hosted gates. CMS GraphQL, live collection queries, content mutations, shared CMS access, API dependency USE and media remain planned. See the [platform plan](platform-plan.md).

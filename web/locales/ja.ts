@@ -1,4 +1,10 @@
 const messages: Record<string, string> = {
+  'Text style': '文字のスタイル',
+  Lists: 'リスト',
+  Insert: '挿入',
+  'Table tools': '表の操作',
+  'Undo and redo': '元に戻す・やり直す',
+
   'Content snapshot APIs stay owner-only.':
     'コンテンツのスナップショット API は引き続き所有者専用です。',
 

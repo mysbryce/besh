@@ -120,8 +120,20 @@ export async function verifyRichTextLinkInteraction(
     await page.getByRole('button', { name: 'Edit link', exact: true }).click()
     await expect(url).toHaveValue('https://example.com/guide')
     await url.fill('https://example.com/canceled-keyboard')
+
+    const bold = page.getByRole('button', { name: 'Bold', exact: true })
+    await expect(bold).toBeDisabled()
+    const target = await bold.boundingBox()
+    expect(target).not.toBeNull()
+    await page.mouse.move(
+      target!.x + target!.width / 2,
+      target!.y + target!.height / 2,
+    )
+    await expect(page.getByRole('tooltip')).toHaveText('Bold')
+    await expect(url).toBeFocused()
     await url.press('Escape')
 
+    await expect(page.getByRole('tooltip')).toHaveCount(0)
     await expect(review).toHaveCount(0)
     await expect(editor).toBeFocused()
     await expect(editor.locator('a')).toHaveAttribute(

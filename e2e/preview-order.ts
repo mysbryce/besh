@@ -50,6 +50,7 @@ export const previewStories = [
   { id: 'collection-renderers', count: 22, locks: [] },
   { id: 'saved-renderer-preview', count: 14, locks: [] },
   { id: 'content-snapshot', count: 17, locks: [] },
+  { id: 'rich-text-toolbar', count: 5, locks: [] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']

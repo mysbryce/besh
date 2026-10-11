@@ -376,7 +376,75 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-subtle);
+}
+.formatted-toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding-right: 6px;
+  border-right: 1px solid var(--border);
+}
+.formatted-toolbar-group:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+.formatted-tool-anchor {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.formatted-text-toolbar .formatted-tool-button {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-color: transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  box-shadow: none;
+}
+.formatted-text-toolbar .formatted-tool-button:not(:disabled):hover {
+  background: var(--surface-selected);
+  color: var(--action);
+}
+.formatted-text-toolbar .formatted-tool-button[aria-pressed='true'] {
+  border-color: var(--control-border);
+  background: var(--surface-selected);
+  color: var(--action);
+}
+.formatted-text-toolbar .formatted-tool-button:focus-visible {
+  border-color: var(--focus);
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.formatted-text-toolbar .formatted-tool-button:disabled {
+  opacity: 0.4;
+}
+.formatted-tool-tooltip {
+  position: fixed;
+  z-index: 80;
+  max-width: min(240px, calc(100vw - 16px));
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 4px 14px #0000001a;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  pointer-events: auto;
 }
 .formatted-link-review {
   display: grid;
@@ -396,6 +464,32 @@
   width: auto;
   min-width: 150px;
   max-width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+@media (max-width: 640px), (pointer: coarse) {
+  .formatted-text-toolbar .formatted-tool-button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .formatted-text-toolbar .select-trigger {
+    min-height: 44px;
+  }
+}
+@media (max-width: 640px) {
+  .formatted-toolbar-text-style {
+    flex-basis: 100%;
+    padding-right: 0;
+    border-right: 0;
+  }
+  .formatted-toolbar-text-style .select-trigger {
+    flex-basis: 100%;
+    width: 100%;
+    margin-bottom: 4px;
+  }
 }
 .formatted-text-surface {
   min-width: 0;

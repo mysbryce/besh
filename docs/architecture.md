@@ -57,13 +57,13 @@ Saved-mode generation supplies only `rendererVersion`, mutually exclusive with t
 
 Source delivery completed through [PR #24](https://github.com/mysbryce/besh/pull/24), with matching reviewed/merged trees and all three exact-head/main CI jobs passing. Preview stays owner-only and read-only, with the existing inactive iframe/source and original session/entry/field/operation guards. Generating a preview never creates or publishes a route. See [preview workflow](rich-text-html.md#choose-html-settings).
 
-## Sealed Content snapshot APIs — active 0.27
+## Sealed Content snapshot APIs — delivered 0.27
 
 `src/collections/snapshots.ts` prepares one exact reviewed saved field inside flow creation's acquired write transaction, after the original same-actor/current-owner proof. It checks collection, entry and renderer revisions against the frozen Struct and reuses saved-mode HTML rendering. A canonical sealed payload stores the selected paired AST and preview result outside shallow graph JSON; the graph holds only an opaque seal ID/hash. Migration 28 adds that payload and a sticky resource-owned CMS classification. Ordinary writes cannot forge a sealed flow or remove its owner-only classification.
 
 `src/flows/cms-snapshot.ts` binds the stored seal to its exact flow, terminal and draft/release revision. It checks bytes/hash before parsing, canonical identities, paired semantic content and the final serialized response bound. Publication uses trusted compiler-three modules and the existing atomic stage/commit/activate boundary; ordinary compiler-two generation and canonical compiler-one compatibility remain unchanged. Actual fixed REST GET admission requires the current runtime key, current release pin and original live owner issuer. The response is literal `{ document, html, provenance }`, without generic value interpolation or live source lookup. Source entry deletion does not alter it.
 
-Focused public checks cover publication, downloaded backup reopen, a representative migration-27 schema, owner/key boundaries and stale/held/unconfirmed creation. Full 0.27 suites, gallery, portable and hosted delivery remain pending. Unconfirmed creation has a memory-only retry latch, not crash-safe duplicate recovery. Full backups retain their existing authority. CMS GraphQL, live collection access, mutations, rollback, draft tests and client exports require separate gates; see [Content snapshot APIs](content-snapshots.md).
+Focused public checks cover publication, downloaded backup reopen, a representative migration-27 schema, owner/key boundaries and stale/held/unconfirmed creation. Complete local and hosted gates passed for PR #25; see the [delivery receipt](testing.md#sealed-content-snapshot-draft--active-027-work). Unconfirmed creation has a memory-only retry latch, not crash-safe duplicate recovery. Full backups retain their existing authority. CMS GraphQL, live collection access, mutations, rollback, draft tests and client exports require separate gates; see [Content snapshot APIs](content-snapshots.md).
 
 ## Portable executable boundary
 

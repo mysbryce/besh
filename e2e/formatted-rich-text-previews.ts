@@ -85,7 +85,32 @@ export async function formattedRichTextPreviews({
   const editor = page.getByRole('textbox', { name: 'Body', exact: true })
   await editor.fill('<script>literal</script> & ไทย')
   await editor.press('ControlOrMeta+a')
-  await page.getByRole('button', { name: 'Bold', exact: true }).click()
+  await expect
+    .poll(() => page.evaluate(() => window.getSelection()?.toString()))
+    .toBe('<script>literal</script> & ไทย')
+
+  const bold = page.getByRole('button', { name: 'Bold', exact: true })
+  await bold.hover()
+  await expect(page.getByRole('tooltip')).toHaveText('Bold')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect
+    .poll(() => page.evaluate(() => window.getSelection()?.toString()))
+    .toBe('<script>literal</script> & ไทย')
+
+  await editor.press('Alt+F10')
+  await expect(
+    page.getByRole('combobox', { name: 'Body block style', exact: true }),
+  ).toBeFocused()
+  await page.keyboard.press('ArrowRight')
+  await expect(bold).toBeFocused()
+  await expect(page.getByRole('tooltip')).toHaveText('Bold')
+  await page.keyboard.press('Enter')
+  await expect(editor).toBeFocused()
+  await expect(bold).toHaveAttribute('aria-pressed', 'true')
+  await expect(editor.locator('p strong')).toHaveText(
+    '<script>literal</script> & ไทย',
+  )
   await page
     .getByRole('combobox', { name: 'Body block style', exact: true })
     .click()
@@ -309,15 +334,34 @@ export async function formattedRichTextPreviews({
   await editor.press('Home')
   await expect
     .poll(() =>
-      editor.evaluate((element) => {
-        const selection = window.getSelection()
+      editor.locator('ol ol li').evaluate(async (element) => {
+        function atFirstText() {
+          const selection = window.getSelection()
+          const first = document
+            .createTreeWalker(element, NodeFilter.SHOW_TEXT)
+            .nextNode()
 
-        return Boolean(
-          selection?.isCollapsed &&
-          selection.anchorOffset === 0 &&
-          selection.anchorNode?.textContent === 'Test before publishing' &&
-          element.contains(selection.anchorNode),
-        )
+          return Boolean(
+            first &&
+            document.activeElement ===
+              element.closest('.formatted-text-surface') &&
+            selection?.isCollapsed &&
+            selection.anchorNode === first &&
+            selection.focusNode === first &&
+            selection.anchorOffset === 0 &&
+            selection.focusOffset === 0,
+          )
+        }
+
+        if (!atFirstText()) return false
+
+        // Undo restores list structure before its native caret has settled.
+        for (let frame = 0; frame < 2; frame++) {
+          await new Promise<void>((done) => requestAnimationFrame(() => done()))
+          if (!atFirstText()) return false
+        }
+
+        return true
       }),
     )
     .toBe(true)

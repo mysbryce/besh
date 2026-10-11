@@ -7,6 +7,25 @@ import {
   useState,
 } from 'react'
 import {
+  Bold,
+  Code,
+  Columns2,
+  Italic,
+  Link,
+  ListIndentDecrease,
+  ListIndentIncrease,
+  Minus,
+  Redo2,
+  Rows2,
+  Strikethrough,
+  Table2,
+  TableColumnsSplit,
+  TableRowsSplit,
+  Underline,
+  Undo2,
+  Unlink,
+} from 'lucide-react'
+import {
   $addUpdateTag,
   $createParagraphNode,
   $getRoot,
@@ -116,6 +135,7 @@ import {
 } from './formatted-rich-text-value'
 import { formattedLinkNodes } from './formatted-rich-text-link'
 import { formattedListNodes } from './formatted-rich-text-list'
+import { FormattedToolbarButton } from './formatted-toolbar-button'
 import type {
   FormattedRichTextMark,
   FormattedRichTextListItem,
@@ -135,6 +155,14 @@ const markLabels = {
   underline: 'Underline',
   strikethrough: 'Strikethrough',
   code: 'Inline code',
+} as const
+
+const markIcons = {
+  bold: Bold,
+  italic: Italic,
+  underline: Underline,
+  strikethrough: Strikethrough,
+  code: Code,
 } as const
 
 const blockOptions = [
@@ -496,8 +524,12 @@ function EditorSurface({ value, label, disabled, onChange }: Props) {
   const restoreFocus = useRef(false)
   const linkInput = useRef<HTMLInputElement>(null)
   const linkInputId = useId()
-  const focusRef = useLexicalFocusManagerRef()
-  const rovingRef = useLexicalRovingTabIndexRef()
+  const focusRef = useLexicalFocusManagerRef({
+    toolbarItemSelector: 'button:not([disabled])',
+  })
+  const rovingRef = useLexicalRovingTabIndexRef({
+    itemSelector: 'button:not([disabled])',
+  })
 
   useLayoutEffect(() => {
     latest.current = { value, disabled, onChange }
@@ -1346,171 +1378,179 @@ function EditorSurface({ value, label, disabled, onChange }: Props) {
         aria-label={t('{field} formatting', { field: label })}
         ref={toolbarRef}
       >
-        <Select
-          label={t('{field} block style', { field: label })}
-          value={blockStyle}
-          options={blockOptions
-            .filter(
-              (option) =>
-                (!quoteSelected && !codeSelected) ||
-                option.value === 'paragraph' ||
-                (quoteSelected && option.value === 'quote') ||
-                (codeSelected && option.value === 'code'),
-            )
-            .map((option) => ({
-              ...option,
-              label: t(option.label),
-            }))}
-          disabled={disabled || linkOpen || tableSelected}
-          onValueChange={selectBlock}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || !listMovement.indent}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => moveList('indent')}
+        <div
+          className="formatted-toolbar-group formatted-toolbar-text-style"
+          role="group"
+          aria-label={t('Text style')}
         >
-          {t('Indent list')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || !listMovement.outdent}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => moveList('outdent')}
+          <Select
+            label={t('{field} block style', { field: label })}
+            value={blockStyle}
+            options={blockOptions
+              .filter(
+                (option) =>
+                  (!quoteSelected && !codeSelected) ||
+                  option.value === 'paragraph' ||
+                  (quoteSelected && option.value === 'quote') ||
+                  (codeSelected && option.value === 'code'),
+              )
+              .map((option) => ({
+                ...option,
+                label: t(option.label),
+              }))}
+            disabled={disabled || linkOpen || tableSelected}
+            onValueChange={selectBlock}
+          />
+          {formattedMarks.map((mark) => (
+            <FormattedToolbarButton
+              key={mark}
+              label={t(markLabels[mark])}
+              icon={markIcons[mark]}
+              aria-pressed={activeMarks.includes(mark)}
+              disabled={disabled || linkOpen || codeSelected}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                if (disabled || linkOpen || codeSelected) return
+
+                editor.update(() => {
+                  if (savedSelection.current)
+                    $setSelection(savedSelection.current.clone())
+
+                  editor.dispatchCommand(FORMAT_TEXT_COMMAND, mark)
+                })
+                editor.focus()
+              }}
+            />
+          ))}
+        </div>
+        {blockStyle === 'bullet' || blockStyle === 'number' ? (
+          <div
+            className="formatted-toolbar-group"
+            role="group"
+            aria-label={t('Lists')}
+          >
+            <FormattedToolbarButton
+              label={t('Indent list')}
+              icon={ListIndentIncrease}
+              disabled={disabled || linkOpen || !listMovement.indent}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => moveList('indent')}
+            />
+            <FormattedToolbarButton
+              label={t('Outdent list')}
+              icon={ListIndentDecrease}
+              disabled={disabled || linkOpen || !listMovement.outdent}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => moveList('outdent')}
+            />
+          </div>
+        ) : null}
+        <div
+          className="formatted-toolbar-group"
+          role="group"
+          aria-label={t('Insert')}
         >
-          {t('Outdent list')}
-        </Button>
-        {formattedMarks.map((mark) => (
-          <Button
-            key={mark}
-            type="button"
-            variant="outline"
-            aria-pressed={activeMarks.includes(mark)}
+          <FormattedToolbarButton
+            label={t('Insert table')}
+            icon={Table2}
+            disabled={
+              disabled ||
+              linkOpen ||
+              tableSelected ||
+              quoteSelected ||
+              codeSelected
+            }
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={insertTable}
+          />
+          <FormattedToolbarButton
+            label={t('Insert divider')}
+            icon={Minus}
+            disabled={disabled || linkOpen || !dividerAllowed}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={insertDivider}
+          />
+          <FormattedToolbarButton
+            label={t(currentLink ? 'Edit link' : 'Add link')}
+            icon={Link}
             disabled={disabled || linkOpen || codeSelected}
             onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              if (disabled || linkOpen || codeSelected) return
+            onClick={openLink}
+          />
+          {currentLink ? (
+            <FormattedToolbarButton
+              label={t('Remove link')}
+              icon={Unlink}
+              disabled={disabled || linkOpen}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                if (disabled || linkOpen) return
 
-              editor.update(() => {
-                if (savedSelection.current)
-                  $setSelection(savedSelection.current.clone())
+                editor.update(() => {
+                  if (savedSelection.current)
+                    $setSelection(savedSelection.current.clone())
 
-                editor.dispatchCommand(FORMAT_TEXT_COMMAND, mark)
-              })
-              editor.focus()
-            }}
+                  editor.dispatchCommand(TOGGLE_LINK_COMMAND, null)
+                })
+                editor.focus()
+              }}
+            />
+          ) : null}
+        </div>
+        {tableSelected ? (
+          <div
+            className="formatted-toolbar-group"
+            role="group"
+            aria-label={t('Table tools')}
           >
-            {t(markLabels[mark])}
-          </Button>
-        ))}
-        <Button
-          type="button"
-          variant="outline"
-          disabled={
-            disabled ||
-            linkOpen ||
-            tableSelected ||
-            quoteSelected ||
-            codeSelected
-          }
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={insertTable}
-        >
-          {t('Insert table')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || !dividerAllowed}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={insertDivider}
-        >
-          {t('Insert divider')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || !tableSelected}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => growTable('row')}
-        >
-          {t('Add row')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || !tableSelected}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => growTable('column')}
-        >
-          {t('Add column')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || !removableDimensions.row}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => removeTableDimension('row')}
-        >
-          {t('Remove row')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || !removableDimensions.column}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => removeTableDimension('column')}
-        >
-          {t('Remove column')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || codeSelected}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={openLink}
-        >
-          {t(currentLink ? 'Edit link' : 'Add link')}
-        </Button>
-        {currentLink ? (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={disabled || linkOpen}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              if (disabled || linkOpen) return
-
-              editor.update(() => {
-                if (savedSelection.current)
-                  $setSelection(savedSelection.current.clone())
-
-                editor.dispatchCommand(TOGGLE_LINK_COMMAND, null)
-              })
-              editor.focus()
-            }}
-          >
-            {t('Remove link')}
-          </Button>
+            <FormattedToolbarButton
+              label={t('Add row')}
+              icon={TableRowsSplit}
+              disabled={disabled || linkOpen || !tableSelected}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => growTable('row')}
+            />
+            <FormattedToolbarButton
+              label={t('Add column')}
+              icon={TableColumnsSplit}
+              disabled={disabled || linkOpen || !tableSelected}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => growTable('column')}
+            />
+            <FormattedToolbarButton
+              label={t('Remove row')}
+              icon={Rows2}
+              disabled={disabled || linkOpen || !removableDimensions.row}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => removeTableDimension('row')}
+            />
+            <FormattedToolbarButton
+              label={t('Remove column')}
+              icon={Columns2}
+              disabled={disabled || linkOpen || !removableDimensions.column}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => removeTableDimension('column')}
+            />
+          </div>
         ) : null}
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || !canUndo}
-          onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
+        <div
+          className="formatted-toolbar-group"
+          role="group"
+          aria-label={t('Undo and redo')}
         >
-          {t('Undo')}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={disabled || linkOpen || !canRedo}
-          onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
-        >
-          {t('Redo')}
-        </Button>
+          <FormattedToolbarButton
+            label={t('Undo')}
+            icon={Undo2}
+            disabled={disabled || linkOpen || !canUndo}
+            onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}
+          />
+          <FormattedToolbarButton
+            label={t('Redo')}
+            icon={Redo2}
+            disabled={disabled || linkOpen || !canRedo}
+            onClick={() => editor.dispatchCommand(REDO_COMMAND, undefined)}
+          />
+        </div>
       </div>
       {codeSelected ? (
         <Select

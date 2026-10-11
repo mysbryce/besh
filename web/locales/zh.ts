@@ -1,4 +1,10 @@
 const messages: Record<string, string> = {
+  'Text style': '文本样式',
+  Lists: '列表',
+  Insert: '插入',
+  'Table tools': '表格工具',
+  'Undo and redo': '撤销与重做',
+
   'Content snapshot APIs stay owner-only.': '内容快照 API 仍仅限所有者。',
 
   'Create Content API': '创建内容 API',

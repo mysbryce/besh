@@ -1,4 +1,10 @@
 const messages: Record<string, string> = {
+  'Text style': 'Стиль текста',
+  Lists: 'Списки',
+  Insert: 'Вставка',
+  'Table tools': 'Инструменты таблицы',
+  'Undo and redo': 'Отмена и повтор',
+
   'Content snapshot APIs stay owner-only.':
     'API снимков контента по-прежнему доступны только владельцу.',
 
