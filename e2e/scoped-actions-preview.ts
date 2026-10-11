@@ -8,7 +8,7 @@ import type {
   Role,
   RuntimeKey,
   SavedFlow,
-} from '../web/lib/api'
+} from '../web/types/api'
 import { helloFlow } from '../test/fixtures'
 
 type Capture = (group: string, title: string, detail: string) => Promise<void>

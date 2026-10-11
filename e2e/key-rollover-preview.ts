@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test'
 import { helloFlow } from '../test/fixtures'
-import type { RuntimeKey } from '../web/lib/api'
+import type { RuntimeKey } from '../web/types/api'
 
 type PreviewOptions = {
   page: Page

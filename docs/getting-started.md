@@ -259,15 +259,25 @@ src/              app.ts wiring, index.ts startup, errors.ts shared errors
   load-tests/     Local k6 jobs and provisioning
   updates/        Manual GitHub release notices
   workspace/      Control store, permissions, backups
-web/              React dashboard and Zustand editor state
-  components/ui/  shadcn/ui components
+web/              React dashboard
+  main.tsx        dashboard entry
+  styles.css      stylesheet, scan root and font URLs
+  app/            shell and lazy page loading
+  pages/<feature>/ pages and adjacent feature helpers
+  stores/         independent draft/workspace state
+  types/api.ts    shared API DTOs
+  components/     shared controls, including components/ui/
+  lib/            HTTP transport and schema utilities
+  i18n.ts         language coordinator
+  locales/        lazy interface dictionaries
+  assets/         local fonts and license notices
 test/             Bun tests through HTTP and executor interfaces
 e2e/              Playwright browser story
 scripts/          Local dev startup and preview gallery
 docs/             Architecture, roadmap, testing, API reference
 ```
 
-One package manifest. Server features are grouped by domain; application wiring, startup, and shared errors stay at the source root.
+One package manifest. Server features and dashboard pages are grouped by domain. Dashboard entry, stylesheet and language coordinator stay at the `web/` root; application wiring, startup and shared server errors stay at the `src/` root.
 
 ## Development checks
 

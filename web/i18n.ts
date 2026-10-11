@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { create } from 'zustand'
-import { loadMessages, messagesByLanguage } from './locales'
+import { loadMessages, messagesByLanguage } from './locales/index'
 
 export const languages = ['en', 'th', 'zh', 'ru', 'ja', 'ko', 'pt'] as const
 export type Language = (typeof languages)[number]
