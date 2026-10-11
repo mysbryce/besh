@@ -351,18 +351,44 @@ export async function richTextBlockPreviews({
   ).toBeVisible()
   await page.getByRole('option', { name: 'Quote', exact: true }).click()
   await expect(editor.locator('blockquote > p')).toHaveText('A calm launch')
+
+  await expect(page.getByRole('listbox')).toHaveCount(0)
+  await expect(
+    page.getByRole('combobox', { name: 'Body block style', exact: true }),
+  ).toBeFocused()
+
   await editor.press('ArrowRight')
   await expect
     .poll(() =>
-      editor.evaluate((element) => {
-        const selection = window.getSelection()
-        return Boolean(
-          selection?.isCollapsed &&
-          selection.anchorNode &&
-          element.contains(selection.anchorNode) &&
-          selection.anchorNode.textContent === 'A calm launch' &&
-          selection.anchorOffset === 13,
-        )
+      editor.locator('blockquote > p').evaluate(async (element) => {
+        const text = document
+          .createTreeWalker(element, NodeFilter.SHOW_TEXT)
+          .nextNode()
+
+        function atTextEnd() {
+          const selection = window.getSelection()
+
+          return Boolean(
+            text?.textContent === 'A calm launch' &&
+            document.activeElement ===
+              element.closest('.formatted-text-surface') &&
+            selection?.isCollapsed &&
+            selection.anchorNode === text &&
+            selection.focusNode === text &&
+            selection.anchorOffset === 13 &&
+            selection.focusOffset === 13,
+          )
+        }
+
+        if (!atTextEnd()) return false
+
+        // Native line breaks must follow the menu's settled editor selection.
+        for (let frame = 0; frame < 2; frame++) {
+          await new Promise<void>((done) => requestAnimationFrame(() => done()))
+          if (!atTextEnd()) return false
+        }
+
+        return true
       }),
     )
     .toBe(true)

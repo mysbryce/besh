@@ -447,6 +447,11 @@ export async function richTextLocalePreviews({
         .click()
       await page.getByRole('option', { name: phone.theme, exact: true }).click()
 
+      await expect(page.getByRole('listbox')).toHaveCount(0)
+      await expect(
+        page.getByRole('combobox', { name: phone.appearance, exact: true }),
+      ).toBeFocused()
+
       const save = page.getByRole('button', { name: phone.save, exact: true })
       await save.focus()
       await expect(save).toBeFocused()

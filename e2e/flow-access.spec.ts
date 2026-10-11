@@ -74,9 +74,12 @@ test('owner shares selected read-only APIs with a viewer', async ({ page }) => {
     })
     expect(browserErrors).toEqual([])
   } finally {
+    await page.unrouteAll({ behavior: 'wait' })
     await page.close()
+
     server.kill()
     await stopped
+
     rmSync(directory, {
       recursive: true,
       force: true,

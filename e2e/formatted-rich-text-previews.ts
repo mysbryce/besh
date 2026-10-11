@@ -182,18 +182,45 @@ export async function formattedRichTextPreviews({
   ).toBeVisible()
   await page.getByRole('option', { name: 'Bullet list', exact: true }).click()
   await expect(editor.locator('ul li')).toHaveText('Create an API')
+
+  // Wait for the menu's deferred return-focus before sending native editor keys.
+  await expect(page.getByRole('listbox')).toHaveCount(0)
+  await expect(
+    page.getByRole('combobox', { name: 'Body block style', exact: true }),
+  ).toBeFocused()
+
   await editor.press('ArrowRight')
   await expect
     .poll(() =>
-      editor.evaluate((element) => {
-        const selection = window.getSelection()
-        return Boolean(
-          selection?.isCollapsed &&
-          selection.anchorNode &&
-          element.contains(selection.anchorNode) &&
-          selection.anchorNode.textContent === 'Create an API' &&
-          selection.anchorOffset === 13,
-        )
+      editor.locator('ul li').evaluate(async (element) => {
+        const text = document
+          .createTreeWalker(element, NodeFilter.SHOW_TEXT)
+          .nextNode()
+
+        function atTextEnd() {
+          const selection = window.getSelection()
+
+          return Boolean(
+            text?.textContent === 'Create an API' &&
+            document.activeElement ===
+              element.closest('.formatted-text-surface') &&
+            selection?.isCollapsed &&
+            selection.anchorNode === text &&
+            selection.focusNode === text &&
+            selection.anchorOffset === 13 &&
+            selection.focusOffset === 13,
+          )
+        }
+
+        if (!atTextEnd()) return false
+
+        // Menu closure can restore focus after the first native caret observation.
+        for (let frame = 0; frame < 2; frame++) {
+          await new Promise<void>((done) => requestAnimationFrame(() => done()))
+          if (!atTextEnd()) return false
+        }
+
+        return true
       }),
     )
     .toBe(true)
