@@ -4,6 +4,21 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.28.0-alpha.0 — 2026-10-11
+
+### Added
+
+- Choose GraphQL when creating a sealed Content API from reviewed saved rich text and HTML settings.
+- Publish an exact generated POST route with typed document, HTML and provenance selection, including aliases, fragments and variables.
+- Preserve both rich-text versions, literal content and original snapshot boundaries through typed projection and backup recovery.
+- Show the fixed read-only schema and an example query in Studio, with seven-language creation controls.
+- Require current pinned query keys and recheck original owner authority and runtime generation before delivery.
+
+### Fixed
+
+- Explain published key access in sealed response panels instead of suggesting unavailable draft tests.
+- Synchronize real key refresh completion and await owned browser route handlers before fixture cleanup; retain public toolbar and SQLite result readiness assertions.
+
 ## 0.27.3-alpha.0 — 2026-10-11
 
 ### Fixed

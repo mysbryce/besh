@@ -1,4 +1,11 @@
 const messages: Record<string, string> = {
+  'Fixed GraphQL schema': 'Фиксированная схема GraphQL',
+  'Example GraphQL query': 'Пример запроса GraphQL',
+  'GraphQL uses a fixed read-only schema. Create and publish explicitly before calling it.':
+    'GraphQL использует фиксированную схему только для чтения. Перед вызовом явно создайте и опубликуйте API.',
+  'Select the document, HTML and provenance fields you need. Queries do not read newer source content.':
+    'Выберите нужные поля документа, HTML и данных о происхождении. Запросы не читают обновлённое исходное содержимое.',
+
   'Text style': 'Стиль текста',
   Lists: 'Списки',
   Insert: 'Вставка',

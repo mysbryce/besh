@@ -17,6 +17,8 @@ import { clientCodeTargets } from './client-code-model'
 import { clientCodeSchema, flowClientCode } from './client-code'
 import type { RuntimeRelease, RuntimeService } from './runtime'
 import { hasCmsSnapshot, readCmsSnapshot } from './cms-snapshot'
+import { cmsGraphqlSchema } from './cms-graphql-schema'
+import { cmsGraphqlExecution } from './cms-graphql'
 import { assertGraphFields } from '../workspace/field-policy'
 import { mixedReadGraph } from './read-graph'
 import {
@@ -311,6 +313,77 @@ export function flowService(
     }
   }
 
+  function createSnapshot(
+    actor: string,
+    currentMember: CurrentMember,
+    prepare: () => PreparedCollectionSnapshot,
+    transport: 'rest' | 'graphql',
+  ) {
+    return db
+      .transaction(() => {
+        const member = currentMember()
+        if (member.id !== actor || member.role !== 'owner')
+          throw new ApiError(403, 'Permission denied')
+
+        active()
+        const prepared = prepare()
+        const bytes = Buffer.byteLength(prepared.payload, 'utf8')
+        const sha256 = createHash('sha256')
+          .update(prepared.payload, 'utf8')
+          .digest('hex')
+        if (bytes > 262_144 || sha256 !== prepared.sha256)
+          throw new ApiError(503, 'Prepared CMS snapshot is invalid')
+
+        const id = crypto.randomUUID()
+        const snapshotId = crypto.randomUUID()
+        const requestId = crypto.randomUUID()
+        const nodeId = crypto.randomUUID()
+        const definition = validateFlow({
+          name: prepared.name,
+          method: transport === 'graphql' ? 'POST' : 'GET',
+          path: prepared.path,
+          ...(transport === 'graphql'
+            ? { graphql: { schema: cmsGraphqlSchema } }
+            : {}),
+          nodes: [
+            {
+              id: requestId,
+              type: 'request',
+              position: { x: 0, y: 0 },
+              config: {},
+            },
+            {
+              id: nodeId,
+              type: 'cmsSnapshotResponse',
+              position: { x: 360, y: 0 },
+              config: { snapshotId, snapshotSha256: sha256 },
+            },
+          ],
+          edges: [
+            { id: crypto.randomUUID(), source: requestId, target: nodeId },
+          ],
+        })
+        if (definition.graphql) graphqlSchema(definition)
+
+        query(
+          'INSERT INTO flows (id, definition, revision, cms) VALUES (?, ?, 1, 1)',
+        ).run(id, JSON.stringify(definition))
+        query(`INSERT INTO cms_snapshots
+          (snapshot_id, flow_id, node_id, draft_revision, sha256, payload)
+          VALUES (?, ?, ?, 1, ?, ?)`).run(
+          snapshotId,
+          id,
+          nodeId,
+          sha256,
+          prepared.payload,
+        )
+        audit(actor, 'flow.created', id)
+
+        return present(get(id))
+      })
+      .immediate()
+  }
+
   return {
     websocketDraft(id: string): RuntimeRelease {
       ordinaryFlow(id)
@@ -555,65 +628,14 @@ export function flowService(
       currentMember: CurrentMember,
       prepare: () => PreparedCollectionSnapshot,
     ) {
-      return db
-        .transaction(() => {
-          const member = currentMember()
-          if (member.id !== actor || member.role !== 'owner')
-            throw new ApiError(403, 'Permission denied')
-
-          active()
-          const prepared = prepare()
-          const bytes = Buffer.byteLength(prepared.payload, 'utf8')
-          const sha256 = createHash('sha256')
-            .update(prepared.payload, 'utf8')
-            .digest('hex')
-          if (bytes > 262_144 || sha256 !== prepared.sha256)
-            throw new ApiError(503, 'Prepared CMS snapshot is invalid')
-
-          const id = crypto.randomUUID()
-          const snapshotId = crypto.randomUUID()
-          const requestId = crypto.randomUUID()
-          const nodeId = crypto.randomUUID()
-          const definition = validateFlow({
-            name: prepared.name,
-            method: 'GET',
-            path: prepared.path,
-            nodes: [
-              {
-                id: requestId,
-                type: 'request',
-                position: { x: 0, y: 0 },
-                config: {},
-              },
-              {
-                id: nodeId,
-                type: 'cmsSnapshotResponse',
-                position: { x: 360, y: 0 },
-                config: { snapshotId, snapshotSha256: sha256 },
-              },
-            ],
-            edges: [
-              { id: crypto.randomUUID(), source: requestId, target: nodeId },
-            ],
-          })
-
-          query(
-            'INSERT INTO flows (id, definition, revision, cms) VALUES (?, ?, 1, 1)',
-          ).run(id, JSON.stringify(definition))
-          query(`INSERT INTO cms_snapshots
-            (snapshot_id, flow_id, node_id, draft_revision, sha256, payload)
-            VALUES (?, ?, ?, 1, ?, ?)`).run(
-            snapshotId,
-            id,
-            nodeId,
-            sha256,
-            prepared.payload,
-          )
-          audit(actor, 'flow.created', id)
-
-          return present(get(id))
-        })
-        .immediate()
+      return createSnapshot(actor, currentMember, prepare, 'rest')
+    },
+    createContentGraphqlSnapshot(
+      actor: string,
+      currentMember: CurrentMember,
+      prepare: () => PreparedCollectionSnapshot,
+    ) {
+      return createSnapshot(actor, currentMember, prepare, 'graphql')
     },
     update(
       actor: string,
@@ -925,6 +947,64 @@ export function flowService(
           403,
           'Runtime key is pinned to a release that is not currently published',
         )
+
+      const cms = ownerManagedFlow(store, release.flowId)
+      if (cms !== hasCmsSnapshot(release.definition))
+        throw new ApiError(503, 'CMS snapshot classification is invalid')
+
+      if (cms) {
+        const generation = runtime.assertCurrent(release)
+        const authorize = () => {
+          active()
+          if (signal?.aborted)
+            throw new ApiError(503, 'CMS snapshot read was cancelled')
+          if (runtime.assertCurrent(release) !== generation)
+            throw new ApiError(
+              503,
+              'Published runtime changed. Retry this request.',
+            )
+          if (
+            !ownerManagedFlow(store, release.flowId) ||
+            !hasCmsSnapshot(release.definition)
+          )
+            throw new ApiError(503, 'CMS snapshot classification is invalid')
+
+          const current = store.runtimeCredential(key.id)
+          if (!current) throw new ApiError(401, 'Authentication required')
+          if (
+            current.flowId !== release.flowId ||
+            !current.permissions.includes('query') ||
+            current.permissions.includes('rest') ||
+            current.releaseRevision !== release.revision
+          )
+            throw new ApiError(403, 'Runtime key does not allow this endpoint')
+
+          store.checkRuntimeAuthority(current, release.definition)
+
+          return current
+        }
+
+        const snapshot = runtime.readAdmission(release, () => {
+          authorize()
+
+          return readCmsSnapshot(store, release)
+        })
+        const result = await executeGraphql(
+          release.definition,
+          input,
+          key.permissions,
+          {},
+          cmsGraphqlExecution(snapshot, release.definition),
+        )
+
+        return runtime.readAdmission(release, () => {
+          const current = authorize()
+          if (result.visited.length)
+            audit(`runtime:${current.id}`, 'graphql.executed', release.flowId)
+
+          return result
+        })
+      }
 
       const checkpoint = rowCheckpoint(store, release.definition, () => {
         active()

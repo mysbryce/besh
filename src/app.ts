@@ -516,6 +516,21 @@ export function createApp(options: AppOptions) {
         )
       },
     )
+    .post(
+      '/collections/:id/entries/:entryId/snapshot-flow/graphql',
+      ({ member, params, body, request }) => {
+        allow(member, ['owner'])
+
+        return flows.createContentGraphqlSnapshot(
+          member.id,
+          () => currentMember(request),
+          () =>
+            snapshots.prepare(member.id, params.id, params.entryId, body, () =>
+              currentMember(request),
+            ),
+        )
+      },
+    )
     .put(
       '/collections/:id/entries/:entryId',
       ({ member, params, body, request }) => {

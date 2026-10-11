@@ -10,10 +10,13 @@ import { hasCmsSnapshot } from './cms-snapshot'
 
 export const backendCompilerVersion = 2
 const cmsBackendCompilerVersion = 3
+const cmsGraphqlBackendCompilerVersion = 4
 
 function currentCompilerVersion(definition: Flow) {
   return hasCmsSnapshot(definition)
-    ? cmsBackendCompilerVersion
+    ? definition.graphql
+      ? cmsGraphqlBackendCompilerVersion
+      : cmsBackendCompilerVersion
     : backendCompilerVersion
 }
 

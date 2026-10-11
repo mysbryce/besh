@@ -5,6 +5,7 @@ import { parseRichTextDocument } from '../structs/rich-text'
 import { parseFormattedRichTextDocument } from '../structs/rich-text-formatted'
 import type { Store } from '../workspace/store'
 import type { Flow } from './model'
+import { cmsGraphqlSchema } from './cms-graphql-schema'
 
 const maximumBytes = 262_144
 const opaqueId = /^[A-Za-z0-9_-]{1,80}$/
@@ -102,8 +103,11 @@ export function readCmsSnapshot(
     terminal.id === request.id ||
     definition.nodes.length !== 2 ||
     definition.edges.length !== 1 ||
-    definition.method !== 'GET' ||
-    definition.graphql ||
+    !(
+      (definition.method === 'GET' && !definition.graphql) ||
+      (definition.method === 'POST' &&
+        definition.graphql?.schema === cmsGraphqlSchema)
+    ) ||
     definition.websocket ||
     definition.contract ||
     definition.path.length > 160 ||

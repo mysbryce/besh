@@ -10,6 +10,7 @@ import { checkValue, prepareInput } from './contracts'
 import { ApiError } from '../errors'
 import { concreteRoute } from './routes'
 import { validateWebSocketGraph } from '../websockets/graph'
+import { cmsGraphqlSchema } from './cms-graphql-schema'
 
 export function validateFlow(value: unknown) {
   assertJsonLimit(value)
@@ -39,8 +40,10 @@ export function validateFlow(value: unknown) {
     (snapshots.length !== 1 ||
       flow.nodes.length !== 2 ||
       flow.edges.length !== 1 ||
-      flow.method !== 'GET' ||
-      flow.graphql ||
+      !(
+        (flow.method === 'GET' && !flow.graphql) ||
+        (flow.method === 'POST' && flow.graphql?.schema === cmsGraphqlSchema)
+      ) ||
       flow.websocket ||
       flow.contract ||
       !/^\/[a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*$/.test(flow.path) ||
@@ -49,7 +52,7 @@ export function validateFlow(value: unknown) {
       flow.edges[0].sourceHandle != null)
   )
     throw new Error(
-      'CMS snapshots require one fixed GET request and sealed response',
+      'CMS snapshots require one fixed REST or GraphQL request and sealed response',
     )
 
   for (const edge of flow.edges) {

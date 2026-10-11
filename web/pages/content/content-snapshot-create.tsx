@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
+import { Select } from '../../components/ui/select'
 import { api, ApiError } from '../../lib/api'
 import { useStudio } from '../../stores/studio-store'
 import { useStructDraft } from '../../stores/struct-store'
@@ -17,7 +18,10 @@ import type {
 import { useTranslation } from '../../i18n'
 import type { HtmlField } from './content-html-fields'
 import type { HtmlPreview } from './content-html-preview'
-import { verifyContentSnapshotFlow } from './content-snapshot-value'
+import {
+  verifyContentSnapshotFlow,
+  verifyGraphqlContentSnapshotFlow,
+} from './content-snapshot-value'
 
 const dirtyMessage =
   'Save or discard unsaved changes before creating a Content API.'
@@ -68,6 +72,7 @@ export function ContentSnapshotCreate({
   const rendererDirty = useContentRendererDraft((draft) => draft.dirty)
   const [name, setName] = useState('')
   const [path, setPath] = useState('/article-snapshot')
+  const [apiType, setApiType] = useState<'rest' | 'graphql'>('rest')
   const [error, setError] = useState('')
   const [stale, setStale] = useState(false)
   const [created, setCreated] = useState<SavedFlow | null>(null)
@@ -153,6 +158,7 @@ export function ContentSnapshotCreate({
       rendererVersion: preview.rendererVersion,
       fieldPath: [...field.path],
     }
+    const graphql = apiType === 'graphql'
 
     function ownsRequest() {
       const owner = useStudio.getState()
@@ -189,7 +195,7 @@ export function ContentSnapshotCreate({
 
       try {
         const value = await api<unknown>(
-          `/api/collections/${encodeURIComponent(collection.id)}/entries/${encodeURIComponent(entry.id)}/snapshot-flow`,
+          `/api/collections/${encodeURIComponent(collection.id)}/entries/${encodeURIComponent(entry.id)}/snapshot-flow${graphql ? '/graphql' : ''}`,
           proof.token,
           'POST',
           body,
@@ -199,7 +205,14 @@ export function ContentSnapshotCreate({
           return
         }
 
-        const flow = verifyContentSnapshotFlow(value, body.name, body.path)
+        const flow = graphql
+          ? await verifyGraphqlContentSnapshotFlow(value, body.name, body.path)
+          : verifyContentSnapshotFlow(value, body.name, body.path)
+        if (!ownsRequest()) {
+          useContentSnapshot.getState().markUnconfirmed(scope)
+          return
+        }
+
         if (!flow) throw new Error(uncertainMessage)
 
         setCreated(flow)
@@ -259,6 +272,25 @@ export function ContentSnapshotCreate({
             .join(' · ')}
         </span>
       </div>
+      <label>
+        {t('API type')}
+        <Select
+          label={t('API type')}
+          value={apiType}
+          disabled={disabled || state.busy || !!created}
+          options={[
+            { value: 'rest', label: 'REST' },
+            { value: 'graphql', label: 'GraphQL' },
+          ]}
+          onValueChange={(value) => {
+            if (disabled || useStudio.getState().busy || created) return
+            if (value !== 'rest' && value !== 'graphql') return
+
+            setApiType(value)
+            if (!stale) setError('')
+          }}
+        />
+      </label>
       <label>
         {t('API name')}
         <Input

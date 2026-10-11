@@ -458,6 +458,12 @@ export async function richTextToolbarPreviews({
     return captures
   } finally {
     page.off('request', observeWrite)
-    if (originalViewport) await page.setViewportSize(originalViewport)
+
+    // Closed-page cleanup must not replace a failed interaction.
+    if (originalViewport && !page.isClosed()) {
+      await page.setViewportSize(originalViewport).catch((error: unknown) => {
+        if (!page.isClosed()) throw error
+      })
+    }
   }
 }

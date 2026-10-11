@@ -13,6 +13,7 @@ import {
   Kind,
   type DocumentNode,
   type SelectionSetNode,
+  type GraphQLTypeResolver,
 } from 'graphql'
 import { z } from 'zod'
 import { assertJsonLimit, executeFlow } from './engine'
@@ -96,11 +97,17 @@ function failure(message: string): FlowResult {
   return { status: 400, body: { errors: [{ message }] }, visited: [] }
 }
 
+export type TrustedGraphqlExecution = {
+  resolveRoot: (fieldName: string) => FlowResult
+  resolveType: GraphQLTypeResolver<unknown, unknown>
+}
+
 export async function executeGraphql(
   flow: Flow,
   value: unknown,
   permissions?: readonly RuntimePermission[],
   context: FlowContext = {},
+  trusted?: TrustedGraphqlExecution,
 ): Promise<FlowResult> {
   try {
     assertJsonLimit(value)
@@ -172,6 +179,7 @@ export async function executeGraphql(
     document,
     variableValues: request.variables,
     operationName: request.operationName,
+    typeResolver: trusted?.resolveType,
     fieldResolver(source, args, _context, info) {
       if (++resolutions > 5_000)
         throw new GraphQLError('GraphQL resolution limit exceeded', {
@@ -189,17 +197,19 @@ export async function executeGraphql(
           if (info.fieldName === 'info') return 'GitHub product login'
           throw new GraphQLError('Product login requires a mutation')
         }
-        const promise = executeFlow(
-          flow,
-          {
-            body: args,
-            query: {
-              field: info.fieldName,
-              operation: info.operation.operation,
-            },
-          },
-          context,
-        )
+        const promise = trusted
+          ? Promise.resolve(trusted.resolveRoot(info.fieldName))
+          : executeFlow(
+              flow,
+              {
+                body: args,
+                query: {
+                  field: info.fieldName,
+                  operation: info.operation.operation,
+                },
+              },
+              context,
+            )
         return promise.then((run) => {
           visited.push(...run.visited)
           if (run.status >= 400)

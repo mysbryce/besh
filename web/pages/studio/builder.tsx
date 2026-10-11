@@ -50,6 +50,7 @@ import { hasContentSnapshot } from '../../lib/content-snapshot'
 import { canReadDependencyStructure } from '../../lib/dependency-access'
 import { TenantReview, useTenantReview } from '../../components/tenant-review'
 import { ReleaseHistory } from './release-history'
+import { ContentSnapshotGraphql } from './content-snapshot-graphql'
 import { DatabaseNodeForm } from './database-node'
 import { ApiRules, OpenApiDownload } from './api-rules'
 import {
@@ -1142,7 +1143,11 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
           />
         </div>
       ) : null}
-      {sealed ? null : state.websocket ? (
+      {sealed ? (
+        state.graphql ? (
+          <ContentSnapshotGraphql schema={state.graphql.schema} />
+        ) : null
+      ) : state.websocket ? (
         <Suspense fallback={<p>Loading WebSocket message rules…</p>}>
           <WebSocketForms
             definition={state.websocket}
@@ -1389,15 +1394,21 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
               {state.result ? (
                 <Badge variant="secondary">{state.result.status}</Badge>
               ) : (
-                <span>{t('WAITING FOR A RUN')}</span>
+                <span>
+                  {t(sealed ? 'API key protected' : 'WAITING FOR A RUN')}
+                </span>
               )}
             </div>
             <pre data-testid="test-result">
               {state.result
                 ? JSON.stringify(maskedLoginResult(state.result), null, 2)
-                : t(
-                    '// Save your draft, then run a test.\n// Your response will appear here.',
-                  )}
+                : sealed
+                  ? t(
+                      'Owner and member keys manage drafts. Create an API key in API keys to call a published endpoint.',
+                    )
+                  : t(
+                      '// Save your draft, then run a test.\n// Your response will appear here.',
+                    )}
             </pre>
             {socialFlow && state.result ? (
               <LoginResultActions
