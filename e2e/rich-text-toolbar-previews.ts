@@ -196,15 +196,36 @@ export async function richTextToolbarPreviews({
       await editor.press('Home')
       await expect
         .poll(() =>
-          paragraph.evaluate((element) => {
-            const selection = window.getSelection()
+          paragraph.evaluate(async (element) => {
+            function atFirstText() {
+              const selection = window.getSelection()
+              const first = document
+                .createTreeWalker(element, NodeFilter.SHOW_TEXT)
+                .nextNode()
 
-            return Boolean(
-              selection?.isCollapsed &&
-              selection.anchorOffset === 0 &&
-              selection.anchorNode &&
-              element.contains(selection.anchorNode),
-            )
+              return Boolean(
+                first &&
+                document.activeElement ===
+                  element.closest('.formatted-text-surface') &&
+                selection?.isCollapsed &&
+                selection.anchorNode === first &&
+                selection.focusNode === first &&
+                selection.anchorOffset === 0 &&
+                selection.focusOffset === 0,
+              )
+            }
+
+            if (!atFirstText()) return false
+
+            // History paint and asynchronous native selection must both settle.
+            for (let frame = 0; frame < 2; frame++) {
+              await new Promise<void>((done) =>
+                requestAnimationFrame(() => done()),
+              )
+              if (!atFirstText()) return false
+            }
+
+            return true
           }),
         )
         .toBe(true)

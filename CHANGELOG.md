@@ -4,6 +4,12 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.27.2-alpha.0 — 2026-10-11
+
+### Fixed
+
+- Wait for the focused native text caret to settle after Undo/Redo before browser tests extend a selection; retain every character and saved-content assertion.
+
 ## 0.27.1-alpha.0 — 2026-10-11
 
 ### Fixed

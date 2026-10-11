@@ -4,6 +4,10 @@ Besh stays below `1.0.0` until the project is ready and the maintainer explicitl
 
 Every completed change delivery gets a new version in `package.json` and an entry in [CHANGELOG.md](../CHANGELOG.md), in the same tested commit. Work in progress does not need a version change after every edit.
 
+## Rich-text toolbar readiness — 0.27.2-alpha.0 candidate
+
+This test-only correction follows PR #26's hosted native selection failure. It waits for focused editor ownership and exact first-text anchor/focus offsets zero across two animation frames before the unchanged five character-selection assertions. Six strengthened repetitions and the current full 79-case browser suite pass; current core passes 411 backend cases/9,416 assertions, types, build and formatting. The hosted cause remains unproved. Product UI sources are unchanged; the historical 0.27.1 gallery and scoped original reviews remain below. Current portable acceptance passes ten cases/1,205 assertions, with all 14 fresh originals reviewed and byte-linked. Source-bundle and updated exact-head/main CI, merge and branch cleanup remain pending. See [chronological evidence](testing.md#rich-text-toolbar-readiness--active-0272-work). No tag, new public executable or deployment is published.
+
 ## Grouped rich-text toolbar — 0.27.1-alpha.0 local acceptance
 
 The compact icon-toolbar candidate passes core types, 411 backend cases/9,417 assertions, build and formatting; all 79 browser cases pass in 272.20 seconds, wrapper 273.9425042 seconds. The promoted gallery contains 1,341 PNGs/51 receipts, preserves all 1,336 prior metadata records and has scoped exact-byte review of five new and 40 legacy originals. Ten portable cases/1,205 assertions pass in 111.47 seconds, wrapper 111.5768851 seconds, including the actual copied-executable browser in 17.85661 seconds. All 14 portable originals were individually reviewed with current byte/hash/dimension proof and no concrete visual blocker. See [exact checks and limitations](testing.md#grouped-rich-text-toolbar--active-0271-work).
