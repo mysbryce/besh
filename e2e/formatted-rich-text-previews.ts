@@ -182,6 +182,13 @@ export async function formattedRichTextPreviews({
   ).toBeVisible()
   await page.getByRole('option', { name: 'Bullet list', exact: true }).click()
   await expect(editor.locator('ul li')).toHaveText('Create an API')
+
+  // Wait for the menu's deferred return-focus before sending native editor keys.
+  await expect(page.getByRole('listbox')).toHaveCount(0)
+  await expect(
+    page.getByRole('combobox', { name: 'Body block style', exact: true }),
+  ).toBeFocused()
+
   await editor.press('ArrowRight')
   await expect
     .poll(() =>

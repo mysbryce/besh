@@ -1,5 +1,5 @@
 import { openApiTools } from './api-tools'
-import { expect, type Page, type Request } from '@playwright/test'
+import { expect, type Page, type Request, type Route } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import type { Member, Role, SavedFlow } from '../web/types/api'
 import { helloFlow } from '../test/fixtures'
@@ -310,51 +310,75 @@ export async function flowAccessPreviews({
   await page
     .getByRole('button', { name: 'Cancel role changes', exact: true })
     .click()
+
   let deliverRead = () => {}
+  let readDone = () => {}
+  let readStarted = false
   let heldRead = false
   let finishedRead = false
   const readDelivery = new Promise<void>((resolve) => {
     deliverRead = resolve
   })
-  await page.route('**/api/members', async (route) => {
-    const url = new URL(route.request().url())
-    const response = await route.fetch({
-      url: `${apiOrigin || url.origin}${url.pathname}`,
-    })
-    heldRead = true
-    await readDelivery
-    await route.fulfill({ response })
-    finishedRead = true
+  const readDelivered = new Promise<void>((resolve) => {
+    readDone = resolve
   })
-  await page
-    .getByRole('button', {
-      name: 'Manage APIs for Selected API reviewer',
-      exact: true,
-    })
-    .click()
-  await expect.poll(() => heldRead).toBe(true)
-  await expect(sharing).toContainText('Loading API sharing…')
-  await expect(
-    sharing.getByRole('button', { name: 'Review API sharing', exact: true }),
-  ).toBeDisabled()
-  await capture(
-    'Members',
-    'API sharing metadata read loading',
-    'The real current-policy response is held. Saving and selection changes stay disabled until its version is known.',
-  )
-  await sharing
-    .getByRole('button', { name: 'Close API sharing', exact: true })
-    .click()
-  deliverRead()
-  await expect.poll(() => finishedRead).toBe(true)
-  await expect(sharing).toHaveCount(0)
-  await expect(row).toContainText('Selected APIs · 2')
-  await capture(
-    'Members',
-    'Late sharing read ignored after close',
-    'Closing the editor fences its delayed real response. It cannot reopen the editor or overwrite another review.',
-  )
-  await page.unroute('**/api/members')
+
+  const heldMembersRoute = async (route: Route) => {
+    readStarted = true
+
+    try {
+      const url = new URL(route.request().url())
+      const response = await route.fetch({
+        url: `${apiOrigin || url.origin}${url.pathname}`,
+      })
+
+      heldRead = true
+      await readDelivery
+      await route.fulfill({ response })
+      finishedRead = true
+    } finally {
+      readDone()
+    }
+  }
+
+  await page.route('**/api/members', heldMembersRoute)
+
+  try {
+    await page
+      .getByRole('button', {
+        name: 'Manage APIs for Selected API reviewer',
+        exact: true,
+      })
+      .click()
+    await expect.poll(() => heldRead).toBe(true)
+    await expect(sharing).toContainText('Loading API sharing…')
+    await expect(
+      sharing.getByRole('button', { name: 'Review API sharing', exact: true }),
+    ).toBeDisabled()
+    await capture(
+      'Members',
+      'API sharing metadata read loading',
+      'The real current-policy response is held. Saving and selection changes stay disabled until its version is known.',
+    )
+    await sharing
+      .getByRole('button', { name: 'Close API sharing', exact: true })
+      .click()
+
+    deliverRead()
+    await expect.poll(() => finishedRead).toBe(true)
+    await expect(sharing).toHaveCount(0)
+    await expect(row).toContainText('Selected APIs · 2')
+    await capture(
+      'Members',
+      'Late sharing read ignored after close',
+      'Closing the editor fences its delayed real response. It cannot reopen the editor or overwrite another review.',
+    )
+  } finally {
+    deliverRead()
+    if (readStarted) await readDelivered
+    await page.unroute('**/api/members', heldMembersRoute)
+  }
+
   await openSharing()
   await sharing
     .getByRole('checkbox', { name: `Share ${rest.name}`, exact: true })
@@ -596,50 +620,75 @@ export async function flowAccessPreviews({
     await sharing
       .getByRole('checkbox', { name: `Share ${flow.name}`, exact: true })
       .check()
+
   let release = () => {}
+  let done = () => {}
+  let started = false
   let committed = false
   const delivery = new Promise<void>((resolve) => {
     release = resolve
   })
-  await page.route('**/api/members/*/access', async (route) => {
-    const url = new URL(route.request().url())
-    const response = await route.fetch({
-      url: `${apiOrigin || url.origin}${url.pathname}`,
-    })
-    expect(response.status()).toBe(200)
-    committed = true
-    await delivery
-    await route.fulfill({ response })
+  const delivered = new Promise<void>((resolve) => {
+    done = resolve
   })
-  await review()
-  await capture(
-    'Members',
-    'Confirm selected API sharing',
-    'Both named routes are reviewed before their policy replaces all-API visibility and ends affected sessions.',
-  )
-  await sharing
-    .getByRole('button', { name: 'Confirm API sharing', exact: true })
-    .click()
-  await expect.poll(() => committed).toBe(true)
-  for (const label of [
-    'Confirm API sharing',
-    'Refresh API access',
-    'Close API sharing',
-  ])
+
+  const heldAccessRoute = async (route: Route) => {
+    started = true
+
+    try {
+      const url = new URL(route.request().url())
+      const response = await route.fetch({
+        url: `${apiOrigin || url.origin}${url.pathname}`,
+      })
+      expect(response.status()).toBe(200)
+
+      committed = true
+      await delivery
+      await route.fulfill({ response })
+    } finally {
+      done()
+    }
+  }
+
+  await page.route('**/api/members/*/access', heldAccessRoute)
+
+  try {
+    await review()
+    await capture(
+      'Members',
+      'Confirm selected API sharing',
+      'Both named routes are reviewed before their policy replaces all-API visibility and ends affected sessions.',
+    )
+    await sharing
+      .getByRole('button', { name: 'Confirm API sharing', exact: true })
+      .click()
+    await expect.poll(() => committed).toBe(true)
+    for (const label of [
+      'Confirm API sharing',
+      'Refresh API access',
+      'Close API sharing',
+    ])
+      await expect(
+        sharing.getByRole('button', { name: label, exact: true }),
+      ).toBeDisabled()
     await expect(
-      sharing.getByRole('button', { name: label, exact: true }),
+      page.getByRole('button', { name: 'Sign out', exact: true }),
     ).toBeDisabled()
-  await expect(
-    page.getByRole('button', { name: 'Sign out', exact: true }),
-  ).toBeDisabled()
-  await capture(
-    'Members',
-    'Sharing save response pending',
-    'The actual server change has completed but delivery is held. Duplicate save, navigation and credential transitions stay blocked.',
-  )
-  release()
-  await expect(page.getByRole('status')).toContainText('API sharing updated')
-  await page.unroute('**/api/members/*/access')
+    await capture(
+      'Members',
+      'Sharing save response pending',
+      'The actual server change has completed but delivery is held. Duplicate save, navigation and credential transitions stay blocked.',
+    )
+
+    release()
+    await delivered
+    await expect(page.getByRole('status')).toContainText('API sharing updated')
+  } finally {
+    release()
+    if (started) await delivered
+    await page.unroute('**/api/members/*/access', heldAccessRoute)
+  }
+
   await capture(
     'Members',
     'Selected sharing save completed',

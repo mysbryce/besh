@@ -4,6 +4,13 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.28.2-alpha.0 — 2026-10-11
+
+### Fixed
+
+- Wait for native menu closure and restored trigger focus before unchanged browser caret and save-focus actions.
+- Drain owned HTTP handlers and release held responses before fixture teardown shuts down the backend.
+
 ## 0.28.1-alpha.0 — 2026-10-11
 
 ### Fixed
