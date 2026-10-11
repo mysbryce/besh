@@ -34,6 +34,7 @@ import { translateMessage, useTranslation } from '../i18n'
 import { useStructDraft } from '../stores/struct-store'
 import { useCollectionDraft } from '../stores/collection-store'
 import { useContentEntryDraft } from '../stores/content-entry-store'
+import { useContentRendererDraft } from '../stores/content-renderer-store'
 import { GitHubIcon } from '../components/github-icon'
 
 const Builder = lazy(() =>
@@ -169,6 +170,7 @@ export function App({
   const structDirty = useStructDraft((draft) => draft.dirty)
   const collectionDirty = useCollectionDraft((draft) => draft.dirty)
   const entryDirty = useContentEntryDraft((draft) => draft.dirty)
+  const rendererDirty = useContentRendererDraft((draft) => draft.dirty)
 
   useEffect(() => {
     useStructDraft.getState().reset()
@@ -176,6 +178,10 @@ export function App({
     useContentEntryDraft.getState().reset()
     setPage(can(state.member, 'flows.read') ? 'builder' : 'account')
   }, [state.sessionId, state.member?.id])
+
+  useEffect(() => {
+    useContentRendererDraft.getState().reset()
+  }, [state.sessionId, state.member?.id, state.member?.role, state.token])
 
   useEffect(() => {
     if (invitation || !invitationBootstrapReady) return
@@ -218,7 +224,8 @@ export function App({
         (current.dirty ||
           useStructDraft.getState().dirty ||
           useCollectionDraft.getState().dirty ||
-          useContentEntryDraft.getState().dirty) &&
+          useContentEntryDraft.getState().dirty ||
+          useContentRendererDraft.getState().dirty) &&
         !window.confirm(
           'Leave the editor to review this invitation? Your unsaved draft will be kept until you return or confirm sign-out.',
         )
@@ -241,6 +248,7 @@ export function App({
       !structDirty &&
       !collectionDirty &&
       !entryDirty &&
+      !rendererDirty &&
       !state.busy
     )
       return
@@ -252,14 +260,22 @@ export function App({
         current.busy ||
         useStructDraft.getState().dirty ||
         useCollectionDraft.getState().dirty ||
-        useContentEntryDraft.getState().dirty
+        useContentEntryDraft.getState().dirty ||
+        useContentRendererDraft.getState().dirty
       )
         event.preventDefault()
     }
 
     window.addEventListener('beforeunload', warn)
     return () => window.removeEventListener('beforeunload', warn)
-  }, [state.dirty, structDirty, collectionDirty, entryDirty, state.busy])
+  }, [
+    state.dirty,
+    structDirty,
+    collectionDirty,
+    entryDirty,
+    rendererDirty,
+    state.busy,
+  ])
 
   useEffect(() => {
     if (!state.expiresAt) return
@@ -295,6 +311,14 @@ export function App({
           }}
           onSignIn={() => {
             if (
+              useContentRendererDraft.getState().dirty &&
+              !window.confirm(
+                translateMessage('Discard unsaved HTML settings?'),
+              )
+            )
+              return
+
+            if (
               useContentEntryDraft.getState().dirty &&
               !window.confirm(
                 translateMessage('Discard unsaved entry changes?'),
@@ -327,6 +351,7 @@ export function App({
             useStructDraft.getState().reset()
             useCollectionDraft.getState().reset()
             useContentEntryDraft.getState().reset()
+            useContentRendererDraft.getState().reset()
             useStudio.getState().clearSession()
             useStudio.setState({ authReady: true })
             setInvitationSignIn(true)
@@ -403,7 +428,9 @@ export function App({
       (!useCollectionDraft.getState().dirty ||
         window.confirm(t('Discard unsaved collection changes?'))) &&
       (!useContentEntryDraft.getState().dirty ||
-        window.confirm(t('Discard unsaved entry changes?')))
+        window.confirm(t('Discard unsaved entry changes?'))) &&
+      (!useContentRendererDraft.getState().dirty ||
+        window.confirm(t('Discard unsaved HTML settings?')))
     )
   }
 
@@ -415,6 +442,8 @@ export function App({
 
     if (useContentEntryDraft.getState().dirty)
       useContentEntryDraft.getState().reset()
+
+    useContentRendererDraft.getState().reset()
   }
 
   function navigate(next: Page) {

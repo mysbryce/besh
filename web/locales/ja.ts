@@ -1131,6 +1131,42 @@ const messages: Record<string, string> = {
     'API の下書きを作成しました。データをテストしてから公開してください。',
   'API draft created. Read APIs access is needed to open API Studio.':
     'API の下書きを作成しました。API Studio を開くには API の読み取り権限が必要です。',
+
+  'Review HTML settings': 'HTML 設定を確認',
+  'Collection HTML settings': 'コレクションの HTML 設定',
+  'Close HTML settings': 'HTML 設定を閉じる',
+  'These settings apply to rich-text fields in this collection. Reviewing them does not save or publish content.':
+    'これらの設定は、このコレクションのリッチテキスト項目に適用されます。確認してもコンテンツは保存または公開されません。',
+  'Loading HTML settings…': 'HTML 設定を読み込み中…',
+  'Default HTML settings · not saved': '既定の HTML 設定 · 未保存',
+  'Renderer revision {version}': 'HTML 設定のバージョン {version}',
+  'Configured elements': '設定済みの要素',
+  'No custom element settings': 'カスタム要素設定なし',
+  'Consumer contract': 'HTML を利用する側の取り決め',
+  'Could not verify HTML settings.': 'HTML 設定を検証できませんでした。',
+  'Could not load HTML settings.': 'HTML 設定を読み込めませんでした。',
+  'HTML settings reviewed.': 'HTML 設定を確認しました。',
+  'Discard unsaved HTML settings?': '未保存の HTML 設定の変更を破棄しますか？',
+
+  'Save HTML settings': 'HTML 設定を保存',
+  'HTML settings saved.': 'HTML 設定を保存しました。',
+  'Could not save HTML settings.': 'HTML 設定を保存できませんでした。',
+  'Summary of the last reviewed settings. Unsaved edits are shown below.':
+    '前回確認した設定の概要です。未保存の変更は下に表示されます。',
+
+  'Reload HTML settings': 'HTML 設定を再読み込み',
+
+  'Collection renderer changed. Reload before saving.':
+    'コレクションの HTML 設定が変更されました。保存する前に再読み込みしてください。',
+  'Collection renderer is unavailable':
+    'コレクションの HTML 設定を利用できません',
+  'Provide the current renderer version and reviewed HTML settings':
+    '現在のバージョンと確認済みの HTML 設定を指定してください',
+
+  'Use default settings': '既定の設定を使用',
+
+  'Save could not be confirmed. Reload HTML settings before trying again.':
+    '保存を確認できませんでした。再試行する前に HTML 設定を再読み込みしてください。',
 }
 
 export default messages

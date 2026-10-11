@@ -77,6 +77,7 @@ Besh is a visual API builder. Read `README.md`, `GLOSSARY.md`, and `docs/archite
 - Encrypt product OAuth secrets and PKCE verifiers with the private key file. Back up that file separately from SQLite; never commit it or recreate it while encrypted records exist.
 - Save audit events with state changes. Keep migration history and test backup restoration.
 - Separate editable drafts from published releases.
+- Collection HTML settings use independent safe renderer revisions and original-owner transaction checks. Absence is virtual zero; malformed stored records fail closed. Preserve accepted wire shapes and untouched values through form edits. Conflicts or unconfirmed delivery require explicit verified reload before saving. Keep persisted settings separate from temporary preview and future CMS publication.
 - Use parameterized queries. Keep product database connections separate from Besh's control database.
 - SQLite product reads use immutable uploaded copies, inspected identifiers, bound values, and the trusted child reader. Preserve its deadline, output, storage, and process-wide concurrency limits. Never accept caller SQL or filesystem paths.
 - Dispatch the trusted compiled SQLite reader before portable CLI modes. Portable license export must work offline and preserve the embedded inventory and full original notice bytes.

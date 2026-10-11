@@ -35,6 +35,7 @@ import { invitationService } from './auth/invitations'
 import { structService } from './structs/service'
 import { collectionService } from './collections/service'
 import { contentEntryService } from './collections/entries'
+import { collectionRendererService } from './collections/renderers'
 import { timingSafeEqual } from 'node:crypto'
 import {
   sessionService,
@@ -135,6 +136,7 @@ export function createApp(options: AppOptions) {
   const structs = structService(store)
   const collections = collectionService(store)
   const entries = contentEntryService(store, collections)
+  const renderers = collectionRendererService(store, collections)
   const dependencies = dependencyService(store)
   const rowPolicies = rowPolicyService(store)
   const tenantFields = tenantFieldPolicyService(store)
@@ -462,6 +464,16 @@ export function createApp(options: AppOptions) {
       allow(member, ['owner'])
       return collections.create(member.id, body, () =>
         allow(currentMember(request), ['owner']),
+      )
+    })
+    .get('/collections/:id/renderer', ({ member, params }) => {
+      allow(member, ['owner'])
+      return renderers.get(params.id)
+    })
+    .put('/collections/:id/renderer', ({ member, params, body, request }) => {
+      allow(member, ['owner'])
+      return renderers.save(member.id, params.id, body, () =>
+        currentMember(request),
       )
     })
     .get('/collections/:id/entries', ({ member, params, request }) => {

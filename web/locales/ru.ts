@@ -1137,6 +1137,43 @@ const messages: Record<string, string> = {
     'Черновик API создан. Проверьте данные, затем опубликуйте его.',
   'API draft created. Read APIs access is needed to open API Studio.':
     'Черновик API создан. Для открытия API Studio нужно право на чтение API.',
+
+  'Review HTML settings': 'Просмотреть настройки HTML',
+  'Collection HTML settings': 'Настройки HTML коллекции',
+  'Close HTML settings': 'Закрыть настройки HTML',
+  'These settings apply to rich-text fields in this collection. Reviewing them does not save or publish content.':
+    'Эти настройки применяются к полям форматированного текста в этой коллекции. Просмотр не сохраняет и не публикует содержимое.',
+  'Loading HTML settings…': 'Загрузка настроек HTML…',
+  'Default HTML settings · not saved':
+    'Настройки HTML по умолчанию · не сохранены',
+  'Renderer revision {version}': 'Версия настроек HTML {version}',
+  'Configured elements': 'Настроенные элементы',
+  'No custom element settings': 'Нет пользовательских настроек элементов',
+  'Consumer contract': 'Правила для системы, использующей HTML',
+  'Could not verify HTML settings.': 'Не удалось проверить настройки HTML.',
+  'Could not load HTML settings.': 'Не удалось загрузить настройки HTML.',
+  'HTML settings reviewed.': 'Настройки HTML просмотрены.',
+  'Discard unsaved HTML settings?':
+    'Отменить несохранённые изменения настроек HTML?',
+
+  'Save HTML settings': 'Сохранить настройки HTML',
+  'HTML settings saved.': 'Настройки HTML сохранены.',
+  'Could not save HTML settings.': 'Не удалось сохранить настройки HTML.',
+  'Summary of the last reviewed settings. Unsaved edits are shown below.':
+    'Сводка последних просмотренных настроек. Несохранённые изменения показаны ниже.',
+
+  'Reload HTML settings': 'Загрузить настройки HTML заново',
+
+  'Collection renderer changed. Reload before saving.':
+    'Настройки HTML коллекции изменились. Загрузите их заново перед сохранением.',
+  'Collection renderer is unavailable': 'Настройки HTML коллекции недоступны',
+  'Provide the current renderer version and reviewed HTML settings':
+    'Укажите текущую версию и просмотренные настройки HTML',
+
+  'Use default settings': 'Использовать настройки по умолчанию',
+
+  'Save could not be confirmed. Reload HTML settings before trying again.':
+    'Не удалось подтвердить сохранение. Загрузите настройки HTML заново перед повторной попыткой.',
 }
 
 export default messages

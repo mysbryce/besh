@@ -4,6 +4,20 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.25.0-alpha.0 — 2026-10-11
+
+### Added
+
+- Owner-reviewed collection HTML settings with independent revisions, atomic saves, metadata audit and backup recovery.
+- Labelled element classes, literal attributes and optional fixed heading identifiers in seven languages.
+- Local default settings, explicit conflict reload and recovery when a save response cannot be confirmed.
+- Twenty-two page/action previews for saved settings, recovery, pending saves, languages and phone layouts.
+
+### Changed
+
+- Preserve untouched renderer wire values during form edits and block conflicting actions while saving.
+- Keep collection settings separate from private temporary HTML preview and future generated content endpoints.
+
 ## 0.24.1-alpha.0 — 2026-10-11
 
 ### Changed

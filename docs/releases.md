@@ -4,11 +4,19 @@ Besh stays below `1.0.0` until the project is ready and the maintainer explicitl
 
 Every completed change delivery gets a new version in `package.json` and an entry in [CHANGELOG.md](../CHANGELOG.md), in the same tested commit. Work in progress does not need a version change after every edit.
 
-## Dashboard folder candidate verification — 0.24.1-alpha.0
+## Collection HTML settings — local 0.25.0-alpha.0 acceptance
+
+Local core passes types, 406 backend cases/8,886 assertions, production build and formatting; all 72 browser cases pass. The full gallery promotes 1,305 PNGs/48 receipts with all 1,283 previous canonical metadata records preserved. Scoped original review covers all 22 new and six affected legacy images. These checks preserve independent renderer revisions, literal content, explicit owner review and uncertain-save recovery.
+
+The 92,341,760-byte executable records Bun 1.4.2, source base `1d286638` and `clean: false`, identifying a tested working-tree candidate. All 988 actual code inputs and unchanged notice scopes are verified. Its full suite passes ten cases/1,118 assertions in 103.10 seconds, including a real collection-settings save through the copied-executable browser. Source bundle and exact-head/main CI remain pending. No tag, new public executable or deployment is published. See [exact local evidence](testing.md#collection-html-settings--active-025-work).
+
+## Dashboard folder delivery — 0.24.1-alpha.0
 
 The separate dashboard organization patch passed local core types, 397 backend cases/8,426 assertions, build and formatting in 56.886897 seconds; all 71 browser cases passed in a 245.6114405-second wrapper. The fresh gallery promotes `.preview/run-1791677191381-8d1931e5` with 1,283 PNGs/47 receipts and every prior canonical metadata record unchanged. Twenty fresh originals across 13 feature folders passed scoped review. Historical 0.24 receipts remain unchanged.
 
-The local executable built in 4.1556984 seconds and passed ten portable cases/1,103 assertions in 99.95 seconds, wrapper 100.0354829 seconds. Its 92,308,480 bytes, Bun 1.4.2, source base `5a727447` and `clean: false` metadata identify a tested working-tree candidate. Actual Bun/Vite input inventory and unchanged notice scopes were verified. All eight fresh portable originals passed scoped original-detail review with current byte/hash receipts. The initial invocation stopped at environment setup guards without running artifact journeys; the corrected process environment passed without product changes. Source packaging, Conventional Commit, exact-head/main CI and branch cleanup remain pending. No tag, deployment or new public executable is published. See [exact local evidence](testing.md#dashboard-feature-folders--local-0241-acceptance).
+The local executable built in 4.1556984 seconds and passed ten portable cases/1,103 assertions in 99.95 seconds, wrapper 100.0354829 seconds. Its 92,308,480 bytes, Bun 1.4.2, source base `5a727447` and `clean: false` metadata identify a tested working-tree candidate. Actual Bun/Vite input inventory and unchanged notice scopes were verified. All eight fresh portable originals passed scoped original-detail review with current byte/hash receipts. The initial invocation stopped at environment setup guards without running artifact journeys; the corrected process environment passed without product changes. The clean committed source bundle verifies 1,038 indexed files/24,107,436 bytes. No tag, deployment or new public executable is published. See [exact local evidence](testing.md#dashboard-feature-folders--local-0241-acceptance).
+
+[PR #22](https://github.com/mysbryce/besh/pull/22) merged reviewed head `496c32ebeed0b16276914c4a49275ea08adc16a9` as main `1d286638d283a12f77b90e8e166ff64b45db7f75`, with matching tree `1df5ec1e8611e2d0f282bab78dff2ab918bc0729`. All three [exact-head CI](https://github.com/mysbryce/besh/actions/runs/38098314613) and [main CI](https://github.com/mysbryce/besh/actions/runs/38098651218) jobs passed. Both delivery branches were removed after main CI and tree verification. The three public PR screenshots match anonymous downloads of the reviewed originals.
 
 ## Private HTML delivery — 0.24.0-alpha.0
 

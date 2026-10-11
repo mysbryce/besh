@@ -740,6 +740,22 @@ export function openStore(path: string, adminToken?: string) {
       )
     }
 
+    if (!query('SELECT version FROM migrations WHERE version = 27').get()) {
+      db.run(`CREATE TABLE collection_renderers (
+        collection_id TEXT PRIMARY KEY REFERENCES collections(id),
+        version INTEGER NOT NULL CHECK(typeof(version) = 'integer' AND version > 0 AND version <= 9007199254740991),
+        schema_version INTEGER NOT NULL CHECK(schema_version = 1),
+        renderer TEXT NOT NULL CHECK(json_valid(renderer) AND json_type(renderer) = 'object' AND length(CAST(renderer AS BLOB)) <= 1024),
+        renderer_sha256 TEXT NOT NULL CHECK(length(renderer_sha256) = 64),
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )`)
+      query('INSERT INTO migrations VALUES (27, ?, ?)').run(
+        'owner-managed independently versioned collection HTML settings',
+        new Date().toISOString(),
+      )
+    }
+
     if (adminToken) {
       const previous = query<{ token_hash: string }, []>(
         `SELECT token_hash FROM members WHERE id = 'owner'`,

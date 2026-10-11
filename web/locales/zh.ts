@@ -1091,6 +1091,41 @@ const messages: Record<string, string> = {
     'API 草稿已创建。请测试数据，然后发布。',
   'API draft created. Read APIs access is needed to open API Studio.':
     'API 草稿已创建。需要读取 API 权限才能打开 API Studio。',
+
+  'Review HTML settings': '查看 HTML 设置',
+  'Collection HTML settings': '集合 HTML 设置',
+  'Close HTML settings': '关闭 HTML 设置',
+  'These settings apply to rich-text fields in this collection. Reviewing them does not save or publish content.':
+    '这些设置适用于此集合中的富文本字段。查看设置不会保存或发布内容。',
+  'Loading HTML settings…': '正在加载 HTML 设置…',
+  'Default HTML settings · not saved': '默认 HTML 设置 · 未保存',
+  'Renderer revision {version}': 'HTML 设置版本 {version}',
+  'Configured elements': '已配置的元素',
+  'No custom element settings': '没有自定义元素设置',
+  'Consumer contract': 'HTML 使用方约定',
+  'Could not verify HTML settings.': '无法验证 HTML 设置。',
+  'Could not load HTML settings.': '无法加载 HTML 设置。',
+  'HTML settings reviewed.': '已查看 HTML 设置。',
+  'Discard unsaved HTML settings?': '放弃未保存的 HTML 设置更改？',
+
+  'Save HTML settings': '保存 HTML 设置',
+  'HTML settings saved.': 'HTML 设置已保存。',
+  'Could not save HTML settings.': '无法保存 HTML 设置。',
+  'Summary of the last reviewed settings. Unsaved edits are shown below.':
+    '上次查看的设置摘要。未保存的修改显示在下方。',
+
+  'Reload HTML settings': '重新加载 HTML 设置',
+
+  'Collection renderer changed. Reload before saving.':
+    '集合的 HTML 设置已更改。请重新加载后再保存。',
+  'Collection renderer is unavailable': '集合的 HTML 设置不可用',
+  'Provide the current renderer version and reviewed HTML settings':
+    '请提供当前版本和已查看的 HTML 设置',
+
+  'Use default settings': '使用默认设置',
+
+  'Save could not be confirmed. Reload HTML settings before trying again.':
+    '无法确认是否保存成功。请重新加载 HTML 设置后再试。',
 }
 
 export default messages

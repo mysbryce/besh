@@ -1125,6 +1125,41 @@ const messages: Record<string, string> = {
     'API draft created. Test your data, then publish it.',
   'API draft created. Read APIs access is needed to open API Studio.':
     'API draft created. Read APIs access is needed to open API Studio.',
+
+  'Review HTML settings': 'Review HTML settings',
+  'Collection HTML settings': 'Collection HTML settings',
+  'Close HTML settings': 'Close HTML settings',
+  'These settings apply to rich-text fields in this collection. Reviewing them does not save or publish content.':
+    'These settings apply to rich-text fields in this collection. Reviewing them does not save or publish content.',
+  'Loading HTML settings…': 'Loading HTML settings…',
+  'Default HTML settings · not saved': 'Default HTML settings · not saved',
+  'Renderer revision {version}': 'Renderer revision {version}',
+  'Configured elements': 'Configured elements',
+  'No custom element settings': 'No custom element settings',
+  'Consumer contract': 'Consumer contract',
+  'Could not verify HTML settings.': 'Could not verify HTML settings.',
+  'Could not load HTML settings.': 'Could not load HTML settings.',
+  'HTML settings reviewed.': 'HTML settings reviewed.',
+  'Discard unsaved HTML settings?': 'Discard unsaved HTML settings?',
+
+  'Save HTML settings': 'Save HTML settings',
+  'HTML settings saved.': 'HTML settings saved.',
+  'Could not save HTML settings.': 'Could not save HTML settings.',
+  'Summary of the last reviewed settings. Unsaved edits are shown below.':
+    'Summary of the last reviewed settings. Unsaved edits are shown below.',
+
+  'Reload HTML settings': 'Reload HTML settings',
+
+  'Collection renderer changed. Reload before saving.':
+    'Collection renderer changed. Reload before saving.',
+  'Collection renderer is unavailable': 'Collection renderer is unavailable',
+  'Provide the current renderer version and reviewed HTML settings':
+    'Provide the current renderer version and reviewed HTML settings',
+
+  'Use default settings': 'Use default settings',
+
+  'Save could not be confirmed. Reload HTML settings before trying again.':
+    'Save could not be confirmed. Reload HTML settings before trying again.',
 }
 
 export default messages

@@ -15,7 +15,9 @@ import type { StructField, StructSchema } from '../../../src/structs/model'
 import { useStudio } from '../../stores/studio-store'
 import { useCollectionDraft } from '../../stores/collection-store'
 import { useContentEntryDraft } from '../../stores/content-entry-store'
+import { useContentRendererDraft } from '../../stores/content-renderer-store'
 import { ContentEntries } from './content-entries'
+import { ContentRendererSettings } from './content-renderer'
 import { useTranslation } from '../../i18n'
 
 const typeLabels = {
@@ -120,7 +122,9 @@ export function Collections() {
       (!useCollectionDraft.getState().dirty ||
         window.confirm(t('Discard unsaved collection changes?'))) &&
       (!useContentEntryDraft.getState().dirty ||
-        window.confirm(t('Discard unsaved entry changes?')))
+        window.confirm(t('Discard unsaved entry changes?'))) &&
+      (!useContentRendererDraft.getState().dirty ||
+        window.confirm(t('Discard unsaved HTML settings?')))
     )
   }
 
@@ -131,6 +135,7 @@ export function Collections() {
     operation.current += 1
     draft.reset()
     useContentEntryDraft.getState().reset()
+    useContentRendererDraft.getState().reset()
     setError('')
     setReviewRequired(false)
     state.message('New collection')
@@ -182,6 +187,7 @@ export function Collections() {
 
         draft.reset(saved)
         useContentEntryDraft.getState().reset(saved.id)
+        useContentRendererDraft.getState().reset()
         setReviewRequired(false)
         state.message('Collection loaded.')
       } catch (reason) {
@@ -259,6 +265,7 @@ export function Collections() {
 
         draft.reset(saved)
         useContentEntryDraft.getState().reset(saved.id)
+        useContentRendererDraft.getState().reset()
         setCollections((catalog) => [
           ...catalog,
           { ...metadata, structId: struct.id, structVersion: struct.version },
@@ -458,6 +465,9 @@ export function Collections() {
           </p>
         ) : null}
       </section>
+      {draft.collection ? (
+        <ContentRendererSettings collection={draft.collection} />
+      ) : null}
       {draft.collection ? (
         <ContentEntries collection={draft.collection} />
       ) : null}
