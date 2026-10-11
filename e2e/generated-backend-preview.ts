@@ -3,7 +3,7 @@ import { expect, type Page, type Request } from '@playwright/test'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import type { BackendCodeArtifact } from '../src/flows/backend-code-model'
-import type { SavedFlow } from '../web/lib/api'
+import type { SavedFlow } from '../web/types/api'
 
 type Capture = (group: string, title: string, detail: string) => Promise<void>
 

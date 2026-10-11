@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test'
-import type { RuntimeKey, SavedFlow } from '../web/lib/api'
+import type { RuntimeKey, SavedFlow } from '../web/types/api'
 
 type Capture = (group: string, title: string, detail: string) => Promise<void>
 

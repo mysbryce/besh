@@ -1,7 +1,7 @@
 import { openApiTools } from './api-tools'
 import { expect, type Page, type Request } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import type { Member, Role, SavedFlow } from '../web/lib/api'
+import type { Member, Role, SavedFlow } from '../web/types/api'
 import { helloFlow } from '../test/fixtures'
 
 type Capture = (group: string, title: string, detail: string) => Promise<void>

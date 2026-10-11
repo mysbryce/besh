@@ -4,6 +4,14 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.24.1-alpha.0 — 2026-10-11
+
+### Changed
+
+- Group dashboard pages and local helpers by feature, with separate app shell, stores and shared API DTOs.
+- Preserve direct imports, lazy loading, initialization, entry/assets and public behavior while updating Vite/test paths.
+- Document the dashboard layout and completed private HTML source delivery.
+
 ## 0.24.0-alpha.0 — 2026-10-11
 
 ### Added

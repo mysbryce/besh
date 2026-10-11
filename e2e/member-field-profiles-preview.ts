@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process'
 import type { DatabaseConnection } from '../src/databases/model'
 import type { DatabaseRowPolicy } from '../src/workspace/tenant-model'
 import type { DatabaseMemberFieldProfile } from '../src/workspace/member-field-model'
-import type { Member } from '../web/lib/api'
+import type { Member } from '../web/types/api'
 
 type Capture = (
   group: string,

@@ -4,13 +4,19 @@ Besh stays below `1.0.0` until the project is ready and the maintainer explicitl
 
 Every completed change delivery gets a new version in `package.json` and an entry in [CHANGELOG.md](../CHANGELOG.md), in the same tested commit. Work in progress does not need a version change after every edit.
 
-## Private HTML candidate verification — 0.24.0-alpha.0
+## Dashboard folder candidate verification — 0.24.1-alpha.0
+
+The separate dashboard organization patch passed local core types, 397 backend cases/8,426 assertions, build and formatting in 56.886897 seconds; all 71 browser cases passed in a 245.6114405-second wrapper. The fresh gallery promotes `.preview/run-1791677191381-8d1931e5` with 1,283 PNGs/47 receipts and every prior canonical metadata record unchanged. Twenty fresh originals across 13 feature folders passed scoped review. Historical 0.24 receipts remain unchanged.
+
+The local executable built in 4.1556984 seconds and passed ten portable cases/1,103 assertions in 99.95 seconds, wrapper 100.0354829 seconds. Its 92,308,480 bytes, Bun 1.4.2, source base `5a727447` and `clean: false` metadata identify a tested working-tree candidate. Actual Bun/Vite input inventory and unchanged notice scopes were verified. All eight fresh portable originals passed scoped original-detail review with current byte/hash receipts. The initial invocation stopped at environment setup guards without running artifact journeys; the corrected process environment passed without product changes. Source packaging, Conventional Commit, exact-head/main CI and branch cleanup remain pending. No tag, deployment or new public executable is published. See [exact local evidence](testing.md#dashboard-feature-folders--local-0241-acceptance).
+
+## Private HTML delivery — 0.24.0-alpha.0
 
 The fresh local browser command passes all 71 cases in 233.66 seconds. The promoted gallery contains 1,283 PNGs and 47 complete story receipts; scoped review links all 22 new and eight affected originals to their promoted SHA-256 values. Both earlier blank-iframe capture attempts remain recorded in [testing](testing.md#private-html-preview--active-024-work).
 
 The freshly compiled Windows candidate passes ten portable cases/1,103 assertions across eight files in 100.41 seconds, with a 100.51-second wrapper (`.cache/rich-text-html-portable.log`). Its actual copied-executable dashboard generates saved version-two, version-one and reviewed heading HTML through three real HTTP requests while retaining collection, entry and audit state. Default reconciliation verifies 713 original notice files, 276 components and 77 observed npm components, with no additional scopes or blockers; no original notice bytes are changed.
 
-Metadata records version `0.24.0-alpha.0`, Bun `1.4.2`, source base `d33c6bc` and `clean: false`, identifying the local working-tree candidate. Final core passes types, all 397 backend cases/8,426 assertions, production build and formatting. Actual source packaging and hosted delivery checks remain pending. No release tag or new public executable asset is published.
+Metadata records version `0.24.0-alpha.0`, Bun `1.4.2`, source base `d33c6bc` and `clean: false`, identifying the local working-tree candidate. Final core passes types, all 397 backend cases/8,426 assertions, production build and formatting. The clean-head source bundle verifies 1,037 indexed payload files and 24,093,884 bytes against actual source bytes and SHA-256 values. This source delivery publishes no tag, deployment or new executable release. [PR #21](https://github.com/mysbryce/besh/pull/21) merged reviewed head `7e21db11c92d302642ceab2a891d130050ad7007` as main `5a7274479049f744b592f3a2dcb71ab83567a103`; both trees match `099a117ec2bd732f88f422b07e30659c789d26d6`. All three [exact-head CI](https://github.com/mysbryce/besh/actions/runs/38096289936) and [main CI](https://github.com/mysbryce/besh/actions/runs/38096648897) jobs passed. Delivery branches were removed after successful main CI and matching-tree proof. No release tag or new public executable asset is published.
 
 ## Structured rich-text delivery — 0.23.0-alpha.0
 

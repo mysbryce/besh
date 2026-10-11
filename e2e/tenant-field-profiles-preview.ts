@@ -232,7 +232,7 @@ export async function tenantFieldProfilePreviews({
     moduleStarted = resolve
   })
   const moduleRoute =
-    /\/web\/tenant-field-profiles\.tsx(?:\?|$)|\/assets\/tenant-field-profiles-[^/]+\.js(?:\?|$)/
+    /\/web\/components\/resource-access\/tenant-field-profiles\.tsx(?:\?|$)|\/assets\/tenant-field-profiles-[^/]+\.js(?:\?|$)/
   const heldModule = async (route: import('@playwright/test').Route) => {
     const result = await route.fetch()
     expect(result.status()).toBe(200)
