@@ -4,6 +4,12 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.28.3-alpha.0 — 2026-10-11
+
+### Fixed
+
+- Wait for native menu closure and the focused exact quote-text caret before browser line-break input; retain literal text, paragraph and saved-content assertions.
+
 ## 0.28.2-alpha.0 — 2026-10-11
 
 ### Fixed
