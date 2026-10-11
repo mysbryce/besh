@@ -1124,6 +1124,45 @@ const messages: Record<string, string> = {
     'สร้างฉบับร่าง API แล้ว ทดสอบข้อมูลก่อนเผยแพร่',
   'API draft created. Read APIs access is needed to open API Studio.':
     'สร้างฉบับร่าง API แล้ว ต้องมีสิทธิ์อ่าน API จึงจะเปิด API Studio ได้',
+
+  'Review HTML settings': 'ตรวจสอบการตั้งค่า HTML',
+  'Collection HTML settings': 'การตั้งค่า HTML ของคอลเลกชัน',
+  'Close HTML settings': 'ปิดการตั้งค่า HTML',
+  'These settings apply to rich-text fields in this collection. Reviewing them does not save or publish content.':
+    'การตั้งค่าเหล่านี้ใช้กับฟิลด์ข้อความจัดรูปแบบในคอลเลกชันนี้ การตรวจสอบจะไม่บันทึกหรือเผยแพร่เนื้อหา',
+  'Loading HTML settings…': 'กำลังโหลดการตั้งค่า HTML…',
+  'Default HTML settings · not saved':
+    'การตั้งค่า HTML เริ่มต้น · ยังไม่ได้บันทึก',
+  'Renderer revision {version}': 'การตั้งค่า HTML เวอร์ชัน {version}',
+  'Configured elements': 'องค์ประกอบที่ตั้งค่าไว้',
+  'No custom element settings': 'ไม่มีการตั้งค่าองค์ประกอบแบบกำหนดเอง',
+  'Consumer contract': 'ข้อกำหนดสำหรับระบบที่นำ HTML ไปใช้',
+  'Could not verify HTML settings.':
+    'ไม่สามารถตรวจสอบความถูกต้องของการตั้งค่า HTML ได้',
+  'Could not load HTML settings.': 'ไม่สามารถโหลดการตั้งค่า HTML ได้',
+  'HTML settings reviewed.': 'ตรวจสอบการตั้งค่า HTML แล้ว',
+  'Discard unsaved HTML settings?':
+    'ทิ้งการเปลี่ยนแปลงการตั้งค่า HTML ที่ยังไม่ได้บันทึกหรือไม่?',
+
+  'Save HTML settings': 'บันทึกการตั้งค่า HTML',
+  'HTML settings saved.': 'บันทึกการตั้งค่า HTML แล้ว',
+  'Could not save HTML settings.': 'ไม่สามารถบันทึกการตั้งค่า HTML ได้',
+  'Summary of the last reviewed settings. Unsaved edits are shown below.':
+    'สรุปการตั้งค่าที่ตรวจสอบล่าสุด การแก้ไขที่ยังไม่ได้บันทึกแสดงอยู่ด้านล่าง',
+
+  'Reload HTML settings': 'โหลดการตั้งค่า HTML อีกครั้ง',
+
+  'Collection renderer changed. Reload before saving.':
+    'การตั้งค่า HTML ของคอลเลกชันเปลี่ยนแล้ว โหลดอีกครั้งก่อนบันทึก',
+  'Collection renderer is unavailable':
+    'ไม่สามารถใช้งานการตั้งค่า HTML ของคอลเลกชันได้',
+  'Provide the current renderer version and reviewed HTML settings':
+    'ระบุเวอร์ชันปัจจุบันและการตั้งค่า HTML ที่ตรวจสอบแล้ว',
+
+  'Use default settings': 'ใช้การตั้งค่าเริ่มต้น',
+
+  'Save could not be confirmed. Reload HTML settings before trying again.':
+    'ไม่สามารถยืนยันการบันทึกได้ โหลดการตั้งค่า HTML อีกครั้งก่อนลองใหม่',
 }
 
 export default messages

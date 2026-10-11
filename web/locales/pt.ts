@@ -1138,6 +1138,48 @@ const messages: Record<string, string> = {
     'Rascunho da API criado. Teste seus dados e depois publique.',
   'API draft created. Read APIs access is needed to open API Studio.':
     'Rascunho da API criado. A permissão de leitura de APIs é necessária para abrir o API Studio.',
+
+  'Review HTML settings': 'Revisar configurações de HTML',
+  'Collection HTML settings': 'Configurações de HTML da coleção',
+  'Close HTML settings': 'Fechar configurações de HTML',
+  'These settings apply to rich-text fields in this collection. Reviewing them does not save or publish content.':
+    'Estas configurações se aplicam aos campos de texto formatado desta coleção. Revisá-las não salva nem publica conteúdo.',
+  'Loading HTML settings…': 'Carregando configurações de HTML…',
+  'Default HTML settings · not saved':
+    'Configurações padrão de HTML · não salvas',
+  'Renderer revision {version}': 'Versão das configurações de HTML {version}',
+  'Configured elements': 'Elementos configurados',
+  'No custom element settings':
+    'Nenhuma configuração personalizada de elementos',
+  'Consumer contract': 'Regras para o sistema que usa o HTML',
+  'Could not verify HTML settings.':
+    'Não foi possível verificar as configurações de HTML.',
+  'Could not load HTML settings.':
+    'Não foi possível carregar as configurações de HTML.',
+  'HTML settings reviewed.': 'Configurações de HTML revisadas.',
+  'Discard unsaved HTML settings?':
+    'Descartar alterações não salvas nas configurações de HTML?',
+
+  'Save HTML settings': 'Salvar configurações de HTML',
+  'HTML settings saved.': 'Configurações de HTML salvas.',
+  'Could not save HTML settings.':
+    'Não foi possível salvar as configurações de HTML.',
+  'Summary of the last reviewed settings. Unsaved edits are shown below.':
+    'Resumo das últimas configurações revisadas. As alterações não salvas aparecem abaixo.',
+
+  'Reload HTML settings': 'Recarregar configurações de HTML',
+
+  'Collection renderer changed. Reload before saving.':
+    'As configurações de HTML da coleção mudaram. Recarregue antes de salvar.',
+  'Collection renderer is unavailable':
+    'As configurações de HTML da coleção estão indisponíveis',
+  'Provide the current renderer version and reviewed HTML settings':
+    'Informe a versão atual e as configurações de HTML revisadas',
+
+  'Use default settings': 'Usar configurações padrão',
+
+  'Save could not be confirmed. Reload HTML settings before trying again.':
+    'Não foi possível confirmar o salvamento. Recarregue as configurações de HTML antes de tentar novamente.',
 }
 
 export default messages

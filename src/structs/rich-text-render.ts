@@ -20,9 +20,13 @@ type RendererElement = {
   attributes?: Record<string, string>
 }
 
-type RendererConfiguration = {
+export type RichTextRenderer = {
   schemaVersion: 1
   elements: Record<string, RendererElement>
+  consumerContract?: 'besh.fixed-heading-id.v1'
+}
+
+type RendererConfiguration = Omit<RichTextRenderer, 'consumerContract'> & {
   consumerContract: 'besh.fixed-heading-id.v1' | null
 }
 
@@ -226,6 +230,22 @@ function canonical(value: unknown): string {
   return encoded
 }
 
+export function reviewRichTextRenderer(value: unknown) {
+  const normalized = configuration(value)
+  const { consumerContract, ...base } = normalized
+  const renderer: RichTextRenderer =
+    consumerContract === null ? base : { ...base, consumerContract }
+
+  return {
+    renderer,
+    rendererSchemaVersion: normalized.schemaVersion,
+    rendererSha256: createHash('sha256')
+      .update(canonical(normalized), 'utf8')
+      .digest('hex'),
+    consumerContract,
+  }
+}
+
 function escapeText(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -241,7 +261,8 @@ export function renderRichTextPreview(
   document: RichTextDocument | FormattedRichTextDocument,
   value: unknown,
 ) {
-  const renderer = configuration(value)
+  const reviewed = reviewRichTextRenderer(value)
+  const renderer = reviewed.renderer
   const parts: string[] = []
   let bytes = 0
 
@@ -380,11 +401,9 @@ export function renderRichTextPreview(
   children(document.children)
 
   return {
-    rendererSchemaVersion: renderer.schemaVersion,
-    rendererSha256: createHash('sha256')
-      .update(canonical(renderer), 'utf8')
-      .digest('hex'),
-    consumerContract: renderer.consumerContract,
+    rendererSchemaVersion: reviewed.rendererSchemaVersion,
+    rendererSha256: reviewed.rendererSha256,
+    consumerContract: reviewed.consumerContract,
     html: parts.join(''),
   }
 }

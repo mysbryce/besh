@@ -6,6 +6,7 @@ import type { FlowTransport } from '../../src/flows/transport'
 
 export type { StructDraft, StructSummary } from '../../src/structs/model'
 export type { Collection, CollectionSummary } from '../../src/collections/model'
+export type { CollectionRenderer } from '../../src/collections/renderers'
 export type {
   ContentEntry,
   ContentEntryPage,

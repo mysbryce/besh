@@ -1126,6 +1126,42 @@ const messages: Record<string, string> = {
     'API 초안을 만들었습니다. 데이터를 테스트한 다음 게시하세요.',
   'API draft created. Read APIs access is needed to open API Studio.':
     'API 초안을 만들었습니다. API Studio를 열려면 API 읽기 권한이 필요합니다.',
+
+  'Review HTML settings': 'HTML 설정 검토',
+  'Collection HTML settings': '컬렉션 HTML 설정',
+  'Close HTML settings': 'HTML 설정 닫기',
+  'These settings apply to rich-text fields in this collection. Reviewing them does not save or publish content.':
+    '이 설정은 이 컬렉션의 서식 있는 텍스트 필드에 적용됩니다. 설정을 검토해도 콘텐츠를 저장하거나 게시하지 않습니다.',
+  'Loading HTML settings…': 'HTML 설정 불러오는 중…',
+  'Default HTML settings · not saved': '기본 HTML 설정 · 저장되지 않음',
+  'Renderer revision {version}': 'HTML 설정 버전 {version}',
+  'Configured elements': '설정된 요소',
+  'No custom element settings': '사용자 지정 요소 설정 없음',
+  'Consumer contract': 'HTML 사용 규약',
+  'Could not verify HTML settings.': 'HTML 설정을 검증할 수 없습니다.',
+  'Could not load HTML settings.': 'HTML 설정을 불러올 수 없습니다.',
+  'HTML settings reviewed.': 'HTML 설정을 검토했습니다.',
+  'Discard unsaved HTML settings?':
+    '저장하지 않은 HTML 설정 변경 사항을 버릴까요?',
+
+  'Save HTML settings': 'HTML 설정 저장',
+  'HTML settings saved.': 'HTML 설정을 저장했습니다.',
+  'Could not save HTML settings.': 'HTML 설정을 저장할 수 없습니다.',
+  'Summary of the last reviewed settings. Unsaved edits are shown below.':
+    '마지막으로 검토한 설정의 요약입니다. 저장하지 않은 변경 사항은 아래에 표시됩니다.',
+
+  'Reload HTML settings': 'HTML 설정 다시 불러오기',
+
+  'Collection renderer changed. Reload before saving.':
+    '컬렉션 HTML 설정이 변경되었습니다. 저장하기 전에 다시 불러오세요.',
+  'Collection renderer is unavailable': '컬렉션 HTML 설정을 사용할 수 없습니다',
+  'Provide the current renderer version and reviewed HTML settings':
+    '현재 버전과 검토한 HTML 설정을 제공하세요',
+
+  'Use default settings': '기본 설정 사용',
+
+  'Save could not be confirmed. Reload HTML settings before trying again.':
+    '저장 여부를 확인할 수 없습니다. 다시 시도하기 전에 HTML 설정을 다시 불러오세요.',
 }
 
 export default messages
