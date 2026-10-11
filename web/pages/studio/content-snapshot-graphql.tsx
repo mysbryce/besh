@@ -1,7 +1,7 @@
 import { Textarea } from '../../components/ui/textarea'
 import { useTranslation } from '../../i18n'
 
-const exampleQuery = `query ContentSnapshot {
+export const contentSnapshotQuery = `query ContentSnapshot {
   contentSnapshot {
     document {
       type
@@ -67,7 +67,7 @@ export function ContentSnapshotGraphql({ schema }: { schema: string }) {
         rows={9}
         spellCheck={false}
         readOnly
-        value={exampleQuery}
+        value={contentSnapshotQuery}
       />
     </section>
   )

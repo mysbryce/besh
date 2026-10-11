@@ -58,6 +58,7 @@ import { savedRendererPreviews } from './saved-renderer-preview-previews'
 import { contentSnapshotPreviews } from './content-snapshot-previews'
 import { richTextToolbarPreviews } from './rich-text-toolbar-previews'
 import { contentSnapshotGraphqlPreviews } from './content-snapshot-graphql-previews'
+import { contentSnapshotClientCodePreviews } from './content-snapshot-client-code-preview'
 import {
   localeStartupPreviews,
   localeBootstrapPreviews,
@@ -4366,6 +4367,7 @@ test(
 const featureHelpers = {
   database: databasePreviews,
   'client-code': clientCodePreviews,
+  'content-snapshot-client-code': contentSnapshotClientCodePreviews,
   'release-pins': releasePinPreviews,
   'generated-backend': generatedBackendPreviews,
   'flow-access': flowAccessPreviews,

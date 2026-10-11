@@ -197,12 +197,18 @@ export function flowService(
   function codeSource(id: string, source: unknown) {
     ordinaryFlow(id)
 
+    return selectedCodeSource(id, source)
+  }
+
+  function selectedCodeSource(id: string, source: unknown) {
     if (source !== undefined && source !== 'draft' && source !== 'published')
       throw new ApiError(400, 'Choose draft or published example source')
+
     const selected: 'draft' | 'published' = source ?? 'published'
     const row = get(id)
     if (selected === 'published' && !row.published)
       throw new ApiError(404, 'This API has no published release')
+
     const flow = draft(
       JSON.parse(selected === 'draft' ? row.definition : row.published!),
     )
@@ -211,11 +217,47 @@ export function flowService(
         400,
         'HTTP client examples are unavailable for WebSocket APIs',
       )
+
     return {
       source: selected,
       revision: selected === 'draft' ? row.revision : row.published_revision!,
       flow,
     }
+  }
+
+  function codeAuthority(
+    actor: string,
+    id: string,
+    currentMember: CurrentMember,
+  ) {
+    const member = currentMember()
+    if (member.id !== actor) throw new ApiError(403, 'Permission denied')
+
+    authorizeFlow(store, member, id, 'flows.read')
+    const cms = ownerManagedFlow(store, id)
+    if (cms && member.role !== 'owner')
+      throw new ApiError(403, 'Permission denied')
+
+    return cms
+  }
+
+  function reviewedCodeSource(id: string, source: unknown, cms: boolean) {
+    const selected = cms
+      ? selectedCodeSource(id, source)
+      : codeSource(id, source)
+    if (cms !== hasCmsSnapshot(selected.flow))
+      throw new ApiError(503, 'CMS snapshot classification is invalid')
+
+    if (cms) {
+      const definition = validateFlow(selected.flow)
+      readCmsSnapshot(store, {
+        flowId: id,
+        revision: selected.revision,
+        definition,
+      })
+    }
+
+    return selected
   }
 
   function publicationUnlocked(id: string) {
@@ -441,11 +483,18 @@ export function flowService(
         ...protectedShape(store, definition),
       }
     },
-    clientCodeMetadata(id: string, source: unknown) {
+    clientCodeMetadata(
+      actor: string,
+      id: string,
+      source: unknown,
+      currentMember: CurrentMember,
+    ) {
       return db
         .transaction(() => {
-          const selected = codeSource(id, source)
+          const cms = codeAuthority(actor, id, currentMember)
+          const selected = reviewedCodeSource(id, source, cms)
           const { name, method, path, graphql, contract } = selected.flow
+
           return {
             source: selected.source,
             revision: selected.revision,
@@ -459,37 +508,48 @@ export function flowService(
         })
         .immediate()
     },
-    clientCode(id: string, value: unknown) {
-      ordinaryFlow(id)
-
-      const parsed = clientCodeSchema.safeParse(value)
-      if (!parsed.success)
-        throw new ApiError(
-          400,
-          'Provide a supported target, source revision, base URL, and bounded example input',
-        )
-      const selected = db
+    clientCode(
+      actor: string,
+      id: string,
+      value: unknown,
+      currentMember: CurrentMember,
+    ) {
+      return db
         .transaction(() => {
-          const selected = codeSource(id, parsed.data.source)
-          return {
-            ...selected,
-            mixedProtectedRead:
-              protectedShape(store, selected.flow).required &&
-              mixedReadGraph(selected.flow),
-          }
+          const cms = codeAuthority(actor, id, currentMember)
+
+          const parsed = clientCodeSchema.safeParse(value)
+          if (!parsed.success)
+            throw new ApiError(
+              400,
+              'Provide a supported target, source revision, base URL, and bounded example input',
+            )
+
+          const selected = reviewedCodeSource(id, parsed.data.source, cms)
+          if (selected.revision !== parsed.data.revision)
+            throw new ApiError(
+              409,
+              'Selected API revision changed. Reload before generating an example.',
+            )
+
+          const mixedProtectedRead =
+            !cms &&
+            protectedShape(store, selected.flow).required &&
+            mixedReadGraph(selected.flow)
+          const generated = flowClientCode(
+            selected.flow,
+            selected.source,
+            parsed.data,
+            mixedProtectedRead,
+          )
+          if (cms)
+            generated.warnings.push(
+              `Content calls require an owner-issued ${selected.flow.graphql ? 'query' : 'rest'} runtime key for this API pinned to its current release.`,
+            )
+
+          return generated
         })
         .immediate()
-      if (selected.revision !== parsed.data.revision)
-        throw new ApiError(
-          409,
-          'Selected API revision changed. Reload before generating an example.',
-        )
-      return flowClientCode(
-        selected.flow,
-        selected.source,
-        parsed.data,
-        selected.mixedProtectedRead,
-      )
     },
     list(memberId?: string) {
       const member = memberId === undefined ? undefined : store.member(memberId)

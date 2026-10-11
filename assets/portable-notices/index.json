@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "packageVersion": "0.28.3-alpha.0",
+  "packageVersion": "0.29.0-alpha.0",
   "bunVersion": "1.4.2",
   "bunUpstreamSourceCommit": "744846f844374847c902b5e7fd59b4342a51ef99",
   "lockSha256": "239d865dfa3ef7b27dd5dd531c6bab4a3643c927ac89f0fa4dd4d397dda3b408",
-  "codeInputsSha256": "7565daf849e002801af4f93ac336ba473e6bdb4bbb4a94e373ef4bec309625e3",
+  "codeInputsSha256": "1afa9106ea1dd18d99fb66b218f98b297096c204b931a67e6b3c2ebc81e430e8",
   "files": [
     {
       "path": "adapted-ui/THIRD_PARTY_NOTICES.md",
@@ -4299,7 +4299,7 @@
     },
     {
       "id": "besh",
-      "version": "0.28.3-alpha.0",
+      "version": "0.29.0-alpha.0",
       "inclusionScopes": [
         "compiled-server",
         "dashboard"

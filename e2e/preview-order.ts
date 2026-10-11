@@ -52,6 +52,7 @@ export const previewStories = [
   { id: 'content-snapshot', count: 17, locks: [] },
   { id: 'rich-text-toolbar', count: 5, locks: [] },
   { id: 'content-snapshot-graphql', count: 23, locks: [] },
+  { id: 'content-snapshot-client-code', count: 28, locks: ['clipboard'] },
 ] as const
 
 export type PreviewStory = (typeof previewStories)[number]['id']

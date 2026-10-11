@@ -149,8 +149,17 @@ export async function richTextToolbarPreviews({
     await page
       .getByRole('button', { name: 'Open workspace', exact: true })
       .click()
-    await page.locator('#appearance').click()
+    await expect(
+      page.getByRole('heading', { name: /API Studio/ }),
+    ).toBeVisible()
+
+    const appearance = page.locator('#appearance')
+    await appearance.click()
+    await expect(appearance).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.getByRole('listbox')).toBeVisible()
     await page.getByRole('option', { name: 'Light', exact: true }).click()
+    await expect(page.getByRole('listbox')).toHaveCount(0)
+    await expect(appearance).toHaveText('Light')
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
 
     await page.getByRole('button', { name: 'Content', exact: true }).click()
