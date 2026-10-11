@@ -474,6 +474,101 @@ test(
         expect.stringContaining('$input.body.secret <b>ไทย</b>'),
       )
 
+      async function clientExampleState() {
+        const state: string[] = []
+        for (const path of [
+          entriesPath + '/' + entry.id,
+          '/api/flows/' + flow.id,
+          '/api/runtime-keys',
+          '/api/audit',
+        ]) {
+          const response = await workspace.api(path)
+          expect(response.status).toBe(200)
+          const text = await response.text()
+          expect(Buffer.byteLength(text)).toBeLessThanOrEqual(262_144)
+
+          state.push(text)
+        }
+
+        return state
+      }
+
+      const beforeExamples = await clientExampleState()
+      const metadata = await publicObject(
+        await workspace.api('/api/flows/' + flow.id + '/client-code'),
+      )
+      const metadataText = JSON.stringify(metadata)
+      expect(metadataText).not.toContain('$input.body.secret')
+      expect(metadataText).not.toContain(workspace.owner)
+      expect(Object.keys(metadata).sort()).toEqual([
+        'contract',
+        'graphql',
+        'method',
+        'name',
+        'path',
+        'revision',
+        'source',
+        'targets',
+      ])
+      expect(metadata.source).toBe('published')
+      expect(metadata.revision).toBe(1)
+      expect(metadata.name).toBe('Portable typed content query')
+      expect(metadata.method).toBe('POST')
+      expect(metadata.path).toBe('/portable-sealed-graphql')
+      expect(metadata.contract).toBeNull()
+      expect(metadata.targets).toHaveLength(8)
+      expect(metadata.graphql).toMatchObject({
+        schema: expect.stringContaining('contentSnapshot: CmsContentSnapshot!'),
+      })
+
+      const exampleQuery = `query PortableContentExample {
+  contentSnapshot {
+    document {
+      children {
+        ... on CmsHeading { children { ... on CmsText { text marks } } }
+      }
+    }
+    provenance { releaseRevision }
+  }
+}`
+      const example = await publicObject(
+        await workspace.api('/api/flows/' + flow.id + '/client-code', 'POST', {
+          target: 'javascript-fetch',
+          revision: 1,
+          baseUrl: workspace.origin(),
+          request: {
+            graphql: {
+              query: exampleQuery,
+              operationName: 'PortableContentExample',
+            },
+          },
+        }),
+      )
+      const exampleText = JSON.stringify(example)
+      expect(exampleText).not.toContain('$input.body.secret')
+      expect(exampleText).not.toContain('<h2>')
+      expect(exampleText).not.toContain(workspace.owner)
+      expect(example.source).toBe('published')
+      expect(example.revision).toBe(1)
+      expect(example.method).toBe('POST')
+      expect(example.url).toBe(
+        workspace.origin() + '/graphql/portable-sealed-graphql',
+      )
+      expect(example.target).toBe('javascript-fetch')
+      expect(example.code).toEqual(
+        expect.stringContaining('BESH_RUNTIME_API_KEY'),
+      )
+      expect(example.code).toEqual(
+        expect.stringContaining('PortableContentExample'),
+      )
+      expect(example.code).toEqual(expect.stringContaining('CmsText'))
+      expect(example.warnings).toEqual(
+        expect.arrayContaining([
+          'Content calls require an owner-issued query runtime key for this API pinned to its current release.',
+        ]),
+      )
+      expect(await clientExampleState()).toEqual(beforeExamples)
+
       const caller = await publicObject(
         await workspace.api('/api/runtime-keys', 'POST', {
           name: 'Portable sealed content reader',

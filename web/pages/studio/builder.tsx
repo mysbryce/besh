@@ -703,6 +703,9 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
   )
   const [operationName, setOperationName] = useState('')
   const sealed = hasContentSnapshot(state.nodes)
+  const sealedClientOwner = !!state.id && state.member?.role === 'owner'
+  const clientCodeAllowed =
+    can(state.member, 'flows.read') && (!sealed || sealedClientOwner)
   const writable = can(state.member, 'flows.write') && !sealed
   const firstTask =
     writable &&
@@ -1423,49 +1426,51 @@ function BuilderSession({ onOpenData }: { onOpenData: () => void }) {
         variant="outline"
         aria-expanded={apiTools}
         aria-controls="api-tools"
-        disabled={state.busy || sealed}
+        disabled={state.busy || (sealed && !sealedClientOwner)}
         onClick={() => setApiTools(!apiTools)}
       >
         {t('API tools')}
       </Button>
-      {apiTools && !sealed ? (
+      {apiTools && (!sealed || sealedClientOwner) ? (
         <section
           id="api-tools"
           aria-label={t('API tools')}
           className="form-stack"
         >
-          <OpenApiDownload />
+          {!sealed ? <OpenApiDownload /> : null}
           <Button
             variant="outline"
             aria-expanded={clientCode}
-            disabled={
-              state.busy || !state.id || !can(state.member, 'flows.read')
-            }
+            disabled={state.busy || !state.id || !clientCodeAllowed}
             onClick={() => setClientCode(!clientCode)}
           >
             {t('Use this API')}
           </Button>
-          {clientCode && can(state.member, 'flows.read') ? (
+          {clientCode && clientCodeAllowed ? (
             <Suspense fallback={<p>Loading client examples…</p>}>
               <ClientCode />
             </Suspense>
           ) : null}
-          <Button
-            variant="outline"
-            aria-expanded={generatedBackend}
-            disabled={
-              state.busy || !state.id || !can(state.member, 'flows.read')
-            }
-            onClick={() => setGeneratedBackend(!generatedBackend)}
-          >
-            {t('Generated backend')}
-          </Button>
-          {generatedBackend && can(state.member, 'flows.read') ? (
-            <Suspense fallback={<p>Loading generated backend panel…</p>}>
-              <GeneratedBackend />
-            </Suspense>
+          {!sealed ? (
+            <>
+              <Button
+                variant="outline"
+                aria-expanded={generatedBackend}
+                disabled={
+                  state.busy || !state.id || !can(state.member, 'flows.read')
+                }
+                onClick={() => setGeneratedBackend(!generatedBackend)}
+              >
+                {t('Generated backend')}
+              </Button>
+              {generatedBackend && can(state.member, 'flows.read') ? (
+                <Suspense fallback={<p>Loading generated backend panel…</p>}>
+                  <GeneratedBackend />
+                </Suspense>
+              ) : null}
+              <ReleaseHistory />
+            </>
           ) : null}
-          <ReleaseHistory />
         </section>
       ) : null}
     </>

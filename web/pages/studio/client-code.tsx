@@ -15,7 +15,9 @@ import { Select } from '../../components/ui/select'
 import { Textarea } from '../../components/ui/textarea'
 import { RequestForm, parseRequestInput, ValueFields } from './flow-forms'
 import { api } from '../../lib/api'
+import { hasContentSnapshot } from '../../lib/content-snapshot'
 import { useStudio } from '../../stores/studio-store'
+import { contentSnapshotQuery } from './content-snapshot-graphql'
 
 function example(schema?: ApiSchema, budget = { remaining: 256 }): unknown {
   if (--budget.remaining < 0) return null
@@ -119,7 +121,10 @@ export function ClientCode() {
   const active = useRef(false)
   const sequence = useRef(0)
   const pending = useRef(false)
-  const allowed = can(state.member, 'flows.read')
+  const sealed = hasContentSnapshot(state.nodes)
+  const allowed =
+    can(state.member, 'flows.read') &&
+    (!sealed || state.member?.role === 'owner')
 
   function current() {
     const live = useStudio.getState()
@@ -128,7 +133,8 @@ export function ClientCode() {
       live.editorSession === state.editorSession &&
       live.sessionId === state.sessionId &&
       live.member?.id === state.member?.id &&
-      can(live.member, 'flows.read')
+      can(live.member, 'flows.read') &&
+      (!hasContentSnapshot(live.nodes) || live.member?.role === 'owner')
     )
   }
 
@@ -149,7 +155,9 @@ export function ClientCode() {
     )
       .then(async (value) => {
         const seeded = value.graphql
-          ? await graphqlExample(value.graphql.schema)
+          ? sealed
+            ? { operation: contentSnapshotQuery, variables: {} }
+            : await graphqlExample(value.graphql.schema)
           : null
         if (!alive || seq !== sequence.current || !current()) return
         setMetadata(value)
@@ -192,6 +200,7 @@ export function ClientCode() {
     }
   }, [
     allowed,
+    sealed,
     state.id,
     state.editorSession,
     state.sessionId,

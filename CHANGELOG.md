@@ -4,6 +4,13 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.29.0-alpha.0 — 2026-10-11
+
+### Added
+
+- Generate owner-reviewed REST and typed GraphQL Content client examples in eight language targets, with current-release key guidance and no API execution or private content export.
+- Open client examples from read-only Content graphs with useful typed GraphQL text selections while preserving editing, testing and separate tool boundaries.
+
 ## 0.28.3-alpha.0 — 2026-10-11
 
 ### Fixed

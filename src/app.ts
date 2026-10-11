@@ -754,10 +754,14 @@ export function createApp(options: AppOptions) {
     })
     .get('/flows/:id/client-code', ({ member, params, request }) => {
       requireFlowRead(member, params.id)
+
       const sources = new URL(request.url).searchParams.getAll('source')
       if (sources.length > 1)
         throw new ApiError(400, 'Choose one example source')
-      return flows.clientCodeMetadata(params.id, sources[0])
+
+      return flows.clientCodeMetadata(member.id, params.id, sources[0], () =>
+        currentMember(request),
+      )
     })
     .get('/flows/:id/backend-code', ({ member, params, request }) => {
       requireFlowRead(member, params.id)
@@ -780,9 +784,12 @@ export function createApp(options: AppOptions) {
         revisions.length ? Number(revisions[0]) : undefined,
       )
     })
-    .post('/flows/:id/client-code', ({ member, params, body }) => {
+    .post('/flows/:id/client-code', ({ member, params, body, request }) => {
       requireFlowRead(member, params.id)
-      return flows.clientCode(params.id, body)
+
+      return flows.clientCode(member.id, params.id, body, () =>
+        currentMember(request),
+      )
     })
     .get('/updates', ({ member }) => {
       allow(member, ['owner'])
