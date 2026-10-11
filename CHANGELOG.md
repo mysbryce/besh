@@ -4,6 +4,12 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.28.1-alpha.0 — 2026-10-11
+
+### Fixed
+
+- Wait for the focused first list-text caret to settle across two animation frames before native Enter in browser tests; retain exact text, list, history and saved-content assertions.
+
 ## 0.28.0-alpha.0 — 2026-10-11
 
 ### Added
