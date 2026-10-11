@@ -1,4 +1,11 @@
 const messages: Record<string, string> = {
+  'Fixed GraphQL schema': '固定的 GraphQL 模式',
+  'Example GraphQL query': 'GraphQL 查询示例',
+  'GraphQL uses a fixed read-only schema. Create and publish explicitly before calling it.':
+    'GraphQL 使用固定的只读模式。请先明确创建并发布，再调用它。',
+  'Select the document, HTML and provenance fields you need. Queries do not read newer source content.':
+    '选择所需的文档、HTML 和来源字段。查询不会读取更新后的源内容。',
+
   'Text style': '文本样式',
   Lists: '列表',
   Insert: '插入',

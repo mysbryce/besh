@@ -1,4 +1,11 @@
 const messages: Record<string, string> = {
+  'Fixed GraphQL schema': '고정 GraphQL 스키마',
+  'Example GraphQL query': 'GraphQL 쿼리 예시',
+  'GraphQL uses a fixed read-only schema. Create and publish explicitly before calling it.':
+    'GraphQL은 고정된 읽기 전용 스키마를 사용합니다. 호출하기 전에 직접 생성하고 게시하세요.',
+  'Select the document, HTML and provenance fields you need. Queries do not read newer source content.':
+    '필요한 문서, HTML 및 출처 정보 필드를 선택하세요. 쿼리는 변경된 최신 원본 콘텐츠를 읽지 않습니다.',
+
   'Text style': '텍스트 스타일',
   Lists: '목록',
   Insert: '삽입',

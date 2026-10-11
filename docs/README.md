@@ -30,7 +30,7 @@ Use this index for setup, supported API behavior, development checks, and planne
 - [Structured rich text](rich-text.md): delivered version-one paragraph and version-two formatted contracts, bounds and separate HTML preview/publication gates.
 - [Private HTML preview](rich-text-html.md): reviewed saved-field selection, transient element settings, inactive preview, copied HTML and current acceptance limits.
 - [Collection HTML settings](collection-renderers.md): explicit owner review/save, independent revisions, local defaults and conflict recovery.
-- [Content snapshot APIs](content-snapshots.md): reviewed saved-field creation, explicit fixed REST publication, pinned callers and recovery limits.
+- [Content snapshot APIs](content-snapshots.md): reviewed saved-field creation, fixed REST GET and active typed GraphQL POST publication, pinned callers and recovery limits.
 - [GitHub update notices](updates.md): owner-only manual release checks, saved repository/prerelease choices, cached results, and notice-only limits.
 - [Page and action previews](preview.md): capture commands, gallery inventory, masked credentials, data isolation, and Git ignore choices.
 - [Glossary](../GLOSSARY.md): workspace, draft, release, member identity, and caller credentials.

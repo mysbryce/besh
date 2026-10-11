@@ -132,9 +132,12 @@ test('members generate saved API client examples without invoking the API', asyn
       capture: async () => {},
     })
   } finally {
+    await page.unrouteAll({ behavior: 'wait' })
     await page.close()
+
     server.kill()
     await stopped
+
     rmSync(directory, {
       recursive: true,
       force: true,

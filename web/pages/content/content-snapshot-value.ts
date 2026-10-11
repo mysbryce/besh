@@ -90,3 +90,55 @@ export function verifyContentSnapshotFlow(
 
   return value as SavedFlow
 }
+
+export async function verifyGraphqlContentSnapshotFlow(
+  value: unknown,
+  name: string,
+  path: string,
+): Promise<SavedFlow | null> {
+  if (
+    !record(value) ||
+    !keys(value, [
+      'id',
+      'name',
+      'method',
+      'path',
+      'nodes',
+      'edges',
+      'graphql',
+      'revision',
+      'publishedRevision',
+      'publishedEndpoint',
+    ]) ||
+    value.method !== 'POST' ||
+    !record(value.graphql) ||
+    !keys(value.graphql, ['schema']) ||
+    typeof value.graphql.schema !== 'string' ||
+    value.graphql.schema.length > 16_384
+  )
+    return null
+
+  const { graphql, ...sealed } = value
+  if (!verifyContentSnapshotFlow({ ...sealed, method: 'GET' }, name, path))
+    return null
+
+  // Pin the closed server contract without importing its runtime into the dashboard.
+  try {
+    const digest = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(graphql.schema as string),
+    )
+    const sha256 = Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, '0'),
+    ).join('')
+    if (
+      sha256 !==
+      'ec57b19d96a2cdabb56b3c3450463389a261c50ac3b6294fc8fd85efc355ad45'
+    )
+      return null
+
+    return value as SavedFlow
+  } catch {
+    return null
+  }
+}

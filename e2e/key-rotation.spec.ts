@@ -194,6 +194,11 @@ test('owner replaces a caller key once, saves its secret, and sees revoked histo
         .getByRole('button', { name: 'Replace key', exact: true }),
     ).toBeDisabled()
     await page.getByRole('button', { name: 'Refresh', exact: true }).click()
+    await expect(page.getByRole('status')).toContainText('API keys refreshed.')
+    await expect(
+      page.getByRole('button', { name: 'Refresh', exact: true }),
+    ).toBeEnabled()
+
     await expect(saved).toBeVisible()
     expect(
       (await saved.getByLabel('New API key').inputValue()) === secret,
@@ -550,8 +555,13 @@ test('owner replaces a caller key once, saves its secret, and sees revoked histo
         for (const input of document.querySelectorAll('input')) input.value = ''
       })
       .catch(() => {})
+
+    await page.unrouteAll({ behavior: 'wait' })
+    await page.close()
+
     if (server.exitCode === null && server.signalCode === null) server.kill()
     await stopped
+
     rmSync(directory, { recursive: true, force: true })
   }
 })

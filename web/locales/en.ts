@@ -1,4 +1,11 @@
 const messages: Record<string, string> = {
+  'Fixed GraphQL schema': 'Fixed GraphQL schema',
+  'Example GraphQL query': 'Example GraphQL query',
+  'GraphQL uses a fixed read-only schema. Create and publish explicitly before calling it.':
+    'GraphQL uses a fixed read-only schema. Create and publish explicitly before calling it.',
+  'Select the document, HTML and provenance fields you need. Queries do not read newer source content.':
+    'Select the document, HTML and provenance fields you need. Queries do not read newer source content.',
+
   'Text style': 'Text style',
   Lists: 'Lists',
   Insert: 'Insert',

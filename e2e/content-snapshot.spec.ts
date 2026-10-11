@@ -52,6 +52,244 @@ async function openSnapshotReview(page: Page, workspace: HtmlPreviewWorkspace) {
   return reviewSavedHtml(page)
 }
 
+test('owner chooses GraphQL Content API, publishes its fixed contract and calls it with a pinned query key', async ({
+  page,
+  htmlWorkspace,
+}) => {
+  const review = await openSnapshotReview(page, htmlWorkspace)
+  await review.getByRole('combobox', { name: 'API type', exact: true }).click()
+  await page.getByRole('option', { name: 'GraphQL', exact: true }).click()
+  await review
+    .getByLabel('API name', { exact: true })
+    .fill('Browser GraphQL article')
+  await review
+    .getByLabel('Endpoint path', { exact: true })
+    .fill('/browser-graphql-article')
+
+  const entryPath =
+    '/api/collections/' +
+    htmlWorkspace.collectionId +
+    '/entries/' +
+    htmlWorkspace.entryId
+  const creation = page.waitForResponse(
+    (response) =>
+      response.url() ===
+        htmlPreviewOrigin + entryPath + '/snapshot-flow/graphql' &&
+      response.request().method() === 'POST',
+  )
+  await review
+    .getByRole('button', { name: 'Create Content API', exact: true })
+    .click()
+  const response = await creation
+  expect(response.status()).toBe(200)
+  expect(response.request().postDataJSON()).toEqual({
+    name: 'Browser GraphQL article',
+    path: '/browser-graphql-article',
+    collectionVersion: 1,
+    entryVersion: 1,
+    rendererVersion: 0,
+    fieldPath: ['body'],
+  })
+  const draft = await response.json()
+  expect(draft).toMatchObject({
+    method: 'POST',
+    publishedRevision: null,
+    graphql: {
+      schema: expect.stringContaining('contentSnapshot: CmsContentSnapshot!'),
+    },
+  })
+  await review
+    .getByRole('button', { name: 'Open API Studio', exact: true })
+    .click()
+  await expect(page.locator('.flow-card.cmsSnapshotResponse')).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Save draft', exact: true }),
+  ).toBeDisabled()
+  await expect(
+    page.getByRole('textbox', { name: 'Fixed GraphQL schema', exact: true }),
+  ).toHaveValue(draft.graphql.schema)
+  await expect(
+    page.getByRole('textbox', { name: 'Fixed GraphQL schema', exact: true }),
+  ).toHaveAttribute('readonly', '')
+  const example = page.getByRole('textbox', {
+    name: 'Example GraphQL query',
+    exact: true,
+  })
+  await expect(example).toHaveValue(/contentSnapshot/)
+  await expect(example).toHaveAttribute('readonly', '')
+  const query = await example.inputValue()
+  const publication = page.waitForResponse(
+    (reply) =>
+      reply.url() ===
+        htmlPreviewOrigin + '/api/flows/' + draft.id + '/publish' &&
+      reply.request().method() === 'POST',
+  )
+  await page.getByRole('button', { name: 'Publish', exact: true }).click()
+  expect((await publication).status()).toBe(200)
+  await expect(
+    page.getByLabel('Published endpoint URL', { exact: true }),
+  ).toHaveValue(htmlPreviewOrigin + '/graphql/browser-graphql-article')
+
+  await page.getByRole('button', { name: 'API keys', exact: true }).click()
+  await expect(
+    page.getByRole('combobox', { name: 'Release access', exact: true }),
+  ).toHaveText('Only this release')
+  await page
+    .getByLabel('Key name', { exact: true })
+    .fill('Browser GraphQL reader')
+  await page
+    .getByRole('button', { name: 'Create API key', exact: true })
+    .click()
+  const confirmation = page.getByRole('dialog', {
+    name: 'Create release-pinned API key',
+    exact: true,
+  })
+  await expect(
+    confirmation.getByText('Only release 1', { exact: true }),
+  ).toBeVisible()
+  const issuance = page.waitForResponse(
+    (reply) =>
+      reply.url() === htmlPreviewOrigin + '/api/runtime-keys' &&
+      reply.request().method() === 'POST',
+  )
+  await confirmation
+    .getByRole('button', { name: 'Create pinned key', exact: true })
+    .click()
+  const issued = await issuance
+  expect(issued.status()).toBe(200)
+  expect(issued.request().postDataJSON()).toMatchObject({
+    flowId: draft.id,
+    releaseRevision: 1,
+    permissions: ['query'],
+  })
+  const key = await issued.json()
+  expect(key.issuerBinding).toEqual({
+    memberId: 'owner',
+    action: 'runtime-keys.manage',
+  })
+  await expect(
+    page.getByRole('textbox', { name: 'New API key', exact: true }),
+  ).toHaveValue(key.token)
+
+  const endpoint = htmlPreviewOrigin + '/graphql/browser-graphql-article'
+  const caller = await page.request.post(endpoint, {
+    headers: { authorization: 'Bearer ' + key.token },
+    data: { query },
+  })
+  expect(caller.status()).toBe(200)
+  const selected = await caller.json()
+  expect(selected.errors).toBeUndefined()
+  expect(selected.data.contentSnapshot).toMatchObject({
+    document: { type: 'document', astVersion: 2 },
+    html: '<h1>Saved heading ไทย</h1><p>&lt;script&gt;literal&lt;/script&gt; &amp; text <a href="https://example.invalid/preview?note=a&amp;tag=b">Open article</a></p>',
+    provenance: {
+      entryVersion: '1',
+      rendererVersion: '0',
+      releaseRevision: '1',
+    },
+  })
+  expect(
+    (
+      await page.request.post(endpoint, {
+        headers: { authorization: 'Bearer ' + htmlWorkspace.owner },
+        data: { query },
+      })
+    ).status(),
+  ).toBe(401)
+})
+
+test('GraphQL creation locks its type choice and rejects an unconfirmed altered schema reply', async ({
+  page,
+  htmlWorkspace,
+}) => {
+  const review = await openSnapshotReview(page, htmlWorkspace)
+  await review.getByRole('combobox', { name: 'API type', exact: true }).click()
+  await page.getByRole('option', { name: 'GraphQL', exact: true }).click()
+  await review
+    .getByLabel('API name', { exact: true })
+    .fill('Unconfirmed GraphQL snapshot')
+  await review
+    .getByLabel('Endpoint path', { exact: true })
+    .fill('/unconfirmed-graphql-snapshot')
+  const creationUrl =
+    htmlPreviewOrigin +
+    '/api/collections/' +
+    htmlWorkspace.collectionId +
+    '/entries/' +
+    htmlWorkspace.entryId +
+    '/snapshot-flow/graphql'
+  let release!: () => void
+  let ready!: () => void
+  let done!: () => void
+  let started = false
+  let createdId = ''
+  let canonicalSchema = ''
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  const committed = new Promise<void>((resolve) => {
+    ready = resolve
+  })
+  const delivered = new Promise<void>((resolve) => {
+    done = resolve
+  })
+  await page.route(creationUrl, async (route) => {
+    started = true
+    try {
+      const response = await route.fetch({ maxRedirects: 0 })
+      expect(response.status()).toBe(200)
+      const body = await response.json()
+      createdId = body.id
+      canonicalSchema = body.graphql.schema
+      body.graphql.schema += '\n'
+      ready()
+      await held
+      await route.fulfill({ response, json: body })
+    } finally {
+      done()
+    }
+  })
+
+  try {
+    await review
+      .getByRole('button', { name: 'Create Content API', exact: true })
+      .click()
+    await committed
+    await expect(
+      review.getByRole('combobox', { name: 'API type', exact: true }),
+    ).toBeDisabled()
+    await expect(review.getByLabel('API name', { exact: true })).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: 'Members', exact: true }),
+    ).toBeDisabled()
+    release()
+    await delivered
+    await expect(review.getByRole('alert')).toHaveText(
+      'Creation could not be confirmed. Review the API list before creating again.',
+    )
+    await expect(
+      review.getByRole('button', { name: 'Create Content API', exact: true }),
+    ).toBeDisabled()
+    await expect(
+      review.getByRole('button', { name: 'Open API Studio', exact: true }),
+    ).toHaveCount(0)
+    const catalog = await page.request.get(htmlPreviewOrigin + '/api/flows', {
+      headers: { authorization: 'Bearer ' + htmlWorkspace.owner },
+    })
+    expect(catalog.status()).toBe(200)
+    const flows = (await catalog.json()).filter(
+      (flow: { id: string }) => flow.id === createdId,
+    )
+    expect(flows).toHaveLength(1)
+    expect(flows[0].graphql.schema).toBe(canonicalSchema)
+    expect(flows[0].publishedRevision).toBeNull()
+  } finally {
+    release()
+    if (started) await delivered
+    await page.unroute(creationUrl)
+  }
+})
+
 test('creation blocks navigation and duplicate actions while its real committed reply is held', async ({
   page,
   htmlWorkspace,

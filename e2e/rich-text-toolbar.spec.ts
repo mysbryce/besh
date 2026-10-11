@@ -11,6 +11,8 @@ test.describe.configure({ lock: 'port-4395' })
 test('owner uses compact formatting controls with retained selection and phone focus', async ({
   page,
 }, info) => {
+  page.setDefaultTimeout(10_000)
+
   const directory = mkdtempSync(
     join(tmpdir(), 'besh-rich-text-toolbar-browser-'),
   )

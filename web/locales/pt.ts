@@ -1,4 +1,11 @@
 const messages: Record<string, string> = {
+  'Fixed GraphQL schema': 'Esquema GraphQL fixo',
+  'Example GraphQL query': 'Exemplo de consulta GraphQL',
+  'GraphQL uses a fixed read-only schema. Create and publish explicitly before calling it.':
+    'O GraphQL usa um esquema fixo somente para leitura. Crie e publique explicitamente antes de chamar a API.',
+  'Select the document, HTML and provenance fields you need. Queries do not read newer source content.':
+    'Selecione os campos de documento, HTML e origem necessários. As consultas não leem atualizações do conteúdo de origem.',
+
   'Text style': 'Estilo do texto',
   Lists: 'Listas',
   Insert: 'Inserir',

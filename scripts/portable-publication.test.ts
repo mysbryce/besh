@@ -382,3 +382,195 @@ test(
   () => exercise('websocket'),
   90_000,
 )
+
+test(
+  'portable sealed GraphQL publishes literal typed content and survives source deletion and restart',
+  () =>
+    withPortablePublication(async (workspace) => {
+      const model = await publicObject(
+        await workspace.api('/api/structs', 'POST', {
+          name: 'Portable GraphQL content model',
+          fields: [
+            {
+              key: 'body',
+              label: 'Body',
+              required: true,
+              schema: { type: 'richText', schemaVersion: 2, astVersion: 2 },
+            },
+          ],
+        }),
+      )
+      const collection = await publicObject(
+        await workspace.api('/api/collections', 'POST', {
+          name: 'Portable GraphQL articles',
+          structId: model.id,
+          structVersion: model.version,
+        }),
+      )
+      const document = {
+        type: 'document',
+        astVersion: 2,
+        children: [
+          {
+            type: 'heading',
+            level: 2,
+            children: [
+              {
+                type: 'text',
+                text: '  $input.body.secret <b>ไทย</b>  ',
+                marks: ['italic', 'bold'],
+              },
+            ],
+          },
+        ],
+      }
+      const entriesPath = '/api/collections/' + collection.id + '/entries'
+      const entry = await publicObject(
+        await workspace.api(entriesPath, 'POST', {
+          data: { body: document },
+        }),
+      )
+      const flow = await publicObject(
+        await workspace.api(
+          entriesPath + '/' + entry.id + '/snapshot-flow/graphql',
+          'POST',
+          {
+            name: 'Portable typed content query',
+            path: '/portable-sealed-graphql',
+            collectionVersion: collection.version,
+            entryVersion: entry.version,
+            rendererVersion: 0,
+            fieldPath: ['body'],
+          },
+        ),
+      )
+      expect(flow.method).toBe('POST')
+      expect(flow.publishedRevision).toBeNull()
+      expect(flow.graphql).toMatchObject({
+        schema: expect.stringContaining('contentSnapshot: CmsContentSnapshot!'),
+      })
+
+      const published = await publicObject(
+        await workspace.api('/api/flows/' + flow.id + '/publish', 'POST', {
+          revision: 1,
+        }),
+      )
+      expect(published.publishedEndpoint).toEqual({
+        method: 'POST',
+        path: '/portable-sealed-graphql',
+        graphql: true,
+        transport: 'graphql',
+      })
+      const code = await publicObject(
+        await workspace.api('/api/flows/' + flow.id + '/backend-code'),
+      )
+      expect(code.compilerVersion).toBe(4)
+      expect(code.code).toEqual(
+        expect.stringContaining(
+          "app.route('POST', '/graphql/portable-sealed-graphql'",
+        ),
+      )
+      expect(code.code).not.toEqual(
+        expect.stringContaining('$input.body.secret <b>ไทย</b>'),
+      )
+
+      const caller = await publicObject(
+        await workspace.api('/api/runtime-keys', 'POST', {
+          name: 'Portable sealed content reader',
+          flowId: flow.id,
+          releaseRevision: 1,
+          permissions: ['query'],
+          expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+        }),
+      )
+      if (typeof caller.token !== 'string' || caller.token.length < 32)
+        throw new Error(
+          'Compiled sealed query did not issue a valid caller proof',
+        )
+
+      const token = caller.token
+      workspace.remember(token)
+      expect(caller.issuerBinding).toEqual({
+        memberId: 'owner',
+        action: 'runtime-keys.manage',
+      })
+      const operation = {
+        query: `{
+      contentSnapshot {
+        document { type astVersion children {
+          ... on CmsHeading { type level children { ... on CmsText { type text marks } } }
+        } }
+        html
+        provenance { entryVersion rendererVersion releaseRevision }
+      }
+    }`,
+      }
+      const expected = {
+        data: {
+          contentSnapshot: {
+            document: {
+              type: 'document',
+              astVersion: 2,
+              children: [
+                {
+                  type: 'heading',
+                  level: 2,
+                  children: [
+                    {
+                      type: 'text',
+                      text: '  $input.body.secret <b>ไทย</b>  ',
+                      marks: ['italic', 'bold'],
+                    },
+                  ],
+                },
+              ],
+            },
+            html: '<h2><em><strong>  $input.body.secret &lt;b&gt;ไทย&lt;/b&gt;  </strong></em></h2>',
+            provenance: {
+              entryVersion: '1',
+              rendererVersion: '0',
+              releaseRevision: '1',
+            },
+          },
+        },
+      }
+      async function live() {
+        expect(
+          await publicObject(
+            await workspace.api(
+              '/graphql/portable-sealed-graphql',
+              'POST',
+              operation,
+              token,
+            ),
+          ),
+        ).toEqual(expected)
+        await status(
+          await workspace.api(
+            '/graphql/portable-sealed-graphql',
+            'POST',
+            operation,
+            workspace.owner,
+          ),
+          401,
+        )
+        expect(
+          await publicObject(
+            await workspace.api('/api/flows/' + flow.id + '/backend-code'),
+          ),
+        ).toEqual(code)
+      }
+
+      await live()
+      await status(
+        await workspace.api(entriesPath + '/' + entry.id, 'DELETE', {
+          version: 1,
+        }),
+        200,
+      )
+      await live()
+      await workspace.restart()
+      await live()
+    }),
+  90_000,
+)

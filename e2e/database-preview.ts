@@ -332,7 +332,18 @@ export async function databasePreviews({
     'Respond with SQLite rows',
     'The response form selects Rows from data step, which resolves the database node output through the existing data namespace.',
   )
-  await page.getByRole('button', { name: 'Test flow', exact: true }).click()
+  const [testResponse] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        /^\/api\/flows\/[^/]+\/test$/.test(new URL(response.url()).pathname),
+      { timeout: 5_000 },
+    ),
+    page.getByRole('button', { name: 'Test flow', exact: true }).click(),
+  ])
+  expect(testResponse.status()).toBe(200)
+  expect(JSON.stringify(await testResponse.json())).toContain('Grace')
+
   await expect(page.getByTestId('test-result')).toContainText('Grace')
   await capture(
     'Database API',
