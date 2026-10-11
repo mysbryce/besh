@@ -1160,6 +1160,17 @@ const messages: Record<string, string> = {
 
   'Save could not be confirmed. Reload HTML settings before trying again.':
     'Save could not be confirmed. Reload HTML settings before trying again.',
+
+  'HTML settings': 'HTML settings',
+  'Temporary settings': 'Temporary settings',
+  'Reviewed collection settings': 'Reviewed collection settings',
+  'Review collection settings': 'Review collection settings',
+  'Review saved collection settings before using them. Reviewing does not save settings or generate HTML.':
+    'Review saved collection settings before using them. Reviewing does not save settings or generate HTML.',
+  'Saved HTML settings changed. Review collection settings again.':
+    'Saved HTML settings changed. Review collection settings again.',
+  'These are the last reviewed settings. Other sessions may have changed them.':
+    'These are the last reviewed settings. Other sessions may have changed them.',
 }
 
 export default messages

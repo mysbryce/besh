@@ -1167,6 +1167,20 @@ const messages: Record<string, string> = {
 
   'Save could not be confirmed. Reload HTML settings before trying again.':
     '保存を確認できませんでした。再試行する前に HTML 設定を再読み込みしてください。',
+
+  'HTML settings': 'HTML 設定',
+  'Temporary settings': '一時設定',
+  'Reviewed collection settings': '確認済みコレクション設定',
+  'Review collection settings': 'コレクション設定を確認',
+
+  'Review saved collection settings before using them. Reviewing does not save settings or generate HTML.':
+    '使用前に保存済みのコレクション設定を確認してください。確認では設定の保存や HTML の生成は行いません。',
+
+  'Saved HTML settings changed. Review collection settings again.':
+    '保存済みの HTML 設定が変更されました。コレクション設定を再確認してください。',
+
+  'These are the last reviewed settings. Other sessions may have changed them.':
+    'これは最後に確認した設定です。別のセッションで変更されている可能性があります。',
 }
 
 export default messages

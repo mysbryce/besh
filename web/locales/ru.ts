@@ -1174,6 +1174,20 @@ const messages: Record<string, string> = {
 
   'Save could not be confirmed. Reload HTML settings before trying again.':
     'Не удалось подтвердить сохранение. Загрузите настройки HTML заново перед повторной попыткой.',
+
+  'HTML settings': 'Настройки HTML',
+  'Temporary settings': 'Временные настройки',
+  'Reviewed collection settings': 'Просмотренные настройки коллекции',
+  'Review collection settings': 'Просмотреть настройки коллекции',
+
+  'Review saved collection settings before using them. Reviewing does not save settings or generate HTML.':
+    'Перед использованием просмотрите сохранённые настройки коллекции. Просмотр не сохраняет настройки и не создаёт HTML.',
+
+  'Saved HTML settings changed. Review collection settings again.':
+    'Сохранённые настройки HTML изменились. Просмотрите настройки коллекции снова.',
+
+  'These are the last reviewed settings. Other sessions may have changed them.':
+    'Это последние просмотренные настройки. В других сеансах они могли измениться.',
 }
 
 export default messages

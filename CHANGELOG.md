@@ -4,6 +4,20 @@ Every version change is recorded here. See [version rules](docs/releases.md). De
 
 ## Unreleased
 
+## 0.26.0-alpha.0 — 2026-10-11
+
+### Added
+
+- Explicitly review and select saved collection HTML settings for private rich-text previews.
+- Verify the exact renderer revision and configuration hash independently of the saved entry.
+- Fourteen action previews covering pending review, stale settings, recovery, seven phone languages and focused light/dark settings.
+
+### Fixed
+
+- Require explicit review after settings change and preserve unsaved collection and temporary settings.
+- Serialize only the browser stories sharing port 4395, keeping other worker lanes parallel.
+- Wrap long reviewed revision labels inside phone cards and capture rendered HTML in its visible viewport.
+
 ## 0.25.0-alpha.0 — 2026-10-11
 
 ### Added

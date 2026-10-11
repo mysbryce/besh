@@ -4,11 +4,17 @@ Besh stays below `1.0.0` until the project is ready and the maintainer explicitl
 
 Every completed change delivery gets a new version in `package.json` and an entry in [CHANGELOG.md](../CHANGELOG.md), in the same tested commit. Work in progress does not need a version change after every edit.
 
-## Collection HTML settings — local 0.25.0-alpha.0 acceptance
+## Saved settings in private HTML preview — 0.26.0-alpha.0 candidate
+
+This source candidate adds explicit saved-settings review and selection for private previews. Local core, all 73 browser cases, the final 1,319-image gallery and ten portable cases pass. Scoped gallery originals and exact executable/input/notice hashes are verified; final committed-source and exact-head/main CI gates remain pending. See [current evidence](testing.md#saved-settings-in-private-html-preview--active-026-work). No tag, public executable or deployment is published.
+
+## Collection HTML settings — 0.25.0-alpha.0 delivery
 
 Local core passes types, 406 backend cases/8,886 assertions, production build and formatting; all 72 browser cases pass. The full gallery promotes 1,305 PNGs/48 receipts with all 1,283 previous canonical metadata records preserved. Scoped original review covers all 22 new and six affected legacy images. These checks preserve independent renderer revisions, literal content, explicit owner review and uncertain-save recovery.
 
-The 92,341,760-byte executable records Bun 1.4.2, source base `1d286638` and `clean: false`, identifying a tested working-tree candidate. All 988 actual code inputs and unchanged notice scopes are verified. Its full suite passes ten cases/1,118 assertions in 103.10 seconds, including a real collection-settings save through the copied-executable browser. Source bundle and exact-head/main CI remain pending. No tag, new public executable or deployment is published. See [exact local evidence](testing.md#collection-html-settings--active-025-work).
+The 92,341,760-byte executable records Bun 1.4.2, source base `1d286638` and `clean: false`, identifying a tested working-tree candidate. All 988 actual code inputs and unchanged notice scopes are verified. Its full suite passes ten cases/1,118 assertions in 103.10 seconds, including a real collection-settings save through the copied-executable browser. All nine portable originals were reviewed; the clean source bundle verifies 1,043 files/24,226,822 bytes. See [exact local evidence](testing.md#collection-html-settings--local-025-acceptance).
+
+[PR #23](https://github.com/mysbryce/besh/pull/23) merged reviewed head `8ffc1b358bc495718951cb0dad33ecd2e46aa8dc` as main `d270296deced6ea0f32575993d18f46dbb31e90d`, with matching tree `8f38538a5e05c2610dc9a96d1aca6fa5d898a6a6`. All three [exact-head CI](https://github.com/mysbryce/besh/actions/runs/38102725938) and [main CI](https://github.com/mysbryce/besh/actions/runs/38103040126) jobs passed before exact local/remote delivery branches were deleted. Three reviewed anonymous preview attachments match original hashes. No tag, new public executable or deployment is published.
 
 ## Dashboard folder delivery — 0.24.1-alpha.0
 

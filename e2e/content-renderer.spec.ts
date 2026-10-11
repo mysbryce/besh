@@ -11,6 +11,8 @@ const origin = 'http://127.0.0.1:4395'
 
 test.use({ baseURL: origin, locale: 'en-US' })
 
+test.describe.configure({ lock: 'port-4395' })
+
 test('owner reviews and saves collection HTML settings without losing a stale draft', async ({
   page,
 }, info) => {

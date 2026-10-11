@@ -1,5 +1,10 @@
 import { expect, test } from 'bun:test'
-import { chromium, expect as browserExpect, type Page } from '@playwright/test'
+import {
+  chromium,
+  expect as browserExpect,
+  type Page,
+  type Request,
+} from '@playwright/test'
 import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import {
@@ -689,6 +694,140 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     await page
       .getByRole('option', { name: contentCollectionName, exact: true })
       .click()
+
+    const collectionRendererPath =
+      knownOrigin + '/api/collections/' + contentCollection.id + '/renderer'
+    const rendererReview = page.waitForResponse(
+      (response) =>
+        response.url() === collectionRendererPath &&
+        response.request().method() === 'GET',
+    )
+    await page
+      .getByRole('button', { name: 'Review HTML settings', exact: true })
+      .click()
+    const rendererReviewed = await rendererReview
+    expect(rendererReviewed.status()).toBe(200)
+    expect(await rendererReviewed.json()).toMatchObject({
+      collectionId: contentCollection.id,
+      structId: contentModel.id,
+      structVersion: 1,
+      version: 0,
+      renderer: { schemaVersion: 1, elements: {} },
+      consumerContract: null,
+      createdAt: null,
+      updatedAt: null,
+    })
+
+    const rendererPanel = page.getByRole('region', {
+      name: 'Collection HTML settings',
+      exact: true,
+    })
+    await rendererPanel
+      .getByRole('button', { name: 'Advanced element settings', exact: true })
+      .click()
+    await rendererPanel
+      .getByRole('combobox', { name: 'Element', exact: true })
+      .click()
+    await page
+      .getByRole('option', { name: 'Heading 1 (h1)', exact: true })
+      .click()
+    await rendererPanel
+      .getByLabel('CSS classes', { exact: true })
+      .fill('portable-collection-heading')
+    await rendererPanel
+      .getByLabel('Title attribute', { exact: true })
+      .fill('Collection "ไทย" & <literal>')
+
+    const rendererSave = page.waitForResponse(
+      (response) =>
+        response.url() === collectionRendererPath &&
+        response.request().method() === 'PUT',
+    )
+    await rendererPanel
+      .getByRole('button', { name: 'Save HTML settings', exact: true })
+      .click()
+    const rendererSaved = await rendererSave
+    expect(rendererSaved.status()).toBe(200)
+    const collectionRendererWire = {
+      schemaVersion: 1,
+      elements: {
+        h1: {
+          classes: ['portable-collection-heading'],
+          attributes: { title: 'Collection "ไทย" & <literal>' },
+        },
+      },
+    }
+    const collectionRendererHash = createHash('sha256')
+      .update(
+        '{"consumerContract":null,"elements":{"h1":{"attributes":{"title":"Collection \\"ไทย\\" & <literal>"},"classes":["portable-collection-heading"]}},"schemaVersion":1}',
+      )
+      .digest('hex')
+    expect(rendererSaved.request().postDataJSON()).toEqual({
+      version: 0,
+      renderer: collectionRendererWire,
+    })
+    const acceptedRenderer = await rendererSaved.json()
+    expect(acceptedRenderer).toMatchObject({
+      collectionId: contentCollection.id,
+      collectionVersion: contentCollection.version,
+      structId: contentModel.id,
+      structVersion: contentModel.version,
+      version: 1,
+      renderer: collectionRendererWire,
+      rendererSha256: collectionRendererHash,
+      consumerContract: null,
+    })
+    await browserExpect(
+      rendererPanel.getByText('Renderer revision 1', { exact: true }),
+    ).toBeVisible()
+    await browserExpect(
+      rendererPanel.getByRole('button', {
+        name: 'Save HTML settings',
+        exact: true,
+      }),
+    ).toBeDisabled()
+    await rendererPanel
+      .getByLabel('Title attribute', { exact: true })
+      .scrollIntoViewIfNeeded()
+    await capture(
+      '09-collection-html-settings.png',
+      'Compiled owner-reviewed collection HTML settings saved at revision one',
+      false,
+    )
+
+    const persistedRenderer = await page.request.get(collectionRendererPath, {
+      headers: contentHeaders,
+    })
+    expect(persistedRenderer.status()).toBe(200)
+    expect(await persistedRenderer.json()).toEqual(acceptedRenderer)
+    for (let index = 0; index < 2; index++) {
+      const unchanged = await page.request.get(contentPaths[index]!, {
+        headers: contentHeaders,
+      })
+      expect(unchanged.status()).toBe(200)
+      expect(await unchanged.json()).toEqual(contentBefore[index])
+    }
+    const rendererAudit = await page.request.get(contentPaths[2]!, {
+      headers: contentHeaders,
+    })
+    expect(rendererAudit.status()).toBe(200)
+    const rendererEvents = await rendererAudit.json()
+    expect(rendererEvents.slice(1)).toEqual(contentBefore[2])
+    expect(rendererEvents[0]).toMatchObject({
+      action: 'collection.renderer.saved',
+      resource: contentCollection.id,
+    })
+
+    await rendererPanel
+      .getByRole('button', { name: 'Close HTML settings', exact: true })
+      .click()
+
+    const previewContentBefore = [
+      contentBefore[0],
+      contentBefore[1],
+      rendererEvents,
+    ]
+
     await page
       .locator('.content-entry-row')
       .filter({ hasText: contentEntry.id })
@@ -696,6 +835,22 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     await browserExpect(
       page.getByRole('heading', { name: 'Saved entry', exact: true }),
     ).toBeVisible()
+
+    const htmlPreviewPath = contentEntryPath + '/render-preview'
+    let reviewedRendererReads = 0
+    let portableHtmlPosts = 0
+    const observePrivatePreview = (request: Request) => {
+      if (
+        request.url() === collectionRendererPath &&
+        request.method() === 'GET'
+      )
+        reviewedRendererReads += 1
+
+      if (request.url() === htmlPreviewPath && request.method() === 'POST')
+        portableHtmlPosts += 1
+    }
+    page.on('request', observePrivatePreview)
+
     await page
       .getByRole('button', { name: 'Preview HTML', exact: true })
       .click()
@@ -716,7 +871,6 @@ test('copied executable renders real setup, signs in and publishes a callable RE
       name: 'Rich-text field',
       exact: true,
     })
-    const htmlPreviewPath = contentEntryPath + '/render-preview'
     const htmlIdentity = {
       collectionId: contentCollection.id,
       collectionVersion: contentCollection.version,
@@ -727,6 +881,140 @@ test('copied executable renders real setup, signs in and publishes a callable RE
       rendererSchemaVersion: 1,
       consumerContract: null,
     }
+
+    async function snapshotPrivatePreviewState() {
+      const values: unknown[] = []
+
+      for (const path of [
+        knownOrigin + '/api/structs/' + contentModel.id,
+        contentPaths[0]!,
+        contentEntriesPath,
+        contentEntryPath,
+        collectionRendererPath,
+        contentPaths[2]!,
+      ]) {
+        const response = await page.request.get(path, {
+          headers: contentHeaders,
+        })
+        expect(response.status()).toBe(200)
+        values.push(await response.json())
+      }
+
+      return values
+    }
+
+    await browserExpect(htmlReview).toBeVisible()
+    expect(reviewedRendererReads).toBe(0)
+    expect(portableHtmlPosts).toBe(0)
+    const privatePreviewBefore = await snapshotPrivatePreviewState()
+    const reviewCollectionSettings = htmlReview.getByRole('button', {
+      name: 'Review collection settings',
+      exact: true,
+    })
+    const savedSettingsReview = page.waitForResponse(
+      (response) =>
+        response.url() === collectionRendererPath &&
+        response.request().method() === 'GET',
+    )
+
+    await reviewCollectionSettings.click()
+
+    const savedSettingsResponse = await savedSettingsReview
+    expect(savedSettingsResponse.status()).toBe(200)
+    expect(await savedSettingsResponse.json()).toEqual(acceptedRenderer)
+    await browserExpect(reviewCollectionSettings).toBeEnabled()
+    expect(reviewedRendererReads).toBe(1)
+    expect(portableHtmlPosts).toBe(0)
+
+    const htmlSettings = htmlReview.getByRole('combobox', {
+      name: 'HTML settings',
+      exact: true,
+    })
+    await browserExpect(htmlSettings).toHaveText('Temporary settings')
+    await htmlSettings.click()
+    await page
+      .getByRole('option', {
+        name: 'Reviewed collection settings',
+        exact: true,
+      })
+      .click()
+    await browserExpect(htmlSource).toHaveCount(0)
+    await browserExpect(
+      htmlReview.getByText('Renderer revision 1', { exact: true }),
+    ).toBeVisible()
+    expect(reviewedRendererReads).toBe(1)
+    expect(portableHtmlPosts).toBe(0)
+
+    const reviewedCollectionHTML =
+      '<h1 class="portable-collection-heading" title="Collection &quot;ไทย&quot; &amp; &lt;literal&gt;">Portable heading ไทย</h1><p>&lt;script&gt;literal&lt;/script&gt; &amp; ไทย</p>'
+    const reviewedPreview = page.waitForResponse(
+      (response) =>
+        response.url() === htmlPreviewPath &&
+        response.request().method() === 'POST',
+    )
+
+    await generateHTML.click()
+
+    const reviewedPreviewResponse = await reviewedPreview
+    expect(reviewedPreviewResponse.status()).toBe(200)
+    expect(reviewedPreviewResponse.request().postDataJSON()).toEqual({
+      entryVersion: 1,
+      fieldKey: 'body',
+      rendererVersion: 1,
+    })
+    expect(await reviewedPreviewResponse.json()).toEqual({
+      ...htmlIdentity,
+      fieldKey: 'body',
+      schemaVersion: 2,
+      astVersion: 2,
+      rendererVersion: 1,
+      rendererSha256: collectionRendererHash,
+      html: reviewedCollectionHTML,
+    })
+    await browserExpect(htmlSource).toHaveValue(reviewedCollectionHTML)
+    await browserExpect(htmlSource).toHaveAttribute('readonly', '')
+    const reviewedFrame = htmlReview.locator(
+      'iframe[title="Rendered HTML preview"]',
+    )
+    await browserExpect(reviewedFrame).toHaveAttribute('sandbox', '')
+    const reviewedHeading = reviewedFrame.contentFrame().locator('h1')
+    await browserExpect(reviewedHeading).toHaveText('Portable heading ไทย')
+    await browserExpect(reviewedHeading).toHaveAttribute(
+      'class',
+      'portable-collection-heading',
+    )
+    await browserExpect(reviewedHeading).toHaveAttribute(
+      'title',
+      'Collection "ไทย" & <literal>',
+    )
+    await browserExpect(reviewedFrame.contentFrame().locator('p')).toHaveText(
+      '<script>literal</script> & ไทย',
+    )
+    await htmlReview
+      .getByRole('button', { name: 'Configured elements', exact: true })
+      .click()
+    await browserExpect(
+      htmlReview.getByText(collectionRendererHash, { exact: true }),
+    ).toBeVisible()
+    await reviewedFrame.scrollIntoViewIfNeeded()
+    await browserExpect(reviewedFrame).toBeInViewport()
+    await capture(
+      '10-reviewed-collection-html-preview.png',
+      'Compiled private HTML from explicitly reviewed collection renderer revision one',
+      false,
+    )
+    expect(reviewedRendererReads).toBe(1)
+    expect(portableHtmlPosts).toBe(1)
+    expect(await snapshotPrivatePreviewState()).toEqual(privatePreviewBefore)
+
+    await htmlSettings.click()
+    await page
+      .getByRole('option', { name: 'Temporary settings', exact: true })
+      .click()
+    await browserExpect(htmlSource).toHaveCount(0)
+    expect(reviewedRendererReads).toBe(1)
+    expect(portableHtmlPosts).toBe(1)
+
     const formattedHTML =
       '<h1>Portable heading ไทย</h1><p>&lt;script&gt;literal&lt;/script&gt; &amp; ไทย</p>'
     const formattedReply = page.waitForResponse(
@@ -863,127 +1151,15 @@ test('copied executable renders real setup, signs in and publishes a callable RE
       contentAfter.push(await response.json())
     }
 
-    expect(contentAfter).toEqual(contentBefore)
+    expect(contentAfter).toEqual(previewContentBefore)
+    expect(await snapshotPrivatePreviewState()).toEqual(privatePreviewBefore)
+    expect(reviewedRendererReads).toBe(1)
+    expect(portableHtmlPosts).toBe(4)
+    page.off('request', observePrivatePreview)
+
     await htmlReview
       .getByRole('button', { name: 'Close HTML preview', exact: true })
       .click()
-
-    const collectionRendererPath =
-      knownOrigin + '/api/collections/' + contentCollection.id + '/renderer'
-    const rendererReview = page.waitForResponse(
-      (response) =>
-        response.url() === collectionRendererPath &&
-        response.request().method() === 'GET',
-    )
-    await page
-      .getByRole('button', { name: 'Review HTML settings', exact: true })
-      .click()
-    const rendererReviewed = await rendererReview
-    expect(rendererReviewed.status()).toBe(200)
-    expect(await rendererReviewed.json()).toMatchObject({
-      collectionId: contentCollection.id,
-      structId: contentModel.id,
-      structVersion: 1,
-      version: 0,
-      renderer: { schemaVersion: 1, elements: {} },
-      consumerContract: null,
-      createdAt: null,
-      updatedAt: null,
-    })
-
-    const rendererPanel = page.getByRole('region', {
-      name: 'Collection HTML settings',
-      exact: true,
-    })
-    await rendererPanel
-      .getByRole('button', { name: 'Advanced element settings', exact: true })
-      .click()
-    await rendererPanel
-      .getByRole('combobox', { name: 'Element', exact: true })
-      .click()
-    await page
-      .getByRole('option', { name: 'Heading 1 (h1)', exact: true })
-      .click()
-    await rendererPanel
-      .getByLabel('CSS classes', { exact: true })
-      .fill('portable-collection-heading')
-    await rendererPanel
-      .getByLabel('Title attribute', { exact: true })
-      .fill('Collection "ไทย" & <literal>')
-
-    const rendererSave = page.waitForResponse(
-      (response) =>
-        response.url() === collectionRendererPath &&
-        response.request().method() === 'PUT',
-    )
-    await rendererPanel
-      .getByRole('button', { name: 'Save HTML settings', exact: true })
-      .click()
-    const rendererSaved = await rendererSave
-    expect(rendererSaved.status()).toBe(200)
-    const collectionRendererWire = {
-      schemaVersion: 1,
-      elements: {
-        h1: {
-          classes: ['portable-collection-heading'],
-          attributes: { title: 'Collection "ไทย" & <literal>' },
-        },
-      },
-    }
-    expect(rendererSaved.request().postDataJSON()).toEqual({
-      version: 0,
-      renderer: collectionRendererWire,
-    })
-    const acceptedRenderer = await rendererSaved.json()
-    expect(acceptedRenderer).toMatchObject({
-      collectionId: contentCollection.id,
-      collectionVersion: contentCollection.version,
-      structId: contentModel.id,
-      structVersion: contentModel.version,
-      version: 1,
-      renderer: collectionRendererWire,
-      consumerContract: null,
-    })
-    await browserExpect(
-      rendererPanel.getByText('Renderer revision 1', { exact: true }),
-    ).toBeVisible()
-    await browserExpect(
-      rendererPanel.getByRole('button', {
-        name: 'Save HTML settings',
-        exact: true,
-      }),
-    ).toBeDisabled()
-    await rendererPanel
-      .getByLabel('Title attribute', { exact: true })
-      .scrollIntoViewIfNeeded()
-    await capture(
-      '09-collection-html-settings.png',
-      'Compiled owner-reviewed collection HTML settings saved at revision one',
-      false,
-    )
-
-    const persistedRenderer = await page.request.get(collectionRendererPath, {
-      headers: contentHeaders,
-    })
-    expect(persistedRenderer.status()).toBe(200)
-    expect(await persistedRenderer.json()).toEqual(acceptedRenderer)
-    for (let index = 0; index < 2; index++) {
-      const unchanged = await page.request.get(contentPaths[index]!, {
-        headers: contentHeaders,
-      })
-      expect(unchanged.status()).toBe(200)
-      expect(await unchanged.json()).toEqual(contentBefore[index])
-    }
-    const rendererAudit = await page.request.get(contentPaths[2]!, {
-      headers: contentHeaders,
-    })
-    expect(rendererAudit.status()).toBe(200)
-    const rendererEvents = await rendererAudit.json()
-    expect(rendererEvents.slice(1)).toEqual(contentBefore[2])
-    expect(rendererEvents[0]).toMatchObject({
-      action: 'collection.renderer.saved',
-      resource: contentCollection.id,
-    })
 
     await page.getByRole('button', { name: 'API keys', exact: true }).click()
     await page
@@ -1083,7 +1259,7 @@ test('copied executable renders real setup, signs in and publishes a callable RE
     expect(
       pageErrors === 0 && networkErrors === 0 && policyViolations === 0,
     ).toBe(true)
-    expect(captures.length).toBe(9)
+    expect(captures.length).toBe(10)
     await writeFile(
       join(previews, 'manifest.json'),
       JSON.stringify({ captures }, null, 2) + '\n',

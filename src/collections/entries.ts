@@ -7,6 +7,7 @@ import { renderRichTextPreview } from '../structs/rich-text-render'
 import type { Member, Store } from '../workspace/store'
 import type { ContentEntry, ContentEntryPage, EntryData } from './model'
 import type { collectionService } from './service'
+import type { collectionRendererService } from './renderers'
 
 type EntryRow = {
   id: string
@@ -275,13 +276,15 @@ function entry(row: EntryRow, collectionId: string, fields: StructField[]) {
 }
 
 type FieldPath = (string | number)[]
-type PreviewInput = {
-  entryVersion: number
-  renderer: unknown
-} & (
-  | { selector: 'key'; fieldKey: string }
-  | { selector: 'path'; fieldPath: FieldPath }
-)
+type PreviewRenderer =
+  | { rendererSelection: 'transient'; renderer: unknown }
+  | { rendererSelection: 'saved'; rendererVersion: number }
+
+type PreviewInput = { entryVersion: number } & PreviewRenderer &
+  (
+    | { selector: 'key'; fieldKey: string }
+    | { selector: 'path'; fieldPath: FieldPath }
+  )
 
 function fieldKey(value: unknown): value is string {
   return (
@@ -334,7 +337,13 @@ function previewInput(value: unknown): PreviewInput | null {
       const descriptor = descriptors[key as string]
       return (
         typeof key !== 'string' ||
-        !['entryVersion', 'fieldKey', 'fieldPath', 'renderer'].includes(key) ||
+        ![
+          'entryVersion',
+          'fieldKey',
+          'fieldPath',
+          'renderer',
+          'rendererVersion',
+        ].includes(key) ||
         !descriptor ||
         !descriptor.enumerable ||
         !('value' in descriptor)
@@ -345,10 +354,12 @@ function previewInput(value: unknown): PreviewInput | null {
 
   const hasKey = Object.hasOwn(descriptors, 'fieldKey')
   const hasPath = Object.hasOwn(descriptors, 'fieldPath')
+  const hasRenderer = Object.hasOwn(descriptors, 'renderer')
+  const hasRendererVersion = Object.hasOwn(descriptors, 'rendererVersion')
   if (
     !Object.hasOwn(descriptors, 'entryVersion') ||
-    !Object.hasOwn(descriptors, 'renderer') ||
-    hasKey === hasPath
+    hasKey === hasPath ||
+    hasRenderer === hasRendererVersion
   )
     return null
 
@@ -360,18 +371,40 @@ function previewInput(value: unknown): PreviewInput | null {
   )
     return null
 
-  const renderer: unknown = descriptors.renderer!.value
+  let renderer: PreviewRenderer
+  if (hasRenderer) {
+    renderer = {
+      rendererSelection: 'transient',
+      renderer: descriptors.renderer!.value,
+    }
+  } else {
+    const rendererVersion: unknown = descriptors.rendererVersion!.value
+    if (
+      typeof rendererVersion !== 'number' ||
+      !Number.isSafeInteger(rendererVersion) ||
+      rendererVersion < 0
+    )
+      return null
+
+    renderer = { rendererSelection: 'saved', rendererVersion }
+  }
+
   if (hasKey) {
     const selectedKey: unknown = descriptors.fieldKey!.value
     if (!fieldKey(selectedKey)) return null
 
-    return { entryVersion, renderer, selector: 'key', fieldKey: selectedKey }
+    return { entryVersion, ...renderer, selector: 'key', fieldKey: selectedKey }
   }
 
   const selectedPath = fieldPath(descriptors.fieldPath!.value)
   if (!selectedPath) return null
 
-  return { entryVersion, renderer, selector: 'path', fieldPath: selectedPath }
+  return {
+    entryVersion,
+    ...renderer,
+    selector: 'path',
+    fieldPath: selectedPath,
+  }
 }
 
 function previewField(
@@ -424,6 +457,7 @@ function previewField(
 export function contentEntryService(
   store: Store,
   collections: Pick<ReturnType<typeof collectionService>, 'get'>,
+  renderers: Pick<ReturnType<typeof collectionRendererService>, 'get'>,
 ) {
   const service = {
     list(collectionId: string, query: URLSearchParams): ContentEntryPage {
@@ -515,7 +549,23 @@ export function contentEntryService(
               : parseFormattedRichTextDocument(selected.value)
           if (!document) throw new ApiError(503, 'Content entry is unavailable')
 
-          const rendered = renderRichTextPreview(document, input.renderer)
+          let renderer: unknown
+          let rendererVersion: number | undefined
+          if (input.rendererSelection === 'saved') {
+            const reviewed = renderers.get(collectionId)
+            if (reviewed.version !== input.rendererVersion)
+              throw new ApiError(
+                409,
+                'Collection renderer changed. Reload before previewing.',
+              )
+
+            renderer = reviewed.renderer
+            rendererVersion = reviewed.version
+          } else {
+            renderer = input.renderer
+          }
+
+          const rendered = renderRichTextPreview(document, renderer)
 
           return {
             collectionId: collection.id,
@@ -531,6 +581,7 @@ export function contentEntryService(
             schemaVersion: selected.schema.schemaVersion,
             astVersion: document.astVersion,
             ...rendered,
+            ...(rendererVersion !== undefined ? { rendererVersion } : {}),
           }
         })
         .immediate()

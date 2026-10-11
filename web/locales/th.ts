@@ -1163,6 +1163,20 @@ const messages: Record<string, string> = {
 
   'Save could not be confirmed. Reload HTML settings before trying again.':
     'ไม่สามารถยืนยันการบันทึกได้ โหลดการตั้งค่า HTML อีกครั้งก่อนลองใหม่',
+
+  'HTML settings': 'การตั้งค่า HTML',
+  'Temporary settings': 'การตั้งค่าชั่วคราว',
+  'Reviewed collection settings': 'การตั้งค่าคอลเลกชันที่ตรวจสอบแล้ว',
+  'Review collection settings': 'ตรวจสอบการตั้งค่าคอลเลกชัน',
+
+  'Review saved collection settings before using them. Reviewing does not save settings or generate HTML.':
+    'ตรวจสอบการตั้งค่าที่บันทึกไว้ของคอลเลกชันก่อนใช้ การตรวจสอบจะไม่บันทึกการตั้งค่าหรือสร้าง HTML',
+
+  'Saved HTML settings changed. Review collection settings again.':
+    'การตั้งค่า HTML ที่บันทึกไว้เปลี่ยนแล้ว ตรวจสอบการตั้งค่าคอลเลกชันอีกครั้ง',
+
+  'These are the last reviewed settings. Other sessions may have changed them.':
+    'นี่คือการตั้งค่าที่ตรวจสอบครั้งล่าสุด เซสชันอื่นอาจเปลี่ยนการตั้งค่าแล้ว',
 }
 
 export default messages
